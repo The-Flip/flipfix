@@ -174,24 +174,17 @@
 
 <div class="game-detail-container">
     <div class="game-header no-print">
-        <h1>{{ game.name }}</h1>
+        <h1>
+            {{ game.name }}
+            {% if game.year or game.manufacturer %}
+                ({% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %} {% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %})
+            {% endif %}
+        </h1>
         <a href="{% url 'game_list' %}" class="btn btn-secondary">Back to Games</a>
     </div>
 
     <div class="game-info">
         <div class="game-info-grid">
-            <div class="info-item">
-                <span class="info-label">Name</span>
-                <span class="info-value">{{ game.name }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Manufacturer</span>
-                <span class="info-value">{{ game.manufacturer|default:"—" }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Year</span>
-                <span class="info-value">{{ game.year|default:"—" }}</span>
-            </div>
             <div class="info-item">
                 <span class="info-label">Type</span>
                 <span class="info-value">{{ game.get_type_display }}</span>
