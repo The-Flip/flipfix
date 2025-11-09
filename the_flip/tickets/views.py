@@ -4,8 +4,8 @@ from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
 from django.db.models import Q
 
-from .models import ProblemReport
-from .forms import ReportFilterForm, ReportUpdateForm
+from .models import Game, ProblemReport
+from .forms import ReportFilterForm, ReportUpdateForm, ProblemReportCreateForm
 
 
 def home(request):
@@ -121,4 +121,45 @@ def report_detail(request, pk):
         'report': report,
         'form': form,
         'can_update': can_update,
+    })
+
+
+def report_create(request, game_id=None):
+    """
+    Create a new problem report.
+
+    If game_id is provided (QR code scenario), the game is pre-selected.
+    Otherwise, user selects from dropdown.
+
+    Accessible to everyone (public + maintainers).
+    """
+    game = None
+    if game_id:
+        game = get_object_or_404(Game, pk=game_id, is_active=True)
+
+    if request.method == 'POST':
+        form = ProblemReportCreateForm(request.POST, game=game)
+        if form.is_valid():
+            report = form.save(commit=False)
+
+            # Capture device info
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+            ip_address = request.META.get('REMOTE_ADDR', '')
+            report.device_info = f"{user_agent[:200]}"  # Limit to 200 chars
+
+            # Associate authenticated user if logged in
+            if request.user.is_authenticated and hasattr(request.user, 'maintainer'):
+                if not report.reported_by_name:
+                    report.reported_by_name = request.user.get_full_name() or request.user.username
+
+            report.save()
+
+            messages.success(request, 'Problem report submitted successfully. Thank you!')
+            return redirect('report_detail', pk=report.pk)
+    else:
+        form = ProblemReportCreateForm(game=game)
+
+    return render(request, 'tickets/report_create.html', {
+        'form': form,
+        'game': game,
     })

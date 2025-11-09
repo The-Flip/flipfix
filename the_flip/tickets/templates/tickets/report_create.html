@@ -1,0 +1,98 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Report a Problem{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'report_list' %}">← Back to Reports</a>
+</div>
+
+<div class="report-create">
+    <div class="page-header">
+        <h1>Report a Problem</h1>
+    </div>
+
+    {% if game %}
+        <div class="qr-info">
+            <p class="qr-message">
+                You're reporting a problem with <strong>{{ game.name }}</strong>
+            </p>
+        </div>
+    {% endif %}
+
+    <form method="post" class="report-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            {{ form.game }}
+            {% if not game %}
+                {{ form.game.label_tag }}
+                {{ form.game }}
+                {% if form.game.errors %}
+                    <div class="form-errors">{{ form.game.errors }}</div>
+                {% endif %}
+                {% if form.game.help_text %}
+                    <p class="form-help">{{ form.game.help_text }}</p>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.problem_type.label_tag }}
+            <div class="radio-group">
+                {{ form.problem_type }}
+            </div>
+            {% if form.problem_type.errors %}
+                <div class="form-errors">{{ form.problem_type.errors }}</div>
+            {% endif %}
+            {% if form.problem_type.help_text %}
+                <p class="form-help">{{ form.problem_type.help_text }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.problem_text.label_tag }}
+            {{ form.problem_text }}
+            {% if form.problem_text.errors %}
+                <div class="form-errors">{{ form.problem_text.errors }}</div>
+            {% endif %}
+            {% if form.problem_text.help_text %}
+                <p class="form-help">{{ form.problem_text.help_text }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.reported_by_name.label_tag }}
+            {{ form.reported_by_name }}
+            {% if form.reported_by_name.errors %}
+                <div class="form-errors">{{ form.reported_by_name.errors }}</div>
+            {% endif %}
+            {% if form.reported_by_name.help_text %}
+                <p class="form-help">{{ form.reported_by_name.help_text }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.reported_by_contact.label_tag }}
+            {{ form.reported_by_contact }}
+            {% if form.reported_by_contact.errors %}
+                <div class="form-errors">{{ form.reported_by_contact.errors }}</div>
+            {% endif %}
+            {% if form.reported_by_contact.help_text %}
+                <p class="form-help">{{ form.reported_by_contact.help_text }}</p>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Submit Report</button>
+            <a href="{% url 'report_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

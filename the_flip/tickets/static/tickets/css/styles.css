@@ -577,6 +577,76 @@ textarea.form-control {
     text-align: center;
 }
 
+/* Report Create */
+.report-create {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.qr-info {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 2rem;
+}
+
+.qr-message {
+    color: #155724;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.report-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.form-errors {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-help {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .report-list-container {
@@ -610,5 +680,13 @@ textarea.form-control {
 
     .reports-table {
         overflow-x: auto;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .report-create {
+        padding: 1rem;
     }
 }

@@ -62,3 +62,51 @@ class ReportUpdateForm(forms.ModelForm):
         labels = {
             'text': 'Update'
         }
+
+
+class ProblemReportCreateForm(forms.ModelForm):
+    """Form for creating new problem reports (public + maintainers)."""
+
+    def __init__(self, *args, **kwargs):
+        # Extract game if provided (for QR code scenario)
+        game = kwargs.pop('game', None)
+        super().__init__(*args, **kwargs)
+
+        if game:
+            # QR code scenario: hide game field and pre-select
+            self.fields['game'].widget = forms.HiddenInput()
+            self.fields['game'].initial = game
+        else:
+            # General scenario: show dropdown
+            self.fields['game'].queryset = Game.objects.filter(is_active=True).order_by('name')
+
+    class Meta:
+        model = ProblemReport
+        fields = ['game', 'problem_type', 'problem_text', 'reported_by_name', 'reported_by_contact']
+        widgets = {
+            'game': forms.Select(attrs={'class': 'form-select'}),
+            'problem_type': forms.RadioSelect(),
+            'problem_text': forms.Textarea(attrs={
+                'rows': 5,
+                'class': 'form-control',
+                'placeholder': 'Please describe the problem in detail...'
+            }),
+            'reported_by_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Your name (optional)'
+            }),
+            'reported_by_contact': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Email or phone (optional)'
+            }),
+        }
+        labels = {
+            'game': 'Which game?',
+            'problem_type': 'What type of problem?',
+            'problem_text': 'Problem description',
+            'reported_by_name': 'Your name',
+            'reported_by_contact': 'Contact information',
+        }
+        help_texts = {
+            'problem_text': 'Please provide as much detail as possible so we can fix the issue.',
+        }
