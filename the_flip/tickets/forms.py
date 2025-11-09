@@ -70,6 +70,8 @@ class ProblemReportCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # Extract game if provided (for QR code scenario)
         game = kwargs.pop('game', None)
+        # Extract user if provided (to hide contact fields for authenticated users)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
         if game:
@@ -79,6 +81,13 @@ class ProblemReportCreateForm(forms.ModelForm):
         else:
             # General scenario: show dropdown
             self.fields['game'].queryset = Game.objects.filter(is_active=True).order_by('name')
+
+        # Hide contact fields for authenticated users
+        if user and user.is_authenticated:
+            self.fields['reported_by_name'].widget = forms.HiddenInput()
+            self.fields['reported_by_name'].required = False
+            self.fields['reported_by_contact'].widget = forms.HiddenInput()
+            self.fields['reported_by_contact'].required = False
 
     class Meta:
         model = ProblemReport

@@ -138,7 +138,7 @@ def report_create(request, game_id=None):
         game = get_object_or_404(Game, pk=game_id, is_active=True)
 
     if request.method == 'POST':
-        form = ProblemReportCreateForm(request.POST, game=game)
+        form = ProblemReportCreateForm(request.POST, game=game, user=request.user)
         if form.is_valid():
             report = form.save(commit=False)
 
@@ -148,16 +148,17 @@ def report_create(request, game_id=None):
             report.device_info = f"{user_agent[:200]}"  # Limit to 200 chars
 
             # Associate authenticated user if logged in
-            if request.user.is_authenticated and hasattr(request.user, 'maintainer'):
-                if not report.reported_by_name:
-                    report.reported_by_name = request.user.get_full_name() or request.user.username
+            if request.user.is_authenticated:
+                report.reported_by_name = request.user.get_full_name() or request.user.username
+                if hasattr(request.user, 'maintainer'):
+                    report.reported_by_contact = request.user.email
 
             report.save()
 
             messages.success(request, 'Problem report submitted successfully. Thank you!')
             return redirect('report_detail', pk=report.pk)
     else:
-        form = ProblemReportCreateForm(game=game)
+        form = ProblemReportCreateForm(game=game, user=request.user)
 
     return render(request, 'tickets/report_create.html', {
         'form': form,

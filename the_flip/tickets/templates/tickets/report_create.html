@@ -68,6 +68,7 @@
             {% endif %}
         </div>
 
+        {% if not form.reported_by_name.field.widget.is_hidden %}
         <div class="form-group">
             {{ form.reported_by_name.label_tag }}
             {{ form.reported_by_name }}
@@ -78,7 +79,11 @@
                 <p class="form-help">{{ form.reported_by_name.help_text }}</p>
             {% endif %}
         </div>
+        {% else %}
+            {{ form.reported_by_name }}
+        {% endif %}
 
+        {% if not form.reported_by_contact.field.widget.is_hidden %}
         <div class="form-group">
             {{ form.reported_by_contact.label_tag }}
             {{ form.reported_by_contact }}
@@ -89,6 +94,9 @@
                 <p class="form-help">{{ form.reported_by_contact.help_text }}</p>
             {% endif %}
         </div>
+        {% else %}
+            {{ form.reported_by_contact }}
+        {% endif %}
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Submit Report</button>
