@@ -1,0 +1,5 @@
+# Django Web Framework
+Django==5.2.8
+
+# Configuration Management
+python-decouple==3.8
