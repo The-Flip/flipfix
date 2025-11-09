@@ -24,11 +24,11 @@ class ProblemReportAdmin(admin.ModelAdmin):
     search_fields = ['game__name', 'problem_text', 'reported_by_name']
     readonly_fields = ['created_at']
 
+    @admin.display(description='Reported By')
     def reported_by(self, obj):
         if obj.reported_by_user:
             return obj.reported_by_user.username
         return obj.reported_by_name or 'Anonymous'
-    reported_by.short_description = 'Reported By'
 
 
 @admin.register(ReportUpdate)
