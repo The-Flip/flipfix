@@ -82,18 +82,23 @@ def report_detail(request, pk):
         pk=pk
     )
 
-    # Check if user can update
-    can_update = request.user.is_authenticated and hasattr(request.user, 'maintainer')
+    # Check if user can update (staff users or maintainers)
+    can_update = request.user.is_authenticated and (
+        request.user.is_staff or hasattr(request.user, 'maintainer')
+    )
 
     form = None
 
-    # Handle POST requests (maintainers only)
+    # Handle POST requests (staff or maintainers)
     if request.method == 'POST' and can_update:
+        # Get maintainer object (None for staff users without maintainer record)
+        maintainer = getattr(request.user, 'maintainer', None)
+
         if 'add_update' in request.POST:
             form = ReportUpdateForm(request.POST)
             if form.is_valid():
                 text = form.cleaned_data['text']
-                report.add_note(request.user.maintainer, text)
+                report.add_note(maintainer, text)
                 messages.success(request, 'Update added successfully.')
                 return redirect('report_detail', pk=pk)
 
@@ -101,7 +106,7 @@ def report_detail(request, pk):
             text = request.POST.get('text', 'Closing report.')
             if not text or text.strip() == '':
                 text = 'Closing report.'
-            report.set_status(ProblemReport.STATUS_CLOSED, request.user.maintainer, text)
+            report.set_status(ProblemReport.STATUS_CLOSED, maintainer, text)
             messages.success(request, 'Report closed successfully.')
             return redirect('report_detail', pk=pk)
 
@@ -109,7 +114,7 @@ def report_detail(request, pk):
             text = request.POST.get('text', 'Reopening report.')
             if not text or text.strip() == '':
                 text = 'Reopening report.'
-            report.set_status(ProblemReport.STATUS_OPEN, request.user.maintainer, text)
+            report.set_status(ProblemReport.STATUS_OPEN, maintainer, text)
             messages.success(request, 'Report reopened successfully.')
             return redirect('report_detail', pk=pk)
 
