@@ -112,7 +112,7 @@ def report_detail(request, pk):
         maintainer = getattr(request.user, 'maintainer', None)
 
         if 'add_update' in request.POST:
-            form = ReportUpdateForm(request.POST)
+            form = ReportUpdateForm(request.POST, current_game_status=report.game.status)
             if form.is_valid():
                 text = form.cleaned_data['text']
                 game_status = form.cleaned_data.get('game_status')
@@ -129,7 +129,7 @@ def report_detail(request, pk):
 
     # Create empty form for GET requests or failed POST
     if can_update and form is None:
-        form = ReportUpdateForm()
+        form = ReportUpdateForm(current_game_status=report.game.status)
 
     return render(request, 'tickets/report_detail.html', {
         'report': report,

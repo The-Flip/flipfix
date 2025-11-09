@@ -50,11 +50,30 @@ class ReportUpdateForm(forms.ModelForm):
     """Form for adding updates to problem reports (maintainers only)."""
 
     game_status = forms.ChoiceField(
-        choices=[('', '-- No Change --'), (Game.STATUS_GOOD, 'Good'), (Game.STATUS_FIXING, 'Fixing'), (Game.STATUS_BROKEN, 'Broken')],
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Update Game Status'
     )
+
+    def __init__(self, *args, **kwargs):
+        # Extract current_game_status if provided
+        current_game_status = kwargs.pop('current_game_status', None)
+        super().__init__(*args, **kwargs)
+
+        # Build choices excluding the current game status
+        all_status_choices = [
+            (Game.STATUS_GOOD, 'Good'),
+            (Game.STATUS_FIXING, 'Fixing'),
+            (Game.STATUS_BROKEN, 'Broken'),
+        ]
+
+        # Filter out the current status
+        available_choices = [('', '-- No Change --')]
+        for status_code, status_label in all_status_choices:
+            if status_code != current_game_status:
+                available_choices.append((status_code, status_label))
+
+        self.fields['game_status'].choices = available_choices
 
     class Meta:
         model = ReportUpdate
