@@ -5,10 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
+from django.conf import settings
 import qrcode
 import qrcode.image.svg
 from io import BytesIO
 import base64
+import os
+from PIL import Image
 
 from .models import Game, ProblemReport
 from .forms import ReportFilterForm, ReportUpdateForm, ProblemReportCreateForm
@@ -254,18 +257,54 @@ def game_detail(request, pk):
         reverse('report_create_qr', args=[game.id])
     )
 
-    # Create QR code
+    # Create QR code with high error correction to allow logo embedding
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,  # High error correction (30%)
         box_size=10,
         border=4,
     )
     qr.add_data(qr_url)
     qr.make(fit=True)
 
-    # Create image
-    img = qr.make_image(fill_color="black", back_color="white")
+    # Create QR code image
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+    # Embed logo in the center of QR code
+    logo_path = os.path.join(settings.BASE_DIR, 'tickets', 'static', 'tickets', 'images', 'the_flip_logo.png')
+    if os.path.exists(logo_path):
+        try:
+            # Open and resize logo
+            logo = Image.open(logo_path)
+
+            # Calculate logo size (20% of QR code size)
+            qr_width, qr_height = img.size
+            logo_size = int(qr_width * 0.20)
+
+            # Resize logo while maintaining aspect ratio
+            logo.thumbnail((logo_size, logo_size), Image.Resampling.LANCZOS)
+
+            # Create white background square slightly larger than logo
+            logo_bg_size = int(logo_size * 1.1)
+            logo_bg = Image.new('RGB', (logo_bg_size, logo_bg_size), 'white')
+
+            # Calculate position to center the logo background
+            logo_bg_pos = ((qr_width - logo_bg_size) // 2, (qr_height - logo_bg_size) // 2)
+
+            # Paste white background
+            img.paste(logo_bg, logo_bg_pos)
+
+            # Calculate position to center the logo
+            logo_pos = ((qr_width - logo.width) // 2, (qr_height - logo.height) // 2)
+
+            # Paste logo (with transparency if available)
+            if logo.mode == 'RGBA':
+                img.paste(logo, logo_pos, logo)
+            else:
+                img.paste(logo, logo_pos)
+        except Exception as e:
+            # If logo embedding fails, continue with QR code without logo
+            pass
 
     # Convert to base64 for embedding in HTML
     buffer = BytesIO()
