@@ -1,6 +1,8 @@
 import random
+from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from tickets.models import Game, Maintainer, ProblemReport
 
 User = get_user_model()
@@ -312,7 +314,11 @@ class Command(BaseCommand):
         created_reports = 0
         existing_reports = 0
 
-        for scenario in problem_scenarios:
+        # Start with reports from 30 days ago and work forward
+        now = timezone.now()
+        base_time = now - timedelta(days=30)
+
+        for i, scenario in enumerate(problem_scenarios):
             game = random.choice(games)
             updates_data = scenario.pop('updates')
 
@@ -338,34 +344,51 @@ class Command(BaseCommand):
             if created:
                 created_reports += 1
 
+                # Set created_at to spread reports over the last 30 days
+                # Each report is roughly 1-2 days apart with some randomness
+                days_offset = i * 1.5 + random.uniform(-0.5, 0.5)
+                report.created_at = base_time + timedelta(days=days_offset)
+                report.save(update_fields=['created_at'])
+
                 # Add updates if any
                 if updates_data:
+                    # Start updates a few hours to a day after the report was created
+                    update_time = report.created_at + timedelta(hours=random.uniform(2, 24))
+
                     for update in updates_data:
                         maintainer = random.choice(maintainers)
+                        update_obj = None
 
                         # Update can be a string or a dict
                         if isinstance(update, str):
                             # Simple note
-                            report.add_note(maintainer, update)
+                            update_obj = report.add_note(maintainer, update)
                         elif isinstance(update, dict):
                             text = update['text']
                             if update.get('close'):
                                 # Close the report
-                                report.set_status(
+                                update_obj = report.set_status(
                                     ProblemReport.STATUS_CLOSED,
                                     maintainer,
                                     text
                                 )
                             elif update.get('reopen'):
                                 # Reopen the report
-                                report.set_status(
+                                update_obj = report.set_status(
                                     ProblemReport.STATUS_OPEN,
                                     maintainer,
                                     text
                                 )
                             else:
                                 # Just a note
-                                report.add_note(maintainer, text)
+                                update_obj = report.add_note(maintainer, text)
+
+                        # Set the update's created_at timestamp
+                        if update_obj:
+                            update_obj.created_at = update_time
+                            update_obj.save(update_fields=['created_at'])
+                            # Next update is a few hours to a day later
+                            update_time += timedelta(hours=random.uniform(3, 24))
 
                     status_emoji = '✓' if report.status == ProblemReport.STATUS_CLOSED else '○'
                     self.stdout.write(
