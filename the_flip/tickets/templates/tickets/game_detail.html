@@ -180,7 +180,10 @@
                 ({% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %} {% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %})
             {% endif %}
         </h1>
-        <a href="{% url 'game_list' %}" class="btn btn-secondary">Back to Games</a>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{% url 'report_create_qr' game.id %}" class="btn btn-primary">Report a Problem</a>
+            <a href="{% url 'game_list' %}" class="btn btn-secondary">Back to Games</a>
+        </div>
     </div>
 
     <div class="game-info no-print">

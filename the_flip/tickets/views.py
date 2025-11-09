@@ -149,7 +149,7 @@ def report_create(request, game_id=None):
     """
     game = None
     if game_id:
-        game = get_object_or_404(Game, pk=game_id, is_active=True)
+        game = get_object_or_404(Game.objects.exclude(status=Game.STATUS_BROKEN), pk=game_id)
 
     if request.method == 'POST':
         form = ProblemReportCreateForm(request.POST, game=game, user=request.user)
