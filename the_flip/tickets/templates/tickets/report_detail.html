@@ -1,0 +1,125 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}{{ report.game.name }} - Problem Report{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'report_list' %}">← Back to Reports</a>
+</div>
+
+<div class="report-detail">
+    <div class="report-header">
+        <h1>{{ report.game.name }}</h1>
+        <span class="badge badge-{{ report.status }} badge-large">
+            {{ report.get_status_display }}
+        </span>
+    </div>
+
+    <div class="report-info-grid">
+        <div class="info-card">
+            <h3>Problem Type</h3>
+            <p>{{ report.get_problem_type_display }}</p>
+        </div>
+
+        <div class="info-card">
+            <h3>Reported By</h3>
+            <p>{{ report.reported_by_name|default:"Anonymous" }}</p>
+            {% if report.reported_by_contact %}
+                <p class="contact-info">{{ report.reported_by_contact }}</p>
+            {% endif %}
+        </div>
+
+        <div class="info-card">
+            <h3>Reported</h3>
+            <p>{{ report.created_at|date:"M d, Y g:i A" }}</p>
+            {% if report.device_info %}
+                <p class="device-info">{{ report.device_info }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="problem-description">
+        <h3>Problem Description</h3>
+        <p>{{ report.problem_text|linebreaks }}</p>
+    </div>
+
+    <div class="updates-section">
+        <h3>Update History</h3>
+
+        {% if report.updates.all %}
+            <div class="timeline">
+                {% for update in report.updates.all %}
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="update-header">
+                            <strong>
+                                {% if update.maintainer %}
+                                    {{ update.maintainer.user.get_full_name|default:update.maintainer.user.username }}
+                                {% else %}
+                                    System
+                                {% endif %}
+                            </strong>
+                            <span class="update-time">{{ update.created_at|date:"M d, Y g:i A" }}</span>
+                            {% if update.status %}
+                                <span class="badge badge-{{ update.status }} badge-small">
+                                    Changed to {{ update.get_status_display }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="update-text">
+                            {{ update.text|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-updates">No updates yet.</p>
+        {% endif %}
+    </div>
+
+    {% if can_update %}
+        <div class="maintainer-actions">
+            <h3>Add Update</h3>
+
+            <form method="post" class="update-form">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    {{ form.text.label_tag }}
+                    {{ form.text }}
+                    {% if form.text.errors %}
+                        <div class="form-errors">{{ form.text.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" name="add_update" class="btn btn-primary">
+                        Add Update
+                    </button>
+
+                    {% if report.status == 'open' %}
+                        <button type="submit" name="close_report" class="btn btn-success"
+                                onclick="return confirm('Close this report?')">
+                            Close Report
+                        </button>
+                    {% else %}
+                        <button type="submit" name="reopen_report" class="btn btn-warning"
+                                onclick="return confirm('Reopen this report?')">
+                            Reopen Report
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <div class="login-prompt">
+            <p>
+                <a href="{% url 'login' %}?next={{ request.path }}">Login as a maintainer</a>
+                to add updates or change the status of this report.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

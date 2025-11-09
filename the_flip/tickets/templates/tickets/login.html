@@ -1,0 +1,40 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Login - The Flip{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">
+        <h1>Maintainer Login</h1>
+        <p>Log in to manage problem reports and add updates.</p>
+
+        {% if form.errors %}
+            <div class="alert alert-error">
+                Invalid username or password. Please try again.
+            </div>
+        {% endif %}
+
+        <form method="post" class="login-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+            </div>
+
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </form>
+
+        <div class="login-help">
+            <p><a href="{% url 'report_list' %}">← Back to Reports</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

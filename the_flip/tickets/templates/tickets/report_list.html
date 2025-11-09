@@ -1,0 +1,98 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Problem Reports - The Flip{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Problem Reports</h1>
+    <div class="stats">
+        <span class="stat-badge stat-open">{{ stats.open_count }} Open</span>
+        <span class="stat-badge stat-closed">{{ stats.closed_count }} Closed</span>
+    </div>
+</div>
+
+<div class="report-list-container">
+    <aside class="filters-sidebar">
+        <h3>Filters</h3>
+        <form method="get" class="filter-form">
+            <div class="form-group">
+                <label>{{ form.status.label }}</label>
+                {{ form.status }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.problem_type.label }}</label>
+                {{ form.problem_type }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.game.label }}</label>
+                {{ form.game }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.search.label }}</label>
+                {{ form.search }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="{% url 'report_list' %}" class="btn btn-secondary">Clear</a>
+        </form>
+    </aside>
+
+    <div class="reports-main">
+        {% if page_obj %}
+            <div class="reports-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Problem Type</th>
+                            <th>Status</th>
+                            <th>Reported</th>
+                            <th>Reporter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in page_obj %}
+                        <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
+                            <td><strong>{{ report.game.name }}</strong></td>
+                            <td>{{ report.get_problem_type_display }}</td>
+                            <td>
+                                <span class="badge badge-{{ report.status }}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ report.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ report.reported_by_name|default:"Anonymous" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Previous</a>
+                {% endif %}
+
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Last</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-results">
+                <p>No problem reports found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
