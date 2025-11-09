@@ -81,6 +81,8 @@ class ProblemReportCreateForm(forms.ModelForm):
         else:
             # General scenario: show dropdown
             self.fields['game'].queryset = Game.objects.filter(is_active=True).order_by('name')
+            # Customize the label to show "Name (Year Manufacturer)"
+            self.fields['game'].label_from_instance = lambda obj: f"{obj.name} ({obj.year} {obj.manufacturer})"
 
         # Hide contact fields for authenticated users
         if user and user.is_authenticated:

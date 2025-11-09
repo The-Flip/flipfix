@@ -56,7 +56,7 @@
                     <tbody>
                         {% for report in page_obj %}
                         <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
-                            <td><strong>{{ report.game.name }}</strong></td>
+                            <td><strong>{{ report.game.name }}</strong> ({{ report.game.year }} {{ report.game.manufacturer }})</td>
                             <td>
                                 {% if report.problem_type == 'other' and report.problem_text %}
                                     {{ report.problem_text|truncatechars:80 }}
