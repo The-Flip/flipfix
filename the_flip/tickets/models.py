@@ -131,32 +131,29 @@ class ProblemReport(models.Model):
         return ReportUpdate.objects.create(
             report=self,
             maintainer=maintainer,
-            kind=ReportUpdate.KIND_NOTE,
             text=text,
         )
 
-    def set_status(self, new_status: str, maintainer: "Maintainer | None", text: str = ""):
+    def set_status(self, status: str, maintainer: "Maintainer | None", text: str = ""):
         """
         Change the report's current status AND record that change
         in the update history.
         """
-        if new_status not in dict(self.STATUS_CHOICES):
-            raise ValueError(f"Invalid status: {new_status}")
+        if status not in dict(self.STATUS_CHOICES):
+            raise ValueError(f"Invalid status: {status}")
 
         old_status = self.status
-        if old_status == new_status and not text:
+        if old_status == status and not text:
             # Nothing to do; you could relax this if you want to always log.
             return None
 
-        self.status = new_status
+        self.status = status
         self.save(update_fields=["status"])
 
         return ReportUpdate.objects.create(
             report=self,
             maintainer=maintainer,
-            kind=ReportUpdate.KIND_STATUS_CHANGE,
-            old_status=old_status,
-            new_status=new_status,
+            status=status,
             text=text,
         )
 
