@@ -314,8 +314,10 @@ class Command(BaseCommand):
         created_reports = 0
         existing_reports = 0
 
-        # Start with reports from 30 days ago and work forward
-        now = timezone.now()
+        # Use a fixed "now" to ensure all timestamps are in the past
+        # Set to 1 hour ago to give a buffer
+        now = timezone.now() - timedelta(hours=1)
+        # Start with reports from 30 days before that
         base_time = now - timedelta(days=30)
 
         for i, scenario in enumerate(problem_scenarios):
