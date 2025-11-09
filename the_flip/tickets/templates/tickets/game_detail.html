@@ -183,7 +183,7 @@
         <a href="{% url 'game_list' %}" class="btn btn-secondary">Back to Games</a>
     </div>
 
-    <div class="game-info">
+    <div class="game-info no-print">
         <div class="game-info-grid">
             <div class="info-item">
                 <span class="info-label">Type</span>
@@ -205,7 +205,7 @@
     <div class="qr-section">
         <div class="qr-code-container">
             <h2>QR Code for Problem Reporting</h2>
-            <p>Scan this QR code to report problems with this game</p>
+            <p>Scan this QR code to report a problem with this game</p>
 
             <img src="data:image/png;base64,{{ qr_code_data }}" alt="QR Code for {{ game.name }}">
 
