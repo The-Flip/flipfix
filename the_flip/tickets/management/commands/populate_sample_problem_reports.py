@@ -309,6 +309,107 @@ class Command(BaseCommand):
                     'Coil appears dead. Checking for power at connector.',
                 ]
             },
+            # Additional reports for newly added games
+            {
+                'type': ProblemReport.PROBLEM_STUCK_BALL,
+                'text': 'Ball stuck in trunk mechanism. Won\'t release for multiball.',
+                'reporter_name': 'Alex Turner',
+                'reporter_contact': 'alex.t@email.com',
+                'updates': [
+                    'Trunk motor was jammed with debris.',
+                    'Cleaned motor and lubricated mechanism.',
+                    {'text': 'Tested trunk 30 times - working perfectly now.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_NO_CREDITS,
+                'text': 'Card reader won\'t accept any cards. Display says "Card Error".',
+                'reporter_name': 'Samantha Wright',
+                'updates': [
+                    'Card reader head was dirty.',
+                    'Cleaned with alcohol swabs and tested.',
+                    {'text': 'Reading cards successfully now.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Magnet save not activating during gameplay.',
+                'reporter_name': 'Derek Johnson',
+                'reporter_contact': '555-8765',
+                'updates': [
+                    'Checked button - working fine.',
+                    'Found broken wire at magnet connector.',
+                    'Resoldered connection.',
+                    {'text': 'Magnet save firing perfectly now.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_STUCK_BALL,
+                'text': 'Ball keeps draining straight down the middle. SDTM every time!',
+                'reporter_name': 'Michelle Lee',
+                'updates': [
+                    'Checked playfield level - was tilted slightly forward.',
+                    'Adjusted leg levelers to proper angle.',
+                    {'text': 'Tested 10 games - much better ball save now.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Topper lights not working. Display is fine but topper is dark.',
+                'reporter_name': 'Brian Martinez',
+                'reporter_contact': 'brian.m@email.com',
+                'updates': [
+                    'Found loose connector on topper LED strip.',
+                    {'text': 'Reconnected and secured. All topper lights working.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_NO_CREDITS,
+                'text': 'Machine showing "Call Attendant" error. Won\'t start.',
+                'reporter_name': 'Karen Wilson',
+                'updates': [
+                    'Coin box was full and triggered switch.',
+                    'Emptied coin box and reset error.',
+                    {'text': 'Machine operating normally.', 'close': True},
+                    {'text': 'Error returned after 2 days. Coin box full again. Need more frequent emptying.', 'reopen': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Shaker motor runs constantly, even when not in game.',
+                'reporter_name': 'Tyler Brooks',
+                'reporter_contact': '555-2468',
+                'updates': [
+                    'Shaker relay stuck in closed position.',
+                    'Replaced relay.',
+                    {'text': 'Shaker now activating only during proper game events.', 'close': True},
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_STUCK_BALL,
+                'text': 'Lock mechanism not holding balls. Balls roll right back out.',
+                'reporter_name': 'Patricia Green',
+                'updates': [
+                    'Lock kicker coil sleeve was cracked.',
+                    'Ordered replacement part - ETA 3 days.',
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'GI lights dimming during ball launch. Flickers badly.',
+                'reporter_name': 'William Chen',
+                'reporter_contact': 'w.chen@email.com',
+                'updates': [
+                    'Checked power supply - voltage drops during coil fire.',
+                    'Tested capacitors - found one bulging.',
+                ]
+            },
+            {
+                'type': ProblemReport.PROBLEM_NO_CREDITS,
+                'text': 'Start button stuck. Can hear it clicking but won\'t start game.',
+                'reporter_name': 'Rebecca Hall',
+                'updates': []
+            },
         ]
 
         created_reports = 0
