@@ -23,7 +23,7 @@ class Game(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(12)],
         help_text="Month of manufacture (1-12)",
     )
-    type = models.CharField(max_length=2, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=2, choices=TYPE_CHOICES, blank=False)
     system = models.CharField(max_length=100, blank=True, help_text="e.g., MPU_1, System 7, Fliptronics 2")
     scoring = models.CharField(max_length=100, blank=True, help_text="e.g., Manual, Reels, DMD, Video")
     flipper_count = models.CharField(

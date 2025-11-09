@@ -1,9 +1,23 @@
 from django.contrib import admin
+from django import forms
 from .models import Game, Maintainer, ProblemReport, ReportUpdate
+
+
+class GameAdminForm(forms.ModelForm):
+    class Meta:
+        model = Game
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the type field to use only the defined choices without a blank option
+        self.fields['type'].choices = Game.TYPE_CHOICES
+        self.fields['type'].required = True
 
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
+    form = GameAdminForm
     list_display = ['name', 'manufacturer', 'year', 'type', 'system', 'pinside_rating', 'is_active']
     list_filter = ['type', 'is_active', 'system']
     search_fields = ['name', 'manufacturer', 'system']
