@@ -127,22 +127,6 @@ def report_detail(request, pk):
                     messages.success(request, 'Update added successfully.')
                 return redirect('report_detail', pk=pk)
 
-        elif 'close_report' in request.POST:
-            text = request.POST.get('text', 'Closing report.')
-            if not text or text.strip() == '':
-                text = 'Closing report.'
-            report.set_status(ProblemReport.STATUS_CLOSED, maintainer, text)
-            messages.success(request, 'Report closed successfully.')
-            return redirect('report_detail', pk=pk)
-
-        elif 'reopen_report' in request.POST:
-            text = request.POST.get('text', 'Reopening report.')
-            if not text or text.strip() == '':
-                text = 'Reopening report.'
-            report.set_status(ProblemReport.STATUS_OPEN, maintainer, text)
-            messages.success(request, 'Report reopened successfully.')
-            return redirect('report_detail', pk=pk)
-
     # Create empty form for GET requests or failed POST
     if can_update and form is None:
         form = ReportUpdateForm()

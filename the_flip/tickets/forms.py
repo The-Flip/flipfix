@@ -50,10 +50,10 @@ class ReportUpdateForm(forms.ModelForm):
     """Form for adding updates to problem reports (maintainers only)."""
 
     game_status = forms.ChoiceField(
-        choices=[('', '-- No Change --')] + list(Game.STATUS_CHOICES),
+        choices=[('', '-- No Change --'), (Game.STATUS_GOOD, 'Good'), (Game.STATUS_FIXING, 'Fixing'), (Game.STATUS_BROKEN, 'Broken')],
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Update Game Status (optional)'
+        label='Update Game Status'
     )
 
     class Meta:

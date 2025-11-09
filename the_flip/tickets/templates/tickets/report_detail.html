@@ -118,18 +118,6 @@
                     <button type="submit" name="add_update" class="btn btn-primary">
                         Add Update
                     </button>
-
-                    {% if report.status == 'open' %}
-                        <button type="submit" name="close_report" class="btn btn-success"
-                                onclick="return confirm('Close this report?')">
-                            Close Report
-                        </button>
-                    {% else %}
-                        <button type="submit" name="reopen_report" class="btn btn-warning"
-                                onclick="return confirm('Reopen this report?')">
-                            Reopen Report
-                        </button>
-                    {% endif %}
                 </div>
             </form>
         </div>
