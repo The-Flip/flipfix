@@ -22,42 +22,42 @@ class Command(BaseCommand):
 
         # Sample pinball machines - mix of classic and modern games
         sample_games = [
-            # Classic DMD era games
+            # Classic Solid State era games (DMD/Alphanumeric displays)
             {
                 "name": "Medieval Madness",
                 "manufacturer": "Williams",
                 "year": 1997,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "The Addams Family",
                 "manufacturer": "Bally",
                 "year": 1992,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Attack from Mars",
                 "manufacturer": "Bally",
                 "year": 1995,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Twilight Zone",
                 "manufacturer": "Bally",
                 "year": 1993,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Monster Bash",
                 "manufacturer": "Williams",
                 "year": 1998,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Funhouse",
                 "manufacturer": "Williams",
                 "year": 1990,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             # Solid State era
             {
@@ -85,75 +85,75 @@ class Command(BaseCommand):
                 "year": 1973,
                 "type": Game.TYPE_EM,
             },
-            # Modern LCD games
+            # Modern Stern games (Solid State with LCD displays)
             {
                 "name": "The Mandalorian",
                 "manufacturer": "Stern",
                 "year": 2021,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Godzilla",
                 "manufacturer": "Stern",
                 "year": 2021,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
-            # Add one that's inactive (under maintenance)
+            # Add one that's broken (under maintenance)
             {
                 "name": "Creature from the Black Lagoon",
                 "manufacturer": "Bally",
                 "year": 1992,
-                "type": Game.TYPE_DMD,
-                "is_active": False,
+                "type": Game.TYPE_SS,
+                "status": Game.STATUS_BROKEN,
             },
-            # Additional classic DMD games
+            # Additional classic Solid State games
             {
                 "name": "Theatre of Magic",
                 "manufacturer": "Bally",
                 "year": 1995,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Indiana Jones: The Pinball Adventure",
                 "manufacturer": "Williams",
                 "year": 1993,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Star Trek: The Next Generation",
                 "manufacturer": "Williams",
                 "year": 1993,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Scared Stiff",
                 "manufacturer": "Bally",
                 "year": 1996,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Cirqus Voltaire",
                 "manufacturer": "Bally",
                 "year": 1997,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Tales of the Arabian Nights",
                 "manufacturer": "Williams",
                 "year": 1996,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Terminator 2: Judgment Day",
                 "manufacturer": "Williams",
                 "year": 1991,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "White Water",
                 "manufacturer": "Williams",
                 "year": 1993,
-                "type": Game.TYPE_DMD,
+                "type": Game.TYPE_SS,
             },
             # More solid state classics
             {
@@ -185,27 +185,27 @@ class Command(BaseCommand):
                 "name": "Deadpool",
                 "manufacturer": "Stern",
                 "year": 2018,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Jurassic Park",
                 "manufacturer": "Stern",
                 "year": 2019,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Led Zeppelin",
                 "manufacturer": "Stern",
                 "year": 2021,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
             {
                 "name": "Stranger Things",
                 "manufacturer": "Stern",
                 "year": 2020,
-                "type": Game.TYPE_LCD,
+                "type": Game.TYPE_SS,
             },
-            # Classic EM games
+            # Classic early solid state games
             {
                 "name": "Eight Ball Deluxe",
                 "manufacturer": "Bally",
