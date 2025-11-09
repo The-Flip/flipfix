@@ -34,11 +34,11 @@ class Command(BaseCommand):
 
         # Create maintainers
         maintainer_data = [
-            {'username': 'cmiller', 'first_name': 'Chris', 'last_name': 'Miller', 'phone': '555-0101'},
-            {'username': 'dthau', 'first_name': 'Dave', 'last_name': 'Thau', 'phone': '555-0102'},
-            {'username': 'mkuniavsky', 'first_name': 'Mike', 'last_name': 'Kuniavsky', 'phone': '555-0103'},
-            {'username': 'jhome', 'first_name': 'Jim', 'last_name': 'Home', 'phone': '555-0104'},
-            {'username': 'jcook', 'first_name': 'John', 'last_name': 'Cook', 'phone': '555-0105'},
+            {'username': 'form', 'first_name': 'Chris', 'last_name': 'Miller', 'phone': '415-555-0101'},
+            {'username': 'thau', 'first_name': 'Dave', 'last_name': 'Thau', 'phone': '415-555-0102'},
+            {'username': 'mikek', 'first_name': 'Mike', 'last_name': 'Kuniavsky', 'phone': '415-555-0103'},
+            {'username': 'jimh', 'first_name': 'Jim', 'last_name': 'Home', 'phone': '415-555-0104'},
+            {'username': 'jcook', 'first_name': 'John', 'last_name': 'Cook', 'phone': '415-555-0105'},
         ]
 
         maintainers = []
