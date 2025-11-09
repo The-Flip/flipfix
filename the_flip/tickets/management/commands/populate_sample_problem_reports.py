@@ -95,6 +95,10 @@ class Command(BaseCommand):
             return
 
         # Sample problem reports with varying content
+        # Updates can be:
+        # - Simple strings (just add a note)
+        # - Dicts with 'text' and 'close': True (closes the report)
+        # - Dicts with 'text' and 'reopen': True (reopens a closed report)
         problem_scenarios = [
             {
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
@@ -103,7 +107,7 @@ class Command(BaseCommand):
                 'reporter_contact': 'sarah@email.com',
                 'updates': [
                     'Opened playfield and retrieved ball. Checking switch.',
-                    'Switch appears to be working. Closed up and tested - all good.',
+                    {'text': 'Switch appears to be working. Closed up and tested - all good.', 'close': True},
                 ]
             },
             {
@@ -112,7 +116,7 @@ class Command(BaseCommand):
                 'reporter_name': 'Mike Davis',
                 'reporter_contact': '555-1234',
                 'updates': [
-                    'Bill stacker was full. Cleared it out.',
+                    {'text': 'Bill stacker was full. Cleared it out.', 'close': True},
                 ]
             },
             {
@@ -133,7 +137,7 @@ class Command(BaseCommand):
                 'updates': [
                     'Retrieved ball. Ramp appears to have debris buildup.',
                     'Cleaned and waxed ramp. Adjusted angle slightly.',
-                    'Tested 20 games - no more sticking. Fixed!',
+                    {'text': 'Tested 20 games - no more sticking. Fixed!', 'close': True},
                 ]
             },
             {
@@ -142,6 +146,7 @@ class Command(BaseCommand):
                 'reporter_name': 'Lisa Anderson',
                 'updates': [
                     'Removed jammed quarter. Coin mech needs cleaning.',
+                    {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'close': True},
                 ]
             },
             {
@@ -152,14 +157,18 @@ class Command(BaseCommand):
                 'updates': [
                     'Measured coil voltage - within spec.',
                     'Replaced flipper rubber - was worn.',
-                    'Customer tested and confirmed feels better now.',
+                    {'text': 'Customer tested and confirmed feels better now.', 'close': True},
+                    {'text': 'Customer reports flipper is weak again after a few games. Investigating further.', 'reopen': True},
                 ]
             },
             {
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
                 'text': 'Multiball started but only 2 balls came out instead of 3.',
                 'reporter_name': 'Jessica Lee',
-                'updates': []  # No updates yet - still open
+                'updates': [
+                    'Checked ball trough - found one ball stuck.',
+                    'Freed stuck ball and tested multiball 5 times - works now.',
+                ]
             },
             {
                 'type': ProblemReport.PROBLEM_OTHER,
@@ -168,6 +177,7 @@ class Command(BaseCommand):
                 'reporter_contact': 'mark@email.com',
                 'updates': [
                     'Checked amp connections - found cold solder joint.',
+                    'Resoldered connection and tested.',
                 ]
             },
             {
@@ -177,7 +187,7 @@ class Command(BaseCommand):
                 'updates': [
                     'Tilt bob was adjusted too sensitive.',
                     'Recalibrated tilt mechanism per manual.',
-                    'Tested - working correctly now.',
+                    {'text': 'Tested - working correctly now.', 'close': True},
                 ]
             },
             {
@@ -187,7 +197,7 @@ class Command(BaseCommand):
                 'reporter_contact': '555-9012',
                 'updates': [
                     'Switch was bent and not making contact.',
-                    'Bent switch back into position. Firing correctly.',
+                    {'text': 'Bent switch back into position. Firing correctly.', 'close': True},
                 ]
             },
             {
@@ -196,14 +206,17 @@ class Command(BaseCommand):
                 'reporter_name': '',  # Anonymous
                 'updates': [
                     'Found ball wedged behind target bank.',
-                    'Adjusted target spacing to prevent recurrence.',
+                    {'text': 'Adjusted target spacing to prevent recurrence.', 'close': True},
                 ]
             },
             {
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Score not registering properly - stuck at 0.',
                 'reporter_name': 'Amy White',
-                'updates': []  # Still investigating
+                'updates': [
+                    'Checked display connections - all good.',
+                    'Reviewing board for cold solder joints.',
+                ]
             },
             {
                 'type': ProblemReport.PROBLEM_NO_CREDITS,
@@ -213,7 +226,7 @@ class Command(BaseCommand):
                 'updates': [
                     'Button switch was dirty and corroded.',
                     'Cleaned with contact cleaner. Testing now.',
-                    'Working perfectly. Closed.',
+                    {'text': 'Working perfectly. Closed.', 'close': True},
                 ]
             },
             {
@@ -222,7 +235,8 @@ class Command(BaseCommand):
                 'reporter_name': 'Nicole Garcia',
                 'updates': [
                     'Button mechanism had sticky residue (soda?).',
-                    'Cleaned thoroughly and lubricated.',
+                    {'text': 'Cleaned thoroughly and lubricated.', 'close': True},
+                    {'text': 'Button is sticking again. Need to replace the mechanism entirely.', 'reopen': True},
                 ]
             },
             {
@@ -234,7 +248,7 @@ class Command(BaseCommand):
                     'Scoop kicker coil weak - measured only 35V.',
                     'Replaced coil sleeve and cleaned.',
                     'Now kicking out reliably at 48V.',
-                    'Tested 15 scoops - all successful. Fixed!',
+                    {'text': 'Tested 15 scoops - all successful. Fixed!', 'close': True},
                 ]
             },
             {
@@ -242,13 +256,18 @@ class Command(BaseCommand):
                 'text': 'Right flipper making grinding noise when pressed.',
                 'reporter_name': 'Steve Chen',
                 'reporter_contact': 'steve.c@email.com',
-                'updates': []
+                'updates': [
+                    'Inspected flipper mechanism - found worn bushing.',
+                    'Ordered replacement parts.',
+                ]
             },
             {
                 'type': ProblemReport.PROBLEM_NO_CREDITS,
                 'text': 'Accepts quarters but only gives 1 credit instead of 2.',
                 'reporter_name': 'Maria Lopez',
-                'updates': []
+                'updates': [
+                    'Checked coin switch settings in service menu.',
+                ]
             },
             {
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
@@ -261,7 +280,10 @@ class Command(BaseCommand):
                 'text': 'All playfield lights flickering intermittently.',
                 'reporter_name': 'Chris Johnson',
                 'reporter_contact': '555-7890',
-                'updates': []
+                'updates': [
+                    'Checked power supply - voltage is unstable.',
+                    'Testing with spare power supply to isolate issue.',
+                ]
             },
             {
                 'type': ProblemReport.PROBLEM_OTHER,
@@ -281,7 +303,9 @@ class Command(BaseCommand):
                 'text': 'Top right bumper not firing at all.',
                 'reporter_name': 'Jennifer Mills',
                 'reporter_contact': '555-4321',
-                'updates': []
+                'updates': [
+                    'Coil appears dead. Checking for power at connector.',
+                ]
             },
         ]
 
@@ -316,19 +340,32 @@ class Command(BaseCommand):
 
                 # Add updates if any
                 if updates_data:
-                    for i, update_text in enumerate(updates_data):
+                    for update in updates_data:
                         maintainer = random.choice(maintainers)
 
-                        # Last update closes the report
-                        if i == len(updates_data) - 1:
-                            report.set_status(
-                                ProblemReport.STATUS_CLOSED,
-                                maintainer,
-                                update_text
-                            )
-                        else:
-                            # Just add a note
-                            report.add_note(maintainer, update_text)
+                        # Update can be a string or a dict
+                        if isinstance(update, str):
+                            # Simple note
+                            report.add_note(maintainer, update)
+                        elif isinstance(update, dict):
+                            text = update['text']
+                            if update.get('close'):
+                                # Close the report
+                                report.set_status(
+                                    ProblemReport.STATUS_CLOSED,
+                                    maintainer,
+                                    text
+                                )
+                            elif update.get('reopen'):
+                                # Reopen the report
+                                report.set_status(
+                                    ProblemReport.STATUS_OPEN,
+                                    maintainer,
+                                    text
+                                )
+                            else:
+                                # Just a note
+                                report.add_note(maintainer, text)
 
                     status_emoji = '✓' if report.status == ProblemReport.STATUS_CLOSED else '○'
                     self.stdout.write(
