@@ -94,39 +94,37 @@ def report_list(request):
     """
     reports = ProblemReport.objects.all().select_related('game').order_by('-created_at')
 
-    # Apply filters
-    # If no GET parameters, default to showing only open reports
-    if not request.GET:
-        form = ReportFilterForm({'status': 'open'})
-        reports = reports.filter(status=ProblemReport.STATUS_OPEN)
-    else:
-        form = ReportFilterForm(request.GET)
+    # Default to showing open reports when no status filter is provided
+    query_params = request.GET.copy()
+    if not query_params.get('status'):
+        query_params = query_params.copy()
+        query_params['status'] = ProblemReport.STATUS_OPEN
+
+    form = ReportFilterForm(query_params or None)
 
     if form.is_valid():
-        # Only apply filters if we have GET parameters
-        if request.GET:
-            # Status filter
-            status = form.cleaned_data.get('status')
-            if status and status != 'all':
-                reports = reports.filter(status=status)
+        # Status filter
+        status = form.cleaned_data.get('status')
+        if status and status != 'all':
+            reports = reports.filter(status=status)
 
-            # Problem type filter
-            problem_type = form.cleaned_data.get('problem_type')
-            if problem_type and problem_type != 'all':
-                reports = reports.filter(problem_type=problem_type)
+        # Problem type filter
+        problem_type = form.cleaned_data.get('problem_type')
+        if problem_type and problem_type != 'all':
+            reports = reports.filter(problem_type=problem_type)
 
-            # Game filter
-            game = form.cleaned_data.get('game')
-            if game:
-                reports = reports.filter(game=game)
+        # Game filter
+        game = form.cleaned_data.get('game')
+        if game:
+            reports = reports.filter(game=game)
 
-            # Search filter
-            search = form.cleaned_data.get('search')
-            if search:
-                reports = reports.filter(
-                    Q(problem_text__icontains=search) |
-                    Q(reported_by_name__icontains=search)
-                )
+        # Search filter
+        search = form.cleaned_data.get('search')
+        if search:
+            reports = reports.filter(
+                Q(problem_text__icontains=search) |
+                Q(reported_by_name__icontains=search)
+            )
 
     # Calculate stats
     stats = {
