@@ -1,20 +1,79 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.urls import reverse
-from django.conf import settings
+import base64
+from datetime import timedelta
+from io import BytesIO
+import os
+
 import qrcode
 import qrcode.image.svg
-from io import BytesIO
-import base64
-import os
 from PIL import Image
 
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.core.validators import validate_ipv46_address
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+
+from .forms import ProblemReportCreateForm, ReportFilterForm, ReportUpdateForm
 from .models import Game, ProblemReport
-from .forms import ReportFilterForm, ReportUpdateForm, ProblemReportCreateForm
+
+
+def _get_request_ip(request):
+    """Return the best-guess client IP, honoring common proxy headers."""
+    header_ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    if header_ip:
+        # X-Forwarded-For can contain multiple IPs. First value is the original client.
+        candidate = header_ip.split(',')[0].strip()
+    else:
+        candidate = request.META.get('REMOTE_ADDR', '')
+
+    if not candidate:
+        return None
+
+    try:
+        validate_ipv46_address(candidate)
+    except ValidationError:
+        return None
+    return candidate
+
+
+def _report_submission_rate_limit_exceeded(ip_address: str | None) -> bool:
+    """Return True if this client IP has exceeded the problem-report submission rate."""
+    if not ip_address:
+        return False
+
+    max_reports = getattr(settings, 'REPORT_SUBMISSION_RATE_LIMIT_MAX', 5)
+    window_seconds = getattr(settings, 'REPORT_SUBMISSION_RATE_LIMIT_WINDOW_SECONDS', 10 * 60)
+
+    if max_reports <= 0 or window_seconds <= 0:
+        return False
+
+    cache_key = f'report-rate:{ip_address}'
+    now = timezone.now()
+    entry = cache.get(cache_key)
+
+    if entry:
+        reset_at = entry.get('reset_at')
+        if not reset_at or reset_at <= now:
+            entry = None
+        else:
+            count = entry.get('count', 0)
+            if count >= max_reports:
+                return True
+            entry['count'] = count + 1
+            remaining = max(int((reset_at - now).total_seconds()), 0)
+            cache.set(cache_key, entry, timeout=remaining)
+            return False
+
+    reset_at = now + timedelta(seconds=window_seconds)
+    cache.set(cache_key, {'count': 1, 'reset_at': reset_at}, timeout=window_seconds)
+    return False
 
 
 def home(request):
@@ -154,23 +213,28 @@ def report_create(request, game_id=None):
     if request.method == 'POST':
         form = ProblemReportCreateForm(request.POST, game=game, user=request.user)
         if form.is_valid():
-            report = form.save(commit=False)
+            ip_address = _get_request_ip(request)
+            if _report_submission_rate_limit_exceeded(ip_address):
+                form.add_error(None, 'Too many problem reports from this device. Please wait a few minutes and try again.')
+            else:
+                report = form.save(commit=False)
 
-            # Capture device info
-            user_agent = request.META.get('HTTP_USER_AGENT', '')
-            ip_address = request.META.get('REMOTE_ADDR', '')
-            report.device_info = f"{user_agent[:200]}"  # Limit to 200 chars
+                # Capture device info
+                user_agent = request.META.get('HTTP_USER_AGENT', '')
+                report.device_info = f"{user_agent[:200]}"  # Limit to 200 chars
+                report.ip_address = ip_address
 
-            # Associate authenticated user if logged in
-            if request.user.is_authenticated:
-                report.reported_by_name = request.user.get_full_name() or request.user.username
-                if hasattr(request.user, 'maintainer'):
-                    report.reported_by_contact = request.user.email
+                # Associate authenticated user if logged in
+                if request.user.is_authenticated:
+                    report.reported_by_user = request.user
+                    report.reported_by_name = request.user.get_full_name() or request.user.username
+                    if hasattr(request.user, 'maintainer'):
+                        report.reported_by_contact = request.user.email
 
-            report.save()
+                report.save()
 
-            messages.success(request, 'Problem report submitted successfully. Thank you!')
-            return redirect('report_detail', pk=report.pk)
+                messages.success(request, 'Problem report submitted successfully. Thank you!')
+                return redirect('report_detail', pk=report.pk)
     else:
         form = ProblemReportCreateForm(game=game, user=request.user)
 
@@ -246,7 +310,7 @@ def game_detail(request, pk):
     # Generate QR code
     # The QR code will link to the report creation page for this game
     qr_url = request.build_absolute_uri(
-        reverse('report_create_qr', args=[game.id])
+        reverse('report_create_qr', args=[game.pk])
     )
 
     # Create QR code with high error correction to allow logo embedding
