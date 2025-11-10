@@ -201,7 +201,9 @@ class ProblemReport(models.Model):
     def set_game_status(self, game_status: str, maintainer: "Maintainer | None", text: str = ""):
         """
         Change the game's status AND record that change
-        in the update history.
+        in the update history. Also automatically updates the report status:
+        - Game status 'good' -> closes the report
+        - Game status 'broken' or 'fixing' -> opens the report
         """
         if game_status not in dict(Game.STATUS_CHOICES):
             raise ValueError(f"Invalid game status: {game_status}")
@@ -214,10 +216,23 @@ class ProblemReport(models.Model):
         self.game.status = game_status
         self.game.save(update_fields=["status"])
 
+        # Automatically update report status based on game status
+        new_report_status = None
+        if game_status == Game.STATUS_GOOD:
+            new_report_status = self.STATUS_CLOSED
+        elif game_status in (Game.STATUS_BROKEN, Game.STATUS_FIXING):
+            new_report_status = self.STATUS_OPEN
+
+        # Update report status if it changed
+        if new_report_status and self.status != new_report_status:
+            self.status = new_report_status
+            self.save(update_fields=["status"])
+
         return ReportUpdate.objects.create(
             report=self,
             maintainer=maintainer,
             game_status=game_status,
+            status=new_report_status if new_report_status else None,
             text=text,
         )
 
