@@ -11,16 +11,25 @@ class CustomAdminSite(AdminSite):
         """
         app_list = super().get_app_list(request, app_label)
 
+        # Custom ordering for app sections
+        app_order = {
+            'auth': 1,
+            'games': 2,
+            'tickets': 3,
+        }
+
         # Custom ordering for Game Maintenance models
-        model_order = {
-            'Games': 1,
-            'Problem Reports': 2,
-            'Problem Report Updates': 3,
+        game_maintenance_order = {
+            'Problem Reports': 1,
+            'Problem Report Updates': 2,
         }
 
         for app in app_list:
             if app['app_label'] == 'tickets':
-                app['models'].sort(key=lambda x: model_order.get(x['name'], 999))
+                app['models'].sort(key=lambda x: game_maintenance_order.get(x['name'], 999))
+
+        # Sort apps by custom order
+        app_list = sorted(app_list, key=lambda x: app_order.get(x['app_label'], 999))
 
         return app_list
 
@@ -29,9 +38,18 @@ class CustomAdminSite(AdminSite):
 admin.site.__class__ = CustomAdminSite
 
 
+class GameAdminProxy(Game):
+    """Proxy model to display Games under its own app section."""
+    class Meta:
+        proxy = True
+        app_label = 'games'
+        verbose_name = 'Game'
+        verbose_name_plural = 'Games'
+
+
 class GameAdminForm(forms.ModelForm):
     class Meta:
-        model = Game
+        model = GameAdminProxy
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
@@ -44,7 +62,7 @@ class GameAdminForm(forms.ModelForm):
         self.fields['status'].required = True
 
 
-@admin.register(Game)
+@admin.register(GameAdminProxy)
 class GameAdmin(admin.ModelAdmin):
     form = GameAdminForm
     list_display = ['name', 'manufacturer', 'year', 'type', 'system', 'pinside_rating', 'status']
