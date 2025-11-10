@@ -30,7 +30,7 @@ class ReportFilterForm(forms.Form):
     )
 
     game = forms.ModelChoiceField(
-        queryset=Game.objects.exclude(status=Game.STATUS_BROKEN).order_by('name'),
+        queryset=Game.objects.none(),
         required=False,
         empty_label='All Games',
         widget=forms.Select(attrs={'class': 'form-select'})
@@ -44,6 +44,11 @@ class ReportFilterForm(forms.Form):
             'placeholder': 'Search problem text or reporter name...'
         })
     )
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['game'].queryset = Game.objects.exclude(status=Game.STATUS_BROKEN).order_by('name')
 
 
 class ReportUpdateForm(forms.ModelForm):
