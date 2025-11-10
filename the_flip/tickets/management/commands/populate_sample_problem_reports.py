@@ -86,297 +86,311 @@ class Command(BaseCommand):
 
         self.stdout.write('')
 
-        # Get all non-broken games to assign reports to (is_active field removed in favor of status)
-        games = list(Game.objects.exclude(status=Game.STATUS_BROKEN))
-        if not games:
-            self.stdout.write(
-                self.style.ERROR(
-                    'No active games found! Run populate_sample_data first.'
-                )
-            )
-            return
+        # Get specific games by name for targeted problem reports
+        def get_game(name):
+            try:
+                return Game.objects.get(name=name)
+            except Game.DoesNotExist:
+                return None
 
-        # Sample problem reports with varying content
+        # Sample problem reports with contextually appropriate content for our specific machines
         # Updates can be:
         # - Simple strings (just add a note)
         # - Dicts with 'text' and 'close': True (closes the report)
         # - Dicts with 'text' and 'reopen': True (reopens a closed report)
+        # - Dicts with 'text' and 'game_status': 'good'/'fixing'/'broken' (changes game status)
         problem_scenarios = [
+            # Baseball - BROKEN status - gooped-up mechanics
             {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball got stuck in the castle. Need to open playfield.',
-                'reporter_name': 'Sarah Johnson',
-                'reporter_contact': 'sarah@email.com',
-                'updates': [
-                    'Opened playfield and retrieved ball. Checking switch.',
-                    {'text': 'Switch appears to be working. Closed up and tested - all good.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Bill acceptor not working. Inserted $5, no credits given.',
-                'reporter_name': 'Mike Davis',
-                'reporter_contact': '555-1234',
-                'updates': [
-                    {'text': 'Bill stacker was full. Cleared it out.', 'close': True},
-                ]
-            },
-            {
+                'game_name': 'Baseball',
                 'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Display is flickering and hard to read.',
-                'reporter_name': 'Anonymous',
+                'text': "Mechanics are completely gooped up with old grease and dirt. Machine doesn't work at all.",
+                'reporter_name': 'Museum Curator',
+                'reporter_contact': 'curator@museum.org',
                 'updates': [
-                    'Checked connections - found loose ribbon cable.',
-                    'Reseated cable and tested. Display looks good now.',
-                    'Monitoring for 24 hours before closing.',
+                    'Started cleaning process. Removing decades of gunk from mechanical components.',
+                    'About 30% through cleaning. Found several broken springs that need replacement.',
+                    'Ordered replacement springs from vintage parts supplier.',
                 ]
             },
+            # Star Trip - left flipper coil melted
             {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball stuck in left ramp. Happens frequently.',
+                'game_name': 'Star Trip',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Left flipper completely dead. No response when button pressed.',
                 'reporter_name': 'Tom Wilson',
                 'reporter_contact': 'tom.w@email.com',
                 'updates': [
-                    'Retrieved ball. Ramp appears to have debris buildup.',
-                    'Cleaned and waxed ramp. Adjusted angle slightly.',
-                    {'text': 'Tested 20 games - no more sticking. Fixed!', 'close': True},
+                    'Opened up the cabinet. Left flipper coil is melted!',
+                    'Investigating why coil melted - checking for electrical issues.',
+                    'Found short in wiring harness. Replacing coil and fixing short.',
                 ]
             },
+            # Gorgar - transformer and cables
             {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Coin slot jammed. Quarter stuck inside.',
+                'game_name': 'Gorgar',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Game powers on but display is flickering. Boards are disconnected.',
+                'reporter_name': 'Sarah Johnson',
+                'reporter_contact': 'sarah@email.com',
+                'updates': [
+                    'Transformer voltage needs verification. Getting multimeter readings.',
+                    'Transformer output looks good. Now adjusting cable connections.',
+                    'Boards need to be reinstalled properly. Working on it.',
+                ]
+            },
+            # Star Trek - fixing status
+            {
+                'game_name': 'Star Trek',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'MPU board not booting. No display activity.',
+                'reporter_name': 'Mike Davis',
+                'reporter_contact': '555-1234',
+                'updates': [
+                    'Found corroded battery on MPU board. Battery had leaked.',
+                    'Cleaning battery acid damage from traces.',
+                    'Ordered replacement MPU board as backup in case damage is too severe.',
+                ]
+            },
+            # Blackout - replace lock, initial machine check
+            {
+                'game_name': 'Blackout',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Coin door lock is broken. Need to replace before putting on floor.',
                 'reporter_name': 'Lisa Anderson',
                 'updates': [
-                    'Removed jammed quarter. Coin mech needs cleaning.',
-                    {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'close': True},
+                    'Lock ordered. Should arrive in 3-5 days.',
+                    {'text': 'Lock installed. Works perfectly.', 'close': True},
                 ]
             },
             {
+                'game_name': 'Blackout',
                 'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Flippers feel weak on right side.',
+                'text': 'Initial machine check before putting on floor.',
+                'reporter_name': 'Jim Home',
+                'updates': [
+                    'Running through all switches and lights.',
+                    'Found one burnt out GI bulb. Replaced.',
+                    'All flippers working. Drop targets resetting properly.',
+                    {'text': 'Machine checks out. Ready for floor.', 'close': True, 'game_status': Game.STATUS_GOOD},
+                ]
+            },
+            # Trade Winds - fixing status (early EM)
+            {
+                'game_name': 'Trade Winds',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Replay counter not advancing when winning free games.',
                 'reporter_name': 'Bob Smith',
                 'reporter_contact': '555-5678',
                 'updates': [
-                    'Measured coil voltage - within spec.',
-                    'Replaced flipper rubber - was worn.',
-                    {'text': 'Customer tested and confirmed feels better now.', 'close': True},
-                    {'text': 'Customer reports flipper is weak again after a few games. Investigating further.', 'reopen': True},
+                    'Inspecting replay mechanism. Lots of old hardened grease.',
+                    'Cleaned and re-lubricated replay counter mechanism.',
+                    'Testing - counter now advances properly!',
                 ]
             },
+            # The Addams Family - popular modern game, occasional issues
             {
+                'game_name': 'The Addams Family',
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Multiball started but only 2 balls came out instead of 3.',
+                'text': 'Ball got stuck in the bookcase. Had to open playfield.',
                 'reporter_name': 'Jessica Lee',
                 'updates': [
-                    'Checked ball trough - found one ball stuck.',
-                    'Freed stuck ball and tested multiball 5 times - works now.',
+                    'Retrieved ball from bookcase VUK area.',
+                    'VUK kicker seems a bit weak. Adjusting.',
+                    {'text': 'Tested 20 times - kicking out reliably now.', 'close': True},
                 ]
             },
             {
+                'game_name': 'The Addams Family',
                 'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Sound cutting in and out during gameplay.',
+                'text': 'Thing hand keeps getting stuck in the up position.',
                 'reporter_name': 'Mark Taylor',
                 'reporter_contact': 'mark@email.com',
                 'updates': [
-                    'Checked amp connections - found cold solder joint.',
-                    'Resoldered connection and tested.',
+                    'Motor for Thing hand mechanism needs lubrication.',
+                    {'text': 'Lubricated motor and tested. Working smoothly.', 'close': True},
+                    {'text': 'Thing is stuck up again. Motor may be failing.', 'reopen': True},
+                    'Ordered replacement motor. Should arrive next week.',
+                    'New motor installed. Testing thoroughly.',
+                    {'text': 'Thing working perfectly with new motor!', 'close': True},
                 ]
             },
+            # Godzilla - modern game with tech issues
             {
+                'game_name': 'Godzilla (Premium)',
                 'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Machine takes money but immediately goes to tilt.',
+                'text': 'Card reader not accepting any cards. Display shows "Card Error".',
                 'reporter_name': 'Rachel Green',
                 'updates': [
-                    'Tilt bob was adjusted too sensitive.',
-                    'Recalibrated tilt mechanism per manual.',
-                    {'text': 'Tested - working correctly now.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Left slingshot not firing.',
-                'reporter_name': 'Kevin Brown',
-                'reporter_contact': '555-9012',
-                'updates': [
-                    'Switch was bent and not making contact.',
-                    {'text': 'Bent switch back into position. Firing correctly.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball got stuck behind drop targets. Lost a ball.',
-                'reporter_name': '',  # Anonymous
-                'updates': [
-                    'Found ball wedged behind target bank.',
-                    {'text': 'Adjusted target spacing to prevent recurrence.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Score not registering properly - stuck at 0.',
-                'reporter_name': 'Amy White',
-                'updates': [
-                    'Checked display connections - all good.',
-                    'Reviewing board for cold solder joints.',
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Credit button not working. Can\'t start game.',
-                'reporter_name': 'Daniel Martinez',
-                'reporter_contact': 'dan.m@email.com',
-                'updates': [
-                    'Button switch was dirty and corroded.',
-                    'Cleaned with contact cleaner. Testing now.',
-                    {'text': 'Working perfectly. Closed.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Magna-save button stuck down.',
-                'reporter_name': 'Nicole Garcia',
-                'updates': [
-                    'Button mechanism had sticky residue (soda?).',
-                    {'text': 'Cleaned thoroughly and lubricated.', 'close': True},
-                    {'text': 'Button is sticking again. Need to replace the mechanism entirely.', 'reopen': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball keeps getting stuck in scoop. Very annoying!',
-                'reporter_name': 'Paul Rodriguez',
-                'reporter_contact': '555-3456',
-                'updates': [
-                    'Scoop kicker coil weak - measured only 35V.',
-                    'Replaced coil sleeve and cleaned.',
-                    'Now kicking out reliably at 48V.',
-                    {'text': 'Tested 15 scoops - all successful. Fixed!', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Right flipper making grinding noise when pressed.',
-                'reporter_name': 'Steve Chen',
-                'reporter_contact': 'steve.c@email.com',
-                'updates': [
-                    'Inspected flipper mechanism - found worn bushing.',
-                    'Ordered replacement parts.',
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Accepts quarters but only gives 1 credit instead of 2.',
-                'reporter_name': 'Maria Lopez',
-                'updates': [
-                    'Checked coin switch settings in service menu.',
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball drained but game didn\'t register it. Still waiting for ball.',
-                'reporter_name': '',
-                'updates': []
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'All playfield lights flickering intermittently.',
-                'reporter_name': 'Chris Johnson',
-                'reporter_contact': '555-7890',
-                'updates': [
-                    'Checked power supply - voltage is unstable.',
-                    'Testing with spare power supply to isolate issue.',
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Ball launcher feels very weak. Barely makes it up the ramp.',
-                'reporter_name': 'Emily White',
-                'updates': []
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Machine stuck in free play mode. Won\'t accept credits.',
-                'reporter_name': 'Robert King',
-                'reporter_contact': 'r.king@email.com',
-                'updates': []
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Top right bumper not firing at all.',
-                'reporter_name': 'Jennifer Mills',
-                'reporter_contact': '555-4321',
-                'updates': [
-                    'Coil appears dead. Checking for power at connector.',
-                ]
-            },
-            # Additional reports for newly added games
-            {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball stuck in trunk mechanism. Won\'t release for multiball.',
-                'reporter_name': 'Alex Turner',
-                'reporter_contact': 'alex.t@email.com',
-                'updates': [
-                    'Trunk motor was jammed with debris.',
-                    'Cleaned motor and lubricated mechanism.',
-                    {'text': 'Tested trunk 30 times - working perfectly now.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Card reader won\'t accept any cards. Display says "Card Error".',
-                'reporter_name': 'Samantha Wright',
-                'updates': [
-                    'Card reader head was dirty.',
-                    'Cleaned with alcohol swabs and tested.',
+                    'Card reader head was dirty from heavy use.',
+                    'Cleaned with alcohol swabs per manual.',
                     {'text': 'Reading cards successfully now.', 'close': True},
                 ]
             },
             {
+                'game_name': 'Godzilla (Premium)',
                 'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Magnet save not activating during gameplay.',
-                'reporter_name': 'Derek Johnson',
-                'reporter_contact': '555-8765',
-                'updates': [
-                    'Checked button - working fine.',
-                    'Found broken wire at magnet connector.',
-                    'Resoldered connection.',
-                    {'text': 'Magnet save firing perfectly now.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Ball keeps draining straight down the middle. SDTM every time!',
-                'reporter_name': 'Michelle Lee',
-                'updates': [
-                    'Checked playfield level - was tilted slightly forward.',
-                    'Adjusted leg levelers to proper angle.',
-                    {'text': 'Tested 10 games - much better ball save now.', 'close': True},
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Topper lights not working. Display is fine but topper is dark.',
-                'reporter_name': 'Brian Martinez',
-                'reporter_contact': 'brian.m@email.com',
+                'text': 'Building topper not lighting up. Display works fine but topper is dark.',
+                'reporter_name': 'Kevin Brown',
+                'reporter_contact': '555-9012',
                 'updates': [
                     'Found loose connector on topper LED strip.',
                     {'text': 'Reconnected and secured. All topper lights working.', 'close': True},
                 ]
             },
+            # Teacher's Pet - vintage EM with high rating
             {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Machine showing "Call Attendant" error. Won\'t start.',
-                'reporter_name': 'Karen Wilson',
+                'game_name': "Teacher's Pet",
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Score reels not advancing correctly on player 2.',
+                'reporter_name': 'Amy White',
                 'updates': [
-                    'Coin box was full and triggered switch.',
-                    'Emptied coin box and reset error.',
-                    {'text': 'Machine operating normally.', 'close': True},
-                    {'text': 'Error returned after 2 days. Coin box full again. Need more frequent emptying.', 'reopen': True},
+                    'Player 2 score reel is sticking. Cleaning mechanism.',
+                    'Found bent wiper on the tens reel. Straightening it out.',
+                    {'text': 'All reels advancing smoothly now. Tested 5 full games.', 'close': True},
+                ]
+            },
+            # Hokus Pokus - EM with reels
+            {
+                'game_name': 'Hokus Pokus',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Chime unit not firing when scoring. Silent during gameplay.',
+                'reporter_name': 'Daniel Martinez',
+                'reporter_contact': 'dan.m@email.com',
+                'updates': [
+                    'Chime plungers are sticky and not striking.',
+                    'Cleaned and adjusted all three chime units.',
+                    {'text': 'Beautiful chime sounds back! Tested thoroughly.', 'close': True},
+                ]
+            },
+            # The Hulk - early SS
+            {
+                'game_name': 'The Hulk',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Display shows random characters. Not readable.',
+                'reporter_name': 'Nicole Garcia',
+                'updates': [
+                    'Reseated display ribbon cable.',
+                    {'text': 'Display clear and working now.', 'close': True},
+                ]
+            },
+            # Eight Ball Deluxe Limited Edition - classic SS
+            {
+                'game_name': 'Eight Ball Deluxe Limited Edition',
+                'type': ProblemReport.PROBLEM_STUCK_BALL,
+                'text': 'Ball stuck in 8-ball target area.',
+                'reporter_name': 'Paul Rodriguez',
+                'reporter_contact': '555-3456',
+                'updates': [
+                    'Retrieved ball. Target bank spacing was too tight.',
+                    {'text': 'Adjusted target spacing. Tested extensively - no more sticking.', 'close': True},
+                ]
+            },
+            # The Getaway - popular DMD era
+            {
+                'game_name': 'The Getaway: High Speed II',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Supercharger gear making grinding noise.',
+                'reporter_name': 'Steve Chen',
+                'reporter_contact': 'steve.c@email.com',
+                'updates': [
+                    'Supercharger gear teeth showing wear.',
+                    'Ordered replacement supercharger assembly.',
+                    'New assembly arrived. Installing now.',
+                    {'text': 'Supercharger working smoothly. Sounds great!', 'close': True},
+                ]
+            },
+            # Hyperball - unique flipperless game
+            {
+                'game_name': 'Hyperball',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Ball launcher feels weak. Barely making it to playfield.',
+                'reporter_name': 'Emily White',
+                'updates': [
+                    'Launcher spring tension is low. Adjusting.',
+                    {'text': 'Spring replaced and adjusted. Launching perfectly now.', 'close': True},
+                ]
+            },
+            # Derby Day - vintage EM
+            {
+                'game_name': 'Derby Day',
+                'type': ProblemReport.PROBLEM_NO_CREDITS,
+                'text': 'Coin slot jammed. Quarter stuck inside.',
+                'reporter_name': 'William Chen',
+                'reporter_contact': 'w.chen@email.com',
+                'updates': [
+                    'Removed jammed quarter. Coin mech needs cleaning.',
+                    {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'close': True},
+                ]
+            },
+            # Roto Pool - vintage EM
+            {
+                'game_name': 'Roto Pool',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Rotating pool table mechanism is stuck. Won\'t rotate.',
+                'reporter_name': 'Chris Johnson',
+                'reporter_contact': '555-7890',
+                'updates': [
+                    'Motor for rotating playfield seized up from old grease.',
+                    'Disassembling mechanism for thorough cleaning.',
+                    'Cleaned and re-lubricated with proper light oil.',
+                    {'text': 'Playfield rotating smoothly again. Beautiful mechanism!', 'close': True},
+                ]
+            },
+            # Ballyhoo - very early PM
+            {
+                'game_name': 'Ballyhoo',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Several pins on playfield are loose.',
+                'reporter_name': 'Jennifer Mills',
+                'reporter_contact': '555-4321',
+                'updates': [
+                    'Tightening all loose pins. Some need replacement.',
+                    {'text': 'All pins secure. Playfield in excellent condition for 1932!', 'close': True},
+                ]
+            },
+            # Carom - early EM with unknown status
+            {
+                'game_name': 'Carom',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Need full diagnostic. Machine status unknown.',
+                'reporter_name': 'Museum Curator',
+                'reporter_contact': 'curator@museum.org',
+                'updates': [
+                    'Starting full inspection of 1937 machine.',
+                    'Totalizer scoring mechanism appears intact.',
+                    'Testing electrical components. Some corrosion on contacts.',
+                    'Cleaning contacts and testing scoring.',
+                    {'text': 'Machine is operational! Just needed cleaning. Ready for display.', 'close': True, 'game_status': Game.STATUS_GOOD},
+                ]
+            },
+            # Additional varied reports for good machines
+            {
+                'game_name': 'Eight Ball Deluxe Limited Edition',
+                'type': ProblemReport.PROBLEM_OTHER,
+                'text': 'Right flipper feels weak compared to left.',
+                'reporter_name': 'Alex Turner',
+                'reporter_contact': 'alex.t@email.com',
+                'updates': [
+                    'Measured coil voltage - within spec.',
+                    'Flipper rubber on right side is worn. Replacing.',
+                    {'text': 'New rubber installed. Both flippers feel equal now.', 'close': True},
                 ]
             },
             {
+                'game_name': 'The Addams Family',
+                'type': ProblemReport.PROBLEM_NO_CREDITS,
+                'text': 'Bill acceptor not giving credits. Ate my $5!',
+                'reporter_name': 'Samantha Wright',
+                'updates': [
+                    'Bill stacker was full.',
+                    {'text': 'Emptied bill stacker. Refunded $5. Working now.', 'close': True},
+                ]
+            },
+            {
+                'game_name': 'Godzilla (Premium)',
                 'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'Shaker motor runs constantly, even when not in game.',
+                'text': 'Shaker motor runs constantly, even in attract mode.',
                 'reporter_name': 'Tyler Brooks',
                 'reporter_contact': '555-2468',
                 'updates': [
@@ -386,29 +400,15 @@ class Command(BaseCommand):
                 ]
             },
             {
+                'game_name': 'The Getaway: High Speed II',
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
-                'text': 'Lock mechanism not holding balls. Balls roll right back out.',
+                'text': 'Multiball lock not holding balls. Balls roll right back out.',
                 'reporter_name': 'Patricia Green',
                 'updates': [
-                    'Lock kicker coil sleeve was cracked.',
-                    'Ordered replacement part - ETA 3 days.',
+                    'Lock mechanism kicker coil weak.',
+                    'Cleaning coil sleeve and plunger.',
+                    {'text': 'Tested lock 30 times - holding balls securely now.', 'close': True},
                 ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_OTHER,
-                'text': 'GI lights dimming during ball launch. Flickers badly.',
-                'reporter_name': 'William Chen',
-                'reporter_contact': 'w.chen@email.com',
-                'updates': [
-                    'Checked power supply - voltage drops during coil fire.',
-                    'Tested capacitors - found one bulging.',
-                ]
-            },
-            {
-                'type': ProblemReport.PROBLEM_NO_CREDITS,
-                'text': 'Start button stuck. Can hear it clicking but won\'t start game.',
-                'reporter_name': 'Rebecca Hall',
-                'updates': []
             },
         ]
 
@@ -422,8 +422,14 @@ class Command(BaseCommand):
         base_time = now - timedelta(days=30)
 
         for i, scenario in enumerate(problem_scenarios):
-            game = random.choice(games)
-            updates_data = scenario.pop('updates')
+            game = get_game(scenario.pop('game_name'))
+            if not game:
+                self.stdout.write(
+                    self.style.WARNING(f"Game not found: {scenario.get('game_name', 'Unknown')}")
+                )
+                continue
+
+            updates_data = scenario.pop('updates', [])
 
             # Create the problem report
             report, created = ProblemReport.objects.get_or_create(
@@ -485,6 +491,17 @@ class Command(BaseCommand):
                             else:
                                 # Just a note
                                 update_obj = report.add_note(maintainer, text)
+
+                            # Check if we should also change game status
+                            if update.get('game_status'):
+                                game_status_obj = report.set_game_status(
+                                    update['game_status'],
+                                    maintainer,
+                                    f"Game status changed to {update['game_status']}"
+                                )
+                                if game_status_obj:
+                                    game_status_obj.created_at = update_time
+                                    game_status_obj.save(update_fields=['created_at'])
 
                         # Set the update's created_at timestamp
                         if update_obj:
