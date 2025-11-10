@@ -9,24 +9,22 @@
         margin: 0 auto;
     }
 
-    .breadcrumb {
+    .back-link {
         font-size: 0.9em;
         color: #666;
         margin-bottom: 20px;
+        display: inline-block;
     }
 
-    .breadcrumb a {
+    .back-link a {
         color: #2196F3;
         text-decoration: none;
+        transition: color 0.2s;
     }
 
-    .breadcrumb a:hover {
-        text-decoration: underline;
-    }
-
-    .breadcrumb-separator {
-        margin: 0 8px;
-        color: #999;
+    .back-link a:hover {
+        color: #1976D2;
+        text-decoration: none;
     }
 
     .game-header {
@@ -54,7 +52,12 @@
     .game-meta {
         color: #666;
         font-size: 1.1em;
-        margin-top: 5px;
+        margin-top: 10px;
+    }
+
+    .game-meta-separator {
+        margin: 0 8px;
+        color: #999;
     }
 
     .action-buttons {
@@ -92,24 +95,10 @@
         background: #f0f8ff;
     }
 
-    .game-info {
-        background: #f8f9fa;
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-        font-size: 1.1em;
-        color: #666;
-    }
-
-    .game-info-separator {
-        margin: 0 8px;
-        color: #999;
-    }
 
     .recent-reports h2 {
         margin-bottom: 20px;
         padding-bottom: 10px;
-        border-bottom: 2px solid #ddd;
         color: #2c3e50;
     }
 
@@ -165,11 +154,9 @@
 </style>
 
 <div class="game-detail-container">
-    <nav class="breadcrumb">
-        <a href="{% url 'game_list' %}">Games</a>
-        <span class="breadcrumb-separator">›</span>
-        <span>{{ game.name }}</span>
-    </nav>
+    <div class="back-link">
+        <a href="{% url 'game_list' %}">← Back to Games</a>
+    </div>
 
     <div class="game-header">
         <div class="header-top">
@@ -178,21 +165,15 @@
                     <span>{{ game.name }}</span>
                     <span class="badge badge-{{ game.status }}">Status: {{ game.get_status_display }}</span>
                 </h1>
-                {% if game.year or game.manufacturer or game.ipdb_url %}
-                    <div class="game-meta">
-                        {% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %} • {% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %}{% if game.ipdb_url %}{% if game.year or game.manufacturer %} • {% endif %}<a href="{{ game.ipdb_url }}" target="_blank" rel="noopener noreferrer" style="color: #2196F3; text-decoration: none;">IPDB↗</a>{% endif %}
-                    </div>
-                {% endif %}
+                <div class="game-meta">
+                    {% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %}<span class="game-meta-separator">•</span>{% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %}{% if game.year or game.manufacturer %}<span class="game-meta-separator">•</span>{% endif %}{{ game.type }}{% if game.flipper_count %}<span class="game-meta-separator">•</span>{{ game.flipper_count }} Flipper{% if game.flipper_count != 1 %}s{% endif %}{% endif %}{% if game.scoring %}<span class="game-meta-separator">•</span>{{ game.scoring }} Scoring{% endif %}{% if game.ipdb_url %}<span class="game-meta-separator">•</span><a href="{{ game.ipdb_url }}" target="_blank" rel="noopener noreferrer" style="color: #2196F3; text-decoration: none;">IPDB ↗</a>{% endif %}
+                </div>
             </div>
             <div class="action-buttons">
                 <a href="{% url 'game_qr' game.pk %}" class="btn btn-secondary">QR Code</a>
                 <a href="{% url 'report_create_qr' game.id %}" class="btn btn-primary">Report a Problem</a>
             </div>
         </div>
-    </div>
-
-    <div class="game-info">
-        {{ game.get_type_display }}{% if game.flipper_count %}<span class="game-info-separator">•</span>{{ game.flipper_count }} Flipper{% if game.flipper_count != 1 %}s{% endif %}{% endif %}{% if game.scoring %}<span class="game-info-separator">•</span>{{ game.scoring }} Scoring{% endif %}
     </div>
 
     <div class="recent-reports">
