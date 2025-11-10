@@ -1,6 +1,6 @@
 # Maintenance Workflow
 
-This document describes the maintenance workflow and philosophy for The Flip pinball machine museum.
+This document describes the pinball machine maintenance workflows for the museum.
 
 ## Machine States
 
@@ -21,9 +21,9 @@ It's a different sense of "problem" than the problem report. There might be a ha
 ### 3. Machines in Storage
 
  These will have a maintenance history, and will fall under one of these states: 
-  - known good (we've worked on it a bunch until we're happy)
-  - unknown (purchased but not inspected)
-  - known to have problems (bought with known issues, or we triaged it a bit but didn't have an open workshop spot)
+  - **Unknown**: purchased but not inspected
+  - **Broken**: bought with known issues, or we triaged it a bit but didn't have an open workshop spot
+  - **Good**: we've worked on it a bunch until we're happy
 
 ## Crosscutting / Non-Urgent Projects
 
