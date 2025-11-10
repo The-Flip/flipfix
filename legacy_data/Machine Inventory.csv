@@ -1,0 +1,22 @@
+maker,name,year,status,type,scoring,system,flippers,pinside rating,Notes
+Bally,Ballyhoo,1/1932,good,PM,manual,,0,,
+Bally,Carom,1/1937,unknown,EM,totalizer,,0,,
+United,Trade Winds,3/1945,fixing,EM,lights,,,,
+Chicago Coin,Baseball,10/1947,broken,EM,lights,,2,,Doesn't work; first step is cleaning the gooped-up mechanics
+Gottlieb,Derby Day,4/1956,good,EM,lights,,2,,
+Gottlieb,Roto Pool,7/1958,good,EM,lights,,2,,
+Williams,Teacher's Pet,12/1965,good,EM,reels,,2,8.34,
+Bally,Hokus Pokus,3/1976,good,EM,reels,,2,7.94,
+GamePlan,Star Trip,4/1979,good,SS,7-segment,MPU_1,2,,Left flipper coil melted; need to figure out why
+Bally,Star Trek,4/1979,fixing,SS,7-segment,Bally MPU AS-2518-35,2,6.76,
+Gottlieb,The Hulk,10/1979,good,SS,7-segment,System 1,2,,
+Williams,Gorgar,12/1979,fixing,SS,7-segment,System 6,2,7.56,transformer needs to be verified and cables adjusted; boards need to be installed
+Williams,Blackout,6/1980,fixing,SS,7-segment,System 6,2,7.70,"replace lock, initial machine check"
+Williams,Hyperball,12/1981,good,SS,alphanumeric,System 7,0,,
+Bally,Eight Ball Deluxe Limited Edition,8/1982,good,SS,7-segment,Bally MPU AS-2518-35,3,8.06,
+Williams,The Getaway: High Speed II,2/1992,good,SS,DMD,Fliptronics 2?,3,8.14,
+Williams,The Addams Family,3/1992,good,SS,DMD,Fliptronics 1?,4,8.56,
+Stern,Godzilla (Premium),10/2021,good,SS,video,Spike 2,3,9.19,
+,,,,,,,,,
+,,,,,,,,,
+machine count,18,,,,,,,,

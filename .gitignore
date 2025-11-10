@@ -47,8 +47,5 @@ htmlcov/
 # Collected static files
 /static/
 
-# Data from legacy system
-/legacy_data/
-
 # Claude Code
 .claude/

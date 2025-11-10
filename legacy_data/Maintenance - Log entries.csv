@@ -1,0 +1,470 @@
+Machine,Date,Notes,Maintainers
+The Getaway: High Speed 2,10/4/2025 6:09 PM,"Fixed ooto 1 switch (loose wire) and replaced fuse, restoring Supercharger feature to function","Ken, Caleb"
+Star Trek,9/20/2025 1:16 PM,"Replaced bulbs across the machine, found 3 with no voltage","Ken, Caleb"
+RotoPool,9/3/2025 6:29 PM,"Wouldn't start. Manually started score motor a few times and manually tripped the start via the S relay. Now it's working, but I didn't fix anything.",
+Star Trip,9/3/2025 6:27 PM,Machine wouldn't boot properly and left flipper was locked up even without power. Turned out to be melted coil sleeve. Replacement coil ordered from PBR.,William
+Star Trek,8/30/2025 4:41 PM,Replaced 2 of 3 models connectors for rectifier board,"Brian, Ken, Diana"
+Hulk,8/30/2025 3:36 PM,Waxed playfield,Reba
+The Getaway: High Speed 2,8/30/2025 3:35 PM,Waxed playfield,Reba
+Eight Ball Deluxe Limited Edition,8/30/2025 3:11 PM,Cleaned play field,Reba
+Eight Ball Deluxe Limited Edition,8/30/2025 3:08 PM,"Replaced pop number cap on top right, and top left, swapped player 3 and 4 displays and they work now
+
+(Replacement LED display was dim, probably by design, but in troubleshooting Nick discovered swapping 3 and 4 fixed it, perhaps had been loose?)
+
+Tuned left slingshot","Nick, Ken"
+Trade Winds,8/23/2025 2:52 PM,"Got set up for the first time. Previous owner had replaced the back board of the main cabinet, but had not put in whatever hole use to be there. We added a hole.
+
+The machine is in decent shape. It needs some bulbs, some cleaning, and a glass. The score motor doesn't work. But it's mostly playable, and definitely conveys the feel.",Ken and William
+Star Trek,8/23/2025 11:00 AM,"Did diode test across bride rectifiers on rectifier board, appears that one (leftmost of 3) is bad. Also has visible bugle on board. William ordering replacement board as recommended online (a common problem)",Ken
+Eight Ball Deluxe Limited Edition,8/23/2025 9:52 AM,Replaced 1 Ball spring to hopefully fix sticking up dropdown target,"Ken, William"
+Derby Day,8/20/2025 7:43 PM,"Machine was not starting up. Button worked, but S relay wasn't triggering. Sanded blades and adjusted alignment",William
+Gorgar,8/2/2025 6:39 PM,Started swapping over power wiring as per previous checklist. One of the AC-to-DC converters had been installed wrong by the repair guy we brought in to look at it. More work to do here.,William
+The Getaway: High Speed 2,8/2/2025 6:35 PM,"Test plays showed the spinny light at the top was only working erratically. We traced the wiring through the resistor board, the triac board, and back to the power board. It turned out that one of the jumpers had been incorrectly placed on the installation of the new board. We put it in the right spot and it started passing in the solenoid tests, where it is known as MARS. Reassembled and everything seems fine.",William and Diana
+The Getaway: High Speed 2,8/2/2025 12:18 PM,Installed repaired board,Ken
+Star Trek,8/2/2025 12:16 PM,"Noticed sponteous knocker (and probably SPECIAL) going over, visually inspected",Ken
+The Getaway: High Speed 2,8/2/2025 9:00 AM,Received repaired power board from Skip at Coin Op Services. He repaired the trace that runs to U1 pin 1; it had failed under the fuse. He also replaced a couple of other jumpers while he was at it.,William
+Hokus Pokus,7/19/2025 5:32 PM,"Left flipper button was soft and intermittently ineffective. Replaced missing screw, so force was centered. Disassembled leaf switch. Bent outer leaf to provide better button resistance. Bent other leaves to make it as responsive as the right. Reassembled and tested to work.",William
+The Getaway: High Speed 2,7/19/2025 4:00 PM,"More detailed investigation. I did an extensive comparison of the states of the U1 pins.
+
+The basic summary is that all the data pins show high with rapid change. The first 5 output pins on AF are steady low, but they're steady high on Getaway. The last one on AF switches from steady high to steady low when the flippers are enabled. My general take being that high means inhibit, and low means active.
+
+As before, the OC pin is low for AF. For Getaway, it's high at U1 pin 1, but low at the connector (J113, p31). It's also high further back on the CPU board. Our initial theory was that maybe U1 itself was bad, but swapping for a new chip didn't help. However, grounding U1 pin 1 to pull it low does make the lights work. The problem is certainly on this board, so I'm sending it in for repair.",William
+Star Trek,7/19/2025 10:58 AM,"Put legs on Star Trek, tested, found solenoids not firing, found blown fuse F1. Unknown cause of blown fuse, speculate board short.",
+The Getaway: High Speed 2,7/12/2025 2:58 PM,"Did extensive probing and tracing of circuits based on previously mentioned guide.
+
+Input voltages are fine. Some of the output voltages are fine. Tracing the flow across the board is fine, at least for the brown circuit. The clock signal is fine, as are the data pins.
+
+But what's not fine is pin 1 on U1 on the power driver board, which enables everything. That's supposed to be low, but the logic probe says it's high. We traced that back from the processor board, looking at U5, and it's low. It's also low on the incoming connector. But it's high at U1. Our best guess it that it's the U1 chip, which has a socket, so we've ordered a replacement.","William, Ken"
+Gorgar,7/5/2025 6:07 PM,"Carefully traced all outputs from old transformer, plus related wiring. What we have appears to be correctly wired. 
+
+Made a plan for switching. On paper, on the clipboard. Requires the construction of a new connector for the 3 grey/grey-white wires, as the old one has much longer leads. 
+
+Ordered necessary parts.",William
+The Getaway: High Speed 2,7/5/2025 5:46 PM,"Verified that J115 voltages were correct. Ordered necessary parts for connector replacement anyhow. Ordered a logic probe as well. Next time, walk through this in detail: https://pinwiki.com/wiki/index.php/Williams_WPC#General_Illumination_Problems",William
+Gorgar,6/30/2025 7:37 PM,New transformer moved to mount location. All output voltages check out. Added insulation between some transformer lugs to minimize risk. Next step is to map connections and begin the swap.,William
+Gorgar,6/28/2025 1:24 PM,Replaced old power cord with new. Power tested good at input. Next step is to test transformer outputs again.,William
+The Getaway: High Speed 2,6/28/2025 12:49 PM,"Tried swapping ribbon cvale between CPU and power board, visually inspected both boards, checked fuses",Ken
+Star Trip,6/28/2025 12:48 PM,"Removed playfield hardware at top, cleaned playfield with Carnauba wax. One hardware element is hanging from its old rubber so we remember where it goes",Brian and William
+Star Trip,6/28/2025 12:47 PM,Tested voltage to strobe three while triggering solenoids to rule out a short from solenoid power to strobe.,"Ken, Brian"
+Baseball,6/21/2025 4:08 PM,"Initial triage:
+
+This won't be an easy one.
+
+To lift the playfield, you need to loosen the top two bolts that secure the backbox. Then it comes right up.
+
+The power layout on this one is deranged. The line cord needs replacing for sure, but even then this thing will be a nightmare. The switch on the front of the box is not connected to anything, but line current definitely runs to the coin door, which I'm not sure I can secure.
+
+The first thing to do is to document everything. Lots of photos and some diagrams to indicate initial wiring. Then we should test the transformer with decent line cord and make sure it's behaving sensibly. From there it will probably take a good going through, backbox and main body, to get it close to functional.
+
+It'll be a good project, but it's definitely a project.",William
+Gorgar,6/21/2025 2:59 PM,Swapped input connections to replacement transformer. Next step is to power up and test in situ. Unfortunately power cord needs to be replaced. Replacement ordered.,William
+Gorgar,6/19/2025 7:02 PM,"Began transformer replacement. There was a fair bit of what I'm guessing is lacquer on the lugs, but jamming the soldering iron in and letting it sit a bit got the wires off.
+
+Next step is putting the old input wiring on the replacement transformer, and then we can begin the process of swapping the cables and plugging in the new boards.",William
+Gorgar,6/15/2025 7:31 PM,"Tested new transformer. All outputs are a bit high, but nothing that seems unreasonable.",William
+Teacher's Pet,3/22/2025 12:00 AM,"- Same problem again with the kickout not happening. The score motor was once again not advancing all the way on one half of the wheel. Adjusted the second-from-top switch to be just right. But it's a narrow range between spinning forever and not going far enough. If this happens again worth asking on internet forums for ideas. Maybe the disc isn't quite right? Maybe there's some other mysterious score motor adjustment?
+- Had problems with the drop targets not popping up at the start of a new game. Spent a long time looking at it and we're not totally sure they should.",Wlliam
+Gorgar,2/12/2025 12:00 AM,"talked to Lee of Midwest Pinball. He doesn't do board work on the spot, but could send it off to one of a couple of guys. He said the rectifiers should be fused. It'll be $220 to show up and $110 if he has to come back to reinstall the boards. I told him I'd get back to him shortly.",William
+RotoPool,2/8/2025 12:00 AM,Ordered new plastics from Shay Group via PayPal.,William
+Hokus Pokus,2/1/2025 12:00 AM,"- Ken and Jackie fixed the one-player, ten-balls issue. Turned out to be a dirty switch on the score motor.
+- More flipper adjustments.
+- Attempted to stop the left flipper from buzzing; no luck.","Ken, Jackie"
+Gorgar,2/1/2025 12:00 AM,"- Replaced the plug, which was a hack job.
+- Turned it on and something is making a buzzing noise and the breaker eventually trips. But we smelled smoke, so I turned it off and left it off. I need a pro!",William
+Hokus Pokus,1/18/2025 12:00 AM,"- Fixing left flipper, which came loose. The coil sleeve was pretty grubby, so we replaced that too. The flipper shaft is pretty chewed up, so a new one has been ordered.
+- Double bonus countdown would stick such that it would keep giving points without dropping the bonus. Solution was to clean the switches on the Double Bonus relay.","William, Ken"
+Gorgar,1/18/2025 12:00 AM,More cleaning,William
+Gorgar,1/12/2025 12:00 AM,"- Tried powering it up.
+- At first it was totally dead.
+- There was a little of corrosion on the MPU board. I cleaned it with alcohol, but not perfectly. There was some corrosion on a chip above the battery.
+- I traced the wiring, and there was a fuse missing right at the power cord. I replaced the fuse (using 8A, as that was what was in Addams Family).
+- I tried turning it on and it came on with a clatter, including GI working and one of the solenoids firing. That shouldn't happen, so I turned it off.
+- There was even more corrosion on the driver board. I wiped it up a bit, but it probably needs more. I put the MPU back in too.
+- I went through a cycle of turning it off and on. MPU lights come on, and no clatter, but a very loud hum from the backbox.
+- I left it on a little longer and the fuse blew, so I put together one of the mini-breaker fuse replacers. That was a pain, but it worked.
+- More off on and off and I still couldn't find the source of the hum. definitely from the backbox, but hard to tell where from.
+- next steps:
+- study the wiring and figure out what all the fuses are
+- pull the fuses to see which one causes the hum to stop",William
+Addams Family,12/29/2024 12:00 AM,"The ball launcher was misbehaving. The outside spring had at some point fractured. I tried fixing it recently, and it was fine for a bit, but it was bad yesterday during the tour. Today I ended up removing one of the chunks, as it was getting tangled in the other and making things less elastic. Works for now, but I should replace it. And since there are problems unscrewing one of the screws, maybe better just to get a new assembly?",William
+Teacher's Pet,12/29/2024 12:00 AM,"- symptom is that when the ball ends up in the bottom trough it doesn't cycle to the next ball and kick it out
+- That seems familiar. How did I solve it before?
+- It was adjusting the score motor wheel:
+- We got the weird behavior where the ball eject wouldn't work to happen again. It was fine to start but got worse over time. We traced it to the score motor, index wheel, switch A, which gives power to the outhole switch that in turn triggers the end of ball cycle. It was finicky because it depended on exactly how far the score motor wheel advanced, and one of the two notches was more prone to cause trouble. Adjusting the switch leaf appears to have fixed it.
+- I bent the switch just a bit more and it seems better.",William
+Addams Family,12/27/2024 12:00 AM,"- There's something wrong in the swamp. I should go through all the switches there, and perhaps more generally.
+- God, it's nice having something with decent built-in diagnostics. One of the swamp switches was erratic. But poking it was enough to get things working again. Was it a bit stuck? Was there some junk wedged there? Hard to know.
+- I had also noticed a problem with detecting the ball waiting to be launched. That was a bit trickier. It turns out the plunger was sitting just a shade too far forward. The external spring was weird and janky. I tried taking it all apart, but one of the screws is stuck. The external spring was in two parts, and I tried separating them. They mashed back together pretty quickly. I tried a bit of tape, but that made the ball not launch or launch weekly. So I took the tape off and everything is somehow fine?
+- Long term, I should get at least the screw and maybe a whole new assembly, complete with spring.",William
+Hyperball,12/27/2024 12:00 AM,"- The problem I started out with was that the ball lift motor was not working. It worked before I moved it.
+- I got out the manual and ran through some self-test stuff. Everything worked except the sound and the ball lift motor.
+- After some disassembly, I found that the ball lift motor wasn't connected. But where should of it have gone to?
+- In the backbox there was a connector of the right shape but the wrong pins were hooked up.
+- Tracing the wiring led me to discover that the speaker connector and the ball lift motor had the same connectors. The labeling on them were messy, so I had them hooked up incorrectly. Fortunately, the speaker connector was wired differently, so the speaker was unharmed.
+- I hooked them up properly and labeled the motor connections. My label printer worked pretty well for that. I need to experiment more and start a policy of just labeling everything that could be ambiguous.
+- Putting it back together went reasonably smoothly. Some of the balls looked a bit grubby, so I polished them all.
+- It's now in working order! I played a game and the noise is a bit overwhelming. There are on-line mods for quieting things. I should have some sort of policy there. A good item for the [[ChicagoPinbalMuseum/Newsletter]].",William
+Hyperball,12/25/2024 12:00 AM,"- Got the backbox connectors set up.
+- TODO get more durable labels for connectors.
+- It powers up. Time to put in the balls.
+- Gah, I forgot the keys at home!
+- And I didn't have any immediate luck picking the door, so I guess I should go home.",William
+Gorgar,12/25/2024 12:00 AM,"- The putty dried overnight and seems fine. I tried out the cover-up markers and either the gray or black will look best depending on how much the paint has faded.
+- Now it's time to put it together. I think I want to go with Tom's suggestion of angling in screws from the sides to maximize the amount of wood involved. But i also want to do some angled in so as to hit the wood below. So let's go with side angles on top and down angles on the bottom.
+- I'm a little scared of anything like this, as it's not reversible. But worst case I get more boards and cut them into shape. I don't want to be cavalier about making modifications, but this is the kind of thing nobody will notice, and there's no going back to the original, so I have to go forward.
+- The screw plan worked.
+- Held it in place with a ratchet strap and then the big clamps from the Worx workbench.
+- Drilled holes and put in screws one at a time, initially out of caution and eventually because I didn't want misalignment.
+- It was easy to over-sink the screws, but setting the drill's torque level to 5 was enough to get the screws mostly there, and 8 was enough to sink or over-sink them. At the end it was worth going very gently, including by squeezing the trigger just enough to
+- Filled in with the DAP red-tube wood putty.
+- initial tests with the Varthane grey and black markers look good. Once the putty has tried I'll go back and finish.
+- It seems super solid. Without the vertical screws it was serviceable but wiggly; now it seems better than new.
+- Cleaned out the bottom of the cabinet. There was a bunch of what I presume was poop, but much bigger than mouse poop, and round. This thing was clearly up on end for quite a while judging by the amount of dust and muck. There were also a bunch of loose parts and lengths of wire. I bagged them all up as possible pieces to the puzzle.
+-
+- Put on the backbox. Two of the bolts were pretty sticky. One I pushed at it and I think the fitting came loose. The other I didn't push, but it's not fully on. So:
+- TODO remove backbox and inspect anchor points
+- Took photos.
+- I got this one to where I wanted it, which was upright and looking like a pinball machine. It has a ton of things that need doing:
+- Compare the circuit boards to known-good photos.
+- Especially compare the thing on the lower right to the square thing that could plug in there. I think it doesn't belong, but worth checking.
+- Connect all the backbox cables.
+- Do a smoke test.
+- Make a list of all the electronics issues, and perhaps find a local expert to help with board work.",William
+Gorgar,12/24/2024 12:00 AM,"- The first problem here is getting the backbox on top. That requires reattaching the wood that serves as a neck or riser or whatever.
+- This was originally staple together, but poorly. Tom's suggestion was to use wood screws and filler putty.
+- To get the old staples out I mainly hammered and pulled. But there were a couple I would have had to tear the cabinet apart to get to, so I used a Dremel grinding wheel and it took them right off. That left little nubs, but a bit more grinding took care of that.
+- I did a test with his recommended screw, a number that's 1 1/2 inches long. I drilled with the 3/32nd bit and it was tough to hand screw but the screwdriver pushed it right in, including enough countersinking to fill. I'm trying out my fill; when I come back we'll see how it has done. Then I need to test the cover-up marker. But seems like good progress so far. I have also ordered some 2.5"" screws so I can sink from the top down to add some extra firmness and replace the staples I had to grind off.",William
+Derby Day,12/24/2024 12:00 AM,"- Found the missing screw. It had bounced over to the wall/floor line and gotten wedged there.
+- Fixed the 10k score stepper. It just needed some cleaning and everything started moving smoothly again.
+- There was also a solder point that was broken; removing the 10k stepper made that easy to get to, so I fixed it too.
+- Overall, it seems like it works now. Time to put it back where it belongs.",William
+Gorgar,12/18/2024 12:00 AM,"The first problem is rebuilding the backbox riser. It was put together with 3/4x1/8 u-shaped staples, some of which were not put in particularly well. I've re-glued the parts of the plywood that were delaminating, and I've asked Tom for fastner advice.",William
+Derby Day,12/18/2024 12:00 AM,"- This one has to be close. What's remaining?
+- Fixed the 1 and 2 targets.
+- The pinballs look kinda rough! didn't I replace them? Let's definitely replace these.",William
+Derby Day,12/7/2024 12:00 AM,"- The wood on the board inside the backbox splintered.
+- I think it happened when I shook the machine a bit while playing, causing the board to come loose, swing on its hinge, and then stop suddenly at the bottom.
+- I ran over to Home Depot to get some glue and clamps and glued it up. I'm supposed to wait 24 hours to try it out, but I'm going to cheat a little and see if I can get it running again.",William
+Derby Day,10/12/2024 12:00 AM,"- It seems to be playing decently, but:
+- TODO check and replace bulbs
+- TODO is the 10k startup sequence right?
+- When starting up, the 10k reset behaves oddly, going through more positions than necessary. Is that right?
+- Took me a while to remember that the start solenoid doesn't trigger any switches, so it looks different on the diagram
+- It seems to rotate through the zero positions, but never the nearest one
+- There are 3 zero positions. Let's call them A, B, and C, which are at the 11, 3, and 7 o-clock spots.
+- I did a few trials. Starting at 0A, it went to 0C 4/4. Starting at 0B, it went 2/4 to 0A and 2/4 to 0C. Starting at OC it went to 0A 1/2 and 0B 1/2.
+- I notice that it sticks some. Hitting the 50k bumper causes 5 triggers, but doesn't always advance 5. It seems to be sticker around 12 oclock.
+- This stickyness could account for the erratic behavior, so let's fix that.
+- TODO clean and lube the 10k stepper.
+- TODO number 4 horse doesn't always light the place position
+- TODO bend the horse targets
+- TODO clean and wax the playfield before closing up
+- TODO millions light alignment
+- TODO special light and special work?
+- TODO number 1 horse is sticky on return
+-",William
+Derby Day,10/6/2024 12:00 AM,"- It gets caught in the startup sequence. So what do I see?
+- I press the replay button.
+- That energizes the Start coil, which changes the state on the Start/S relay pair
+- That starts the score motor running
+- It resets the horse sequence units with a switch on Motor 2D
+- It loops on this forever
+- If I force trip the S relay, then it
+- resets the scores
+- energizes the ball release coil
+- that stays energized until I hit something that generates points
+- from here the game plays as normal
+- Also involved is the Z or Reset relay. That is triggered by the ""minus 1"" position on the 100,000 stepper. So I guess something kicks the reset solenoid on that?
+- So what's the whole sequence?
+- replay button
+- start coil, flipping S switches
+- disables the start button
+- enables the score motor?
+- both
+- enables subtracting a replay
+- resets the 100,000 to minus 1
+- the 100,000 minus 1 switch triggers the Z/Reset relay, which
+- triggers the ball release
+- starts the score motor
+- enables the flipping back of the S relay when the score motor hits 4C
+- subtracts a replay at 1C
+- activates the horse resets
+- triggers the T and Counter relays
+- When I started this debugging, I knew one of the switch stacks was bent way out of true. But I discounted it as probably irrelevant, because I thought it had to have been that way before. However, bending it back and fixing the switch alignment fixed the problem. I did adjust some wire positions, so maybe there was a compensating short?
+- The machine is now back to being playable. There are a number of small things, one of which is that the backbox lights are a little off because the wood has worn or has bits missing. I used some putty to hopefully fix it.",William
+Derby Day,9/15/2024 12:00 AM,"- It is looping on start. I'm pretty sure this behavior started before the move.
+- We found a broken solder connection on one of the race position solenoids. But fixing that didn't help.
+- lOne of the score motor switch brackets is wildly bent. I can't imagine that happening during the move, but I don't know what it could be. I may want to ask Matt.","William, Brian"
+Teacher's Pet,9/15/2024 12:00 AM,"- Unfortunately, I think I failed to write up what we did! So where's it at?
+- Brian came in to help, which has been great.
+- We got the weird behavior where the ball eject wouldn't work to happen again. It was fine to start but got worse over time. We traced it to the score motor, index wheel, switch A, which gives power to the outhole switch that in turn triggers the end of ball cycle. It was finicky because it depended on exactly how far the score motor wheel advanced, and one of the two notches was more prone to cause trouble. Adjusting the switch leaf appears to have fixed it.
+- Match wheel was a little wonky, so we took it apart. The screws holding the inner bracket to the main plate had worked their way loose. We tightened those, put the square circuit board back in its lowest position, and put it all back together. The shoes were correctly centered.
+- After that there was a problem with ball advance. One part was a problem of ignorance; I thought the ball was advanced by the outhole switch, but it turns out it was a separate trough switch that registered the ball moving to the plunger area.
+- The last issue today was a flaky T. Cleaning the related Jones plug helped some, and pinching the female Jones plug a bit helped with the rest.
+- There's still a chance either that switch or the score wheel will need tweaking, but for now we put it back.","William, Brian"
+Teacher's Pet,8/24/2024 12:00 AM,"- Back at it, starting with the start button, which they know as the replay button
+- Button itself works.
+- Next stop is the replay unit zero switch, which should block the signal if there are no credits, but it passes through regardless. Maybe the switch was bent as a cheap way of making it free play?
+- Then it splits
+- Green wire goes to the lock relay, on a switch marked normally closed but that's open whenever the power is on
+- Also goes to the Game relay, green (although diagram says black) and then brown out. That's marked as normally open
+- One problem was the game relay switch was not closing properly. We cleaned that and adjusted it and you can now start a game.
+- However, the eject only works intermittently because the outhole switch is not always powered. This can be seen by connecting a meter between the black line on the solenoids and the top of the outhole switch.
+- When this happens, the score relays are still powered, suggesting the problem is in the wiring near to that.",William
+Teacher's Pet,8/17/2024 12:00 AM,"- What's this thing's deal? It's not starting properly.
+- Let's just trace the power through the circuit diagram.
+- Reset relay - operates when start button is pressed. Looks like power comes out on a dual switch with red/yellow weave wire.
+- Tilt relay - from the diagram, it looks like it goes to a dual switch, the normal side of which should pass through, and the momentary side should go to the game relay
+- the tilt relay flips at power on, which is pretty wrong. Isn't it?
+- It flips because there's something on the lock relay that starts that way. If I disable the switch, it doesn't happen. And sometimes it doesn't happen regardless. And if it doesn't happen, then you can't start a game.
+- Anyhow, the power did not pass through the tilt switch to the game over relay. Fixed and verified with a meter. But that didn't fix anything, so that was a problem, but not the problem. So what's the problem?
+- Let's try looking from the start button forward.
+- I can't find the start button. But it only works when the machine is tilted.
+- Wait, no. It only works when the game relay is tripped. Can I find it from there?
+- The start button is called the ""replay switch"". I think the theory is that normally just putting a coin in starts the game, and there are no credits, just replays. Credits must have come later.
+- So that passes through the following:
+- replay unit zero, normally closed. So zero credits opens it.
+- or gate
+- lock relay, normally closed
+- game relay, normally open
+- 25c relay
+- ending up in the replay relay.
+- What if I just trip that relay?
+- It does something like a startup sequence, and then does not work. What trips the kicker?
+-",William
+Teacher's Pet,7/28/2024 12:00 AM,"- Started out with no power. I was expecting a complicated problem with relays. But the switch connector, which looks to be a bit of hack, fell off. I put it back on and adjusted it some.
+- In a test play, I discovered that both T lights are out in the backbox. Also, the ball counter is not advancing.
+- And now something's wrong with the startup sequence; it will reset the score, but it won't play it all. Is there anything in my notes?",William
+Teacher's Pet,7/21/2024 12:00 AM,"And I got a bunch done! It now feels like a workshop. I installed the Jones plugs for [[Pinball/Machines/TeachersPet34484]] but it wouldn't start, so I have a clear repair issue for next time. This feels great and I'm very glad I did it.",William
+Derby Day,5/11/2024 12:00 AM,"- I perused the schematic and found a number of things that would keep the score motor running. It looks like the start relay was staying on, perhaps because it was stuck or because the reset start relay wasn't firing. I poked it and things got better.
+- It still needs a fresh set of elastics.",William
+Teacher's Pet,4/27/2024 12:00 AM,"- I fixed the problem with the outhole switch. Turns out that it was getting about 5V from who knows where, and about 8V from a switch on the switch stack that was only partly closed. If I manually closed it, it would get 29V. Filing it didn't help, so I adjusted the switch a bit.
+- TODO The special light flickers.
+- TODO If you bang on the playfield you get points, suggesting some switch is too close.
+- I was having trouble figuring out the logic of the points for the red targets. It's a ladder where the more letters you have in TEACHERS PET, the bigger the points. But it has to be in order, so TE kicks it up, and TEAC gets more, and so on up to special.",William
+Teacher's Pet,4/23/2024 12:00 AM,"- The score motor was running for mysterious reasons. It would never start on its own, but it would keep running long past when it should have stopped. I found it on the circuit diagram and there were a bunch of things that could start it off. I tried those, but they all had other effects that would only happen the first time. But the score motor knows to keep running to complete a cycle. How? On one of the switch stacks (""index""), there's a normally-open switch that when it closes keeps the motor running until the next proper stopping point. That was opening, but the momentum of the system would keep it running through the stopping point. A small amount of friction or pressure on the switch stack would get it to behave, so I just adjusted the switch a bit and all was well.
+- Next up is the mysterious outhole failure.
+- It used to work fine. For a while I think it worked erratically. Now it only works if you hit something else, like the one-point bumper, while the outhole switch is depressed.
+- The outhole switch is mechanically and electrically fine.
+- The voltage at the switch normally is ~8V, dropping to 0 when the switch closes. If the machine doesn't have a game going, it's at 5V. If I push the one-point bumper, it peaks at 22V before dropping back to 8V.
+- When I kick it off manually, the relay measures at ~28V. But without it, it's at 0.
+- Holy shit, it's the same index stack of switches. For reasons I don't get, the outhole switch and the score EOS switches are all fed through a normally-closed switch on the score motor index wheel. If it goes slightly too far, the switch isn't properly closed, and so is at too low a voltage. If I move the wheel back to the proper closed position, the normal voltage is 28V.
+- Since both these problems started at the same time, could there be a common cause? Why is the score motor going slightly too far now? Or is it going the right distance, but the switches were adjusted for the old distance?
+- Time to clean up, so we'll find out next time!",William
+Teacher's Pet,3/30/2024 12:00 AM,"- TODO elastics
+- TODO playfield lights
+- DONE score motor runs too long during resets
+- TODO end of ball sometimes doesn't happen until something else gets hit
+- outhole switch seems fine
+- TODO permanently attach or replace broken red plastic in E hole","William, Laura"
+Teacher's Pet,3/23/2024 12:00 AM,"- The boot loop problem is that the bank reset relay isn't firing.
+- If I fire it by hand, the game starts.
+- There's a broken solder joint that is clearly a problem. But even when it's not firing, it's 18v vs ground. Why's that?
+- For now, I'll ignore that, as with the joint fixed, the game is sort of playable.
+- Issue list:
+- DONE Score reels are sticky during reset
+- TODO Backbox lights
+:logbook:
+ CLOCK: [2024-03-23 Sat 17:04:56]--[2024-03-23 Sat 17:04:57] => 00:00:01
+ CLOCK: [2024-03-23 Sat 17:04:58]--[2024-03-23 Sat 17:04:58] => 00:00:00
+:END:
+- TODO Playfield lights
+:logbook:
+  CLOCK: [2024-03-23 Sat 17:05:37]--[2024-03-23 Sat 17:05:38] => 00:00:01
+  CLOCK: [2024-03-23 Sat 17:05:48]--[2024-03-23 Sat 17:05:49] => 00:00:01
+  CLOCK: [2024-03-23 Sat 17:05:49]--[2024-03-23 Sat 17:05:50] => 00:00:01
+:END:
+- TODO Elastics
+- DONE 1-point
+- Switch was sticky, just worked it some
+- DONE Right flipper
+- Another broken solder joint
+- DONE Yellow right bumper
+- DONE 2nd ball skipped
+- Ball count unit is still finicky
+- Turns out [there's a trick](https://pinside.com/pinball/forum/topic/williams-ball-count-unit-sticking-even-after-cleaning)
+- TODO Bumpers get stuck",William
+Derby Day,2/27/2024 12:00 AM,"It used to work fine and now the score motor is stuck on. It seems like maybe it's doing a reset sequence? It's pulsing solenoids on what I think are the mechanisms that track the horse positions, and since nothing happens I think they're the reset solenoids.",William
+Teacher's Pet,2/24/2024 12:00 AM,"- Sanded the Jones plugs and plugged them in.
+- Power on:
+- score doesn't reset. Score motor spins endlessly.
+- Power off and on, look for issues.
+- Tilt on
+- Ball in play 1
+- Triggering score reset relay manually:
+- All wheels sticky
+- Triggering point relays:
+- Only hundreds works, and it gets stuck on
+- Let's start by cleaning the score wheels
+- Took a while, but they came out great
+- Next, the ball count unit
+- This is a weird one. When I found it, both the tension and ratchet advance springs were over-tightened. 7 turns for the tension spring. The ratchet advance spring had been shorted.
+- I disassembled and cleaned the axle and the contact points. That seemed to help, but when I put it back together, it was still not moving freely.
+- After a few more passes, I realized that it moved poorly if the nut was tight. This is odd, because the similar unit has some play in the axle even when fully tight.
+- I thought maybe the axle/toothed wheel thing was bent, causing a wobble. But I put it in my drill and it's reasonably symmetrical when it spins.
+- I can't figure out what the story is. If I had three, I'd know. Bad part? Missing part? Wrong part? But I can't tell. Maybe I should post online.",William
+Teacher's Pet,2/19/2024 12:00 AM,"- Installed 4 new legs, including the two Kate made. They seem great!
+- Installed the grounding kit. Now the legs, coin door, lock bar, and side metal are all grounded. As is the frame around the plunger. Oh, and the metal plate by the switch. Plus, of course, the transformer housing. I still have to hook up the new power cord, though.
+- For the power cord, it comes into terminals at the back. I want yellow to be hot and black to be neutral, as that way if the fuse blows the smallest area is hot. For the new cord, the ribbed side is neutral. So the new thing is yellow->smooth, black-> ribbed.
+- Got the cord installed. Turned it on and nothing caught on fire. The score motor even ran.
+- Next up: buff the Jones plug pins, install all of them, and see what happens when I turn it on.",William
+Teacher's Pet,2/10/2024 12:00 AM,"- Took a lot of starting pictures.
+- Vacuumed the machine out thoroughly, hopefully removing all rabbit poop. I removed the playfield and unscrewed the main relay board to make room.
+- Put up the schematic.
+- Turns out this era of machine has 120v all over the place.
+- I have ordered a grounding kit.
+- I should post on pinside asking
+- best way to ground it
+- best way to work on it
+- are there common safety measures people take?",William
+Hokus Pokus,2/10/2024 12:00 AM,"- Closed this up and moved it out of the work spot. It's in great shape for playing.
+- I gave it one last cleaning and waxing.
+- Turns out the glass wouldn't go back in because I had assembled the metal slot it fits into at the back incorrectly. Not too hard to get it fixed, though.",William
+Hokus Pokus,2/3/2024 12:00 AM,"- Replaced the lamp socket, so that's the last of the make-it-play-right work.
+- Except that one of the flipper buttons was sticking, and one of the flippers was changing position a bit.
+- For the position thing, I tightened the screws on the flipper shaft, but I remember it was pretty chewed up, so I ordered another flipper in case that doesn't hold.
+- For the sticking, I assumed it was the flipper mechanism, but it was the flipper button. Sarah and I took one off and it was grubby! We started cleaning it and Gabe got involved so we took the other one off too. It took lots of scrubbing and a little bit of sanding, but they both came out fine.
+- However, the left flipper button was now not hitting quite right, so after some fiddling we adjusted the switch position a smidge and then it was fine.",William
+Hokus Pokus,1/27/2024 12:00 AM,"- Disassembled and cleaned the 00-90 UNIT DISC. Bit of a puzzle, but thanks to some good photos and a bit of video, it wasn't too bad. Moves much more smoothly now.
+- The match problem was indeed a bad socket. I took it out to see if I could repair it, but I can't even figure out how it works, or if it ever worked.",William
+Hokus Pokus,1/20/2024 12:00 AM,"- This one is really close! I think the alternator is the last thing.
+- What I'd expect it to be connected to is an odd/even output on the 10s score wheel. What it's actually connected to is ""00-90 UNIT CAM SWITCH"".
+- The wire is supposed to be blue with white. And that's what goes into the alternator. And then in the backbox there's a different blue with white, which goes to the 4 on both reels, so I guess that's right? But when does that light up? Let's see what I can find on the schematic.
+- Ok, there's something called the 00-90 UNIT DISC, which has two 0-9 boards, a solenoid that moves things along and establishes a relationship between the boards, and a switch that looks like it alternates every tick. So maybe this should get activated when we want to match or alternate and this isn't working?
+- Actually, it was working! It swaps every 10-point step, more or less. I have questions about how it resets and works when players change, but ignore that for now. The alternator switch alternates! Why doesn't it work?
+- At first I thought, ""This is an odd switch, it only has one wire coming in. Does it work off the solenoid that it's attached to?"" But no, it's just that the portion of the switch blade that connects to the yellow common wire got broken off. It was hanging right there, and I think I even noticed the odd floating junction before. So how do I repair it?
+- The switch itself doesn't come all the way apart; maybe parts have mushroomed over time. So ideally, I'd just find a way to reattach something. Thin metal? Foil? A jumper? The original switch? Let's see what we have.
+- Turns out this has broken and been repaired before. They had added a yellow jumper wire to the broken tab and then just put the wire into the switch body. It looks like over time that had broken off. Which makes sense; this has to be one of the most vibrate-y places on the machine.
+- What I really should do is replace the switch blade entirely, but that would require having a new switch blade and also figuring out how to free the blade from the apparently-grown plastic. What I actually did was just to put the wire into the switch in the same spot, after removing the old copper bits.
+- That's a bit of hack, though. This clearly didn't hold forever before, so I should do it right eventually.
+- Ok, maybe match doesn't work?
+- Well, it works better now, but the doodad is still sticky, and one or two of the bulbs won't light, either due to bad sockets or bad wiring.
+- Specifically, the 20 doesn't work. Power gets to the socket, but a new bulb won't light, so I may want to replace the socket. But it's stapled in, so I'll need to find a new way of attaching it.",William
+Teacher's Pet,1/13/2024 12:00 AM,"Found some scrap wood, got it up to an approximately playable angle. Seems much better than waiting. I can at least work on it next. The leg adjusters are stuck, though, so maybe I'll put some lubrication on and let it penetrate. Except I don't have any, so now that's on the list.",William
+Hokus Pokus,1/13/2024 12:00 AM,"- Seems like it's in very good shape. The double bonus light is kinda dim, but the bulb and socket look fine and the plastic lens is clean. Probably looks better when not under a bright lamp.
+- Tried some more backglass stabilization. This time I'm focusing on using the cuticle pusher to lay down a pretty thick layer of glue and the cotton-tips to squish things down without breaking up the paint more than necessary. We'll see how it looks, but it feels better. Still hard not to create a bigger mess, especially if something is still partly attached.
+- Still doesn't look great, though. Lots of small misalignments. Better than falling off, though.
+- There's definitely something up with the special outlanes after doing ABCD twice. Not sure what's going on, but the lights don't go on and the alternator doesn't appear to be alternating.
+- I spent a long time staring at the circuit diagrams and then tried cleaning the extra ball relay. That got the SPECIAL lights to light, except that the alternator doesn't yet alternate. The alternator coil is connected to the ""00-90 unit cam switch"", and what I'd expect it to do is be one way on the odds and another on the evens. If I traced the wire correctly, it's linked to the 4 digit, which seems wrong, but I'm not sure if that's ""I traced it wrong"" or ""they built it wrong"" or what.
+- That, or something, made the left outlane start scoring 1000 points. And I thought the right didn't work but got working first? A puzzler.
+- The yellow open-gate target was just too hard to hit. I tried adjusting it in situ and only accomplished shorting the 1000-point relay. So then I took the whole thing apart to get it out and discovered that I could have just removed the light bulb behind the target/switch and it would twist out. Eventually, though, I got it back together. Hooray for pictures! And after a couple more tuning passes, it actually seems to work about right.",William
+Hokus Pokus,1/6/2024 12:00 AM,"- Fixed the sticky right flipper. It's worth using the little gap tool.
+- Played a couple of games and it seems generally good mechanically and electrically.
+- Tried using superglue to save a bit of the backglass.
+- It's much harder than it looks.
+- The glue is hard to spread.
+- It's extra hard to spread under a partially attached piece.
+- The flakes are very hard to work with.
+- If I don't get glue on the whole piece, I end up with a gap filled with fuzzy/frosty stuff, which I think is the glue vapor.
+- When I press down on a flake, it frequently shatters, making the placement problem harder.
+- It seems important to clean the glass before gluing, but also is quite challenging.
+- I'm not sure any of this is reversible, which is concerning.
+- I would love to find somebody with actual dexterity to do this. Lord knows who, though!
+- Once the backglass is stable, maybe it's done?
+- Wait, no, I need to check the left and right outlanes. Do they work ever? Not sure if they're supposed to work only rarely or if they're both just broken.",William
+Derby Day,1/6/2024 12:00 AM,"- Cleaned the glass, both sides.
+- Did a first pass cleaning the playfield using Carnuba wax. There was something weird on the playfield that might have been old wax, but it had a copper-oxide color.
+- Cleaned a couple of the plastic caps.
+- It uses 51 bulbs, which I'll need to get some of.
+- It plays pretty well, all told.",William
+Hokus Pokus,12/9/2023 12:00 AM,"- Fixed the flippers; they were slipping.
+- The chime failure got magically better, so I removed the jumper.
+- Replaced a couple of bad lamp sockets. Accidentally singed a wiring harness. I need more practice. And I shouldn't work while talking.
+- I guess it's almost done? I need to figure out the outlanes and there are a couple GI bulbs. But then it's on to the glass.","William, Mauricio"
+Hokus Pokus,11/25/2023 12:00 AM,"- The 2 player mode started working for no obvious reason. Also, the credit and coin relays, which would previously close briefly twice now close longer just once. That suggests there was some sort of self-latch via the score motor.
+- The double bonus for ABCD works, but the lamp socket is bad. I'll need to order some new ones.
+- The 100-point chime stopped working. It appears that one of the wires in backbox has failed, but that seems entirely improbable. Maybe it's a solder joint at the Jones plug female socket? I'll tackle it next time.
+- The left flipper is still sometimes weak. Is it an EOS problem? How to tell?",William
+Hokus Pokus,11/18/2023 12:00 AM,"- The special modes don't work in 3-ball either. Weird.
+- Still not starting 2 player. Why?
+- Staring at the diagram isn't helping. Let's walk through the startup.
+- Turn on: lock relay energizes, stays on
+- Either coin slot: 2nd coin chute relay pulses
+- Credit button:
+- took video, made notes on wall, things were still mysterious
+- Started making a list of what the Score Motor (aka sequencer) does. Some of them I get, but some are pretty mysterious. Part of the problem is that a given cam has multiple uses (up to 4), and I don't think they're related.
+- What I think I need to do is sit down with clay's guide plus the schematic plus the machine and make a detailed startup guide for this specific machine. I may have to invent a notation for this, as it's pretty confusing otherwise.",William
+Hokus Pokus,10/31/2023 12:00 AM,"- The ball unit seems to be the first thing.
+- Spring is 3 turns.
+- Cleaning definitely helped. I removed the big nylon gear, cleaned it and the hole with alcohol. Then polished all the contact points on spider and disc. Now it works well. I'm glad I took photos and put down a catch cloth, as I would have been screwed without it.
+- I think the special/ABCD issues are just because it's in 5 ball mode. Let's test that.
+- The 2nd player stuff doesn't start. Not sure why. If I trigger it manually it all works, though.",William
+Addams Family,10/26/2023 12:00 AM,"Worked on Addams Family with Laura as a good starter project for her.
+- We cleaned the playfield, replaced some elastics, and replaced some bulbs.
+- She really likes the detailing for the same reasons that I do.
+- She asked if there are checklists. There should be!
+- I also think I should sketch out the beginnings of a curriculum.","William, Laura"
+Hokus Pokus,10/3/2023 12:00 AM,"- The gate-opening target never went off. I tweaked the alignment a bit and now it's better.
+- There's something funky with the ball unit; I think it's not resetting all the way each time? and it's definitely not always making contact for some of the lights. I should probably just take it apart and clean it.
+- I'd love to be able to watch the backbox stuff from the front. Turns out Android can use USB webcams, so I should dig one out and try that with the tablet.
+- I suspect the outer lanes don't work, but I'm not sure why.
+- Lighting up ABCD doesn't do anything.
+- Overall it's pretty playable now. It's a fun game!",William
+Hokus Pokus,9/26/2023 12:00 AM,"- Left flipper was weak
+- Tried a new coil sleeve. Old one was fine and the right size, so I put it back.
+- There was some old duct tape on the EOS switch, which had dried out
+- I noticed the left EOS switch was not sparking, but the right one was
+- Did some searching. One Pinside thing mentioned that EOS switch failures cause weak flippers.
+- I jumped it and it was fine. So I cleaned the switch and it worked.
+- What was going on here?
+- [This page](https://www.funwithpinball.com/learn/flippers-coils-and-power) has a good explanation. There are two coils, high power and low power; the former pushes and the other holds. The EOS switch, which is normally closed, gives the power a path around the low-power coil. But when it kicks open, all current is forced through it, reducing the flow in the high power coil and fully activating the low.
+- The coil in question is an AF-25-500/28-1000 Bally coil. So that's 25-gauge wire with 500 turns for the high power coil, and 28-gauge wire with 1000 turns for the low. Per [this chart](http://hyperphysics.phy-astr.gsu.edu/hbase/Tables/wirega.html), that's 32.7 ohms/1000 foot versus 64.9. So 4x the resistance.
+- I suspect that somebody originally just taped it closed, which worked but risked flipper burnout if you held the button in. A great example of short-term thinking of the ignorant sort.",William
+Hokus Pokus,9/22/2023 12:00 AM,"- Replacing the power cord:
+ collapsed:: true
+- I need to practice my soldering.
+- My iron is fine for electronics. But for the line voltage wiring, it took forever to heat large joints.
+- On the transformer lugs that was a problem, as I somehow softened whatever held the lugs to the rest of it. It worked out ok, but let's not do that again.
+- Connecting it was a challenge partly because it was tight and partly because the original cord had two black wires and one green wire. According to an EM forum, the hot/black wire goes to the switch side.
+- Putting that together seemed to work. The hold relay came on drawing the right amount of power, and jumping the score motor still worked.
+- I then put it back together. I had misplaced a screwdriver and was worried I had left it under the board, which was a pain to check. I really want a repair bay with all the tools having places and labels, plus a small table for current in use tools.
+- The Jones connectors were all keyed so there was only one way to do it. But I still might want to do more marking next I take something apart.
+- When I turned it on, it worked! I could play a ball and have things mostly go.
+- Current issues:
+- both flippers seem weak
+- ~~Not properly leveled~~
+- ~~Ball gets stuck above right flipper~~
+- ~~10-point relay gets stuck on~~
+- Some game lamps out/weak
+- Ball in play counting is weird
+- sometimes lights don't light
+- not reliable in actual number of balls played
+- Spinners don't light up or count for higher points
+- spinners might be too generous? Giving points on wobbles after spin
+- ""opens gate"" target hard to hit
+- when gate is open, it behaves oddly, humming loudly and not closing when it should
+- can't start a two-player game
+- The 10-point issue was interesting. Just by poking I traced it to the left spinner. It turns out that the switch appeared to be triggering when the blades touched or were too far apart. Which is bonkers. And when I was fiddling with the spinner itself, I would sometimes get small shocks! Eventually I noticed that the screw for the left support was through the wood and possibly touching the common wire for the GI lamps. Taking the screw out made it work. So I swapped in a shorter screw and now everything is fine. Abstractions only take you so far!",William
+Hokus Pokus,9/19/2023 12:00 AM,"- Score motor did not run, even with jumpered power. But watts did jump, so perhaps it was stuck?
+- Internet said maybe gearbox, maybe motor, maybe armature. Motor/armature seemed stiff, as did gearbox.
+- Tried cleaning armature and motor-side bracket with alcohol. That helped! Reassembled, motor spun but did not engage.
+- Looked at Internet pictures and eventually figured out that the armature and its bracket were stuck at the joint. I pried the joint off, and sanded a rough spot on the shaft until it moved freely.
+- That fixed it! With jumpered power it spun and clicked happily.
+- Then I filed all the switches I could find in the base and backbox. I'll leave the playfield bottom until it's back together.
+- While unplugging and plugging, the grounding pin came off. I've ordered a replacement cable that should arrive before I'm next there.
+- Next up: replace the power cord, put it back together, see if it works.",William
+Hokus Pokus,9/15/2023 12:00 AM,"- Cleaning, etc
+- Finished replacing rubbers
+- Swapped playfield bulbs for 47s
+- Cleaned and waxed the playfield
+- Cleaned the plastic parts
+- Buffed most of the screws and metal parts
+- Removed, derusted, polished. And replaced the very scruffy metal parts that hold the back of the playfield glass
+- Backbox illumination dead
+- Powered via yellow wire and brown wire
+- Worked when I jumped the yellow Jones connector
+- Cleaned and reseated the Jones connector and it got worse
+- Jumped the yellow all the way to the transformer, no better
+- Turned out to be a flaky fuse holder
+- Got backbox lights working, but ran out of 47 bulbs, need to order more
+- Manually triggering scoring and score reset via relays works.
+- Game still won't start.
+- Also doesn't reset scores, etc on startup.
+- Maybe it's the score motor?
+- Spins manually
+- Jumping the motor just gets a buzz, though.",William
+Hokus Pokus,9/13/2023 12:00 AM,"replacing most of the elastics, cleaning and swapping bulbs along the way",William
+Hokus Pokus,9/8/2023 12:00 AM,"- When I got it, lights went on but it would not play.
+- I fiddles a little and it did not improve.
+- Then I got serious with Clay Harrell's [EM repair guide](http://www.pinrepair.com/em/). I went through and did all the pre-use check steps, including checking the fuses and buffing the connector pins. The lights would not go on.
+- I've got a clamp ammeter on the way, which should make running some of these things down. But I can confirm that the lock relay comes on when I switch the machine on and then something's drawing about 35 watts. Could that be one relay? Seems like a ton.",William
