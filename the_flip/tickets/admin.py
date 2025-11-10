@@ -45,7 +45,16 @@ class GameAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Maintainer)
+class MaintainerAdminProxy(Maintainer):
+    """Proxy model to display Maintainers under Authentication and Authorization."""
+    class Meta:
+        proxy = True
+        app_label = 'auth'
+        verbose_name = 'Maintainer'
+        verbose_name_plural = 'Maintainers'
+
+
+@admin.register(MaintainerAdminProxy)
 class MaintainerAdmin(admin.ModelAdmin):
     list_display = ['user', 'phone', 'is_active']
     list_filter = ['is_active']
