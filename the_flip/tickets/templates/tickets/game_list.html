@@ -15,28 +15,18 @@
         <h3>Filters</h3>
         <form method="get" class="filter-form">
             <div class="form-group">
-                <label>Search</label>
-                <input type="text" name="search" value="{{ search }}" placeholder="Game name or manufacturer">
+                <label>{{ form.search.label }}</label>
+                {{ form.search }}
             </div>
 
             <div class="form-group">
-                <label>Type</label>
-                <select name="type">
-                    <option value="">All Types</option>
-                    {% for code, name in type_choices %}
-                        <option value="{{ code }}" {% if game_type == code %}selected{% endif %}>{{ name }}</option>
-                    {% endfor %}
-                </select>
+                <label>{{ form.type.label }}</label>
+                {{ form.type }}
             </div>
 
             <div class="form-group">
-                <label>Status</label>
-                <select name="status">
-                    <option value="">All Statuses</option>
-                    {% for code, name in status_choices %}
-                        <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
-                    {% endfor %}
-                </select>
+                <label>{{ form.status.label }}</label>
+                {{ form.status }}
             </div>
 
             <button type="submit" class="btn btn-primary">Apply</button>

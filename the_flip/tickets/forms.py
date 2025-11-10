@@ -2,6 +2,39 @@ from django import forms
 from .models import Game, ProblemReport, ReportUpdate
 
 
+class GameFilterForm(forms.Form):
+    """Form for filtering games in the list view."""
+
+    TYPE_CHOICES = [
+        ('', 'All Types'),
+    ] + list(Game.TYPE_CHOICES)
+
+    STATUS_CHOICES = [
+        ('', 'All Statuses'),
+    ] + list(Game.STATUS_CHOICES)
+
+    search = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Game name or manufacturer'
+        })
+    )
+
+    type = forms.ChoiceField(
+        choices=TYPE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+
 class ReportFilterForm(forms.Form):
     """Form for filtering problem reports in the list view."""
 

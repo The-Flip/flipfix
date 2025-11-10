@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import ProblemReportCreateForm, ReportFilterForm, ReportUpdateForm
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, ReportUpdateForm
 from .models import Game, ProblemReport
 
 
@@ -255,40 +255,35 @@ def game_list(request):
 
     games = Game.objects.all().order_by('name')
 
-    # Search functionality
-    search = request.GET.get('search', '')
-    if search:
-        games = games.filter(
-            Q(name__icontains=search) |
-            Q(manufacturer__icontains=search)
-        )
+    form = GameFilterForm(request.GET or None)
 
-    # Filter by type
-    game_type = request.GET.get('type', '')
-    if game_type:
-        games = games.filter(type=game_type)
+    if form.is_valid():
+        # Search functionality
+        search = form.cleaned_data.get('search')
+        if search:
+            games = games.filter(
+                Q(name__icontains=search) |
+                Q(manufacturer__icontains=search)
+            )
 
-    # Filter by status
-    status = request.GET.get('status', '')
-    if status:
-        games = games.filter(status=status)
+        # Filter by type
+        game_type = form.cleaned_data.get('type')
+        if game_type:
+            games = games.filter(type=game_type)
+
+        # Filter by status
+        status = form.cleaned_data.get('status')
+        if status:
+            games = games.filter(status=status)
 
     # Pagination
     paginator = Paginator(games, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get choices for filter dropdowns
-    type_choices = Game.TYPE_CHOICES
-    status_choices = Game.STATUS_CHOICES
-
     return render(request, 'tickets/game_list.html', {
         'page_obj': page_obj,
-        'search': search,
-        'game_type': game_type,
-        'status': status,
-        'type_choices': type_choices,
-        'status_choices': status_choices,
+        'form': form,
     })
 
 
