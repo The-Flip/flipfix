@@ -190,9 +190,9 @@
         <div class="header-top">
             <div class="game-title">
                 <h1>{{ game.name }}</h1>
-                {% if game.year or game.manufacturer %}
+                {% if game.year or game.manufacturer or game.ipdb_url %}
                     <div class="game-meta">
-                        {% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %} • {% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %}
+                        {% if game.year %}{{ game.year }}{% endif %}{% if game.year and game.manufacturer %} • {% endif %}{% if game.manufacturer %}{{ game.manufacturer }}{% endif %}{% if game.ipdb_url %}{% if game.year or game.manufacturer %} • {% endif %}<a href="{{ game.ipdb_url }}" target="_blank" rel="noopener noreferrer" style="color: #2196F3; text-decoration: none;">IPDB↗</a>{% endif %}
                     </div>
                 {% endif %}
             </div>
@@ -243,12 +243,6 @@
             <div class="info-item">
                 <span class="info-label">Pinside Rating</span>
                 <span class="info-value">{{ game.pinside_rating }}</span>
-            </div>
-            {% endif %}
-            {% if game.ipdb_url %}
-            <div class="info-item">
-                <span class="info-label">IPDB</span>
-                <span class="info-value"><a href="{{ game.ipdb_url }}" target="_blank" rel="noopener noreferrer">View on IPDB</a></span>
             </div>
             {% endif %}
             <div class="info-item">
