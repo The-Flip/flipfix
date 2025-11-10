@@ -123,7 +123,8 @@ def report_list(request):
         if search:
             reports = reports.filter(
                 Q(problem_text__icontains=search) |
-                Q(reported_by_name__icontains=search)
+                Q(reported_by_name__icontains=search) |
+                Q(game__name__icontains=search)
             )
 
     # Calculate stats

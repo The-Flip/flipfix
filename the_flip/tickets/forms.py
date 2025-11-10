@@ -74,7 +74,7 @@ class ReportFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Search problem text or reporter name...'
+            'placeholder': 'Search game title, problem text, or reporter name...'
         })
     )
 
