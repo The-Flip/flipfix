@@ -9,7 +9,7 @@
 
 <div class="report-detail">
     <div class="report-header">
-        <h1>{{ report.game.name }}</h1>
+        <h1><a href="{% url 'game_detail' report.game.pk %}">{{ report.game.name }}</a> Problem Report</h1>
         <span class="badge badge-{{ report.status }} badge-large">
             {{ report.get_status_display }}
         </span>
