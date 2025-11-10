@@ -14,8 +14,7 @@
                 <a href="{% url 'home' %}">The Flip</a>
             </div>
             <div class="nav-links">
-                <a href="{% url 'report_list' %}">Reports</a>
-                <a href="{% url 'report_create' %}">Report a Problem</a>
+                <a href="{% url 'report_list' %}">Problem Reports</a>
                 {% if user.is_authenticated %}
                     {% if user.is_staff %}
                         <a href="{% url 'game_list' %}">Games</a>
@@ -28,7 +27,6 @@
                     {% endif %}
                 {% endif %}
                 {% if user.is_authenticated %}
-                    <span class="user-info">{{ user.get_full_name|default:user.username }}</span>
                     <form method="post" action="{% url 'logout' %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn-logout">Logout</button>
