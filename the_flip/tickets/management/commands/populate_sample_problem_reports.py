@@ -96,11 +96,9 @@ class Command(BaseCommand):
         # Sample problem reports with contextually appropriate content for our specific machines
         # Updates can be:
         # - Simple strings (just add a note)
-        # - Dicts with 'text' and 'close': True (closes the report)
-        # - Dicts with 'text' and 'reopen': True (reopens a closed report)
-        # - Dicts with 'text' and 'game_status': 'good'/'fixing'/'broken' (changes game status)
+        # - Dicts with 'text' and 'game_status': 'good'/'fixing'/'broken' (changes game status and auto-closes/opens report)
         problem_scenarios = [
-            # Baseball - BROKEN status - gooped-up mechanics
+            # Baseball - BROKEN status - gooped-up mechanics with multiple repair cycles
             {
                 'game_name': 'Baseball',
                 'type': ProblemReport.PROBLEM_OTHER,
@@ -108,12 +106,16 @@ class Command(BaseCommand):
                 'reporter_name': 'Museum Curator',
                 'reporter_contact': 'curator@museum.org',
                 'updates': [
-                    'Started cleaning process. Removing decades of gunk from mechanical components.',
+                    {'text': 'Started cleaning process. Removing decades of gunk from mechanical components.', 'game_status': Game.STATUS_FIXING},
                     'About 30% through cleaning. Found several broken springs that need replacement.',
                     'Ordered replacement springs from vintage parts supplier.',
+                    'Springs arrived. Installing and testing mechanism.',
+                    {'text': 'Mechanism working! Ready for display.', 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Spring broke again during demo. These vintage springs are fragile.', 'game_status': Game.STATUS_BROKEN},
+                    {'text': 'Ordered higher quality reproduction springs. Installing now.', 'game_status': Game.STATUS_FIXING},
                 ]
             },
-            # Star Trip - left flipper coil melted
+            # Star Trip - left flipper coil melted with full repair cycle ending in reopen
             {
                 'game_name': 'Star Trip',
                 'type': ProblemReport.PROBLEM_OTHER,
@@ -121,9 +123,12 @@ class Command(BaseCommand):
                 'reporter_name': 'Tom Wilson',
                 'reporter_contact': 'tom.w@email.com',
                 'updates': [
-                    'Opened up the cabinet. Left flipper coil is melted!',
+                    {'text': 'Opened up the cabinet. Left flipper coil is melted!', 'game_status': Game.STATUS_BROKEN},
                     'Investigating why coil melted - checking for electrical issues.',
-                    'Found short in wiring harness. Replacing coil and fixing short.',
+                    {'text': 'Found short in wiring harness. Replacing coil and fixing short.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Coil replaced, short fixed. Tested 50 games - working perfectly!', 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Flipper died again! Different issue - EOS switch burned out.', 'game_status': Game.STATUS_BROKEN},
+                    {'text': 'Replacing EOS switch and checking all connections.', 'game_status': Game.STATUS_FIXING},
                 ]
             },
             # Gorgar - transformer and cables
@@ -159,8 +164,8 @@ class Command(BaseCommand):
                 'text': 'Coin door lock is broken. Need to replace before putting on floor.',
                 'reporter_name': 'Lisa Anderson',
                 'updates': [
-                    'Lock ordered. Should arrive in 3-5 days.',
-                    {'text': 'Lock installed. Works perfectly.', 'close': True},
+                    {'text': 'Lock ordered. Should arrive in 3-5 days.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Lock installed. Works perfectly.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -169,13 +174,13 @@ class Command(BaseCommand):
                 'text': 'Initial machine check before putting on floor.',
                 'reporter_name': 'Jim Home',
                 'updates': [
-                    'Running through all switches and lights.',
+                    {'text': 'Running through all switches and lights.', 'game_status': Game.STATUS_FIXING},
                     'Found one burnt out GI bulb. Replaced.',
                     'All flippers working. Drop targets resetting properly.',
-                    {'text': 'Machine checks out. Ready for floor.', 'close': True, 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Machine checks out. Ready for floor.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
-            # Trade Winds - fixing status (early EM)
+            # Trade Winds - fixing status (early EM) with multiple repair attempts
             {
                 'game_name': 'Trade Winds',
                 'type': ProblemReport.PROBLEM_OTHER,
@@ -183,9 +188,12 @@ class Command(BaseCommand):
                 'reporter_name': 'Bob Smith',
                 'reporter_contact': '555-5678',
                 'updates': [
-                    'Inspecting replay mechanism. Lots of old hardened grease.',
+                    {'text': 'Inspecting replay mechanism. Lots of old hardened grease.', 'game_status': Game.STATUS_FIXING},
                     'Cleaned and re-lubricated replay counter mechanism.',
-                    'Testing - counter now advances properly!',
+                    {'text': 'Testing - counter now advances properly!', 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Counter stopped working again. Gear teeth are worn down.', 'game_status': Game.STATUS_BROKEN},
+                    'Searching for replacement gears. These 1950s parts are hard to find!',
+                    {'text': 'Found NOS replacement gear on eBay. Installing and testing.', 'game_status': Game.STATUS_FIXING},
                 ]
             },
             # The Addams Family - popular modern game, occasional issues
@@ -195,9 +203,9 @@ class Command(BaseCommand):
                 'text': 'Ball got stuck in the bookcase. Had to open playfield.',
                 'reporter_name': 'Jessica Lee',
                 'updates': [
-                    'Retrieved ball from bookcase VUK area.',
+                    {'text': 'Retrieved ball from bookcase VUK area.', 'game_status': Game.STATUS_FIXING},
                     'VUK kicker seems a bit weak. Adjusting.',
-                    {'text': 'Tested 20 times - kicking out reliably now.', 'close': True},
+                    {'text': 'Tested 20 times - kicking out reliably now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -207,12 +215,14 @@ class Command(BaseCommand):
                 'reporter_name': 'Mark Taylor',
                 'reporter_contact': 'mark@email.com',
                 'updates': [
-                    'Motor for Thing hand mechanism needs lubrication.',
-                    {'text': 'Lubricated motor and tested. Working smoothly.', 'close': True},
-                    {'text': 'Thing is stuck up again. Motor may be failing.', 'reopen': True},
+                    {'text': 'Motor for Thing hand mechanism needs lubrication.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Lubricated motor and tested. Working smoothly.', 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Thing is stuck up again. Motor may be failing.', 'game_status': Game.STATUS_BROKEN},
                     'Ordered replacement motor. Should arrive next week.',
-                    'New motor installed. Testing thoroughly.',
-                    {'text': 'Thing working perfectly with new motor!', 'close': True},
+                    {'text': 'New motor installed. Testing thoroughly.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Thing working perfectly with new motor!', 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Motor controller board failed. Thing stuck again!', 'game_status': Game.STATUS_BROKEN},
+                    {'text': 'Replacing motor controller board. Root cause identified.', 'game_status': Game.STATUS_FIXING},
                 ]
             },
             # Godzilla - modern game with tech issues
@@ -222,9 +232,9 @@ class Command(BaseCommand):
                 'text': 'Card reader not accepting any cards. Display shows "Card Error".',
                 'reporter_name': 'Rachel Green',
                 'updates': [
-                    'Card reader head was dirty from heavy use.',
+                    {'text': 'Card reader head was dirty from heavy use.', 'game_status': Game.STATUS_FIXING},
                     'Cleaned with alcohol swabs per manual.',
-                    {'text': 'Reading cards successfully now.', 'close': True},
+                    {'text': 'Reading cards successfully now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -234,8 +244,8 @@ class Command(BaseCommand):
                 'reporter_name': 'Kevin Brown',
                 'reporter_contact': '555-9012',
                 'updates': [
-                    'Found loose connector on topper LED strip.',
-                    {'text': 'Reconnected and secured. All topper lights working.', 'close': True},
+                    {'text': 'Found loose connector on topper LED strip.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Reconnected and secured. All topper lights working.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Teacher's Pet - vintage EM with high rating
@@ -245,9 +255,9 @@ class Command(BaseCommand):
                 'text': 'Score reels not advancing correctly on player 2.',
                 'reporter_name': 'Amy White',
                 'updates': [
-                    'Player 2 score reel is sticking. Cleaning mechanism.',
+                    {'text': 'Player 2 score reel is sticking. Cleaning mechanism.', 'game_status': Game.STATUS_FIXING},
                     'Found bent wiper on the tens reel. Straightening it out.',
-                    {'text': 'All reels advancing smoothly now. Tested 5 full games.', 'close': True},
+                    {'text': 'All reels advancing smoothly now. Tested 5 full games.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Hokus Pokus - EM with reels
@@ -258,9 +268,9 @@ class Command(BaseCommand):
                 'reporter_name': 'Daniel Martinez',
                 'reporter_contact': 'dan.m@email.com',
                 'updates': [
-                    'Chime plungers are sticky and not striking.',
+                    {'text': 'Chime plungers are sticky and not striking.', 'game_status': Game.STATUS_FIXING},
                     'Cleaned and adjusted all three chime units.',
-                    {'text': 'Beautiful chime sounds back! Tested thoroughly.', 'close': True},
+                    {'text': 'Beautiful chime sounds back! Tested thoroughly.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # The Hulk - early SS
@@ -270,8 +280,8 @@ class Command(BaseCommand):
                 'text': 'Display shows random characters. Not readable.',
                 'reporter_name': 'Nicole Garcia',
                 'updates': [
-                    'Reseated display ribbon cable.',
-                    {'text': 'Display clear and working now.', 'close': True},
+                    {'text': 'Reseated display ribbon cable.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Display clear and working now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Eight Ball Deluxe Limited Edition - classic SS
@@ -282,8 +292,8 @@ class Command(BaseCommand):
                 'reporter_name': 'Paul Rodriguez',
                 'reporter_contact': '555-3456',
                 'updates': [
-                    'Retrieved ball. Target bank spacing was too tight.',
-                    {'text': 'Adjusted target spacing. Tested extensively - no more sticking.', 'close': True},
+                    {'text': 'Retrieved ball. Target bank spacing was too tight.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Adjusted target spacing. Tested extensively - no more sticking.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # The Getaway - popular DMD era
@@ -294,10 +304,10 @@ class Command(BaseCommand):
                 'reporter_name': 'Steve Chen',
                 'reporter_contact': 'steve.c@email.com',
                 'updates': [
-                    'Supercharger gear teeth showing wear.',
+                    {'text': 'Supercharger gear teeth showing wear.', 'game_status': Game.STATUS_FIXING},
                     'Ordered replacement supercharger assembly.',
                     'New assembly arrived. Installing now.',
-                    {'text': 'Supercharger working smoothly. Sounds great!', 'close': True},
+                    {'text': 'Supercharger working smoothly. Sounds great!', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Hyperball - unique flipperless game
@@ -307,8 +317,8 @@ class Command(BaseCommand):
                 'text': 'Ball launcher feels weak. Barely making it to playfield.',
                 'reporter_name': 'Emily White',
                 'updates': [
-                    'Launcher spring tension is low. Adjusting.',
-                    {'text': 'Spring replaced and adjusted. Launching perfectly now.', 'close': True},
+                    {'text': 'Launcher spring tension is low. Adjusting.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Spring replaced and adjusted. Launching perfectly now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Derby Day - vintage EM
@@ -319,8 +329,8 @@ class Command(BaseCommand):
                 'reporter_name': 'William Chen',
                 'reporter_contact': 'w.chen@email.com',
                 'updates': [
-                    'Removed jammed quarter. Coin mech needs cleaning.',
-                    {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'close': True},
+                    {'text': 'Removed jammed quarter. Coin mech needs cleaning.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Roto Pool - vintage EM
@@ -331,10 +341,10 @@ class Command(BaseCommand):
                 'reporter_name': 'Chris Johnson',
                 'reporter_contact': '555-7890',
                 'updates': [
-                    'Motor for rotating playfield seized up from old grease.',
+                    {'text': 'Motor for rotating playfield seized up from old grease.', 'game_status': Game.STATUS_FIXING},
                     'Disassembling mechanism for thorough cleaning.',
                     'Cleaned and re-lubricated with proper light oil.',
-                    {'text': 'Playfield rotating smoothly again. Beautiful mechanism!', 'close': True},
+                    {'text': 'Playfield rotating smoothly again. Beautiful mechanism!', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Ballyhoo - very early PM
@@ -345,8 +355,8 @@ class Command(BaseCommand):
                 'reporter_name': 'Jennifer Mills',
                 'reporter_contact': '555-4321',
                 'updates': [
-                    'Tightening all loose pins. Some need replacement.',
-                    {'text': 'All pins secure. Playfield in excellent condition for 1932!', 'close': True},
+                    {'text': 'Tightening all loose pins. Some need replacement.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'All pins secure. Playfield in excellent condition for 1932!', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Carom - early EM with unknown status
@@ -357,11 +367,11 @@ class Command(BaseCommand):
                 'reporter_name': 'Museum Curator',
                 'reporter_contact': 'curator@museum.org',
                 'updates': [
-                    'Starting full inspection of 1937 machine.',
+                    {'text': 'Starting full inspection of 1937 machine.', 'game_status': Game.STATUS_FIXING},
                     'Totalizer scoring mechanism appears intact.',
                     'Testing electrical components. Some corrosion on contacts.',
                     'Cleaning contacts and testing scoring.',
-                    {'text': 'Machine is operational! Just needed cleaning. Ready for display.', 'close': True, 'game_status': Game.STATUS_GOOD},
+                    {'text': 'Machine is operational! Just needed cleaning. Ready for display.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             # Additional varied reports for good machines
@@ -372,9 +382,9 @@ class Command(BaseCommand):
                 'reporter_name': 'Alex Turner',
                 'reporter_contact': 'alex.t@email.com',
                 'updates': [
-                    'Measured coil voltage - within spec.',
+                    {'text': 'Measured coil voltage - within spec.', 'game_status': Game.STATUS_FIXING},
                     'Flipper rubber on right side is worn. Replacing.',
-                    {'text': 'New rubber installed. Both flippers feel equal now.', 'close': True},
+                    {'text': 'New rubber installed. Both flippers feel equal now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -383,8 +393,8 @@ class Command(BaseCommand):
                 'text': 'Bill acceptor not giving credits. Ate my $5!',
                 'reporter_name': 'Samantha Wright',
                 'updates': [
-                    'Bill stacker was full.',
-                    {'text': 'Emptied bill stacker. Refunded $5. Working now.', 'close': True},
+                    {'text': 'Bill stacker was full.', 'game_status': Game.STATUS_FIXING},
+                    {'text': 'Emptied bill stacker. Refunded $5. Working now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -394,9 +404,9 @@ class Command(BaseCommand):
                 'reporter_name': 'Tyler Brooks',
                 'reporter_contact': '555-2468',
                 'updates': [
-                    'Shaker relay stuck in closed position.',
+                    {'text': 'Shaker relay stuck in closed position.', 'game_status': Game.STATUS_FIXING},
                     'Replaced relay.',
-                    {'text': 'Shaker now activating only during proper game events.', 'close': True},
+                    {'text': 'Shaker now activating only during proper game events.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
             {
@@ -405,9 +415,9 @@ class Command(BaseCommand):
                 'text': 'Multiball lock not holding balls. Balls roll right back out.',
                 'reporter_name': 'Patricia Green',
                 'updates': [
-                    'Lock mechanism kicker coil weak.',
+                    {'text': 'Lock mechanism kicker coil weak.', 'game_status': Game.STATUS_FIXING},
                     'Cleaning coil sleeve and plunger.',
-                    {'text': 'Tested lock 30 times - holding balls securely now.', 'close': True},
+                    {'text': 'Tested lock 30 times - holding balls securely now.', 'game_status': Game.STATUS_GOOD},
                 ]
             },
         ]
@@ -474,34 +484,18 @@ class Command(BaseCommand):
                             update_obj = report.add_note(maintainer, update)
                         elif isinstance(update, dict):
                             text = update['text']
-                            if update.get('close'):
-                                # Close the report
-                                update_obj = report.set_status(
-                                    ProblemReport.STATUS_CLOSED,
-                                    maintainer,
-                                    text
-                                )
-                            elif update.get('reopen'):
-                                # Reopen the report
-                                update_obj = report.set_status(
-                                    ProblemReport.STATUS_OPEN,
+
+                            # Check if we should change game status
+                            # This automatically handles opening/closing the report
+                            if update.get('game_status'):
+                                update_obj = report.set_game_status(
+                                    update['game_status'],
                                     maintainer,
                                     text
                                 )
                             else:
                                 # Just a note
                                 update_obj = report.add_note(maintainer, text)
-
-                            # Check if we should also change game status
-                            if update.get('game_status'):
-                                game_status_obj = report.set_game_status(
-                                    update['game_status'],
-                                    maintainer,
-                                    f"Game status changed to {update['game_status']}"
-                                )
-                                if game_status_obj:
-                                    game_status_obj.created_at = update_time
-                                    game_status_obj.save(update_fields=['created_at'])
 
                         # Set the update's created_at timestamp
                         if update_obj:
