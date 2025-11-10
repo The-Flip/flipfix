@@ -6,8 +6,8 @@
 <div class="report-create">
     <div class="page-header">
         <h1>
-            {% if game %}
-                Report a Problem With <a href="{% url 'game_detail' game.pk %}">{{ game.name }}</a>
+            {% if machine %}
+                Report a Problem With <a href="{% url 'machine_detail' machine.slug %}">{{ machine.name }}</a>
             {% else %}
                 Report a Problem
             {% endif %}
@@ -24,16 +24,16 @@
         {% endif %}
 
         <div class="form-group">
-            {% if game %}
-                {{ form.game }}
+            {% if machine %}
+                {{ form.machine }}
             {% else %}
-                {{ form.game.label_tag }}
-                {{ form.game }}
-                {% if form.game.errors %}
-                    <div class="form-errors">{{ form.game.errors }}</div>
+                {{ form.machine.label_tag }}
+                {{ form.machine }}
+                {% if form.machine.errors %}
+                    <div class="form-errors">{{ form.machine.errors }}</div>
                 {% endif %}
-                {% if form.game.help_text %}
-                    <p class="form-help">{{ form.game.help_text }}</p>
+                {% if form.machine.help_text %}
+                    <p class="form-help">{{ form.machine.help_text }}</p>
                 {% endif %}
             {% endif %}
         </div>

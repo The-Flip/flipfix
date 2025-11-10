@@ -1,37 +1,48 @@
 from django import forms
-from .models import Game, ProblemReport, ReportUpdate
+from .models import MachineModel, MachineInstance, ProblemReport, ReportUpdate
 
 
 class GameFilterForm(forms.Form):
-    """Form for filtering games in the list view."""
+    """Form for filtering machine instances in the list view."""
 
-    TYPE_CHOICES = [
-        ('', 'All Types'),
-    ] + list(Game.TYPE_CHOICES)
+    ERA_CHOICES = [
+        ('', 'All Eras'),
+    ] + list(MachineModel.ERA_CHOICES)
 
-    STATUS_CHOICES = [
+    LOCATION_CHOICES = [
+        ('', 'All Locations'),
+    ] + list(MachineInstance.LOCATION_CHOICES)
+
+    OPERATIONAL_STATUS_CHOICES = [
         ('', 'All Statuses'),
-    ] + list(Game.STATUS_CHOICES)
+    ] + list(MachineInstance.OPERATIONAL_STATUS_CHOICES)
 
     search = forms.CharField(
         max_length=200,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Game name or manufacturer'
+            'placeholder': 'Machine name, manufacturer, or serial number'
         })
     )
 
-    type = forms.ChoiceField(
-        choices=TYPE_CHOICES,
+    era = forms.ChoiceField(
+        choices=ERA_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
-    status = forms.ChoiceField(
-        choices=STATUS_CHOICES,
+    location = forms.ChoiceField(
+        choices=LOCATION_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    operational_status = forms.ChoiceField(
+        choices=OPERATIONAL_STATUS_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Status'
     )
 
 
@@ -62,10 +73,10 @@ class ReportFilterForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
-    game = forms.ModelChoiceField(
-        queryset=Game.objects.none(),
+    machine = forms.ModelChoiceField(
+        queryset=MachineInstance.objects.none(),
         required=False,
-        empty_label='All Games',
+        empty_label='All Machines',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
@@ -74,44 +85,46 @@ class ReportFilterForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Search game title, problem text, or reporter name...'
+            'placeholder': 'Search machine name, problem text, or reporter name...'
         })
     )
 
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['game'].queryset = Game.objects.exclude(status=Game.STATUS_BROKEN).order_by('name')
+        self.fields['machine'].queryset = MachineInstance.objects.exclude(
+            operational_status=MachineInstance.OPERATIONAL_STATUS_BROKEN
+        ).select_related('model').order_by('model__name', 'serial_number')
 
 
 class ReportUpdateForm(forms.ModelForm):
     """Form for adding updates to problem reports (maintainers only)."""
 
-    game_status = forms.ChoiceField(
+    machine_status = forms.ChoiceField(
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Update Game Status'
+        label='Update Machine Status'
     )
 
     def __init__(self, *args, **kwargs):
-        # Extract current_game_status if provided
-        current_game_status = kwargs.pop('current_game_status', None)
+        # Extract current_machine_status if provided
+        current_machine_status = kwargs.pop('current_machine_status', None)
         super().__init__(*args, **kwargs)
 
-        # Build choices from Game.STATUS_CHOICES, excluding UNKNOWN and current status
+        # Build choices from MachineInstance.OPERATIONAL_STATUS_CHOICES, excluding UNKNOWN and current status
         available_choices = [('', '-- No Change --')]
-        for status_code, status_label in Game.STATUS_CHOICES:
-            if status_code in {Game.STATUS_UNKNOWN}:  # Skip unknown status for updates
+        for status_code, status_label in MachineInstance.OPERATIONAL_STATUS_CHOICES:
+            if status_code in {MachineInstance.OPERATIONAL_STATUS_UNKNOWN}:  # Skip unknown status for updates
                 continue
-            if status_code == current_game_status:
+            if status_code == current_machine_status:
                 continue
             available_choices.append((status_code, status_label))
 
-        self.fields['game_status'].choices = available_choices
+        self.fields['machine_status'].choices = available_choices
 
     class Meta:
         model = ReportUpdate
-        fields = ['text', 'game_status']
+        fields = ['text', 'machine_status']
         widgets = {
             'text': forms.Textarea(attrs={
                 'rows': 4,
@@ -128,21 +141,23 @@ class ProblemReportCreateForm(forms.ModelForm):
     """Form for creating new problem reports (public + maintainers)."""
 
     def __init__(self, *args, **kwargs):
-        # Extract game if provided (for QR code scenario)
-        game = kwargs.pop('game', None)
+        # Extract machine if provided (for QR code scenario)
+        machine = kwargs.pop('machine', None)
         # Extract user if provided (to hide contact fields for authenticated users)
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        if game:
-            # QR code scenario: hide game field and pre-select
-            self.fields['game'].widget = forms.HiddenInput()
-            self.fields['game'].initial = game
+        if machine:
+            # QR code scenario: hide machine field and pre-select
+            self.fields['machine'].widget = forms.HiddenInput()
+            self.fields['machine'].initial = machine
         else:
             # General scenario: show dropdown
-            self.fields['game'].queryset = Game.objects.exclude(status=Game.STATUS_BROKEN).order_by('name')
+            self.fields['machine'].queryset = MachineInstance.objects.exclude(
+                operational_status=MachineInstance.OPERATIONAL_STATUS_BROKEN
+            ).select_related('model').order_by('model__name', 'serial_number')
             # Customize the label to show "Name (Year Manufacturer)"
-            self.fields['game'].label_from_instance = lambda obj: f"{obj.name} ({obj.year} {obj.manufacturer})"
+            self.fields['machine'].label_from_instance = lambda obj: f"{obj.name} ({obj.model.year} {obj.model.manufacturer})"
 
         # Hide contact fields for authenticated users
         if user and user.is_authenticated:
@@ -153,9 +168,9 @@ class ProblemReportCreateForm(forms.ModelForm):
 
     class Meta:
         model = ProblemReport
-        fields = ['game', 'problem_type', 'problem_text', 'reported_by_name', 'reported_by_contact']
+        fields = ['machine', 'problem_type', 'problem_text', 'reported_by_name', 'reported_by_contact']
         widgets = {
-            'game': forms.Select(attrs={'class': 'form-select'}),
+            'machine': forms.Select(attrs={'class': 'form-select'}),
             'problem_type': forms.RadioSelect(),
             'problem_text': forms.Textarea(attrs={
                 'rows': 5,
@@ -172,7 +187,7 @@ class ProblemReportCreateForm(forms.ModelForm):
             }),
         }
         labels = {
-            'game': 'Which game?',
+            'machine': 'Which machine?',
             'problem_type': 'What type of problem?',
             'problem_text': 'Problem description',
             'reported_by_name': 'Your name',

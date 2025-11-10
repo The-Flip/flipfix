@@ -21,7 +21,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, ReportUpdateForm
-from .models import Game, ProblemReport
+from .models import MachineInstance, ProblemReport
 
 
 def _get_request_ip(request):
@@ -92,7 +92,7 @@ def report_list(request):
     Display list of problem reports with filtering.
     Accessible to everyone (public + maintainers).
     """
-    reports = ProblemReport.objects.all().select_related('game').order_by('-created_at')
+    reports = ProblemReport.objects.all().select_related('machine__model').order_by('-created_at')
 
     # Default to showing open reports when no status filter is provided
     query_params = request.GET.copy()
@@ -113,10 +113,10 @@ def report_list(request):
         if problem_type and problem_type != 'all':
             reports = reports.filter(problem_type=problem_type)
 
-        # Game filter
-        game = form.cleaned_data.get('game')
-        if game:
-            reports = reports.filter(game=game)
+        # Machine filter
+        machine = form.cleaned_data.get('machine')
+        if machine:
+            reports = reports.filter(machine=machine)
 
         # Search filter
         search = form.cleaned_data.get('search')
@@ -124,7 +124,8 @@ def report_list(request):
             reports = reports.filter(
                 Q(problem_text__icontains=search) |
                 Q(reported_by_name__icontains=search) |
-                Q(game__name__icontains=search)
+                Q(machine__name_override__icontains=search) |
+                Q(machine__model__name__icontains=search)
             )
 
     # Calculate stats
@@ -151,7 +152,7 @@ def report_detail(request, pk):
     Everyone can view, but only authenticated maintainers can add updates.
     """
     report = get_object_or_404(
-        ProblemReport.objects.select_related('game').prefetch_related(
+        ProblemReport.objects.select_related('machine__model').prefetch_related(
             'updates__maintainer__user'
         ),
         pk=pk
@@ -170,24 +171,24 @@ def report_detail(request, pk):
         maintainer = getattr(request.user, 'maintainer', None)
 
         if 'add_update' in request.POST:
-            form = ReportUpdateForm(request.POST, current_game_status=report.game.status)
+            form = ReportUpdateForm(request.POST, current_machine_status=report.machine.operational_status)
             if form.is_valid():
                 text = form.cleaned_data['text']
-                game_status = form.cleaned_data.get('game_status')
+                machine_status = form.cleaned_data.get('machine_status')
 
-                # If game status was changed, use set_game_status
-                if game_status:
-                    report.set_game_status(game_status, maintainer, text)
-                    messages.success(request, f'Update added and game status changed to {dict(Game.STATUS_CHOICES)[game_status]}.')
+                # If machine status was changed, use set_machine_status
+                if machine_status:
+                    report.set_machine_status(machine_status, maintainer, text)
+                    messages.success(request, f'Update added and machine status changed to {dict(MachineInstance.OPERATIONAL_STATUS_CHOICES)[machine_status]}.')
                 else:
-                    # No game status change, just add a note
+                    # No machine status change, just add a note
                     report.add_note(maintainer, text)
                     messages.success(request, 'Update added successfully.')
                 return redirect('report_detail', pk=pk)
 
     # Create empty form for GET requests or failed POST
     if can_update and form is None:
-        form = ReportUpdateForm(current_game_status=report.game.status)
+        form = ReportUpdateForm(current_machine_status=report.machine.operational_status)
 
     return render(request, 'tickets/report_detail.html', {
         'report': report,
@@ -196,21 +197,24 @@ def report_detail(request, pk):
     })
 
 
-def report_create(request, game_id=None):
+def report_create(request, machine_slug=None):
     """
     Create a new problem report.
 
-    If game_id is provided (QR code scenario), the game is pre-selected.
+    If machine_slug is provided (QR code scenario), the machine is pre-selected.
     Otherwise, user selects from dropdown.
 
     Accessible to everyone (public + maintainers).
     """
-    game = None
-    if game_id:
-        game = get_object_or_404(Game.objects.exclude(status=Game.STATUS_BROKEN), pk=game_id)
+    machine = None
+    if machine_slug:
+        machine = get_object_or_404(
+            MachineInstance.objects.exclude(operational_status=MachineInstance.OPERATIONAL_STATUS_BROKEN),
+            slug=machine_slug
+        )
 
     if request.method == 'POST':
-        form = ProblemReportCreateForm(request.POST, game=game, user=request.user)
+        form = ProblemReportCreateForm(request.POST, machine=machine, user=request.user)
         if form.is_valid():
             ip_address = _get_request_ip(request)
             if _report_submission_rate_limit_exceeded(ip_address):
@@ -235,18 +239,18 @@ def report_create(request, game_id=None):
                 messages.success(request, 'Problem report submitted successfully. Thank you!')
                 return redirect('report_detail', pk=report.pk)
     else:
-        form = ProblemReportCreateForm(game=game, user=request.user)
+        form = ProblemReportCreateForm(machine=machine, user=request.user)
 
     return render(request, 'tickets/report_create.html', {
         'form': form,
-        'game': game,
+        'machine': machine,
     })
 
 
 @login_required
-def game_list(request):
+def machine_list(request):
     """
-    Display list of all games/machines.
+    Display list of all machine instances.
     Only accessible to authenticated staff and maintainers.
     """
     # Check permission (staff users or maintainers)
@@ -254,7 +258,7 @@ def game_list(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('report_list')
 
-    games = Game.objects.all().order_by('name')
+    machines = MachineInstance.objects.all().select_related('model').order_by('model__name', 'serial_number')
 
     form = GameFilterForm(request.GET or None)
 
@@ -262,36 +266,43 @@ def game_list(request):
         # Search functionality
         search = form.cleaned_data.get('search')
         if search:
-            games = games.filter(
-                Q(name__icontains=search) |
-                Q(manufacturer__icontains=search)
+            machines = machines.filter(
+                Q(name_override__icontains=search) |
+                Q(model__name__icontains=search) |
+                Q(model__manufacturer__icontains=search) |
+                Q(serial_number__icontains=search)
             )
 
-        # Filter by type
-        game_type = form.cleaned_data.get('type')
-        if game_type:
-            games = games.filter(type=game_type)
+        # Filter by era
+        era = form.cleaned_data.get('era')
+        if era:
+            machines = machines.filter(model__era=era)
 
-        # Filter by status
-        status = form.cleaned_data.get('status')
-        if status:
-            games = games.filter(status=status)
+        # Filter by location
+        location = form.cleaned_data.get('location')
+        if location:
+            machines = machines.filter(location=location)
+
+        # Filter by operational status
+        operational_status = form.cleaned_data.get('operational_status')
+        if operational_status:
+            machines = machines.filter(operational_status=operational_status)
 
     # Pagination
-    paginator = Paginator(games, 50)
+    paginator = Paginator(machines, 50)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'tickets/game_list.html', {
+    return render(request, 'tickets/machine_list.html', {
         'page_obj': page_obj,
         'form': form,
     })
 
 
 @login_required
-def game_detail(request, pk):
+def machine_detail(request, slug):
     """
-    Display game details with recent reports.
+    Display machine details with recent reports.
     Only accessible to authenticated staff and maintainers.
     """
     # Check permission (staff users or maintainers)
@@ -299,21 +310,21 @@ def game_detail(request, pk):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('report_list')
 
-    game = get_object_or_404(Game, pk=pk)
+    machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
 
-    # Get recent reports for this game
-    recent_reports = ProblemReport.objects.filter(game=game).order_by('-created_at')[:10]
+    # Get recent reports for this machine
+    recent_reports = ProblemReport.objects.filter(machine=machine).order_by('-created_at')[:10]
 
-    return render(request, 'tickets/game_detail.html', {
-        'game': game,
+    return render(request, 'tickets/machine_detail.html', {
+        'machine': machine,
         'recent_reports': recent_reports,
     })
 
 
 @login_required
-def game_qr(request, pk):
+def machine_qr(request, slug):
     """
-    Display QR code for a game (print-optimized page).
+    Display QR code for a machine (print-optimized page).
     Only accessible to authenticated staff and maintainers.
     """
     # Check permission (staff users or maintainers)
@@ -321,12 +332,12 @@ def game_qr(request, pk):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('report_list')
 
-    game = get_object_or_404(Game, pk=pk)
+    machine = get_object_or_404(MachineInstance, slug=slug)
 
     # Generate QR code
-    # The QR code will link to the report creation page for this game
+    # The QR code will link to the report creation page for this machine
     qr_url = request.build_absolute_uri(
-        reverse('report_create_qr', args=[game.pk])
+        reverse('report_create_qr', args=[machine.slug])
     )
 
     # Create QR code with high error correction to allow logo embedding
@@ -383,8 +394,14 @@ def game_qr(request, pk):
     img.save(buffer, format='PNG')
     img_str = base64.b64encode(buffer.getvalue()).decode()
 
-    return render(request, 'tickets/game_qr.html', {
-        'game': game,
+    return render(request, 'tickets/machine_qr.html', {
+        'machine': machine,
         'qr_code_data': img_str,
         'qr_url': qr_url,
     })
+
+
+# Backwards compatibility views
+game_list = machine_list
+game_detail = machine_detail
+game_qr = machine_qr

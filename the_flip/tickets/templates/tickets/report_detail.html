@@ -1,6 +1,6 @@
 {% extends 'tickets/base.html' %}
 
-{% block title %}{{ report.game.name }} - Problem Report{% endblock %}
+{% block title %}{{ report.machine.name }} - Problem Report{% endblock %}
 
 {% block content %}
 <div class="breadcrumb">
@@ -9,7 +9,7 @@
 
 <div class="report-detail">
     <div class="report-header">
-        <h1><a href="{% url 'game_detail' report.game.pk %}">{{ report.game.name }}</a> Problem Report</h1>
+        <h1><a href="{% url 'machine_detail' report.machine.slug %}">{{ report.machine.name }}</a> Problem Report</h1>
         <span class="badge badge-{{ report.status }} badge-large">
             {{ report.get_status_display }}
         </span>
@@ -22,9 +22,9 @@
         </div>
 
         <div class="info-card">
-            <h3>Game Status</h3>
+            <h3>Machine Status</h3>
             <p>
-                <span class="badge badge-{{ report.game.status }}">{{ report.game.get_status_display }}</span>
+                <span class="badge badge-{{ report.machine.operational_status }}">{{ report.machine.get_operational_status_display }}</span>
             </p>
         </div>
 
@@ -68,12 +68,12 @@
                                 {% endif %}
                             </strong>
                             <span class="update-time">{{ update.created_at|date:"M d, Y g:i A" }}</span>
-                            {% if update.game_status %}
-                                <span class="badge badge-{{ update.game_status }} badge-small">
-                                    Game: {{ update.get_game_status_display }}
+                            {% if update.machine_status %}
+                                <span class="badge badge-{{ update.machine_status }} badge-small">
+                                    Machine: {{ update.get_machine_status_display }}
                                 </span>
                             {% endif %}
-                            {% if update.game_status and update.status %}
+                            {% if update.machine_status and update.status %}
                                 <span style="margin: 0 8px; color: #999;">→</span>
                             {% endif %}
                             {% if update.status %}
@@ -110,10 +110,10 @@
                 </div>
 
                 <div class="form-group">
-                    {{ form.game_status.label_tag }}
-                    {{ form.game_status }}
-                    {% if form.game_status.errors %}
-                        <div class="form-errors">{{ form.game_status.errors }}</div>
+                    {{ form.machine_status.label_tag }}
+                    {{ form.machine_status }}
+                    {% if form.machine_status.errors %}
+                        <div class="form-errors">{{ form.machine_status.errors }}</div>
                     {% endif %}
                 </div>
 

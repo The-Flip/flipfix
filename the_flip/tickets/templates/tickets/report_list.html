@@ -78,8 +78,8 @@
             </div>
 
             <div class="form-group">
-                <label>{{ form.game.label }}</label>
-                {{ form.game }}
+                <label>{{ form.machine.label }}</label>
+                {{ form.machine }}
             </div>
 
             <div class="form-group">
@@ -98,7 +98,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Game</th>
+                            <th>Machine</th>
                             <th>Problem</th>
                             <th>Status</th>
                             <th>Reported</th>
@@ -108,7 +108,7 @@
                     <tbody>
                         {% for report in page_obj %}
                         <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
-                            <td><strong>{{ report.game.name }}</strong> ({{ report.game.year }} {{ report.game.manufacturer }})</td>
+                            <td><strong>{{ report.machine.name }}</strong> ({{ report.machine.model.year }} {{ report.machine.model.manufacturer }})</td>
                             <td>
                                 {% if report.problem_type == 'other' and report.problem_text %}
                                     {{ report.problem_text|truncatechars:80 }}

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django import forms
-from .models import Game, Maintainer, ProblemReport, ReportUpdate
+from .models import MachineModel, MachineInstance, Maintainer, ProblemReport, ReportUpdate
 
 
 class CustomAdminSite(AdminSite):
@@ -31,11 +31,19 @@ class CustomAdminSite(AdminSite):
             'Problem Report Updates': 2,
         }
 
+        # Custom ordering for Games app models
+        games_order = {
+            'Machine Models': 1,
+            'Machine Instances': 2,
+        }
+
         for app in app_list:
             if app['app_label'] == 'auth':
                 app['models'].sort(key=lambda x: auth_order.get(x['name'], 999))
             elif app['app_label'] == 'tickets':
                 app['models'].sort(key=lambda x: game_maintenance_order.get(x['name'], 999))
+            elif app['app_label'] == 'games':
+                app['models'].sort(key=lambda x: games_order.get(x['name'], 999))
 
         # Sort apps by custom order
         app_list = sorted(app_list, key=lambda x: app_order.get(x['app_label'], 999))
@@ -47,49 +55,95 @@ class CustomAdminSite(AdminSite):
 admin.site.__class__ = CustomAdminSite
 
 
-class GameAdminProxy(Game):
-    """Proxy model to display Games under its own app section."""
+class MachineModelAdminProxy(MachineModel):
+    """Proxy model to display Machine Models under the Games app section."""
     class Meta:
         proxy = True
         app_label = 'games'
-        verbose_name = 'Game'
-        verbose_name_plural = 'Games'
+        verbose_name = 'Machine Model'
+        verbose_name_plural = 'Machine Models'
 
 
-class GameAdminForm(forms.ModelForm):
+class MachineModelAdminForm(forms.ModelForm):
     class Meta:
-        model = GameAdminProxy
+        model = MachineModelAdminProxy
         fields = '__all__'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set the type field to use only the defined choices without a blank option
-        self.fields['type'].choices = Game.TYPE_CHOICES
-        self.fields['type'].required = True
-        # Set the status field to use only the defined choices without a blank option
-        self.fields['status'].choices = Game.STATUS_CHOICES
-        self.fields['status'].required = True
+        # Set the era field to use only the defined choices without a blank option
+        self.fields['era'].choices = MachineModel.ERA_CHOICES
+        self.fields['era'].required = True
 
 
-@admin.register(GameAdminProxy)
-class GameAdmin(admin.ModelAdmin):
-    form = GameAdminForm
-    list_display = ['name', 'manufacturer', 'year', 'type', 'system', 'pinside_rating', 'status']
-    list_filter = ['type', 'status', 'system']
+@admin.register(MachineModelAdminProxy)
+class MachineModelAdmin(admin.ModelAdmin):
+    form = MachineModelAdminForm
+    list_display = ['name', 'manufacturer', 'year', 'era', 'system', 'pinside_rating']
+    list_filter = ['era', 'manufacturer', 'year']
     search_fields = ['name', 'manufacturer', 'system']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'manufacturer', 'month', 'year')
+            'fields': ('name', 'manufacturer', 'month', 'year', 'era')
         }),
         ('Technical Details', {
-            'fields': ('type', 'system', 'scoring', 'flipper_count')
+            'fields': ('system', 'scoring', 'flipper_count')
         }),
         ('Community', {
-            'fields': ('pinside_rating', 'ipdb_url')
+            'fields': ('pinside_rating', 'ipdb_id')
         }),
-        ('Status', {
-            'fields': ('status',)
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+class MachineInstanceAdminProxy(MachineInstance):
+    """Proxy model to display Machine Instances under the Games app section."""
+    class Meta:
+        proxy = True
+        app_label = 'games'
+        verbose_name = 'Machine Instance'
+        verbose_name_plural = 'Machine Instances'
+
+
+class MachineInstanceAdminForm(forms.ModelForm):
+    class Meta:
+        model = MachineInstanceAdminProxy
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the operational_status field to use only the defined choices without a blank option
+        self.fields['operational_status'].choices = MachineInstance.OPERATIONAL_STATUS_CHOICES
+        self.fields['operational_status'].required = True
+        # Set the location field choices if location is provided
+        if 'location' in self.fields:
+            self.fields['location'].choices = [('', '---------')] + list(MachineInstance.LOCATION_CHOICES)
+
+
+@admin.register(MachineInstanceAdminProxy)
+class MachineInstanceAdmin(admin.ModelAdmin):
+    form = MachineInstanceAdminForm
+    list_display = ['name', 'model', 'serial_number', 'location', 'operational_status']
+    list_filter = ['location', 'operational_status', 'model__era', 'model__manufacturer']
+    search_fields = ['name_override', 'model__name', 'model__manufacturer', 'serial_number']
+    readonly_fields = ['slug', 'created_at', 'updated_at']
+    fieldsets = (
+        ('Identity', {
+            'fields': ('model', 'name_override', 'slug')
+        }),
+        ('Physical Identification', {
+            'fields': ('serial_number',)
+        }),
+        ('Acquisition', {
+            'fields': ('acquisition_notes',),
+            'classes': ('collapse',)
+        }),
+        ('Location & Status', {
+            'fields': ('location', 'operational_status')
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
@@ -116,9 +170,9 @@ class MaintainerAdmin(admin.ModelAdmin):
 
 @admin.register(ProblemReport)
 class ProblemReportAdmin(admin.ModelAdmin):
-    list_display = ['game', 'problem_type', 'status', 'created_at', 'reported_by']
+    list_display = ['machine', 'problem_type', 'status', 'created_at', 'reported_by']
     list_filter = ['status', 'problem_type', 'created_at']
-    search_fields = ['game__name', 'problem_text', 'reported_by_name']
+    search_fields = ['machine__name_override', 'machine__model__name', 'problem_text', 'reported_by_name']
     readonly_fields = ['created_at']
 
     @admin.display(description='Reported By')
@@ -130,7 +184,7 @@ class ProblemReportAdmin(admin.ModelAdmin):
 
 @admin.register(ReportUpdate)
 class ReportUpdateAdmin(admin.ModelAdmin):
-    list_display = ['report', 'maintainer', 'status', 'created_at']
-    list_filter = ['status', 'created_at']
-    search_fields = ['report__game__name', 'text']
+    list_display = ['report', 'maintainer', 'status', 'machine_status', 'created_at']
+    list_filter = ['status', 'machine_status', 'created_at']
+    search_fields = ['report__machine__name_override', 'report__machine__model__name', 'text']
     readonly_fields = ['created_at']

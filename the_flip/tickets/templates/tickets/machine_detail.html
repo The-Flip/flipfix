@@ -1,0 +1,222 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}{{ machine.name }} - The Flip{% endblock %}
+
+{% block content %}
+<style>
+    .machine-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .back-link {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 20px;
+        display: inline-block;
+    }
+
+    .back-link a {
+        color: #2196F3;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .back-link a:hover {
+        color: #1976D2;
+        text-decoration: none;
+    }
+
+    .machine-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .machine-title h1 {
+        margin: 0;
+        font-size: 2em;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .machine-meta {
+        color: #666;
+        font-size: 1.1em;
+        margin-top: 10px;
+    }
+
+    .machine-meta-separator {
+        margin: 0 8px;
+        color: #999;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.95em;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: background 0.2s;
+    }
+
+    .btn-primary {
+        background: #2196F3;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1976D2;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #2196F3;
+        border: 2px solid #2196F3;
+    }
+
+    .btn-secondary:hover {
+        background: #f0f8ff;
+    }
+
+
+    .recent-reports h2 {
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        color: #2c3e50;
+    }
+
+    .reports-table table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .reports-table th,
+    .reports-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .reports-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .reports-table .clickable-row {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .reports-table .clickable-row:hover {
+        background: #f8f9fa;
+    }
+
+    @media (max-width: 768px) {
+        .header-top {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-buttons {
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+        }
+
+
+        .report-meta {
+            flex-direction: column;
+            gap: 5px;
+        }
+    }
+</style>
+
+<div class="machine-detail-container">
+    <div class="back-link">
+        <a href="{% url 'machine_list' %}">← Back to Machines</a>
+    </div>
+
+    <div class="machine-header">
+        <div class="header-top">
+            <div class="machine-title">
+                <h1>
+                    <span>{{ machine.name }}</span>
+                    <span class="badge badge-{{ machine.operational_status }}">Status: {{ machine.get_operational_status_display }}</span>
+                </h1>
+                <div class="machine-meta">
+                    {% if machine.model.year %}{{ machine.model.year }}{% endif %}{% if machine.model.year and machine.model.manufacturer %}<span class="machine-meta-separator">•</span>{% endif %}{% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}{% if machine.model.year or machine.model.manufacturer %}<span class="machine-meta-separator">•</span>{% endif %}{{ machine.model.get_era_display }}{% if machine.model.flipper_count %}<span class="machine-meta-separator">•</span>{{ machine.model.flipper_count }} Flipper{% if machine.model.flipper_count != "1" %}s{% endif %}{% endif %}{% if machine.model.scoring %}<span class="machine-meta-separator">•</span>{{ machine.model.scoring }} Scoring{% endif %}{% if machine.location %}<span class="machine-meta-separator">•</span>{{ machine.get_location_display }}{% endif %}{% if machine.serial_number %}<span class="machine-meta-separator">•</span>SN: {{ machine.serial_number }}{% endif %}{% if machine.model.ipdb_id %}<span class="machine-meta-separator">•</span><a href="https://www.ipdb.org/machine.cgi?id={{ machine.model.ipdb_id }}" target="_blank" rel="noopener noreferrer" style="color: #2196F3; text-decoration: none;">IPDB ↗</a>{% endif %}
+                </div>
+            </div>
+            <div class="action-buttons">
+                <a href="{% url 'machine_qr' machine.slug %}" class="btn btn-secondary">QR Code</a>
+                <a href="{% url 'report_create_qr' machine.slug %}" class="btn btn-primary">Report a Problem</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-reports">
+        <h2>Latest Problem Reports</h2>
+
+        {% if recent_reports %}
+            <div class="reports-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Problem</th>
+                            <th>Reporter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recent_reports %}
+                        <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
+                            <td>
+                                <span class="badge badge-{{ report.status }}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ report.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>
+                                {% if report.problem_type == 'other' and report.problem_text %}
+                                    {{ report.problem_text|truncatechars:80 }}
+                                {% elif report.problem_text %}
+                                    {{ report.get_problem_type_display }} - {{ report.problem_text|truncatechars:80 }}
+                                {% else %}
+                                    {{ report.get_problem_type_display }}
+                                {% endif %}
+                            </td>
+                            <td>{{ report.reported_by_name|default:"Anonymous" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No problem reports for this machine yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
