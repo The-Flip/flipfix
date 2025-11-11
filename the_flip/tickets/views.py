@@ -21,7 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm, MachineTaskFilterForm
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm, MachineTaskFilterForm, MachineLogFilterForm
 from .models import MachineInstance, Task, LogEntry
 
 
@@ -541,7 +541,20 @@ def machine_log_list(request, slug):
     # Get all logs for this machine (both standalone and task-related)
     logs = LogEntry.objects.filter(
         machine=machine
-    ).prefetch_related('maintainers__user', 'task').order_by('-created_at')
+    ).prefetch_related('maintainers__user', 'task')
+
+    # Apply search filter
+    form = MachineLogFilterForm(request.GET or None)
+
+    if form.is_valid():
+        search = form.cleaned_data.get('search')
+        if search:
+            logs = logs.filter(
+                Q(text__icontains=search) |
+                Q(task__problem_text__icontains=search)
+            )
+
+    logs = logs.order_by('-created_at')
 
     # Pagination
     paginator = Paginator(logs, 25)
@@ -551,6 +564,7 @@ def machine_log_list(request, slug):
     return render(request, 'tickets/machine_log_list.html', {
         'machine': machine,
         'page_obj': page_obj,
+        'form': form,
     })
 
 

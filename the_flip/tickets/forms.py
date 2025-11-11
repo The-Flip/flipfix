@@ -323,3 +323,16 @@ class LogWorkForm(forms.ModelForm):
         labels = {
             'text': 'Work description',
         }
+
+
+class MachineLogFilterForm(forms.Form):
+    """Form for filtering work logs on the machine log list page."""
+
+    search = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search log text or related task description...'
+        })
+    )

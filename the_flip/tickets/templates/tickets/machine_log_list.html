@@ -12,6 +12,16 @@
     <a href="{% url 'machine_log_create' machine.slug %}" class="btn btn-primary">Log Work</a>
 </div>
 
+<div style="margin-bottom: 20px;">
+    <form method="get" style="display: flex; gap: 10px; align-items: center;">
+        {{ form.search }}
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if request.GET.search %}
+            <a href="{% url 'machine_log_list' machine.slug %}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
 {% if page_obj %}
     <div class="reports-table">
         <table>
@@ -61,8 +71,8 @@
     {% if page_obj.has_other_pages %}
     <div class="pagination">
         {% if page_obj.has_previous %}
-            <a href="?page=1" class="page-link">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}" class="page-link">Previous</a>
+            <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="page-link">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="page-link">Previous</a>
         {% endif %}
 
         <span class="page-current">
@@ -70,8 +80,8 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="page-link">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="page-link">Last</a>
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="page-link">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}" class="page-link">Last</a>
         {% endif %}
     </div>
     {% endif %}
