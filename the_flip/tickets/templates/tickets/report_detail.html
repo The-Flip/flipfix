@@ -6,16 +6,15 @@
 {% block content %}
 <div class="report-detail">
     <div class="report-header">
-        <h1><a href="{% url 'machine_detail' report.machine.slug %}">{{ report.machine.name }}</a> Task</h1>
-        <span class="badge badge-{{ report.status }} badge-large">
-            {{ report.get_status_display }}
-        </span>
-    </div>
-
-    <div class="report-summary">
-        <p>
+        <h1>
+            <span class="badge badge-{{ report.status }} badge-large">
+                {{ report.get_status_display }}
+            </span>
+            Task on <a href="{% url 'machine_detail' report.machine.slug %}">{{ report.machine.name }}</a>
+        </h1>
+        <h2>
             Reported {{ report.created_at|smart_date }}{% reporter_display report as reporter %}{% if reporter %} by {{ reporter }}{% endif %}.{% if report.problem_type != 'other' %} Problem: {{ report.get_problem_type_display }}.{% endif %} Current machine status: <span class="badge badge-{{ report.machine.operational_status }}">{{ report.machine.get_operational_status_display }}</span>
-        </p>
+        </h2>
     </div>
 
     <div class="problem-description">

@@ -469,9 +469,6 @@ textarea.form-control {
 }
 
 .report-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid #ecf0f1;
@@ -480,19 +477,26 @@ textarea.form-control {
 .report-header h1 {
     color: #2c3e50;
     font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.report-header h2 {
+    margin: 0;
+    color: #555;
+    font-size: 1.1rem;
+    font-weight: 400;
+    line-height: 1.6;
 }
 
 .report-summary {
     margin-bottom: 2rem;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-radius: 4px;
 }
 
-.report-summary p {
+.report-summary h2 {
     margin: 0;
-    color: #2c3e50;
-    font-size: 1rem;
+    color: #555;
+    font-size: 1.1rem;
+    font-weight: 400;
     line-height: 1.6;
 }
 
