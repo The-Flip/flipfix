@@ -35,7 +35,12 @@ Support three types of workflows:
   - `task` - ForeignKey to Task (null=True, blank=True)
     - When `task` is None, it's a standalone log entry
     - When `task` is set, it's an update to that task
-  - All existing ReportUpdate fields, but `task` becomes optional
+  - `maintainer` - **REMOVED** (replaced by many-to-many relationship)
+  - `maintainers` - ManyToManyField to Maintainer (NEW)
+    - Supports multiple maintainers working together on a log entry
+    - By default, populated with just the creating maintainer
+    - Creator can select additional maintainers who participated in the work
+  - All other existing ReportUpdate fields remain
 
 ### Visibility
 
@@ -49,7 +54,10 @@ Support three types of workflows:
 1. Rename `ProblemReport` → `Task`
 2. Rename `ReportUpdate` → `LogEntry`
 3. Make `task` (formerly `report`) nullable
-4. Update all foreign key relationships and related_names
+4. Change `maintainer` from ForeignKey to ManyToManyField `maintainers`
+   - For existing LogEntries, migrate single maintainer to many-to-many
+   - Handle null maintainer case (some updates may not have a maintainer)
+5. Update all foreign key relationships and related_names
 
 
 ## UI Changes
@@ -71,6 +79,10 @@ Form should support:
 Form should have:
 - Text field for work description (not required)
 - Optional dropdown to associate with an open Task on this machine
+- **Multi-select for additional maintainers** (NEW)
+  - By default, pre-selects only the current user
+  - User can select additional maintainers who worked on this
+  - Shows all active maintainers
 - Machine status change option (existing functionality)
 
 ### Display Changes
@@ -108,9 +120,10 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
 
 ### Phase 1: Data Model
 - [ ] Create migration to rename ProblemReport → Task
-- [ ] Add `created_by_maintainer` field to Task
 - [ ] Create migration to rename ReportUpdate → LogEntry
 - [ ] Make LogEntry.task nullable
+- [ ] Change LogEntry.maintainer from ForeignKey to ManyToManyField maintainers
+- [ ] Migrate existing single maintainer data to many-to-many relationship
 - [ ] Update all model methods and properties
 - [ ] Update related_name attributes
 
