@@ -11,6 +11,16 @@
         "reveal": "always",
         "panel": "dedicated"
       }
+    },
+    {
+      "label": "Import Legacy Data",
+      "type": "shell",
+      "command": "cd the_flip && python manage.py import_legacy_data --clear",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }
