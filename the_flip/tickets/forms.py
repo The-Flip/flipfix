@@ -241,3 +241,40 @@ class ProblemReportCreateForm(forms.ModelForm):
             'reported_by_name': 'Your name',
             'reported_by_contact': 'Contact information',
         }
+
+
+class LogWorkForm(forms.ModelForm):
+    """Form for creating standalone work log entries (maintainers only)."""
+
+    machine_status = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Update Machine Status (optional)'
+    )
+
+    def __init__(self, *args, **kwargs):
+        # Extract machine instance if provided
+        machine = kwargs.pop('machine', None)
+        super().__init__(*args, **kwargs)
+
+        # Build machine status choices
+        available_choices = [('', '-- No Change --')]
+        for status_code, status_label in MachineInstance.OPERATIONAL_STATUS_CHOICES:
+            if status_code == MachineInstance.OPERATIONAL_STATUS_UNKNOWN:
+                continue
+            available_choices.append((status_code, status_label))
+        self.fields['machine_status'].choices = available_choices
+
+    class Meta:
+        model = LogEntry
+        fields = ['text', 'machine_status']
+        widgets = {
+            'text': forms.Textarea(attrs={
+                'rows': 5,
+                'class': 'form-control',
+                'placeholder': 'Describe the work performed...'
+            })
+        }
+        labels = {
+            'text': 'Work description',
+        }

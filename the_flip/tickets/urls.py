@@ -12,6 +12,7 @@ urlpatterns = [
     path('tasks/todo/new/', views.task_create_todo, name='task_create_todo'),
     path('machines/', views.machine_list, name='machine_list'),
     path('machines/<slug:slug>/', views.machine_detail, name='machine_detail'),
+    path('machines/<slug:slug>/log/', views.log_work, name='log_work'),
     path('machines/<slug:slug>/qr/', views.machine_qr, name='machine_qr'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

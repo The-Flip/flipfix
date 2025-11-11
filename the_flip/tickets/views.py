@@ -20,8 +20,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm
-from .models import MachineInstance, Task
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm
+from .models import MachineInstance, Task, LogEntry
 
 
 def _get_request_ip(request):
@@ -274,6 +274,53 @@ def task_create_todo(request):
 
     return render(request, 'tickets/task_create_todo.html', {
         'form': form,
+    })
+
+
+@login_required
+def log_work(request, slug):
+    """
+    Create a standalone work log entry for a machine (maintainers only).
+    This is for recording work done that's not tied to a specific task/problem report.
+    """
+    # Check permission (staff users or maintainers)
+    if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('task_list')
+
+    machine = get_object_or_404(MachineInstance, slug=slug)
+
+    if request.method == 'POST':
+        form = LogWorkForm(request.POST, machine=machine)
+        if form.is_valid():
+            log_entry = form.save(commit=False)
+            # Standalone work logs have no associated task
+            log_entry.task = None
+            log_entry.save()
+
+            # Get maintainer object (None for staff users without maintainer record)
+            maintainer = getattr(request.user, 'maintainer', None)
+            if maintainer:
+                log_entry.maintainers.add(maintainer)
+
+            # Update machine status if provided
+            machine_status = form.cleaned_data.get('machine_status')
+            if machine_status:
+                log_entry.machine_status = machine_status
+                machine.operational_status = machine_status
+                machine.save(update_fields=['operational_status'])
+                log_entry.save(update_fields=['machine_status'])
+                messages.success(request, f'Work logged and machine status updated to {dict(MachineInstance.OPERATIONAL_STATUS_CHOICES)[machine_status]}.')
+            else:
+                messages.success(request, 'Work logged successfully.')
+
+            return redirect('machine_detail', slug=machine.slug)
+    else:
+        form = LogWorkForm(machine=machine)
+
+    return render(request, 'tickets/log_work.html', {
+        'form': form,
+        'machine': machine,
     })
 
 
