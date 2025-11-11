@@ -13,23 +13,23 @@ We want to refactor the system to support the workshop and storage workflows as 
 
 ## Goals
 
-Support three types of machines:
+Support three types of workflows:
 1. **Machines in Service** - visitors report problems (existing workflow)
-2. **Machines in Workshop** - maintainers create TODOs and log work.  This update is aimed at supporting this case.
-3. **Machines in Storage** - maintainers track condition and maintenance history.  This update isn't aimed at supporting this case.  It will come in the future.
+2. **Machines in Workshop** - maintainers create TODOs and log work.  This update is aimed at supporting this workflow.
+3. **Machines in Storage** - maintainers track condition and maintenance history.  This update isn't aimed at supporting this workflow.  It will come in the future.
 
 ## Data Model Changes
 
-### New Models
+### Model Renames
 
-**`Task`** (replaces `ProblemReport`)
-- Represents both Problem Reports (visitor-created) AND TODOs (maintainer-created)
+**`Task`** (renamed from `ProblemReport`)
+- Represents both Problem Reports (visitor-created) *and* TODOs (maintainer-created)
 - Fields:
   - All existing ProblemReport fields
   - `created_by_maintainer` (boolean) - distinguish TODO from Problem Report
   - `status` - keep existing open/closed (no new statuses)
 
-**`LogEntry`** (replaces `ReportUpdate`)
+**`LogEntry`** (renamed from `ReportUpdate`)
 - Represents Problem Report Updates, TODO updates, *and* standalone work logs
 - Fields:
   - `task` - ForeignKey to Task (null=True, blank=True)
@@ -37,20 +37,19 @@ Support three types of machines:
     - When `task` is set, it's an update to that task
   - All existing ReportUpdate fields, but `task` becomes optional
 
-### Migration Strategy
-
-1. Rename `ProblemReport` → `Task`
-2. Add `created_by_maintainer` field (default False for existing records)
-3. Rename `ReportUpdate` → `LogEntry`
-4. Make `task` (formerly `report`) nullable
-5. Update all foreign key relationships and related_names
-
-## Visibility
+### Visibility
 
 - All Tasks are visible read-only to public, no authentication required (existing behavior)
 - All LogEntries are visible read-only to public, no authentication required (existing behavior)
 - The public can create a Problem Report from the page accessible via QR code (existing behavior).  Keep the same visual display and labels; don't rename this form to Task.
 - Authentication required to create Tasks or LogEntries from maintainer UI (existing behavior)
+
+### Migration Strategy
+
+1. Rename `ProblemReport` → `Task`
+2. Rename `ReportUpdate` → `LogEntry`
+3. Make `task` (formerly `report`) nullable
+4. Update all foreign key relationships and related_names
 
 
 ## UI Changes
@@ -86,20 +85,18 @@ Form should have:
 
 ### New Management Command
 
-`python manage.py import_legacy_maintenance`
+`python manage.py create_legacy_maintenance_records`
 
 This replaces `create_sample_problem_reports.py` (but don't delete the old one yet).
 
 **Data Sources:**
-- `docs/legacy_data/Maintenance - Log entries.csv`
-- Any other legacy CSV files we discover
+- `docs/legacy_data/Maintenance - Problems.csv`: these become Tasks
+- `docs/legacy_data/Maintenance - Log entries.csv`: these become standalone Log Entries, not associated with a Task
 
 **Import Rules:**
 1. Respect dates from CSV (use `created_at` override)
-2. Parse maintainer names and link to existing Maintainer records if possible
-3. Create machines if they don't exist (match by name)
-4. Import as standalone LogEntries (no Task association) since CSV doesn't have problem report IDs
-5. Handle multi-maintainer entries (comma-separated in CSV)
+2. Parse maintainer names and link to existing Maintainer records.  Exit with error if any maintainer cannot be matched.  Handle multi-maintainer entries (comma-separated in CSV).
+3. The machines should already be created in `create_default_machines.py`.  Exit with error if any maintenance item references a machine that does not exist.
 
 **CSV Columns:**
 - Machine (string) - match to MachineInstance by name
