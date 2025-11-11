@@ -55,6 +55,12 @@ class ReportFilterForm(forms.Form):
         (Task.STATUS_CLOSED, 'Closed'),
     ]
 
+    TYPE_CHOICES = [
+        ('all', 'All Types'),
+        (Task.TYPE_PROBLEM_REPORT, 'Problem Reports'),
+        (Task.TYPE_TASK, 'Tasks'),
+    ]
+
     PROBLEM_TYPE_CHOICES = [
         ('all', 'All Types'),
     ] + list(Task.PROBLEM_TYPE_CHOICES)
@@ -64,6 +70,14 @@ class ReportFilterForm(forms.Form):
         required=False,
         initial='open',
         widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    type = forms.ChoiceField(
+        choices=TYPE_CHOICES,
+        required=False,
+        initial='all',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Task Type'
     )
 
     problem_type = forms.ChoiceField(

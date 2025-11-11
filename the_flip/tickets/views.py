@@ -109,6 +109,11 @@ def report_list(request):
         if status and status != 'all':
             reports = reports.filter(status=status)
 
+        # Type filter
+        type_filter = form.cleaned_data.get('type')
+        if type_filter and type_filter != 'all':
+            reports = reports.filter(type=type_filter)
+
         # Problem type filter
         problem_type = form.cleaned_data.get('problem_type')
         if problem_type and problem_type != 'all':
