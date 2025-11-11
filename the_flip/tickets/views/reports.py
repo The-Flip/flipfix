@@ -99,24 +99,39 @@ def report_detail(request, pk):
         maintainers = [maintainer] if maintainer else []
 
         if 'add_update' in request.POST:
-            form = LogEntryForm(request.POST, current_machine_status=report.machine.operational_status)
+            form = LogEntryForm(
+                request.POST,
+                current_machine_status=report.machine.operational_status,
+                current_task_status=report.status
+            )
             if form.is_valid():
                 text = form.cleaned_data['text']
                 machine_status = form.cleaned_data.get('machine_status')
+                change_task_status = form.cleaned_data.get('change_task_status', False)
 
-                if machine_status:
+                # Handle task status change independently
+                if change_task_status:
+                    # Toggle task status
+                    new_task_status = Task.STATUS_CLOSED if report.status == Task.STATUS_OPEN else Task.STATUS_OPEN
+                    report.set_status(new_task_status, maintainers, text)
+                    status_msg = f"Task {'closed' if new_task_status == Task.STATUS_CLOSED else 're-opened'}"
+                elif machine_status:
+                    # Machine status change (this will also update task status automatically via set_machine_status)
                     report.set_machine_status(machine_status, maintainers, text)
-                    messages.success(
-                        request,
-                        f"Update added and machine status changed to {dict(MachineInstance.OPERATIONAL_STATUS_CHOICES)[machine_status]}.",
-                    )
+                    status_msg = f"Machine status changed to {dict(MachineInstance.OPERATIONAL_STATUS_CHOICES)[machine_status]}"
                 else:
+                    # Just a note
                     report.add_note(maintainers, text)
-                    messages.success(request, 'Update added successfully.')
+                    status_msg = "Update added"
+
+                messages.success(request, f"{status_msg} successfully.")
                 return redirect('task_detail', pk=pk)
 
     if can_update and form is None:
-        form = LogEntryForm(current_machine_status=report.machine.operational_status)
+        form = LogEntryForm(
+            current_machine_status=report.machine.operational_status,
+            current_task_status=report.status
+        )
 
     return render(
         request,

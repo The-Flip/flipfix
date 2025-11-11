@@ -114,6 +114,11 @@ class ReportFilterForm(forms.Form):
 class LogEntryForm(forms.ModelForm):
     """Form for adding log entries to tasks (maintainers only)."""
 
+    change_task_status = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+    )
+
     machine_status = forms.ChoiceField(
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'}),
@@ -121,12 +126,30 @@ class LogEntryForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        # Extract current_machine_status if provided
+        # Extract current_machine_status and current_task_status if provided
         current_machine_status = kwargs.pop('current_machine_status', None)
+        current_task_status = kwargs.pop('current_task_status', None)
         super().__init__(*args, **kwargs)
 
+        # Set checkbox label based on current task status
+        if current_task_status == Task.STATUS_OPEN:
+            self.fields['change_task_status'].label = 'Close task'
+        elif current_task_status == Task.STATUS_CLOSED:
+            self.fields['change_task_status'].label = 'Re-open task'
+        else:
+            self.fields['change_task_status'].label = 'Change task status'
+
         # Build choices from MachineInstance.OPERATIONAL_STATUS_CHOICES, excluding UNKNOWN and current status
-        available_choices = [('', '-- No Change --')]
+        # Create "no change" label that includes current status
+        if current_machine_status:
+            current_status_label = dict(MachineInstance.OPERATIONAL_STATUS_CHOICES).get(
+                current_machine_status, 'Unknown'
+            )
+            no_change_label = f"Keep machine status as '{current_status_label}'"
+        else:
+            no_change_label = '-- No Change --'
+
+        available_choices = [('', no_change_label)]
         for status_code, status_label in MachineInstance.OPERATIONAL_STATUS_CHOICES:
             if status_code in {MachineInstance.OPERATIONAL_STATUS_UNKNOWN}:  # Skip unknown status for updates
                 continue
@@ -138,12 +161,12 @@ class LogEntryForm(forms.ModelForm):
 
     class Meta:
         model = LogEntry
-        fields = ['text', 'machine_status']
+        fields = ['text', 'change_task_status', 'machine_status']
         widgets = {
             'text': forms.Textarea(attrs={
                 'rows': 4,
                 'class': 'form-control',
-                'placeholder': 'Add your update or notes here...'
+                'placeholder': 'Add notes here...'
             })
         }
         labels = {
