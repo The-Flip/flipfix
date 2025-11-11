@@ -287,6 +287,14 @@ class MachineInstance(models.Model):
         """
         return self.name_override or self.model.name
 
+    @property
+    def ownership_display(self):
+        """
+        Display ownership credit with default fallback.
+        Returns ownership_credit if set, otherwise defaults to "The Flip Collection".
+        """
+        return self.ownership_credit or "The Flip Collection"
+
     def save(self, *args, **kwargs):
         # Auto-generate slug if not set
         if not self.slug:
