@@ -37,9 +37,6 @@
                         <div class="update-meta">
                             <span class="update-author">{{ task|creator_display }}</span>
                             <span class="update-time">{{ task.created_at|smart_date }}</span>
-                            <span class="badge badge-{{ task.status }} badge-small">
-                                {{ task.get_status_display }}
-                            </span>
                         </div>
                     </div>
                 </div>
