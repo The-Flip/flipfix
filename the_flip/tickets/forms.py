@@ -165,7 +165,8 @@ class LogEntryForm(forms.ModelForm):
         widgets = {
             'text': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Add notes here...'
+                'placeholder': 'Add notes here...',
+                'autofocus': 'autofocus'
             })
         }
         labels = {
