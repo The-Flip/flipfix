@@ -4,13 +4,9 @@
 {% block title %}{{ report.machine.name }} - Problem Report{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{% url 'task_list' %}">← Back to Reports</a>
-</div>
-
 <div class="report-detail">
     <div class="report-header">
-        <h1><a href="{% url 'machine_detail' report.machine.slug %}">{{ report.machine.name }}</a> Problem Report</h1>
+        <h1><a href="{% url 'machine_detail' report.machine.slug %}">{{ report.machine.name }}</a> Task</h1>
         <span class="badge badge-{{ report.status }} badge-large">
             {{ report.get_status_display }}
         </span>
@@ -43,12 +39,11 @@
     </div>
 
     <div class="problem-description">
-        <h3>Problem Description</h3>
         <p>{{ report.problem_text|linebreaks }}</p>
     </div>
 
     <div class="updates-section">
-        <h3>Update History</h3>
+        <h3>Updates</h3>
 
         {% if report.log_entries.all %}
             <div class="timeline">
@@ -95,13 +90,12 @@
 
     {% if can_update %}
         <div class="maintainer-actions">
-            <h3>Add Update To Problem Report</h3>
+            <h3>Add Update</h3>
 
             <form method="post" class="update-form">
                 {% csrf_token %}
 
                 <div class="form-group">
-                    {{ form.text.label_tag }}
                     {{ form.text }}
                     {% if form.text.errors %}
                         <div class="form-errors">{{ form.text.errors }}</div>
