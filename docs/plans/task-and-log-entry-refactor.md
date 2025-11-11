@@ -239,32 +239,173 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
   - [ ] Associate multiple maintainers with each LogEntry
 - [ ] Update `build.sh` to replace call to `create_sample_problem_reports` with `import_legacy_maintenance_records`
 
-### Phase 5: Testing & Verification
-- [ ] Test Task creation (public and maintainer)
-- [ ] Test LogEntry creation (with and without Task association)
-- [ ] Test Machine Detail page displays correctly
-- [ ] Run legacy data import
-- [ ] Verify imported data displays correctly
-- [ ] Test all existing problem report workflows still work
+### Phase 5: Manual Testing & Verification
+
+#### Data Import Testing
+- [ ] Test `import_legacy_maintainers` with `--clear` flag
+- [ ] Test `import_legacy_maintainers` idempotent behavior (run twice, verify no duplicates)
+- [ ] Test `import_legacy_maintenance_records` imports problems as Tasks with correct dates
+- [ ] Test `import_legacy_maintenance_records` imports log entries with correct dates
+- [ ] Verify multi-maintainer log entries imported correctly
+- [ ] Run full `build.sh` script in clean environment
+
+#### Public Workflows (Visitor-facing)
+- [ ] Test public machine page at `/m/<slug>/` displays correctly
+- [ ] Test "Report a Problem" button links to `/p/<slug>/`
+- [ ] Test problem report form submission (creates Task with `type='problem_report'`)
+- [ ] Verify public terminology stays "Problem Report" (not "Task")
+- [ ] Test QR code generation at `/machines/<slug>/qr/`
+
+#### Maintainer Workflows
+- [ ] Test login flow
+- [ ] Test machine list page at `/machines/`
+- [ ] Test machine detail page displays:
+  - [ ] Recent Tasks section (with type badges)
+  - [ ] Recent Work Logs section (clickable to detail)
+  - [ ] Create Task and Log Work buttons
+- [ ] Test "Create Task" flow at `/machines/<slug>/tasks/new/`
+  - [ ] Verify creates Task with `type='task'`
+  - [ ] Verify redirects to task detail
+- [ ] Test "Log Work" flow at `/machines/<slug>/log/new/`
+  - [ ] Test standalone log entry (no task association)
+  - [ ] Test log entry associated with a task
+  - [ ] Test multi-maintainer selection
+  - [ ] Test machine status change
+
+#### Task Management
+- [ ] Test task list page at `/tasks/` shows all tasks
+- [ ] Test task detail page at `/tasks/<pk>/`
+- [ ] Test task status changes (open/closed)
+- [ ] Test log entries on task detail page
+- [ ] Test adding log entry from task detail page
+
+#### Log Entry Features
+- [ ] Test log list page at `/machines/<slug>/log/`
+- [ ] Test log detail page at `/machines/<slug>/log/<pk>/`
+- [ ] Verify clicking log entry from machine detail goes to log detail
+- [ ] Verify clicking log entry from log list goes to log detail
+- [ ] Verify clicking "Task #X" link from log pages works (with stopPropagation)
+
+#### Display & Navigation
+- [ ] Verify breadcrumb navigation on all pages
+- [ ] Test back buttons work correctly
+- [ ] Test status badges display correctly (task type, status, machine status)
+- [ ] Test pagination on log list and task list
+- [ ] Verify clickable rows work on all tables
+
+#### Edge Cases
+- [ ] Test viewing log entry that doesn't belong to machine (should 404)
+- [ ] Test unauthenticated access to maintainer-only pages (should redirect to login)
+- [ ] Test non-maintainer access to maintainer-only pages
+- [ ] Test empty states (machine with no tasks, no logs)
+
+### Phase 6: Automated Testing
+
+Write Django test cases to ensure code reliability and catch regressions.
+
+#### Model Tests (`the_flip/tickets/tests/test_models.py`)
+- [ ] Test Task model
+  - [ ] Task with `type='problem_report'` created correctly
+  - [ ] Task with `type='task'` created correctly
+  - [ ] Task status transitions (open/closed)
+  - [ ] Task string representation
+- [ ] Test LogEntry model
+  - [ ] LogEntry with task association
+  - [ ] Standalone LogEntry (task=None)
+  - [ ] ManyToMany maintainers relationship
+  - [ ] LogEntry string representation
+- [ ] Test queryset methods
+  - [ ] Task.objects.problem_reports() filter
+  - [ ] Task.objects.tasks() filter
+
+#### View Tests (`the_flip/tickets/tests/test_views.py`)
+- [ ] Test public views
+  - [ ] Machine public view displays problem reports only
+  - [ ] Problem report creation (authenticated and anonymous)
+  - [ ] QR code generation
+- [ ] Test maintainer views (permission checks)
+  - [ ] Machine list requires login
+  - [ ] Machine detail requires login
+  - [ ] Task creation requires login
+  - [ ] Log work requires login
+  - [ ] Non-maintainers redirected appropriately
+- [ ] Test task views
+  - [ ] Task list view
+  - [ ] Task detail view
+  - [ ] Task creation from machine page
+- [ ] Test log entry views
+  - [ ] Log list view
+  - [ ] Log detail view (correct machine check)
+  - [ ] Log creation (standalone and with task)
+
+#### Form Tests (`the_flip/tickets/tests/test_forms.py`)
+- [ ] Test Task creation form
+  - [ ] Valid task data
+  - [ ] Task type set correctly (problem_report vs task)
+  - [ ] Required fields validation
+- [ ] Test LogEntry creation form
+  - [ ] Valid log entry data
+  - [ ] Multi-maintainer selection
+  - [ ] Optional task association
+  - [ ] Machine status change field
+
+#### Management Command Tests (`the_flip/tickets/tests/test_commands.py`)
+- [ ] Test `import_legacy_maintainers`
+  - [ ] Creates users from CSV
+  - [ ] Handles admins vs regular maintainers
+  - [ ] Username generation from first name
+  - [ ] Idempotent behavior (no duplicates)
+  - [ ] `--clear` flag deletes existing data
+- [ ] Test `import_legacy_maintenance_records`
+  - [ ] Imports problems as Tasks
+  - [ ] Imports log entries
+  - [ ] Preserves dates from CSV
+  - [ ] Associates multiple maintainers
+  - [ ] Machine name matching (normalized and hardcoded mapping)
+  - [ ] Error handling for missing machines/maintainers
+
+#### Integration Tests (`the_flip/tickets/tests/test_integration.py`)
+- [ ] Test complete workflows
+  - [ ] Visitor reports problem → task created → maintainer adds log entry → task closed
+  - [ ] Maintainer creates task → logs work → associates with task → closes task
+  - [ ] Import legacy data → verify display on machine detail page
+  - [ ] Create log with multiple maintainers → verify display
 
 ## URL Structure
 
-**Previous (before refactor):**
+**Previous URLs (before refactor):**
 - `/reports/` - list all reports
 - `/reports/<id>/` - report detail
 - `/new_report/` - create report (general)
 - `/new_report/<slug>/` - create report via QR code
 - `/machines/<slug>/` - machine detail
 
-**Updated (completed):**
-- `/tasks/` - list all tasks (URL name: `task_list`)
-- `/tasks/<id>/` - task detail (URL name: `task_detail`)
-- `/tasks/new/` - create task (URL name: `task_create`)
-- `/tasks/new/<slug>/` - create task via QR code (URL name: `task_create_qr`)
-- `/machines/<slug>/` - machine detail (unchanged)
-- `/machines/<slug>/log/` - NEW: create log entry (to be implemented in Phase 3)
+**Updated URLs (completed):**
 
-**Note:** Public-facing templates continue to use "Problem Report" terminology even though URLs are now `/tasks/*`
+*Visitor URLs (public access):*
+- `/m/<slug>/` - public machine page (URL name: `machine_public`)
+- `/p/<slug>/` - problem report form (URL name: `problem_report_create`)
+
+*Global task/report URLs (maintainers only):*
+- `/tasks/` - list all tasks (URL name: `task_list`)
+- `/tasks/<int:pk>/` - task detail (URL name: `task_detail`)
+- `/tasks/new/` - create task (URL name: `task_create_todo`)
+
+*Machine-scoped URLs (maintainers only):*
+- `/machines/` - machine list (URL name: `machine_list`)
+- `/machines/<slug>/` - machine detail (URL name: `machine_detail`)
+- `/machines/<slug>/tasks/` - machine tasks list (URL name: `machine_tasks_list`)
+- `/machines/<slug>/tasks/new/` - create task for machine (URL name: `machine_task_create`)
+- `/machines/<slug>/log/` - machine log list (URL name: `machine_log_list`)
+- `/machines/<slug>/log/<int:pk>/` - log entry detail (URL name: `machine_log_detail`)
+- `/machines/<slug>/log/new/` - create log entry (URL name: `machine_log_create`)
+- `/machines/<slug>/qr/` - QR code for machine (URL name: `machine_qr`)
+
+*Auth:*
+- `/login/` - login page (URL name: `login`)
+- `/logout/` - logout (URL name: `logout`)
+
+**Note:** Public-facing templates continue to use "Problem Report" terminology even though the underlying model is now Task
 
 ## Notes
 
