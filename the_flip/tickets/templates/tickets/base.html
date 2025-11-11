@@ -14,7 +14,7 @@
                 <a href="{% url 'home' %}">The Flip</a>
             </div>
             <div class="nav-links">
-                <a href="{% url 'task_list' %}">Problem Reports</a>
+                <a href="{% url 'task_list' %}">Tasks</a>
                 {% if user.is_authenticated %}
                     {% if user.is_staff %}
                         <a href="{% url 'machine_list' %}">Machines</a>
