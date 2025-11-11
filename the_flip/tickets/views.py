@@ -21,7 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm, MachineTaskFilterForm, MachineLogFilterForm
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm, MachineTaskFilterForm, MachineLogFilterForm, QuickTaskCreateForm
 from .models import MachineInstance, Task, LogEntry
 
 
@@ -522,6 +522,69 @@ def machine_task_create(request, slug):
     return render(request, 'tickets/machine_task_create.html', {
         'form': form,
         'machine': machine,
+    })
+
+
+@login_required
+def machine_tasks_list_v2(request, slug):
+    """
+    Alternative view for listing all tasks and problem reports for a specific machine (maintainers only).
+    This is version 2 for experimentation with different UI/UX.
+    """
+    # Check permission (staff users or maintainers)
+    if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('task_list')
+
+    machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
+
+    # Handle POST request for quick task creation
+    if request.method == 'POST':
+        quick_form = QuickTaskCreateForm(request.POST)
+        if quick_form.is_valid():
+            task = quick_form.save(commit=False)
+            task.machine = machine
+            task.reported_by_user = request.user
+            task.reported_by_name = request.user.get_full_name() or request.user.username
+            task.save()
+            messages.success(request, 'Task created successfully.')
+            return redirect('machine_tasks_list_v2', slug=machine.slug)
+    else:
+        quick_form = QuickTaskCreateForm()
+
+    # Initialize the filter form with GET data
+    form = MachineTaskFilterForm(request.GET or None)
+
+    # Start with all tasks for this machine
+    tasks = Task.objects.filter(machine=machine).order_by('-created_at')
+
+    # Apply filters if form is valid
+    if form.is_valid():
+        filter_type = form.cleaned_data.get('type', 'all')
+        filter_status = form.cleaned_data.get('status', 'all')
+
+        # Apply type filter
+        if filter_type == 'problem_report':
+            tasks = tasks.filter(type=Task.TYPE_PROBLEM_REPORT)
+        elif filter_type == 'task':
+            tasks = tasks.filter(type=Task.TYPE_TASK)
+
+        # Apply status filter
+        if filter_status == 'open':
+            tasks = tasks.filter(status=Task.STATUS_OPEN)
+        elif filter_status == 'closed':
+            tasks = tasks.filter(status=Task.STATUS_CLOSED)
+
+    # Pagination
+    paginator = Paginator(tasks, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'tickets/machine_tasks_list_v2.html', {
+        'machine': machine,
+        'page_obj': page_obj,
+        'form': form,
+        'quick_form': quick_form,
     })
 
 

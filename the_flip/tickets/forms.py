@@ -325,6 +325,32 @@ class LogWorkForm(forms.ModelForm):
         }
 
 
+class QuickTaskCreateForm(forms.ModelForm):
+    """Simplified inline form for quickly creating tasks."""
+
+    class Meta:
+        model = Task
+        fields = ['problem_text']
+        widgets = {
+            'problem_text': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter task description...',
+                'style': 'flex: 1;'
+            }),
+        }
+        labels = {
+            'problem_text': '',
+        }
+
+    def save(self, commit=True):
+        """Override save to set type to task."""
+        instance = super().save(commit=False)
+        instance.type = Task.TYPE_TASK
+        if commit:
+            instance.save()
+        return instance
+
+
 class MachineLogFilterForm(forms.Form):
     """Form for filtering work logs on the machine log list page."""
 

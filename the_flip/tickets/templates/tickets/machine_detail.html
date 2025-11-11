@@ -258,7 +258,11 @@
         {% else %}
             <p>No open tasks{% if closed_tasks_count > 0 %} ({{ closed_tasks_count }} closed){% endif %}</p>
         {% endif %}
-        <p style="margin-top: 15px;"><a href="{% url 'machine_tasks_list' machine.slug %}?type=task">View all tasks →</a></p>
+        <p style="margin-top: 15px;">
+            <a href="{% url 'machine_tasks_list' machine.slug %}?type=task">View all tasks [option 1] →</a>
+            <span style="margin: 0 10px; color: #999;">|</span>
+            <a href="{% url 'machine_tasks_list_v2' machine.slug %}?type=task">View all tasks [option 2] →</a>
+        </p>
     </div>
     {% endif %}
 
