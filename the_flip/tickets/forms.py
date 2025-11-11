@@ -358,7 +358,8 @@ class QuickTaskCreateForm(forms.ModelForm):
             'problem_text': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'New task description...',
-                'style': 'flex: 1;'
+                'style': 'flex: 1;',
+                'autofocus': 'autofocus'
             }),
         }
         labels = {
