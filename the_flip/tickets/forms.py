@@ -163,8 +163,7 @@ class LogEntryForm(forms.ModelForm):
         model = LogEntry
         fields = ['text', 'change_task_status', 'machine_status']
         widgets = {
-            'text': forms.Textarea(attrs={
-                'rows': 4,
+            'text': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Add notes here...'
             })
