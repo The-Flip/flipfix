@@ -21,7 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm, LogWorkForm, MachineTaskFilterForm
 from .models import MachineInstance, Task, LogEntry
 
 
@@ -422,24 +422,28 @@ def machine_tasks_list(request, slug):
 
     machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
 
+    # Initialize the filter form with GET data
+    form = MachineTaskFilterForm(request.GET or None)
+
     # Start with all tasks for this machine
     tasks = Task.objects.filter(machine=machine).order_by('-created_at')
 
-    # Get filter parameters
-    filter_type = request.GET.get('type', 'all')
-    filter_status = request.GET.get('status', 'all')
+    # Apply filters if form is valid
+    if form.is_valid():
+        filter_type = form.cleaned_data.get('type', 'all')
+        filter_status = form.cleaned_data.get('status', 'all')
 
-    # Apply type filter
-    if filter_type == 'problem_reports':
-        tasks = tasks.filter(type=Task.TYPE_PROBLEM_REPORT)
-    elif filter_type == 'tasks':
-        tasks = tasks.filter(type=Task.TYPE_TASK)
+        # Apply type filter
+        if filter_type == 'problem_report':
+            tasks = tasks.filter(type=Task.TYPE_PROBLEM_REPORT)
+        elif filter_type == 'task':
+            tasks = tasks.filter(type=Task.TYPE_TASK)
 
-    # Apply status filter
-    if filter_status == 'open':
-        tasks = tasks.filter(status=Task.STATUS_OPEN)
-    elif filter_status == 'closed':
-        tasks = tasks.filter(status=Task.STATUS_CLOSED)
+        # Apply status filter
+        if filter_status == 'open':
+            tasks = tasks.filter(status=Task.STATUS_OPEN)
+        elif filter_status == 'closed':
+            tasks = tasks.filter(status=Task.STATUS_CLOSED)
 
     # Pagination
     paginator = Paginator(tasks, 25)
@@ -449,8 +453,7 @@ def machine_tasks_list(request, slug):
     return render(request, 'tickets/machine_tasks_list.html', {
         'machine': machine,
         'page_obj': page_obj,
-        'filter_type': filter_type,
-        'filter_status': filter_status,
+        'form': form,
     })
 
 

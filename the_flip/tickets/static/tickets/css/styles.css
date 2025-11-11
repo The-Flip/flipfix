@@ -329,6 +329,17 @@ textarea.form-control {
     color: #383d41;
 }
 
+/* Task Type Badges */
+.badge-problem_report {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge-task {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
 /* Game Status Badges */
 .badge-good {
     background-color: #d4edda;

@@ -12,91 +12,94 @@
     <a href="{% url 'machine_task_create' machine.slug %}" class="btn btn-primary">Create Task</a>
 </div>
 
-<div class="filters" style="margin-bottom: 20px; display: flex; gap: 15px;">
-    <div>
-        <label>Type:</label>
-        <select onchange="window.location.href='?type=' + this.value + '&status={{ filter_status }}'">
-            <option value="all" {% if filter_type == 'all' %}selected{% endif %}>All</option>
-            <option value="problem_reports" {% if filter_type == 'problem_reports' %}selected{% endif %}>Problem Reports</option>
-            <option value="tasks" {% if filter_type == 'tasks' %}selected{% endif %}>Tasks</option>
-        </select>
-    </div>
-    <div>
-        <label>Status:</label>
-        <select onchange="window.location.href='?type={{ filter_type }}&status=' + this.value">
-            <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All</option>
-            <option value="open" {% if filter_status == 'open' %}selected{% endif %}>Open</option>
-            <option value="closed" {% if filter_status == 'closed' %}selected{% endif %}>Closed</option>
-        </select>
+<div class="report-list-container">
+    <aside class="filters-sidebar">
+        <h3>Filters</h3>
+        <form method="get" class="filter-form">
+            <div class="form-group">
+                <label>{{ form.status.label }}</label>
+                {{ form.status }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.type.label }}</label>
+                {{ form.type }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a href="{% url 'machine_tasks_list' machine.slug %}" class="btn btn-secondary">Clear</a>
+        </form>
+    </aside>
+
+    <div class="reports-main">
+        {% if page_obj %}
+            <div class="reports-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in page_obj %}
+                        <tr onclick="window.location='{% url 'task_detail' task.pk %}'" class="clickable-row">
+                            <td>
+                                <span class="badge badge-{{ task.type }}">
+                                    {{ task.get_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ task.status }}">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ task.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>
+                                {% if task.type == 'problem_report' %}
+                                    {% if task.problem_type == 'other' and task.problem_text %}
+                                        {{ task.problem_text|truncatechars:80 }}
+                                    {% elif task.problem_text %}
+                                        {{ task.get_problem_type_display }} - {{ task.problem_text|truncatechars:80 }}
+                                    {% else %}
+                                        {{ task.get_problem_type_display }}
+                                    {% endif %}
+                                {% else %}
+                                    {{ task.problem_text|truncatechars:80 }}
+                                {% endif %}
+                            </td>
+                            <td>{{ task.reported_by_name|default:"Anonymous" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Previous</a>
+                {% endif %}
+
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}" class="page-link">Last</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-results">
+                <p>No tasks found for this machine.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
-
-{% if page_obj %}
-    <div class="reports-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Created By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in page_obj %}
-                <tr onclick="window.location='{% url 'task_detail' task.pk %}'" class="clickable-row">
-                    <td>
-                        <span class="badge badge-{{ task.type }}">
-                            {{ task.get_type_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge badge-{{ task.status }}">
-                            {{ task.get_status_display }}
-                        </span>
-                    </td>
-                    <td>{{ task.created_at|date:"M d, Y g:i A" }}</td>
-                    <td>
-                        {% if task.type == 'problem_report' %}
-                            {% if task.problem_type == 'other' and task.problem_text %}
-                                {{ task.problem_text|truncatechars:80 }}
-                            {% elif task.problem_text %}
-                                {{ task.get_problem_type_display }} - {{ task.problem_text|truncatechars:80 }}
-                            {% else %}
-                                {{ task.get_problem_type_display }}
-                            {% endif %}
-                        {% else %}
-                            {{ task.problem_text|truncatechars:80 }}
-                        {% endif %}
-                    </td>
-                    <td>{{ task.reported_by_name|default:"Anonymous" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% if page_obj.has_other_pages %}
-    <div class="pagination">
-        {% if page_obj.has_previous %}
-            <a href="?page=1&type={{ filter_type }}&status={{ filter_status }}" class="page-link">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}&type={{ filter_type }}&status={{ filter_status }}" class="page-link">Previous</a>
-        {% endif %}
-
-        <span class="page-current">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&type={{ filter_type }}&status={{ filter_status }}" class="page-link">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}&type={{ filter_type }}&status={{ filter_status }}" class="page-link">Last</a>
-        {% endif %}
-    </div>
-    {% endif %}
-{% else %}
-    <div class="no-results">
-        <p>No tasks found for this machine.</p>
-    </div>
-{% endif %}
 {% endblock %}

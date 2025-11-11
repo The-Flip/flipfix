@@ -257,6 +257,37 @@ class ProblemReportCreateForm(forms.ModelForm):
         }
 
 
+class MachineTaskFilterForm(forms.Form):
+    """Form for filtering tasks on the machine detail page."""
+
+    STATUS_CHOICES = [
+        ('all', 'All Tasks'),
+        (Task.STATUS_OPEN, 'Open'),
+        (Task.STATUS_CLOSED, 'Closed'),
+    ]
+
+    TYPE_CHOICES = [
+        ('all', 'All Types'),
+        (Task.TYPE_PROBLEM_REPORT, 'Problem Reports'),
+        (Task.TYPE_TASK, 'Tasks'),
+    ]
+
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        initial='all',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    type = forms.ChoiceField(
+        choices=TYPE_CHOICES,
+        required=False,
+        initial='all',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Task Type'
+    )
+
+
 class LogWorkForm(forms.ModelForm):
     """Form for creating standalone work log entries (maintainers only)."""
 
