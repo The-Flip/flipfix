@@ -64,6 +64,18 @@ Support three types of workflows:
 
 ## UI Changes
 
+### Public-Facing Pages (QR Code Workflow)
+
+**No URL changes needed:**
+- `/m/<slug>/` - public educational page (QR code target) - no changes
+- `/new_report/<slug>/` - problem report form (keep "report" in URL for public) - no changes
+
+**Updates required:**
+- `machine_public_view` - update to query `Task` objects filtered by `type='problem_report'`
+- `report_create` / `report_create_qr` views - update to create `Task` with `type='problem_report'`
+- `ProblemReportCreateForm` - update to work with `Task` model, automatically set `type='problem_report'`
+- Templates keep all "Problem Report" terminology (no "Task" terminology for public)
+
 ### Maintainer's Machine Detail Page
 
 Replace current "Report a Problem" button with two new buttons:
@@ -151,10 +163,23 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
 
 ### Phase 2: Update Code References
 - [ ] Update models.py - rename classes, update relationships
-- [ ] Update forms.py - create TaskCreateForm, LogEntryCreateForm
-- [ ] Update views.py - rename functions, update logic
-- [ ] Update urls.py - update URL patterns
-- [ ] Update templates - rename problem_report → task
+- [ ] Update forms.py
+  - [ ] Update ProblemReportCreateForm to work with Task model
+  - [ ] Ensure form sets type='problem_report' for public submissions
+  - [ ] Create LogEntryCreateForm for maintainer log entries
+- [ ] Update views.py
+  - [ ] Update report_create / report_create_qr to create Task objects
+  - [ ] Update machine_public_view to query Task.objects.filter(type='problem_report')
+  - [ ] Update report_detail to work with Task model
+  - [ ] Update report_list to query Task objects
+  - [ ] Rename view functions (report_* → task_* internally, but keep public URLs)
+- [ ] Update urls.py
+  - [ ] Keep public URLs unchanged (/m/<slug>/, /new_report/<slug>/)
+  - [ ] Update internal URL names if needed
+- [ ] Update templates
+  - [ ] Keep "Problem Report" terminology in public-facing templates
+  - [ ] Update variable names (report → task in context)
+  - [ ] Update maintainer templates with "Task" and "Log Entry" terminology
 - [ ] Update admin.py if it exists
 
 ### Phase 3: New Features
@@ -169,10 +194,13 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
   - [ ] Clean up CSVs automatically on first read
     - [ ] Use Python's csv module with proper quoting to handle multi-line fields
     - [ ] No need to rewrite files - just parse correctly in memory
-  - [ ] Validate machine names match database (exit with error if not)
+  - [ ] Machine name matching strategy:
+    - [ ] Create hardcoded mapping dictionary for known mismatches
+    - [ ] First try: normalized match (ignore capitalization, whitespace, punctuation)
+    - [ ] Second try: check hardcoded mapping dictionary (ignore capitalization, whitespace, punctuation)
+    - [ ] Exit with clear error if no match found, showing available machine names
   - [ ] Parse CSV date formats (handle various formats like "10/4/2025 6:09 PM")
-  - [ ] Match machines by name (case-insensitive, with fuzzy matching if needed)
-  - [ ] Match maintainers by name (exit with error if not found)
+  - [ ] Match maintainers by name (normalize same way as machines)
   - [ ] Create LogEntries with correct dates (override created_at)
   - [ ] Associate multiple maintainers with each LogEntry
 
