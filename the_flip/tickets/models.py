@@ -313,21 +313,37 @@ class Maintainer(models.Model):
         return self.user.get_full_name() or self.user.get_username()
 
 
-class ProblemReportQuerySet(models.QuerySet):
+class TaskQuerySet(models.QuerySet):
     def open(self):
-        return self.filter(status=ProblemReport.STATUS_OPEN)
+        return self.filter(status=Task.STATUS_OPEN)
 
     def closed(self):
-        return self.filter(status=ProblemReport.STATUS_CLOSED)
+        return self.filter(status=Task.STATUS_CLOSED)
+
+    def problem_reports(self):
+        """Return only problem reports (visitor-reported issues)."""
+        return self.filter(type=Task.TYPE_PROBLEM_REPORT)
+
+    def tasks(self):
+        """Return only tasks (maintainer TODOs)."""
+        return self.filter(type=Task.TYPE_TASK)
 
 
-class ProblemReport(models.Model):
+class Task(models.Model):
     STATUS_OPEN = "open"
     STATUS_CLOSED = "closed"
 
     STATUS_CHOICES = [
         (STATUS_OPEN, "Open"),
         (STATUS_CLOSED, "Closed"),
+    ]
+
+    TYPE_PROBLEM_REPORT = "problem_report"
+    TYPE_TASK = "task"
+
+    TYPE_CHOICES = [
+        (TYPE_PROBLEM_REPORT, "Problem Report"),
+        (TYPE_TASK, "Task"),
     ]
 
     PROBLEM_STUCK_BALL = "stuck_ball"
@@ -341,6 +357,14 @@ class ProblemReport(models.Model):
     ]
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default=TYPE_PROBLEM_REPORT,
+        db_index=True,
+        help_text="Problem Report (visitor-reported) or Task (maintainer TODO)",
+    )
     machine = models.ForeignKey(MachineInstance, on_delete=models.CASCADE, related_name="reports")
 
     # Denormalized current status, for easy querying
@@ -376,12 +400,12 @@ class ProblemReport(models.Model):
     )
     problem_text = models.TextField(blank=True)
 
-    objects = ProblemReportQuerySet.as_manager()
+    objects = TaskQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Problem Report"
-        verbose_name_plural = "Problem Reports"
+        verbose_name = "Task"
+        verbose_name_plural = "Tasks"
 
     def __str__(self):
         return f"{self.machine.name} – {self.get_problem_type_display()}"
@@ -420,21 +444,23 @@ class ProblemReport(models.Model):
 
         return ""
 
-    def add_note(self, maintainer: "Maintainer | None", text: str):
+    def add_note(self, maintainers: list["Maintainer"], text: str):
         """
-        Convenience method to append a note to this report.
+        Convenience method to append a note to this task.
         Does NOT change status.
         """
-        return ReportUpdate.objects.create(
-            report=self,
-            maintainer=maintainer,
+        log_entry = LogEntry.objects.create(
+            task=self,
             text=text,
         )
+        if maintainers:
+            log_entry.maintainers.set(maintainers)
+        return log_entry
 
-    def set_status(self, status: str, maintainer: "Maintainer | None", text: str = ""):
+    def set_status(self, status: str, maintainers: list["Maintainer"], text: str = ""):
         """
-        Change the report's current status AND record that change
-        in the update history.
+        Change the task's current status AND record that change
+        in the log history.
         """
         if status not in dict(self.STATUS_CHOICES):
             raise ValueError(f"Invalid status: {status}")
@@ -447,19 +473,21 @@ class ProblemReport(models.Model):
         self.status = status
         self.save(update_fields=["status"])
 
-        return ReportUpdate.objects.create(
-            report=self,
-            maintainer=maintainer,
+        log_entry = LogEntry.objects.create(
+            task=self,
             status=status,
             text=text,
         )
+        if maintainers:
+            log_entry.maintainers.set(maintainers)
+        return log_entry
 
-    def set_machine_status(self, machine_status: str, maintainer: "Maintainer | None", text: str = ""):
+    def set_machine_status(self, machine_status: str, maintainers: list["Maintainer"], text: str = ""):
         """
         Change the machine's status AND record that change
-        in the update history. Also automatically updates the report status:
-        - Machine status 'good' -> closes the report
-        - Machine status 'broken' or 'fixing' -> opens the report
+        in the log history. Also automatically updates the task status:
+        - Machine status 'good' -> closes the task
+        - Machine status 'broken' or 'fixing' -> opens the task
         """
         if machine_status not in dict(MachineInstance.OPERATIONAL_STATUS_CHOICES):
             raise ValueError(f"Invalid machine status: {machine_status}")
@@ -472,54 +500,57 @@ class ProblemReport(models.Model):
         self.machine.operational_status = machine_status
         self.machine.save(update_fields=["operational_status"])
 
-        # Automatically update report status based on machine status
-        new_report_status = None
+        # Automatically update task status based on machine status
+        new_task_status = None
         if machine_status == MachineInstance.OPERATIONAL_STATUS_GOOD:
-            new_report_status = self.STATUS_CLOSED
+            new_task_status = self.STATUS_CLOSED
         elif machine_status in (MachineInstance.OPERATIONAL_STATUS_BROKEN, MachineInstance.OPERATIONAL_STATUS_FIXING):
-            new_report_status = self.STATUS_OPEN
+            new_task_status = self.STATUS_OPEN
 
-        # Update report status if it changed
-        if new_report_status and self.status != new_report_status:
-            self.status = new_report_status
+        # Update task status if it changed
+        if new_task_status and self.status != new_task_status:
+            self.status = new_task_status
             self.save(update_fields=["status"])
 
-        return ReportUpdate.objects.create(
-            report=self,
-            maintainer=maintainer,
+        log_entry = LogEntry.objects.create(
+            task=self,
             machine_status=machine_status,
-            status=new_report_status if new_report_status else None,
+            status=new_task_status if new_task_status else None,
             text=text,
         )
+        if maintainers:
+            log_entry.maintainers.set(maintainers)
+        return log_entry
 
 
-class ReportUpdate(models.Model):
-    report = models.ForeignKey(
-        ProblemReport,
+class LogEntry(models.Model):
+    task = models.ForeignKey(
+        Task,
         on_delete=models.CASCADE,
-        related_name="updates",
-    )
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    maintainer = models.ForeignKey(
-        Maintainer,
-        on_delete=models.SET_NULL,
+        related_name="log_entries",
         null=True,
         blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    maintainers = models.ManyToManyField(
+        Maintainer,
+        blank=True,
+        related_name='log_entries',
     )
 
     # Human text: what was done / observed
     text = models.TextField(blank=True)
 
-    # If set, this update *also* changed status.
-    # If null, this update is just a note.
+    # If set, this log entry *also* changed status.
+    # If null, this entry is just a note.
     status = models.CharField(
         max_length=20,
-        choices=ProblemReport.STATUS_CHOICES,
+        choices=Task.STATUS_CHOICES,
         null=True,
         blank=True,
     )
 
-    # If set, this update *also* changed the machine's status.
+    # If set, this log entry *also* changed the machine's status.
     # If null, the machine status was not changed.
     machine_status = models.CharField(
         max_length=20,
@@ -530,11 +561,14 @@ class ReportUpdate(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Problem Report Update"
-        verbose_name_plural = "Problem Report Updates"
+        verbose_name = "Log Entry"
+        verbose_name_plural = "Log Entries"
 
     def __str__(self):
-        label = f"Update on report {self.report_id}"
+        if self.task:
+            label = f"Log entry for task {self.task_id}"
+        else:
+            label = "Standalone log entry"
         if self.status:
             label += f" → {self.status}"
         return label

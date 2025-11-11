@@ -60,7 +60,7 @@
         </div>
     </div>
     <div class="page-header-right">
-        <a href="{% url 'report_create' %}" class="btn btn-primary">Report a Problem</a>
+        <a href="{% url 'task_create' %}" class="btn btn-primary">Report a Problem</a>
     </div>
 </div>
 
@@ -89,7 +89,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary">Apply</button>
-            <a href="{% url 'report_list' %}" class="btn btn-secondary">Clear</a>
+            <a href="{% url 'task_list' %}" class="btn btn-secondary">Clear</a>
         </form>
     </aside>
 
@@ -110,7 +110,7 @@
                     </thead>
                     <tbody>
                         {% for report in page_obj %}
-                        <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
+                        <tr onclick="window.location='{% url 'task_detail' report.pk %}'" class="clickable-row">
                             <td><strong>{{ report.machine.name }}</strong> ({{ report.machine.model.year }} {{ report.machine.model.manufacturer }})</td>
                             <td>
                                 {% if report.problem_type == 'other' and report.problem_text %}

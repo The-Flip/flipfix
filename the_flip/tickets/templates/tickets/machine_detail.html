@@ -183,7 +183,7 @@
         <div class="action-buttons">
             <a href="{% url 'machine_public' machine.slug %}" class="btn btn-secondary">Public Page</a>
             <a href="{% url 'machine_qr' machine.slug %}" class="btn btn-secondary">QR Code</a>
-            <a href="{% url 'report_create_qr' machine.slug %}" class="btn btn-primary">Report a Problem</a>
+            <a href="{% url 'task_create_qr' machine.slug %}" class="btn btn-primary">Report a Problem</a>
         </div>
         <div class="machine-meta">
             {% if machine.model.year %}{{ machine.model.year }}{% endif %}{% if machine.model.year and machine.model.manufacturer %}<span class="machine-meta-separator">•</span>{% endif %}{% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}{% if machine.model.year or machine.model.manufacturer %}<span class="machine-meta-separator">•</span>{% endif %}{{ machine.model.get_era_display }}{% if machine.model.flipper_count %}<span class="machine-meta-separator">•</span>{{ machine.model.flipper_count }} Flipper{% if machine.model.flipper_count != "1" %}s{% endif %}{% endif %}{% if machine.model.scoring %}<span class="machine-meta-separator">•</span>{{ machine.model.scoring }} Scoring{% endif %}{% if machine.location %}<span class="machine-meta-separator">•</span>{{ machine.get_location_display }}{% endif %}{% if machine.serial_number %}<span class="machine-meta-separator">•</span>SN: {{ machine.serial_number }}{% endif %}{% if machine.model.ipdb_id %}<span class="machine-meta-separator">•</span><a href="https://www.ipdb.org/machine.cgi?id={{ machine.model.ipdb_id }}" target="_blank" rel="noopener noreferrer" style="color: #2196F3; text-decoration: none;">IPDB ↗</a>{% endif %}
@@ -206,7 +206,7 @@
                     </thead>
                     <tbody>
                         {% for report in recent_reports %}
-                        <tr onclick="window.location='{% url 'report_detail' report.pk %}'" class="clickable-row">
+                        <tr onclick="window.location='{% url 'task_detail' report.pk %}'" class="clickable-row">
                             <td>
                                 <span class="badge badge-{{ report.status }}">
                                     {{ report.get_status_display }}

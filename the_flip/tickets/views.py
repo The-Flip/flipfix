@@ -20,8 +20,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, ReportUpdateForm
-from .models import MachineInstance, ProblemReport
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm
+from .models import MachineInstance, Task
 
 
 def _get_request_ip(request):
@@ -77,8 +77,8 @@ def _report_submission_rate_limit_exceeded(ip_address: str | None) -> bool:
 
 
 def home(request):
-    """Redirect to report list."""
-    return redirect('report_list')
+    """Redirect to task list."""
+    return redirect('task_list')
 
 
 class CustomLoginView(LoginView):
@@ -92,13 +92,13 @@ def report_list(request):
     Display list of problem reports with filtering.
     Accessible to everyone (public + maintainers).
     """
-    reports = ProblemReport.objects.all().select_related('machine__model').order_by('-created_at')
+    reports = Task.objects.all().select_related('machine__model').order_by('-created_at')
 
     # Default to showing open reports when no status filter is provided
     query_params = request.GET.copy()
     if not query_params.get('status'):
         query_params = query_params.copy()
-        query_params['status'] = ProblemReport.STATUS_OPEN
+        query_params['status'] = Task.STATUS_OPEN
 
     form = ReportFilterForm(query_params or None)
 
@@ -130,8 +130,8 @@ def report_list(request):
 
     # Calculate stats
     stats = {
-        'open_count': ProblemReport.objects.filter(status=ProblemReport.STATUS_OPEN).count(),
-        'closed_count': ProblemReport.objects.filter(status=ProblemReport.STATUS_CLOSED).count(),
+        'open_count': Task.objects.filter(status=Task.STATUS_OPEN).count(),
+        'closed_count': Task.objects.filter(status=Task.STATUS_CLOSED).count(),
     }
 
     # Pagination
@@ -152,8 +152,8 @@ def report_detail(request, pk):
     Everyone can view, but only authenticated maintainers can add updates.
     """
     report = get_object_or_404(
-        ProblemReport.objects.select_related('machine__model').prefetch_related(
-            'updates__maintainer__user'
+        Task.objects.select_related('machine__model').prefetch_related(
+            'log_entries__maintainers__user'
         ),
         pk=pk
     )
@@ -169,26 +169,27 @@ def report_detail(request, pk):
     if request.method == 'POST' and can_update:
         # Get maintainer object (None for staff users without maintainer record)
         maintainer = getattr(request.user, 'maintainer', None)
+        maintainers = [maintainer] if maintainer else []
 
         if 'add_update' in request.POST:
-            form = ReportUpdateForm(request.POST, current_machine_status=report.machine.operational_status)
+            form = LogEntryForm(request.POST, current_machine_status=report.machine.operational_status)
             if form.is_valid():
                 text = form.cleaned_data['text']
                 machine_status = form.cleaned_data.get('machine_status')
 
                 # If machine status was changed, use set_machine_status
                 if machine_status:
-                    report.set_machine_status(machine_status, maintainer, text)
+                    report.set_machine_status(machine_status, maintainers, text)
                     messages.success(request, f'Update added and machine status changed to {dict(MachineInstance.OPERATIONAL_STATUS_CHOICES)[machine_status]}.')
                 else:
                     # No machine status change, just add a note
-                    report.add_note(maintainer, text)
+                    report.add_note(maintainers, text)
                     messages.success(request, 'Update added successfully.')
-                return redirect('report_detail', pk=pk)
+                return redirect('task_detail', pk=pk)
 
     # Create empty form for GET requests or failed POST
     if can_update and form is None:
-        form = ReportUpdateForm(current_machine_status=report.machine.operational_status)
+        form = LogEntryForm(current_machine_status=report.machine.operational_status)
 
     return render(request, 'tickets/report_detail.html', {
         'report': report,
@@ -237,7 +238,7 @@ def report_create(request, machine_slug=None):
                 report.save()
 
                 messages.success(request, 'Problem report submitted successfully. Thank you!')
-                return redirect('report_detail', pk=report.pk)
+                return redirect('task_detail', pk=report.pk)
     else:
         form = ProblemReportCreateForm(machine=machine, user=request.user)
 
@@ -256,7 +257,7 @@ def machine_list(request):
     # Check permission (staff users or maintainers)
     if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
         messages.error(request, 'You do not have permission to access this page.')
-        return redirect('report_list')
+        return redirect('task_list')
 
     machines = MachineInstance.objects.all().select_related('model').order_by('model__name', 'serial_number')
 
@@ -308,12 +309,12 @@ def machine_detail(request, slug):
     # Check permission (staff users or maintainers)
     if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
         messages.error(request, 'You do not have permission to access this page.')
-        return redirect('report_list')
+        return redirect('task_list')
 
     machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
 
     # Get recent reports for this machine
-    recent_reports = ProblemReport.objects.filter(machine=machine).order_by('-created_at')[:10]
+    recent_reports = Task.objects.filter(machine=machine).order_by('-created_at')[:10]
 
     return render(request, 'tickets/machine_detail.html', {
         'machine': machine,
@@ -343,7 +344,7 @@ def machine_qr(request, slug):
     # Check permission (staff users or maintainers)
     if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
         messages.error(request, 'You do not have permission to access this page.')
-        return redirect('report_list')
+        return redirect('task_list')
 
     machine = get_object_or_404(MachineInstance, slug=slug)
 

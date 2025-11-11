@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django import forms
-from .models import MachineModel, MachineInstance, Maintainer, ProblemReport, ReportUpdate
+from .models import MachineModel, MachineInstance, Maintainer, Task, LogEntry
 
 
 class CustomAdminSite(AdminSite):
@@ -27,8 +27,8 @@ class CustomAdminSite(AdminSite):
 
         # Custom ordering for Game Maintenance models
         game_maintenance_order = {
-            'Problem Reports': 1,
-            'Problem Report Updates': 2,
+            'Tasks': 1,
+            'Log Entries': 2,
         }
 
         # Custom ordering for Games app models
@@ -178,10 +178,10 @@ class MaintainerAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'phone']
 
 
-@admin.register(ProblemReport)
-class ProblemReportAdmin(admin.ModelAdmin):
-    list_display = ['machine', 'problem_type', 'status', 'created_at', 'reported_by']
-    list_filter = ['status', 'problem_type', 'created_at']
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ['machine', 'type', 'problem_type', 'status', 'created_at', 'reported_by']
+    list_filter = ['type', 'status', 'problem_type', 'created_at']
     search_fields = ['machine__name_override', 'machine__model__name', 'problem_text', 'reported_by_name']
     readonly_fields = ['created_at']
 
@@ -192,9 +192,14 @@ class ProblemReportAdmin(admin.ModelAdmin):
         return obj.reported_by_name or 'Anonymous'
 
 
-@admin.register(ReportUpdate)
-class ReportUpdateAdmin(admin.ModelAdmin):
-    list_display = ['report', 'maintainer', 'status', 'machine_status', 'created_at']
+@admin.register(LogEntry)
+class LogEntryAdmin(admin.ModelAdmin):
+    list_display = ['task', 'get_maintainers', 'status', 'machine_status', 'created_at']
     list_filter = ['status', 'machine_status', 'created_at']
-    search_fields = ['report__machine__name_override', 'report__machine__model__name', 'text']
+    search_fields = ['task__machine__name_override', 'task__machine__model__name', 'text']
     readonly_fields = ['created_at']
+    filter_horizontal = ['maintainers']
+
+    @admin.display(description='Maintainers')
+    def get_maintainers(self, obj):
+        return ", ".join([str(m) for m in obj.maintainers.all()[:3]])

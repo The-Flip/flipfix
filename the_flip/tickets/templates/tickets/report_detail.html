@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="breadcrumb">
-    <a href="{% url 'report_list' %}">← Back to Reports</a>
+    <a href="{% url 'task_list' %}">← Back to Reports</a>
 </div>
 
 <div class="report-detail">
@@ -50,37 +50,39 @@
     <div class="updates-section">
         <h3>Update History</h3>
 
-        {% if report.updates.all %}
+        {% if report.log_entries.all %}
             <div class="timeline">
-                {% for update in report.updates.all %}
+                {% for log_entry in report.log_entries.all %}
                 <div class="timeline-item">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
                         <div class="update-header">
                             <strong>
-                                {% if update.maintainer %}
-                                    {{ update.maintainer.user.get_full_name|default:update.maintainer.user.username }}
+                                {% if log_entry.maintainers.all %}
+                                    {% for maintainer in log_entry.maintainers.all %}
+                                        {{ maintainer.user.get_full_name|default:maintainer.user.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
                                 {% else %}
                                     System
                                 {% endif %}
                             </strong>
-                            <span class="update-time">{{ update.created_at|date:"M d, Y g:i A" }}</span>
-                            {% if update.machine_status %}
-                                <span class="badge badge-{{ update.machine_status }} badge-small">
-                                    Machine: {{ update.get_machine_status_display }}
+                            <span class="update-time">{{ log_entry.created_at|date:"M d, Y g:i A" }}</span>
+                            {% if log_entry.machine_status %}
+                                <span class="badge badge-{{ log_entry.machine_status }} badge-small">
+                                    Machine: {{ log_entry.get_machine_status_display }}
                                 </span>
                             {% endif %}
-                            {% if update.machine_status and update.status %}
+                            {% if log_entry.machine_status and log_entry.status %}
                                 <span style="margin: 0 8px; color: #999;">→</span>
                             {% endif %}
-                            {% if update.status %}
-                                <span class="badge badge-{{ update.status }} badge-small">
-                                    Report: {{ update.get_status_display }}
+                            {% if log_entry.status %}
+                                <span class="badge badge-{{ log_entry.status }} badge-small">
+                                    Report: {{ log_entry.get_status_display }}
                                 </span>
                             {% endif %}
                         </div>
                         <div class="update-text">
-                            {{ update.text|linebreaks }}
+                            {{ log_entry.text|linebreaks }}
                         </div>
                     </div>
                 </div>

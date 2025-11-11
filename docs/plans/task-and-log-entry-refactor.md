@@ -66,14 +66,18 @@ Support three types of workflows:
 
 ### Public-Facing Pages (QR Code Workflow)
 
-**No URL changes needed:**
+**URLs unchanged:**
 - `/m/<slug>/` - public educational page (QR code target) - no changes
-- `/new_report/<slug>/` - problem report form (keep "report" in URL for public) - no changes
 
-**Updates required:**
-- `machine_public_view` - update to query `Task` objects filtered by `type='problem_report'`
-- `report_create` / `report_create_qr` views - update to create `Task` with `type='problem_report'`
-- `ProblemReportCreateForm` - update to work with `Task` model, automatically set `type='problem_report'`
+**URLs updated:**
+- `/new_report/<slug>/` → `/tasks/new/<slug>/` - problem report form
+  - Keep "Problem Report" **terminology** in templates and labels
+  - Update URL and URL name for consistency with maintainer interface
+
+**View updates (completed):**
+- `machine_public_view` - query `Task` objects filtered by `type='problem_report'`
+- `report_create` / `report_create_qr` views - create `Task` with `type='problem_report'`
+- `ProblemReportCreateForm` - work with `Task` model, automatically set `type='problem_report'`
 - Templates keep all "Problem Report" terminology (no "Task" terminology for public)
 
 ### Maintainer's Machine Detail Page
@@ -227,18 +231,22 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
 
 ## URL Structure
 
-Current:
+**Previous (before refactor):**
 - `/reports/` - list all reports
 - `/reports/<id>/` - report detail
-- `/new_report/` - create report
+- `/new_report/` - create report (general)
+- `/new_report/<slug>/` - create report via QR code
 - `/machines/<slug>/` - machine detail
 
-Proposed:
-- `/tasks/` - list all tasks (renamed from reports)
-- `/tasks/<id>/` - task detail (renamed from report_detail)
-- `/tasks/new/` - create task (renamed from report_create)
-- `/machines/<slug>/` - machine detail
-- `/machines/<slug>/log/` - NEW: create log entry
+**Updated (completed):**
+- `/tasks/` - list all tasks (URL name: `task_list`)
+- `/tasks/<id>/` - task detail (URL name: `task_detail`)
+- `/tasks/new/` - create task (URL name: `task_create`)
+- `/tasks/new/<slug>/` - create task via QR code (URL name: `task_create_qr`)
+- `/machines/<slug>/` - machine detail (unchanged)
+- `/machines/<slug>/log/` - NEW: create log entry (to be implemented in Phase 3)
+
+**Note:** Public-facing templates continue to use "Problem Report" terminology even though URLs are now `/tasks/*`
 
 ## Notes
 

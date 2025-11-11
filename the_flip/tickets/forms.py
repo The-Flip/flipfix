@@ -1,5 +1,5 @@
 from django import forms
-from .models import MachineModel, MachineInstance, ProblemReport, ReportUpdate
+from .models import MachineModel, MachineInstance, Task, LogEntry
 
 
 class GameFilterForm(forms.Form):
@@ -51,13 +51,13 @@ class ReportFilterForm(forms.Form):
 
     STATUS_CHOICES = [
         ('all', 'All Reports'),
-        (ProblemReport.STATUS_OPEN, 'Open'),
-        (ProblemReport.STATUS_CLOSED, 'Closed'),
+        (Task.STATUS_OPEN, 'Open'),
+        (Task.STATUS_CLOSED, 'Closed'),
     ]
 
     PROBLEM_TYPE_CHOICES = [
         ('all', 'All Types'),
-    ] + list(ProblemReport.PROBLEM_TYPE_CHOICES)
+    ] + list(Task.PROBLEM_TYPE_CHOICES)
 
     status = forms.ChoiceField(
         choices=STATUS_CHOICES,
@@ -97,8 +97,8 @@ class ReportFilterForm(forms.Form):
         ).select_related('model').order_by('model__name', 'serial_number')
 
 
-class ReportUpdateForm(forms.ModelForm):
-    """Form for adding updates to problem reports (maintainers only)."""
+class LogEntryForm(forms.ModelForm):
+    """Form for adding log entries to tasks (maintainers only)."""
 
     machine_status = forms.ChoiceField(
         required=False,
@@ -123,7 +123,7 @@ class ReportUpdateForm(forms.ModelForm):
         self.fields['machine_status'].choices = available_choices
 
     class Meta:
-        model = ReportUpdate
+        model = LogEntry
         fields = ['text', 'machine_status']
         widgets = {
             'text': forms.Textarea(attrs={
@@ -171,8 +171,16 @@ class ProblemReportCreateForm(forms.ModelForm):
             self.fields['reported_by_contact'].widget = forms.HiddenInput()
             self.fields['reported_by_contact'].required = False
 
+    def save(self, commit=True):
+        """Override save to set type to problem_report."""
+        instance = super().save(commit=False)
+        instance.type = Task.TYPE_PROBLEM_REPORT
+        if commit:
+            instance.save()
+        return instance
+
     class Meta:
-        model = ProblemReport
+        model = Task
         fields = ['machine', 'problem_type', 'problem_text', 'reported_by_name', 'reported_by_contact']
         widgets = {
             'machine': forms.Select(attrs={'class': 'form-select'}),
