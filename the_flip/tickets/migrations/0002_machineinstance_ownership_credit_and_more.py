@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='machineinstance',
             name='ownership_credit',
-            field=models.CharField(blank=True, help_text="Credit line for ownership (e.g., 'The Flip Collection', 'On loan from William Pietri', 'From the collection of Sam Harvey')", max_length=300),
+            field=models.CharField(blank=True, help_text="Credit line for ownership (e.g. 'On loan from William Pietri', 'From the collection of Sam Harvey')", max_length=300),
         ),
         migrations.AddField(
             model_name='machinemodel',

@@ -238,7 +238,7 @@ class MachineInstance(models.Model):
     ownership_credit = models.CharField(
         max_length=300,
         blank=True,
-        help_text="Credit line for ownership (e.g., 'The Flip Collection', 'On loan from William Pietri', 'From the collection of Sam Harvey')"
+        help_text="Credit line for ownership (e.g. 'On loan from William Pietri', 'From the collection of Sam Harvey')"
     )
 
     location = models.CharField(

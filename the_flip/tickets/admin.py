@@ -90,6 +90,16 @@ class MachineModelAdmin(admin.ModelAdmin):
         ('Technical Details', {
             'fields': ('system', 'scoring', 'flipper_count')
         }),
+        ('Production', {
+            'fields': ('production_quantity', 'factory_address')
+        }),
+        ('Credits', {
+            'fields': ('design_credit', 'concept_and_design_credit', 'art_credit', 'sound_credit')
+        }),
+        ('Educational Content', {
+            'fields': ('educational_text', 'illustration_filename', 'sources_notes'),
+            'classes': ('collapse',)
+        }),
         ('Community', {
             'fields': ('pinside_rating', 'ipdb_id')
         }),
@@ -139,7 +149,7 @@ class MachineInstanceAdmin(admin.ModelAdmin):
             'fields': ('serial_number',)
         }),
         ('Acquisition', {
-            'fields': ('acquisition_notes',),
+            'fields': ('acquisition_notes', 'ownership_credit'),
             'classes': ('collapse',)
         }),
         ('Location & Status', {
