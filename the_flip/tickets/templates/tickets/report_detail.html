@@ -34,7 +34,7 @@
 
         <div class="info-card">
             <h3>Reported</h3>
-            <p>{{ report.created_at|date:"M d, Y g:i A" }}</p>
+            <p>{{ report.created_at|smart_date }}</p>
         </div>
     </div>
 
@@ -61,7 +61,7 @@
                                     System
                                 {% endif %}
                             </strong>
-                            <span class="update-time">{{ log_entry.created_at|date:"M d, Y g:i A" }}</span>
+                            <span class="update-time">{{ log_entry.created_at|smart_date }}</span>
                             {% if log_entry.machine_status %}
                                 <span class="badge badge-{{ log_entry.machine_status }} badge-small">
                                     Machine: {{ log_entry.get_machine_status_display }}

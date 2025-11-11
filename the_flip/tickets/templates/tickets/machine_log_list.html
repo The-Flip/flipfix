@@ -1,4 +1,5 @@
 {% extends 'tickets/base.html' %}
+{% load reporter_tags %}
 
 {% block title %}Work Logs - {{ machine.name }}{% endblock %}
 
@@ -37,7 +38,7 @@
             <tbody>
                 {% for log in page_obj %}
                 <tr onclick="window.location='{% url 'machine_log_detail' machine.slug log.pk %}'" class="clickable-row">
-                    <td>{{ log.created_at|date:"M d, Y g:i A" }}</td>
+                    <td>{{ log.created_at|smart_date }}</td>
                     <td>{{ log.text|truncatechars:100 }}</td>
                     <td>
                         {% if log.maintainers.all %}

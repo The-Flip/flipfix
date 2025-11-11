@@ -1,4 +1,5 @@
 {% extends 'tickets/base.html' %}
+{% load reporter_tags %}
 
 {% block title %}Work Log - {{ machine.name }}{% endblock %}
 
@@ -164,7 +165,7 @@
     </div>
 
     <div class="log-meta">
-        <strong>Date:</strong> {{ log_entry.created_at|date:"F d, Y g:i A" }}
+        <strong>Date:</strong> {{ log_entry.created_at|smart_date }}
         {% if log_entry.machine_status %}
         <br>
         <strong>Status Change:</strong>

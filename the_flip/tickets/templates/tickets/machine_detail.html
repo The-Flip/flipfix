@@ -208,7 +208,7 @@
                     <tbody>
                         {% for report in open_problem_reports %}
                         <tr onclick="window.location='{% url 'task_detail' report.pk %}'" class="clickable-row">
-                            <td>{{ report.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ report.created_at|smart_date }}</td>
                             <td>
                                 {% if report.problem_type == 'other' and report.problem_text %}
                                     {{ report.problem_text|truncatechars:60 }}
@@ -247,7 +247,7 @@
                     <tbody>
                         {% for task in open_tasks %}
                         <tr onclick="window.location='{% url 'task_detail' task.pk %}'" class="clickable-row">
-                            <td>{{ task.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ task.created_at|smart_date }}</td>
                             <td>{{ task.problem_text|truncatechars:60 }}</td>
                             <td>{{ task|creator_display }}</td>
                         </tr>
@@ -283,7 +283,7 @@
                     <tbody>
                         {% for log in recent_logs %}
                         <tr onclick="window.location='{% url 'machine_log_detail' machine.slug log.pk %}'" class="clickable-row">
-                            <td>{{ log.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ log.created_at|smart_date }}</td>
                             <td>{{ log.text|truncatechars:80 }}</td>
                             <td>
                                 {% if log.maintainers.all %}

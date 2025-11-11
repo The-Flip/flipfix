@@ -131,7 +131,7 @@
                                     {{ report.get_status_display }}
                                 </span>
                             </td>
-                            <td>{{ report.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ report.created_at|smart_date }}</td>
                             {% if user.is_authenticated %}
                             <td>{% reporter_display report %}</td>
                             {% endif %}

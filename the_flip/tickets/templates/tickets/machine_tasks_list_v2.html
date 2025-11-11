@@ -66,7 +66,7 @@
                                     {{ task.get_status_display }}
                                 </span>
                             </td>
-                            <td>{{ task.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>{{ task.created_at|smart_date }}</td>
                             <td>
                                 {% if task.type == 'problem_report' %}
                                     {% if task.problem_type == 'other' and task.problem_text %}
