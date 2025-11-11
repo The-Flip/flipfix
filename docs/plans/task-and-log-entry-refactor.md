@@ -113,9 +113,13 @@ Keep existing status badges and UI patterns
 
 ### New Management Command
 
-`python manage.py create_legacy_maintenance_records`
+`python manage.py import_legacy_maintenance_records`
 
 This replaces `create_sample_problem_reports.py` (but don't delete the old one yet).
+
+**Data Approach:**
+- Unlike `create_default_machines.py` which has legacy data hardcoded in Python, this command **reads CSV files at runtime**
+- Legacy data stays in CSV format for easier updating and maintenance, no need to re-munge data if/when the CSV gets updated
 
 **Data Sources:**
 - `docs/legacy_data/Maintenance - Problems.csv`: these become Tasks
@@ -161,13 +165,16 @@ This replaces `create_sample_problem_reports.py` (but don't delete the old one y
 - [ ] Update report/task list page to show Tasks
 
 ### Phase 4: Legacy Data Import
-- [ ] Create management command `import_legacy_maintenance.py`
-- [ ] Parse CSV date formats
-- [ ] Match machines by name (case-insensitive)
-- [ ] Match maintainers by name
-- [ ] Handle missing machines (create or skip?)
-- [ ] Handle missing maintainers (create generic "Unknown" maintainer?)
-- [ ] Respect CSV dates in LogEntry.created_at
+- [ ] Create management command `import_legacy_maintenance_records.py`
+  - [ ] Clean up CSVs automatically on first read
+    - [ ] Use Python's csv module with proper quoting to handle multi-line fields
+    - [ ] No need to rewrite files - just parse correctly in memory
+  - [ ] Validate machine names match database (exit with error if not)
+  - [ ] Parse CSV date formats (handle various formats like "10/4/2025 6:09 PM")
+  - [ ] Match machines by name (case-insensitive, with fuzzy matching if needed)
+  - [ ] Match maintainers by name (exit with error if not found)
+  - [ ] Create LogEntries with correct dates (override created_at)
+  - [ ] Associate multiple maintainers with each LogEntry
 
 ### Phase 5: Testing & Verification
 - [ ] Test Task creation (public and maintainer)
