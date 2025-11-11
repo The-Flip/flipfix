@@ -9,81 +9,41 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Populate database with sample maintainers and problem reports for development'
+    help = 'Populate database with sample problem reports for development'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--clear',
             action='store_true',
-            help='Clear existing maintainers and reports before adding sample data',
+            help='Clear existing reports before adding sample data',
         )
 
     def handle(self, *args, **options):
         if options['clear']:
             report_count = ProblemReport.objects.count()
-            maintainer_count = Maintainer.objects.count()
             ProblemReport.objects.all().delete()
-            Maintainer.objects.all().delete()
-            # Also delete the users (except superusers)
-            user_count = User.objects.filter(is_superuser=False).count()
-            User.objects.filter(is_superuser=False).delete()
             self.stdout.write(
                 self.style.WARNING(
-                    f'Deleted {user_count} user(s), {maintainer_count} maintainer(s), '
-                    f'{report_count} report(s)'
+                    f'Deleted {report_count} report(s)'
                 )
             )
 
-        # Create maintainers
-        maintainer_data = [
-            {'username': 'form', 'first_name': 'Chris', 'last_name': 'Miller', 'phone': '415-555-0101'},
-            {'username': 'thau', 'first_name': 'Dave', 'last_name': 'Thau', 'phone': '415-555-0102'},
-            {'username': 'mikek', 'first_name': 'Mike', 'last_name': 'Kuniavsky', 'phone': '415-555-0103'},
-            {'username': 'jimh', 'first_name': 'Jim', 'last_name': 'Home', 'phone': '415-555-0104'},
-            {'username': 'jcook', 'first_name': 'John', 'last_name': 'Cook', 'phone': '415-555-0105'},
-        ]
+        # Get existing maintainers
+        maintainers = list(Maintainer.objects.all())
 
-        maintainers = []
-        created_maintainers = 0
-        existing_maintainers = 0
-
-        for data in maintainer_data:
-            username = data.pop('username')
-            first_name = data.pop('first_name')
-            last_name = data.pop('last_name')
-            phone = data.pop('phone')
-
-            user, user_created = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'email': f'{username}@example.com',
-                }
-            )
-
-            if user_created:
-                user.set_password('test123')
-                user.save()
-
-            maintainer, maint_created = Maintainer.objects.get_or_create(
-                user=user,
-                defaults={'phone': phone}
-            )
-
-            maintainers.append(maintainer)
-
-            if maint_created:
-                created_maintainers += 1
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'✓ Created maintainer: {maintainer} ({username})'
-                    )
+        if not maintainers:
+            self.stdout.write(
+                self.style.ERROR(
+                    'No maintainers found! Please run create_default_maintainers first.'
                 )
-            else:
-                existing_maintainers += 1
-                self.stdout.write(f'  Already exists: {maintainer}')
+            )
+            return
 
+        self.stdout.write(
+            self.style.SUCCESS(
+                f'Using {len(maintainers)} existing maintainer(s)'
+            )
+        )
         self.stdout.write('')
 
         # Get specific machines by name for targeted problem reports
@@ -104,7 +64,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': "Mechanics are completely gooped up with old grease and dirt. Machine doesn't work at all.",
                 'reporter_name': 'Museum Curator',
-                'reporter_contact': 'curator@museum.org',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Started cleaning process. Removing decades of gunk from mechanical components.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'About 30% through cleaning. Found several broken springs that need replacement.',
@@ -121,7 +81,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Left flipper completely dead. No response when button pressed.',
                 'reporter_name': 'Tom Wilson',
-                'reporter_contact': 'tom.w@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Opened up the cabinet. Left flipper coil is melted!', 'machine_status': MachineInstance.OPERATIONAL_STATUS_BROKEN},
                     'Investigating why coil melted - checking for electrical issues.',
@@ -137,7 +97,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Game powers on but display is flickering. Boards are disconnected.',
                 'reporter_name': 'Sarah Johnson',
-                'reporter_contact': 'sarah@email.com',
+                'reporter_contact': '',
                 'updates': [
                     'Transformer voltage needs verification. Getting multimeter readings.',
                     'Transformer output looks good. Now adjusting cable connections.',
@@ -150,7 +110,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'MPU board not booting. No display activity.',
                 'reporter_name': 'Mike Davis',
-                'reporter_contact': '555-1234',
+                'reporter_contact': '',
                 'updates': [
                     'Found corroded battery on MPU board. Battery had leaked.',
                     'Cleaning battery acid damage from traces.',
@@ -186,7 +146,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Replay counter not advancing when winning free games.',
                 'reporter_name': 'Bob Smith',
-                'reporter_contact': '555-5678',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Inspecting replay mechanism. Lots of old hardened grease.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Cleaned and re-lubricated replay counter mechanism.',
@@ -213,7 +173,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Thing hand keeps getting stuck in the up position.',
                 'reporter_name': 'Mark Taylor',
-                'reporter_contact': 'mark@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Motor for Thing hand mechanism needs lubrication.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     {'text': 'Lubricated motor and tested. Working smoothly.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_GOOD},
@@ -242,7 +202,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Building topper not lighting up. Display works fine but topper is dark.',
                 'reporter_name': 'Kevin Brown',
-                'reporter_contact': '555-9012',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Found loose connector on topper LED strip.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     {'text': 'Reconnected and secured. All topper lights working.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_GOOD},
@@ -266,7 +226,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Chime unit not firing when scoring. Silent during gameplay.',
                 'reporter_name': 'Daniel Martinez',
-                'reporter_contact': 'dan.m@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Chime plungers are sticky and not striking.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Cleaned and adjusted all three chime units.',
@@ -290,7 +250,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_STUCK_BALL,
                 'text': 'Ball stuck in 8-ball target area.',
                 'reporter_name': 'Paul Rodriguez',
-                'reporter_contact': '555-3456',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Retrieved ball. Target bank spacing was too tight.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     {'text': 'Adjusted target spacing. Tested extensively - no more sticking.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_GOOD},
@@ -302,7 +262,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Supercharger gear making grinding noise.',
                 'reporter_name': 'Steve Chen',
-                'reporter_contact': 'steve.c@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Supercharger gear teeth showing wear.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Ordered replacement supercharger assembly.',
@@ -327,7 +287,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_NO_CREDITS,
                 'text': 'Coin slot jammed. Quarter stuck inside.',
                 'reporter_name': 'William Chen',
-                'reporter_contact': 'w.chen@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Removed jammed quarter. Coin mech needs cleaning.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     {'text': 'Cleaned and lubricated coin mechanism. Testing now.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_GOOD},
@@ -339,7 +299,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Rotating pool table mechanism is stuck. Won\'t rotate.',
                 'reporter_name': 'Chris Johnson',
-                'reporter_contact': '555-7890',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Motor for rotating playfield seized up from old grease.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Disassembling mechanism for thorough cleaning.',
@@ -353,7 +313,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Several pins on playfield are loose.',
                 'reporter_name': 'Jennifer Mills',
-                'reporter_contact': '555-4321',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Tightening all loose pins. Some need replacement.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     {'text': 'All pins secure. Playfield in excellent condition for 1932!', 'machine_status': MachineInstance.OPERATIONAL_STATUS_GOOD},
@@ -365,7 +325,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Need full diagnostic. Machine status unknown.',
                 'reporter_name': 'Museum Curator',
-                'reporter_contact': 'curator@museum.org',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Starting full inspection of 1937 machine.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Totalizer scoring mechanism appears intact.',
@@ -380,7 +340,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Right flipper feels weak compared to left.',
                 'reporter_name': 'Alex Turner',
-                'reporter_contact': 'alex.t@email.com',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Measured coil voltage - within spec.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Flipper rubber on right side is worn. Replacing.',
@@ -402,7 +362,7 @@ class Command(BaseCommand):
                 'type': ProblemReport.PROBLEM_OTHER,
                 'text': 'Shaker motor runs constantly, even in attract mode.',
                 'reporter_name': 'Tyler Brooks',
-                'reporter_contact': '555-2468',
+                'reporter_contact': '',
                 'updates': [
                     {'text': 'Shaker relay stuck in closed position.', 'machine_status': MachineInstance.OPERATIONAL_STATUS_FIXING},
                     'Replaced relay.',
@@ -524,12 +484,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Already exists: {machine.name} report')
 
         self.stdout.write('')
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Summary: {created_maintainers} maintainers created, '
-                f'{existing_maintainers} already existed'
-            )
-        )
         self.stdout.write(
             self.style.SUCCESS(
                 f'Summary: {created_reports} reports created, '

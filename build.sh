@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Build script for deployment to test environment on Render.com
+
 # exit on error
 set -o errexit
 
@@ -14,8 +16,11 @@ python manage.py migrate
 # Collect static files
 python manage.py collectstatic --no-input
 
-# Create default admin users and maintainers
+# Create default admin users
 python manage.py create_default_admins
+
+# Create default maintainers
+python manage.py create_default_maintainers
 
 # Create default pinball machines
 python manage.py create_default_machines
