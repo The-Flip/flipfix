@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm
+from .forms import GameFilterForm, ProblemReportCreateForm, ReportFilterForm, LogEntryForm, TaskCreateForm
 from .models import MachineInstance, Task
 
 
@@ -245,6 +245,35 @@ def report_create(request, machine_slug=None):
     return render(request, 'tickets/report_create.html', {
         'form': form,
         'machine': machine,
+    })
+
+
+@login_required
+def task_create_todo(request):
+    """
+    Create a new TODO task (maintainers only).
+    This is different from problem reports - it's for maintainer-created tasks.
+    """
+    # Check permission (staff users or maintainers)
+    if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('task_list')
+
+    if request.method == 'POST':
+        form = TaskCreateForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.reported_by_user = request.user
+            task.reported_by_name = request.user.get_full_name() or request.user.username
+            task.save()
+
+            messages.success(request, 'Task created successfully.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        form = TaskCreateForm()
+
+    return render(request, 'tickets/task_create_todo.html', {
+        'form': form,
     })
 
 

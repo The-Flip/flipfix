@@ -137,6 +137,41 @@ class LogEntryForm(forms.ModelForm):
         }
 
 
+class TaskCreateForm(forms.ModelForm):
+    """Form for creating maintainer TODO tasks (maintainers only)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show all machines for maintainers
+        self.fields['machine'].queryset = MachineInstance.objects.all().select_related('model').order_by('model__name', 'serial_number')
+        # Customize the label to show "Name (Year Manufacturer)"
+        self.fields['machine'].label_from_instance = lambda obj: f"{obj.name} ({obj.model.year} {obj.model.manufacturer})"
+
+    def save(self, commit=True):
+        """Override save to set type to task."""
+        instance = super().save(commit=False)
+        instance.type = Task.TYPE_TASK
+        if commit:
+            instance.save()
+        return instance
+
+    class Meta:
+        model = Task
+        fields = ['machine', 'problem_text']
+        widgets = {
+            'machine': forms.Select(attrs={'class': 'form-select'}),
+            'problem_text': forms.Textarea(attrs={
+                'rows': 5,
+                'class': 'form-control',
+                'placeholder': 'Describe the task or work to be done...'
+            }),
+        }
+        labels = {
+            'machine': 'Machine',
+            'problem_text': 'Task description',
+        }
+
+
 class ProblemReportCreateForm(forms.ModelForm):
     """Form for creating new problem reports (public + maintainers)."""
 
