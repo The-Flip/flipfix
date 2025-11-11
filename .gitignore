@@ -22,7 +22,9 @@ db.sqlite3-journal
 *.pot
 
 # IDEs
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
