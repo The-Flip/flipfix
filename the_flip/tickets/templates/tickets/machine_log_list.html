@@ -41,8 +41,6 @@
                     <td>
                         {% if log.task %}
                             <a href="{% url 'task_detail' log.task.pk %}" onclick="event.stopPropagation()">Task #{{ log.task.pk }}</a>
-                        {% else %}
-                            Standalone
                         {% endif %}
                     </td>
                     <td>
