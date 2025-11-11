@@ -20,6 +20,7 @@ urlpatterns = [
     path('machines/<slug:slug>/tasks/', views.machine_tasks_list, name='machine_tasks_list'),
     path('machines/<slug:slug>/tasks/new/', views.machine_task_create, name='machine_task_create'),
     path('machines/<slug:slug>/log/', views.machine_log_list, name='machine_log_list'),
+    path('machines/<slug:slug>/log/<int:pk>/', views.machine_log_detail, name='machine_log_detail'),
     path('machines/<slug:slug>/log/new/', views.machine_log_create, name='machine_log_create'),
     path('machines/<slug:slug>/qr/', views.machine_qr, name='machine_qr'),
 

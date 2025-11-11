@@ -26,7 +26,7 @@
             </thead>
             <tbody>
                 {% for log in page_obj %}
-                <tr{% if log.task %} onclick="window.location='{% url 'task_detail' log.task.pk %}'" class="clickable-row"{% endif %}>
+                <tr onclick="window.location='{% url 'machine_log_detail' machine.slug log.pk %}'" class="clickable-row">
                     <td>{{ log.created_at|date:"M d, Y g:i A" }}</td>
                     <td>{{ log.text|truncatechars:100 }}</td>
                     <td>
@@ -40,7 +40,7 @@
                     </td>
                     <td>
                         {% if log.task %}
-                            <a href="{% url 'task_detail' log.task.pk %}">Task #{{ log.task.pk }}</a>
+                            <a href="{% url 'task_detail' log.task.pk %}" onclick="event.stopPropagation()">Task #{{ log.task.pk }}</a>
                         {% else %}
                             Standalone
                         {% endif %}

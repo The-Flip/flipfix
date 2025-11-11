@@ -1,0 +1,216 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Work Log - {{ machine.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .log-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .breadcrumb {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .breadcrumb a {
+        color: #2196F3;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb a:hover {
+        color: #1976D2;
+    }
+
+    .breadcrumb-separator {
+        margin: 0 8px;
+        color: #999;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        margin: 0 0 10px 0;
+        font-size: 2em;
+        color: #2c3e50;
+    }
+
+    .log-meta {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-radius: 6px;
+        color: #666;
+        font-size: 0.95em;
+        line-height: 1.8;
+        margin-bottom: 30px;
+    }
+
+    .log-meta strong {
+        color: #2c3e50;
+    }
+
+    .log-section {
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .log-section h2 {
+        margin: 0 0 15px 0;
+        font-size: 1.2em;
+        color: #2c3e50;
+    }
+
+    .log-text {
+        line-height: 1.6;
+        color: #2c3e50;
+        white-space: pre-wrap;
+    }
+
+    .related-task {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid #2196F3;
+    }
+
+    .related-task a {
+        color: #2196F3;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .related-task a:hover {
+        text-decoration: underline;
+    }
+
+    .maintainers-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .maintainer-chip {
+        background: #e3f2fd;
+        color: #1976D2;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.95em;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: background 0.2s;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #2196F3;
+        border: 2px solid #2196F3;
+    }
+
+    .btn-secondary:hover {
+        background: #f0f8ff;
+    }
+
+    @media (max-width: 768px) {
+        .page-header h1 {
+            font-size: 1.5em;
+        }
+
+        .action-buttons {
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="log-detail-container">
+    <div class="breadcrumb">
+        <a href="{% url 'machine_detail' machine.slug %}">{{ machine.name }}</a>
+        <span class="breadcrumb-separator">→</span>
+        <a href="{% url 'machine_log_list' machine.slug %}">Work Logs</a>
+        <span class="breadcrumb-separator">→</span>
+        <span>Log Entry #{{ log_entry.pk }}</span>
+    </div>
+
+    <div class="page-header">
+        <h1>Work Log Entry</h1>
+    </div>
+
+    <div class="log-meta">
+        <strong>Date:</strong> {{ log_entry.created_at|date:"F d, Y g:i A" }}
+        {% if log_entry.machine_status %}
+        <br>
+        <strong>Status Change:</strong>
+        <span class="badge badge-{{ log_entry.machine_status }} badge-small">
+            {{ log_entry.get_machine_status_display }}
+        </span>
+        {% endif %}
+    </div>
+
+    {% if log_entry.maintainers.all %}
+    <div class="log-section">
+        <h2>Maintainer{% if log_entry.maintainers.count > 1 %}s{% endif %}</h2>
+        <div class="maintainers-list">
+            {% for maintainer in log_entry.maintainers.all %}
+                <span class="maintainer-chip">
+                    {{ maintainer.user.get_full_name|default:maintainer.user.username }}
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if log_entry.text %}
+    <div class="log-section">
+        <h2>Work Description</h2>
+        <div class="log-text">{{ log_entry.text }}</div>
+    </div>
+    {% endif %}
+
+    {% if log_entry.task %}
+    <div class="log-section">
+        <h2>Related Task</h2>
+        <div class="related-task">
+            This log entry is associated with
+            <a href="{% url 'task_detail' log_entry.task.pk %}">Task #{{ log_entry.task.pk }}</a>
+            {% if log_entry.task.problem_text %}
+            <br>
+            <span style="color: #666; font-size: 0.9em;">{{ log_entry.task.problem_text|truncatechars:100 }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="action-buttons">
+        <a href="{% url 'machine_log_list' machine.slug %}" class="btn btn-secondary">Back to Work Logs</a>
+        <a href="{% url 'machine_detail' machine.slug %}" class="btn btn-secondary">Back to Machine</a>
+    </div>
+</div>
+{% endblock %}

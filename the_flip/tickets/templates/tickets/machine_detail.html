@@ -192,7 +192,7 @@
     </div>
 
     <div class="recent-reports">
-        <h2>Recent Tasks & Reports</h2>
+        <h2>Recent Tasks</h2>
         {% if recent_tasks %}
             <div class="reports-table">
                 <table>
@@ -259,7 +259,7 @@
                     </thead>
                     <tbody>
                         {% for log in recent_logs %}
-                        <tr{% if log.task %} onclick="window.location='{% url 'task_detail' log.task.pk %}'" class="clickable-row"{% endif %}>
+                        <tr onclick="window.location='{% url 'machine_log_detail' machine.slug log.pk %}'" class="clickable-row">
                             <td>{{ log.created_at|date:"M d, Y g:i A" }}</td>
                             <td>{{ log.text|truncatechars:80 }}</td>
                             <td>

@@ -22,5 +22,5 @@ python manage.py import_legacy_maintainers
 # Create default pinball machines
 python manage.py create_default_machines
 
-# Create sample problem reports
-python manage.py create_sample_problem_reports
+# Import legacy maintenance records
+python manage.py import_legacy_maintenance_records

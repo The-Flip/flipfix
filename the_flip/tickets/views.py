@@ -514,6 +514,31 @@ def machine_log_list(request, slug):
     })
 
 
+@login_required
+def machine_log_detail(request, slug, pk):
+    """
+    Display details of a single log entry (maintainers only).
+    """
+    # Check permission (staff users or maintainers)
+    if not (request.user.is_staff or hasattr(request.user, 'maintainer')):
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('task_list')
+
+    machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
+
+    # Get the log entry and verify it belongs to this machine
+    log_entry = get_object_or_404(
+        LogEntry.objects.prefetch_related('maintainers__user').select_related('task', 'machine'),
+        pk=pk,
+        machine=machine
+    )
+
+    return render(request, 'tickets/machine_log_detail.html', {
+        'machine': machine,
+        'log_entry': log_entry,
+    })
+
+
 def machine_public_view(request, slug):
     """
     Public-facing educational page for a machine.
