@@ -454,6 +454,20 @@ def machine_tasks_list(request, slug):
 
     machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
 
+    # Handle POST request for quick task creation
+    if request.method == 'POST':
+        quick_form = QuickTaskCreateForm(request.POST)
+        if quick_form.is_valid():
+            task = quick_form.save(commit=False)
+            task.machine = machine
+            task.reported_by_user = request.user
+            task.reported_by_name = request.user.get_full_name() or request.user.username
+            task.save()
+            messages.success(request, 'Task created successfully.')
+            return redirect('machine_tasks_list', slug=machine.slug)
+    else:
+        quick_form = QuickTaskCreateForm()
+
     # Initialize the filter form with GET data
     form = MachineTaskFilterForm(request.GET or None)
 
@@ -486,6 +500,7 @@ def machine_tasks_list(request, slug):
         'machine': machine,
         'page_obj': page_obj,
         'form': form,
+        'quick_form': quick_form,
     })
 
 

@@ -10,7 +10,6 @@
 
 <div class="page-header">
     <h1>Tasks for {{ machine.name }}</h1>
-    <a href="{% url 'machine_task_create' machine.slug %}" class="btn btn-primary">Create Task</a>
 </div>
 
 <div class="report-list-container">
@@ -33,6 +32,15 @@
     </aside>
 
     <div class="reports-main">
+        <!-- Quick Task Creation Form -->
+        <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+            <form method="post" style="display: flex; gap: 10px; align-items: center;">
+                {% csrf_token %}
+                {{ quick_form.problem_text }}
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Create</button>
+            </form>
+        </div>
+
         {% if page_obj %}
             <div class="reports-table">
                 <table>
