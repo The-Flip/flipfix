@@ -392,20 +392,52 @@ def machine_detail(request, slug):
 
     machine = get_object_or_404(MachineInstance.objects.select_related('model'), slug=slug)
 
-    # Get recent tasks and problem reports (merged)
-    recent_tasks = Task.objects.filter(
-        machine=machine
+    # Get open problem reports (up to 5 most recent)
+    open_problem_reports = Task.objects.filter(
+        machine=machine,
+        type=Task.TYPE_PROBLEM_REPORT,
+        status=Task.STATUS_OPEN
     ).order_by('-created_at')[:5]
 
-    # Get recent work logs for this machine
+    # Count closed problem reports
+    closed_problem_reports_count = Task.objects.filter(
+        machine=machine,
+        type=Task.TYPE_PROBLEM_REPORT,
+        status=Task.STATUS_CLOSED
+    ).count()
+
+    # Get open tasks (up to 5 most recent)
+    open_tasks = Task.objects.filter(
+        machine=machine,
+        type=Task.TYPE_TASK,
+        status=Task.STATUS_OPEN
+    ).order_by('-created_at')[:5]
+
+    # Count closed tasks
+    closed_tasks_count = Task.objects.filter(
+        machine=machine,
+        type=Task.TYPE_TASK,
+        status=Task.STATUS_CLOSED
+    ).count()
+
+    # Get recent work logs for this machine (up to 5, no older than 1 month)
+    one_month_ago = timezone.now() - timezone.timedelta(days=30)
     recent_logs = LogEntry.objects.filter(
-        machine=machine
+        machine=machine,
+        created_at__gte=one_month_ago
     ).prefetch_related('maintainers__user').order_by('-created_at')[:5]
+
+    # Count older work logs (for the "view all" context)
+    total_logs_count = LogEntry.objects.filter(machine=machine).count()
 
     return render(request, 'tickets/machine_detail.html', {
         'machine': machine,
-        'recent_tasks': recent_tasks,
+        'open_problem_reports': open_problem_reports,
+        'closed_problem_reports_count': closed_problem_reports_count,
+        'open_tasks': open_tasks,
+        'closed_tasks_count': closed_tasks_count,
         'recent_logs': recent_logs,
+        'total_logs_count': total_logs_count,
     })
 
 

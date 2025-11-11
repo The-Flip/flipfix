@@ -191,61 +191,79 @@
         </div>
     </div>
 
+    {% if open_problem_reports or closed_problem_reports_count > 0 %}
     <div class="recent-reports">
-        <h2>Recent Tasks</h2>
-        {% if recent_tasks %}
+        <h2>Open Problem Reports</h2>
+        {% if open_problem_reports %}
             <div class="reports-table">
                 <table>
                     <thead>
                         <tr>
-                            <th>Type</th>
-                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Reported By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in open_problem_reports %}
+                        <tr onclick="window.location='{% url 'task_detail' report.pk %}'" class="clickable-row">
+                            <td>{{ report.created_at|date:"M d, Y g:i A" }}</td>
+                            <td>
+                                {% if report.problem_type == 'other' and report.problem_text %}
+                                    {{ report.problem_text|truncatechars:60 }}
+                                {% elif report.problem_text %}
+                                    {{ report.get_problem_type_display }} - {{ report.problem_text|truncatechars:60 }}
+                                {% else %}
+                                    {{ report.get_problem_type_display }}
+                                {% endif %}
+                            </td>
+                            <td>{{ report.reported_by_name|default:"Anonymous" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No open problem reports{% if closed_problem_reports_count > 0 %} ({{ closed_problem_reports_count }} closed){% endif %}</p>
+        {% endif %}
+        <p style="margin-top: 15px;"><a href="{% url 'machine_tasks_list' machine.slug %}?type=problem_report">View all reports →</a></p>
+    </div>
+    {% endif %}
+
+    {% if open_tasks or closed_tasks_count > 0 %}
+    <div class="recent-reports">
+        <h2>Open Tasks</h2>
+        {% if open_tasks %}
+            <div class="reports-table">
+                <table>
+                    <thead>
+                        <tr>
                             <th>Date</th>
                             <th>Description</th>
                             <th>Created By</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for task in recent_tasks %}
+                        {% for task in open_tasks %}
                         <tr onclick="window.location='{% url 'task_detail' task.pk %}'" class="clickable-row">
-                            <td>
-                                <span class="badge badge-{{ task.type }}">
-                                    {{ task.get_type_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge badge-{{ task.status }}">
-                                    {{ task.get_status_display }}
-                                </span>
-                            </td>
                             <td>{{ task.created_at|date:"M d, Y g:i A" }}</td>
-                            <td>
-                                {% if task.type == 'problem_report' %}
-                                    {% if task.problem_type == 'other' and task.problem_text %}
-                                        {{ task.problem_text|truncatechars:60 }}
-                                    {% elif task.problem_text %}
-                                        {{ task.get_problem_type_display }} - {{ task.problem_text|truncatechars:60 }}
-                                    {% else %}
-                                        {{ task.get_problem_type_display }}
-                                    {% endif %}
-                                {% else %}
-                                    {{ task.problem_text|truncatechars:60 }}
-                                {% endif %}
-                            </td>
+                            <td>{{ task.problem_text|truncatechars:60 }}</td>
                             <td>{{ task.reported_by_name|default:"Anonymous" }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            <p style="margin-top: 15px;"><a href="{% url 'machine_tasks_list' machine.slug %}">View all tasks & reports →</a></p>
         {% else %}
-            <p>No tasks for this machine yet.</p>
+            <p>No open tasks{% if closed_tasks_count > 0 %} ({{ closed_tasks_count }} closed){% endif %}</p>
         {% endif %}
+        <p style="margin-top: 15px;"><a href="{% url 'machine_tasks_list' machine.slug %}?type=task">View all tasks →</a></p>
     </div>
+    {% endif %}
 
+    {% if recent_logs or total_logs_count > 0 %}
     <div class="recent-reports">
-        <h2>Recent Work Logs</h2>
+        <h2>Recent Work</h2>
         {% if recent_logs %}
             <div class="reports-table">
                 <table>
@@ -285,11 +303,12 @@
                     </tbody>
                 </table>
             </div>
-            <p style="margin-top: 15px;"><a href="{% url 'machine_log_list' machine.slug %}">View all work logs →</a></p>
         {% else %}
-            <p>No work logs for this machine yet.</p>
+            <p>No recent work logs (showing last 30 days)</p>
         {% endif %}
+        <p style="margin-top: 15px;"><a href="{% url 'machine_log_list' machine.slug %}">View all work logs →</a></p>
     </div>
+    {% endif %}
 
     {% if user.is_authenticated and machine.acquisition_notes %}
     <div class="machine-section">
