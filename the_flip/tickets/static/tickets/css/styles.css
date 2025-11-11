@@ -482,6 +482,20 @@ textarea.form-control {
     font-size: 2rem;
 }
 
+.report-summary {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.report-summary p {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
 .report-info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

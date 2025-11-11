@@ -12,30 +12,10 @@
         </span>
     </div>
 
-    <div class="report-info-grid">
-        <div class="info-card">
-            <h3>Problem Type</h3>
-            <p>{{ report.get_problem_type_display }}</p>
-        </div>
-
-        <div class="info-card">
-            <h3>Machine Status</h3>
-            <p>
-                <span class="badge badge-{{ report.machine.operational_status }}">{{ report.machine.get_operational_status_display }}</span>
-            </p>
-        </div>
-
-        {% if user.is_authenticated %}
-        <div class="info-card">
-            <h3>Reported By</h3>
-            <p>{% reporter_display report %}</p>
-        </div>
-        {% endif %}
-
-        <div class="info-card">
-            <h3>Reported</h3>
-            <p>{{ report.created_at|smart_date }}</p>
-        </div>
+    <div class="report-summary">
+        <p>
+            Reported {{ report.created_at|smart_date }}{% reporter_display report as reporter %}{% if reporter %} by {{ reporter }}{% endif %}.{% if report.problem_type != 'other' %} Problem: {{ report.get_problem_type_display }}.{% endif %} Current machine status: <span class="badge badge-{{ report.machine.operational_status }}">{{ report.machine.get_operational_status_display }}</span>
+        </p>
     </div>
 
     <div class="problem-description">
