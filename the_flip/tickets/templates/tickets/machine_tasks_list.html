@@ -4,6 +4,71 @@
 {% block title %}Tasks - {{ machine.name }}{% endblock %}
 
 {% block content %}
+<style>
+    .task-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .task-message {
+        position: relative;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .task-message:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .task-badges-group {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .task-message-content {
+        /* No padding needed - description uses full width */
+    }
+
+    .task-description {
+        color: #2c3e50;
+        font-size: 1em;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .task-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 0.9em;
+        color: #666;
+        padding-left: 200px;
+    }
+
+    .task-author {
+        font-weight: 500;
+    }
+
+    .no-results {
+        color: #666;
+        font-style: italic;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        text-align: center;
+    }
+</style>
+
 <div class="page-header">
     <h1>Tasks for <a href="{% url 'machine_detail' machine.slug %}">{{ machine.name }}</a></h1>
 </div>
@@ -35,49 +100,38 @@
         </div>
 
         {% if page_obj %}
-            <div class="reports-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>Created By</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for task in page_obj %}
-                        <tr onclick="window.location='{% url 'task_detail' task.pk %}'" class="clickable-row">
-                            <td>
-                                <span class="badge badge-{{ task.type }}">
-                                    {{ task.get_type_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge badge-{{ task.status }}">
-                                    {{ task.get_status_display }}
-                                </span>
-                            </td>
-                            <td>{{ task.created_at|smart_date }}</td>
-                            <td>
-                                {% if task.type == 'problem_report' %}
-                                    {% if task.problem_type == 'other' and task.problem_text %}
-                                        {{ task.problem_text|truncatechars:80 }}
-                                    {% elif task.problem_text %}
-                                        {{ task.get_problem_type_display }} - {{ task.problem_text|truncatechars:80 }}
-                                    {% else %}
-                                        {{ task.get_problem_type_display }}
-                                    {% endif %}
+            <div class="task-messages">
+                {% for task in page_obj %}
+                <div class="task-message" onclick="window.location='{% url 'task_detail' task.pk %}'">
+                    <div class="task-badges-group">
+                        <span class="badge badge-{{ task.status }}">
+                            {{ task.get_status_display }}
+                        </span>
+                        <span class="badge badge-{{ task.type }}">
+                            {{ task.get_type_display }}
+                        </span>
+                    </div>
+                    <div class="task-message-content">
+                        <div class="task-description">
+                            {% if task.type == 'problem_report' %}
+                                {% if task.problem_type == 'other' and task.problem_text %}
+                                    {{ task.problem_text }}
+                                {% elif task.problem_text %}
+                                    <strong>{{ task.get_problem_type_display }}:</strong> {{ task.problem_text }}
                                 {% else %}
-                                    {{ task.problem_text|truncatechars:80 }}
+                                    {{ task.get_problem_type_display }}
                                 {% endif %}
-                            </td>
-                            <td>{{ task|creator_display }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            {% else %}
+                                {{ task.problem_text }}
+                            {% endif %}
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-author">{{ task|creator_display }}</span>
+                            <span class="task-time">{{ task.created_at|smart_date }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
 
             {% if page_obj.has_other_pages %}
