@@ -187,6 +187,7 @@
             </h1>
         </div>
         <div class="action-buttons">
+            <a href="{% url 'machine_tasks_list' machine.slug %}" class="btn btn-primary">Tasks</a>
             <a href="{% url 'machine_public' machine.slug %}" class="btn btn-secondary">Public Page</a>
             <a href="{% url 'machine_qr' machine.slug %}" class="btn btn-secondary btn-qr">QR Code</a>
         </div>
