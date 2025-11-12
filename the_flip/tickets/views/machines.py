@@ -197,6 +197,13 @@ def machine_tasks_list(request, slug):
         elif filter_status == 'closed':
             tasks = tasks.filter(status=Task.STATUS_CLOSED)
 
+        search = form.cleaned_data.get('search')
+        if search:
+            tasks = tasks.filter(
+                Q(problem_text__icontains=search)
+                | Q(log_entries__text__icontains=search)
+            ).distinct()
+
     paginator = Paginator(tasks, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)

@@ -85,6 +85,10 @@
                 {{ form.type }}
             </div>
 
+            <div class="form-group">
+                {{ form.search }}
+            </div>
+
             <a href="{% url 'machine_tasks_list' machine.slug %}" class="btn btn-secondary">Clear</a>
         </form>
     </aside>

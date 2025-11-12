@@ -299,6 +299,16 @@ class MachineTaskFilterForm(forms.Form):
         label='Task Type'
     )
 
+    search = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Task descriptions, log entries...',
+            'enterkeyhint': 'search'
+        })
+    )
+
 
 class LogWorkForm(forms.ModelForm):
     """Form for creating standalone work log entries (maintainers only)."""
