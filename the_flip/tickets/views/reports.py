@@ -166,7 +166,7 @@ def problem_report_create(request, slug):
                 report.save()
 
                 messages.success(request, 'Problem report submitted successfully. Thank you!')
-                return redirect('task_detail', pk=report.pk)
+                return redirect('machine_public', slug=machine.slug)
     else:
         form = ProblemReportCreateForm(machine=machine, user=request.user)
 
