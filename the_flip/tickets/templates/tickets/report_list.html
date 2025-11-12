@@ -36,12 +36,19 @@
     }
 
     .task-message {
+        position: relative;
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 16px;
         cursor: pointer;
         transition: all 0.2s ease;
+    }
+
+    .task-message .badge {
+        position: absolute;
+        top: 16px;
+        right: 16px;
     }
 
     .task-message:hover {
@@ -59,6 +66,7 @@
     .task-machine {
         font-size: 14px;
         color: #374151;
+        padding-right: 120px;
     }
 
     .task-description {
@@ -132,16 +140,16 @@
             <div class="task-messages">
                 {% for report in page_obj %}
                 <div class="task-message" onclick="window.location='{% url 'task_detail' report.pk %}'">
+                    {% if report.type == 'problem_report' %}
+                        <span class="badge badge-{{ report.type }}">
+                            {{ report.get_type_display }}
+                        </span>
+                    {% endif %}
                     <div class="task-message-content">
                         <div class="task-machine">
                             <strong>{{ report.machine.name }}</strong>
                         </div>
                         <div class="task-description">
-                            {% if report.type == 'problem_report' %}
-                                <span class="badge badge-{{ report.type }}">
-                                    {{ report.get_type_display }}
-                                </span>
-                            {% endif %}
                             {% if report.problem_type == 'other' and report.problem_text %}
                                 {{ report.problem_text }}
                             {% elif report.problem_text %}
