@@ -4,6 +4,7 @@ import csv
 import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+import hashlib
 from typing import Dict, Iterable, List, Optional
 
 from django.core.management.base import BaseCommand, CommandError
@@ -212,6 +213,7 @@ class Command(BaseCommand):
         task = Task.objects.create(**task_kwargs)
 
         start_time = base_date + timedelta(days=scenario.start_offset_days)
+        start_time += self._time_jitter(f"{machine.name}-{scenario.title}-task-start")
         if start_time >= self.now:
             start_time = self.now - timedelta(hours=1)
         task.created_at = start_time
@@ -228,12 +230,14 @@ class Command(BaseCommand):
 
         events = renderer(participants, scenario.context)
         current_time = task.created_at
+        seed_base = f"{task.machine.name}-{scenario.title}"
 
-        for event in events:
+        for idx, event in enumerate(events):
             current_time += timedelta(
                 days=event.delta_days,
                 hours=event.delta_hours,
             )
+            current_time += self._time_jitter(f"{seed_base}-event-{idx}")
             if current_time >= self.now:
                 current_time = self.now - timedelta(minutes=5)
 
@@ -263,13 +267,11 @@ class Command(BaseCommand):
 
         return log_entry
 
-def _participant_names(participants: List[Maintainer]) -> List[str]:
-    names = []
-    for maintainer in participants:
-        display = maintainer.short_name or maintainer.user.first_name or maintainer.user.username
-        names.append(display)
-    return names
-
+    def _time_jitter(self, seed: str) -> timedelta:
+        digest = hashlib.sha256(seed.encode("utf-8")).digest()
+        minutes = digest[0] % 60
+        seconds = digest[1] % 60
+        return timedelta(minutes=minutes, seconds=seconds, microseconds=0)
 
 def _event(
     action: str,
@@ -290,40 +292,42 @@ def _event(
     )
 
 
-def _lead_second_third(names: List[str]) -> tuple[str, str, str]:
-    lead = names[0]
-    second = names[1] if len(names) > 1 else names[0]
-    third = names[2] if len(names) > 2 else names[-1]
-    return lead, second, third
+def _statement(text: str) -> str:
+    text = (text or "").strip()
+    if not text:
+        return ""
+    if text[0].islower():
+        text = text[0].upper() + text[1:]
+    if not text.endswith("."):
+        text += "."
+    return text
 
 
 def template_standard_fix(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
     followup_gap = int(context.get("followup_gap", 18))
 
     return [
-        _event("note", [0], f"{lead} confirmed {context['symptom']}."),
+        _event("note", [0], _statement(f"Confirmed {context['symptom']}")),
         _event(
             "machine_status",
             [0],
-            f"{lead} moved the game to the workshop to {context['prep']}.",
+            _statement(f"Moved the game to the workshop to {context['prep']}"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
         ),
-        _event("note", [1], f"{second} {context['repair']}.", delta_days=1),
+        _event("note", [1], _statement(context["repair"]), delta_days=1),
         _event(
             "machine_status",
             [0, 1],
-            f"{lead} and {second} {context['result']}.",
+            _statement(context["result"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_GOOD,
             delta_days=1,
         ),
         _event(
             "note",
             [min(2, len(participants) - 1)],
-            f"{third} {context['followup']}.",
+            _statement(context["followup"]),
             delta_days=followup_gap,
         ),
     ]
@@ -332,48 +336,46 @@ def template_standard_fix(
 def template_reopen_cycle(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
     reopen_gap = int(context.get("reopen_gap", 32))
 
     return [
-        _event("note", [0], f"{lead} documented {context['symptom']}."),
+        _event("note", [0], _statement(f"Documented {context['symptom']}")),
         _event(
             "machine_status",
             [0],
-            f"{lead} marked the cabinet as fixing to {context['prep']}.",
+            _statement(f"Marked the cabinet as fixing to {context['prep']}"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
         ),
         _event(
             "machine_status",
             [0, 1],
-            f"{lead} and {second} {context['initial_fix']}.",
+            _statement(context["initial_fix"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_GOOD,
             delta_days=2,
         ),
         _event(
             "reopen",
             [0],
-            f"{lead} reopened the task after {context['reopen_trigger']}.",
+            _statement(f"Reopened the task after {context['reopen_trigger']}"),
             delta_days=reopen_gap,
         ),
         _event(
             "machine_status",
             [1],
-            f"{second} {context['second_fix']}.",
+            _statement(context["second_fix"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
         ),
         _event(
             "machine_status",
             [0, 1],
-            f"{lead} and {second} {context['final_result']}.",
+            _statement(context["final_result"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_GOOD,
             delta_days=2,
         ),
         _event(
             "note",
             [min(2, len(participants) - 1)],
-            f"{third} logged {context['followup']}.",
+            _statement(context["followup"]),
             delta_days=7,
         ),
     ]
@@ -382,34 +384,31 @@ def template_reopen_cycle(
 def template_status_cycle(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
-
     return [
-        _event("note", [1], f"{second} noted {context['symptom']}."),
-        _event("note", [0], f"{lead} laid out {context['plan']}.", delta_hours=4),
+        _event("note", [1], _statement(f"Noted {context['symptom']}")),
+        _event("note", [0], _statement(f"Laid out {context['plan']}"), delta_hours=4),
         _event(
             "close",
             [0],
-            f"{lead} closed the task after {context['close_summary']}.",
+            _statement(f"Closed the task after {context['close_summary']}"),
             delta_days=1,
         ),
         _event(
             "reopen",
             [2 if len(participants) > 2 else 0],
-            f"{third} reopened the task because {context['reopen_reason']}.",
+            _statement(f"Reopened the task because {context['reopen_reason']}"),
             delta_days=14,
         ),
         _event(
             "close",
             [1],
-            f"{second} closed it again after {context['final_close']}.",
+            _statement(f"Closed it again after {context['final_close']}"),
             delta_days=2,
         ),
         _event(
             "note",
             [0],
-            f"{lead} logged {context['followup']}.",
+            _statement(context["followup"]),
             delta_days=10,
         ),
     ]
@@ -418,33 +417,30 @@ def template_status_cycle(
 def template_long_running(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
-
     return [
-        _event("note", [0], f"{lead} documented {context['symptom']}."),
+        _event("note", [0], _statement(f"Documented {context['symptom']}")),
         _event(
             "machine_status",
             [0],
-            f"{lead} marked the machine fixing to {context['prep']}.",
+            _statement(f"Marked the machine fixing to {context['prep']}"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
         ),
         _event(
             "note",
             [1],
-            f"{second} {context['waiting_on']}.",
+            _statement(context["waiting_on"]),
             delta_days=3,
         ),
         _event(
             "note",
             [2 if len(participants) > 2 else 1],
-            f"{third} {context['cleaning']}.",
+            _statement(context["cleaning"]),
             delta_days=5,
         ),
         _event(
             "note",
             [0],
-            f"{lead} noted {context['still_open']}.",
+            _statement(context["still_open"]),
             delta_days=7,
         ),
     ]
@@ -453,47 +449,44 @@ def template_long_running(
 def template_breakdown(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
-
     return [
-        _event("note", [0], f"{lead} found {context['symptom']}."),
+        _event("note", [0], _statement(f"Found {context['symptom']}")),
         _event(
             "machine_status",
             [0],
-            f"{lead} set the machine to broken because {context['cause']}.",
+            _statement(f"Set the machine to broken because {context['cause']}"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_BROKEN,
         ),
         _event(
             "note",
             [1],
-            f"{second} {context['plan']}.",
+            _statement(context["plan"]),
             delta_days=1,
         ),
         _event(
             "machine_status",
             [1],
-            f"{second} moved it to fixing for bench work.",
+            _statement("Moved it to fixing for bench work"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
             delta_days=7,
         ),
         _event(
             "note",
             [2 if len(participants) > 2 else 1],
-            f"{third} {context['bench']}.",
+            _statement(context["bench"]),
             delta_days=2,
         ),
         _event(
             "machine_status",
             [0, 1],
-            f"{lead} and {second} {context['result']}.",
+            _statement(context["result"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_GOOD,
             delta_days=1,
         ),
         _event(
             "note",
             [2 if len(participants) > 2 else 1],
-            f"{third} logged {context['followup']}.",
+            _statement(context["followup"]),
             delta_days=10,
         ),
     ]
@@ -502,35 +495,32 @@ def template_breakdown(
 def template_modern_monitor(
     participants: List[Maintainer], context: Dict[str, str]
 ) -> List[StoryEvent]:
-    names = _participant_names(participants)
-    lead, second, third = _lead_second_third(names)
-
     return [
-        _event("note", [0], f"{lead} noted {context['symptom']}."),
+        _event("note", [0], _statement(f"Noted {context['symptom']}")),
         _event(
             "note",
             [1],
-            f"{second} {context['diagnostic']}.",
+            _statement(context["diagnostic"]),
             delta_hours=6,
         ),
         _event(
             "machine_status",
             [0],
-            f"{lead} marked the game fixing to {context['prep']}.",
+            _statement(f"Marked the game fixing to {context['prep']}"),
             machine_status=MachineInstance.OPERATIONAL_STATUS_FIXING,
             delta_days=1,
         ),
         _event(
             "machine_status",
             [0, 1],
-            f"{lead} and {second} {context['result']}.",
+            _statement(context["result"]),
             machine_status=MachineInstance.OPERATIONAL_STATUS_GOOD,
             delta_days=1,
         ),
         _event(
             "note",
             [2 if len(participants) > 2 else 1],
-            f"{third} {context['followup']}.",
+            _statement(context["followup"]),
             delta_days=5,
         ),
     ]
