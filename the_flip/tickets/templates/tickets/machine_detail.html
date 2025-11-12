@@ -123,6 +123,66 @@
         color: #2c3e50;
     }
 
+    .task-messages {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .task-message {
+        position: relative;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .task-message:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .task-message .badge {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+
+    .task-message-content {
+        padding-right: 120px;
+    }
+
+    .task-description {
+        color: #2c3e50;
+        font-size: 1em;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .task-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .task-author {
+        font-weight: 500;
+    }
+
+    .no-updates {
+        color: #666;
+        font-style: italic;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        text-align: center;
+    }
+
     .reports-table table {
         width: 100%;
         border-collapse: collapse;
@@ -200,27 +260,24 @@
         <h2>Open Tasks</h2>
 
         {% if tasks %}
-            <div class="timeline">
+            <div class="task-messages">
                 {% for task in tasks %}
-                <div class="timeline-item">
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-content">
-                        <div class="update-text">
-                            <p>
-                                {% if task.type == 'problem_report' %}
-                                    <span class="badge badge-{{ task.type }}">
-                                        {{ task.get_type_display }}
-                                    </span>
-                                    {% if task.problem_type != 'other' %}
-                                        <strong>{{ task.get_problem_type_display }}:</strong>
-                                    {% endif %}
-                                {% endif %}
-                                <a href="{% url 'task_detail' task.pk %}">{{ task.problem_text }}</a>
-                            </p>
+                <div class="task-message" onclick="window.location='{% url 'task_detail' task.pk %}'">
+                    {% if task.type == 'problem_report' %}
+                        <span class="badge badge-{{ task.type }}">
+                            {{ task.get_type_display }}
+                        </span>
+                    {% endif %}
+                    <div class="task-message-content">
+                        <div class="task-description">
+                            {% if task.type == 'problem_report' and task.problem_type != 'other' %}
+                                <strong>{{ task.get_problem_type_display }}:</strong>
+                            {% endif %}
+                            {{ task.problem_text }}
                         </div>
-                        <div class="update-meta">
-                            <span class="update-author">{{ task|creator_display }}</span>
-                            <span class="update-time">{{ task.created_at|smart_date }}</span>
+                        <div class="task-meta">
+                            <span class="task-author">{{ task|creator_display }}</span>
+                            <span class="task-time">{{ task.created_at|smart_date }}</span>
                         </div>
                     </div>
                 </div>
