@@ -4,12 +4,8 @@
 {% block title %}Tasks - {{ machine.name }}{% endblock %}
 
 {% block content %}
-<div class="breadcrumb">
-    <a href="{% url 'machine_detail' machine.slug %}">← Back to {{ machine.name }}</a>
-</div>
-
 <div class="page-header">
-    <h1>Tasks for {{ machine.name }}</h1>
+    <h1>Tasks for <a href="{% url 'machine_detail' machine.slug %}">{{ machine.name }}</a></h1>
 </div>
 
 <div class="report-list-container">
@@ -17,12 +13,10 @@
         <h3>Filters</h3>
         <form method="get" class="filter-form">
             <div class="form-group">
-                <label>{{ form.status.label }}</label>
                 {{ form.status }}
             </div>
 
             <div class="form-group">
-                <label>{{ form.type.label }}</label>
                 {{ form.type }}
             </div>
 
