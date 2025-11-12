@@ -24,3 +24,6 @@ python manage.py create_default_machines
 
 # Import legacy maintenance records
 python manage.py import_legacy_maintenance_records
+
+# Create fake maintenance records on top of the real ones
+python manage.py create_sample_maintenance_data
