@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import hashlib
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -44,7 +44,7 @@ class TaskScenario:
     reporter: Reporter
     start_offset_days: int
     template: str
-    context: Dict[str, str] = field(default_factory=dict)
+    context: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -293,7 +293,7 @@ def _event(
 
 
 def _statement(text: str) -> str:
-    text = (text or "").strip()
+    text = str(text or "").strip()
     if not text:
         return ""
     if text[0].islower():
@@ -304,7 +304,7 @@ def _statement(text: str) -> str:
 
 
 def template_standard_fix(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     followup_gap = int(context.get("followup_gap", 18))
 
@@ -334,7 +334,7 @@ def template_standard_fix(
 
 
 def template_reopen_cycle(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     reopen_gap = int(context.get("reopen_gap", 32))
 
@@ -382,7 +382,7 @@ def template_reopen_cycle(
 
 
 def template_status_cycle(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     return [
         _event("note", [1], _statement(f"Noted {context['symptom']}")),
@@ -415,7 +415,7 @@ def template_status_cycle(
 
 
 def template_long_running(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     return [
         _event("note", [0], _statement(f"Documented {context['symptom']}")),
@@ -433,7 +433,7 @@ def template_long_running(
         ),
         _event(
             "note",
-            [2 if len(participants) > 2 else 1],
+            context.get("cleaning_roles") or [2 if len(participants) > 2 else 1],
             _statement(context["cleaning"]),
             delta_days=5,
         ),
@@ -447,7 +447,7 @@ def template_long_running(
 
 
 def template_breakdown(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     return [
         _event("note", [0], _statement(f"Found {context['symptom']}")),
@@ -493,7 +493,7 @@ def template_breakdown(
 
 
 def template_modern_monitor(
-    participants: List[Maintainer], context: Dict[str, str]
+    participants: List[Maintainer], context: Dict[str, Any]
 ) -> List[StoryEvent]:
     return [
         _event("note", [0], _statement(f"Noted {context['symptom']}")),
@@ -2049,6 +2049,7 @@ SCENARIO_DEFINITIONS: List[MachineScenario] = [
                     "prep": "test mild cleaners on hidden sections",
                     "waiting_on": "waiting for museum-grade wipes to arrive",
                     "cleaning": "Reba drafted signage while Diana logged techniques",
+                    "cleaning_roles": [1, 2],
                     "still_open": "keeping cabinet roped off until wipes arrive",
                 },
             ),
