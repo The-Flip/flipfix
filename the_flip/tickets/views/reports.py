@@ -46,7 +46,8 @@ def report_list(request):
                 | Q(reported_by_name__icontains=search)
                 | Q(machine__name_override__icontains=search)
                 | Q(machine__model__name__icontains=search)
-            )
+                | Q(log_entries__text__icontains=search)
+            ).distinct()
 
     stats = {
         'open_count': Task.objects.filter(status=Task.STATUS_OPEN).count(),
