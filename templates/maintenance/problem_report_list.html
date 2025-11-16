@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block title %}Problem Reports · {{ block.super }}{% endblock %}
 {% block content %}
   <h2>Problem Reports</h2>
   {% if reports %}
-    <ul>
-      {% for report in reports %}
-        <li>
-          <strong>{{ report.machine.display_name }}</strong>
-          <div>{{ report.description|default:"No description provided." }}</div>
-          <small>{{ report.created_at|date:"M j, Y H:i" }} · {{ report.get_status_display }}</small>
-        </li>
-      {% endfor %}
-    </ul>
+      <ul>
+        {% for report in reports %}
+          <li>
+            <strong>{{ report.machine.display_name }}</strong>
+            <div>{{ report.description|default:"No description provided." }}</div>
+            <small>{{ report.created_at|smart_date }} · {{ report.get_status_display }}</small>
+          </li>
+        {% endfor %}
+      </ul>
   {% else %}
     <p>No reports yet.</p>
   {% endif %}

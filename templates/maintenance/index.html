@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block title %}Maintenance · {{ block.super }}{% endblock %}
 {% block content %}
   <h2>Maintenance Overview</h2>
@@ -10,7 +11,7 @@
         {% for report in open_reports %}
           <li>
             <strong>{{ report.machine.display_name }}</strong> — {{ report.description|default:"No description" }}
-            <span>({{ report.created_at|date:"M j, Y" }})</span>
+            <span>({{ report.created_at|smart_date }})</span>
           </li>
         {% endfor %}
       </ul>

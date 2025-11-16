@@ -12,3 +12,4 @@ whitenoise==6.8.2
 
 # QR Code Generation
 qrcode[pil]==8.0
+Pillow==10.3.0

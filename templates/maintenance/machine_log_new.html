@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}New Log Entry · {{ block.super }}{% endblock %}
+{% block content %}
+  <h2>Add Log Entry for {{ machine.display_name }}</h2>
+
+  <section class="card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="{{ form.submitter_name.id_for_label }}">Your name</label>
+        {{ form.submitter_name }}
+        {% for error in form.submitter_name.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.text.id_for_label }}">Description</label>
+        {{ form.text }}
+        {% for error in form.text.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.photo.id_for_label }}">Photo (optional)</label>
+        {{ form.photo }}
+        {% for error in form.photo.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary">Create Log Entry</button>
+    </form>
+  </section>
+{% endblock %}

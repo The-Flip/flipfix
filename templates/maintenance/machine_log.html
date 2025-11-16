@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}{{ machine.display_name }} Log · {{ block.super }}{% endblock %}
+{% block content %}
+  <h2>{{ machine.display_name }} · Maintenance Log</h2>
+
+  <section>
+    <h3>Recent Entries</h3>
+    <p><a class="btn btn-primary" href="{% url 'maintenance:machine-log-create' machine.slug %}">Add log entry</a></p>
+    {% if log_entries %}
+      <ul class="list">
+        {% for entry in log_entries %}
+          <li>
+            <strong>{{ entry.created_at|smart_date }}</strong>
+            <div>{{ entry.text }}</div>
+            <div>
+              {% if entry.maintainers.all %}
+                Maintainers: {{ entry.maintainers.all|join:", " }}
+              {% elif entry.maintainer_names %}
+                Maintainers: {{ entry.maintainer_names }}
+              {% endif %}
+            </div>
+            {% if entry.media.all %}
+              <div class="log-entry-media">
+                {% for media in entry.media.all %}
+                  <img src="{{ media.file.url }}" alt="Photo for {{ machine.display_name }}" width="200">
+                {% endfor %}
+              </div>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="pagination">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+      </div>
+    {% else %}
+      <p>No log entries yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

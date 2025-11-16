@@ -1,10 +1,13 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <h2>{{ object.display_name }}</h2>
   <p>{{ object.model.manufacturer }} · {{ object.model.year }}</p>
   <p>Status: {{ object.get_operational_status_display }}</p>
   <p>Location: {{ object.get_location_display }}</p>
+
+  <p><a href="{% url 'maintenance:machine-log' object.slug %}">View maintenance log</a></p>
 
   <section>
     <h3>About the Model</h3>
@@ -19,7 +22,7 @@
       <ul>
         {% for report in problem_reports %}
           <li>
-            {{ report.created_at|date:"M j, Y" }} — {{ report.description|default:"No description" }}
+            {{ report.created_at|smart_date }} — {{ report.description|default:"No description" }}
             ({{ report.get_status_display }})
           </li>
         {% endfor %}
@@ -35,7 +38,7 @@
       <ul>
         {% for entry in log_entries %}
           <li>
-            <strong>{{ entry.created_at|date:"M j, Y" }}</strong> — {{ entry.text|linebreaks }}
+            <strong>{{ entry.created_at|smart_date }}</strong> — {{ entry.text|linebreaks }}
             <div>
               {% if entry.maintainers.all %}
                 {{ entry.maintainers.all|join:", " }}

@@ -2,7 +2,7 @@
 from django import forms
 
 from the_flip.apps.accounts.models import Maintainer
-from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 
 
 class ProblemReportForm(forms.ModelForm):
@@ -27,3 +27,21 @@ class LogEntryForm(forms.ModelForm):
         widgets = {
             "text": forms.Textarea(attrs={"rows": 4}),
         }
+
+
+class LogEntryQuickForm(forms.Form):
+    submitter_name = forms.CharField(
+        label="Your name",
+        max_length=200,
+        widget=forms.TextInput(attrs={"enterkeyhint": "next", "autocomplete": "name"}),
+    )
+    text = forms.CharField(
+        label="Description",
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "What work was done?", "autofocus": True}),
+        max_length=1000,
+    )
+    photo = forms.ImageField(
+        label="Photo",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"accept": "image/*"}),
+    )

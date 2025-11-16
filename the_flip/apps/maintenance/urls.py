@@ -12,4 +12,14 @@ urlpatterns = [
         views.ProblemReportCreateView.as_view(),
         name="problem-report-create",
     ),
+    path(
+        "<slug:slug>/log/",
+        views.MachineLogView.as_view(),
+        name="machine-log",
+    ),
+    path(
+        "<slug:slug>/log/new/",
+        views.MachineLogCreateView.as_view(),
+        name="machine-log-create",
+    ),
 ]
