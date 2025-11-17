@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Value, When
+from django.db.models import Case, CharField, Count, Q, Value, When
 from django.db.models.functions import Coalesce, Lower
 from django.views.generic import DetailView, ListView
 
@@ -12,7 +12,14 @@ class PublicMachineListView(ListView):
     context_object_name = "machines"
 
     def get_queryset(self):
-        return MachineInstance.objects.visible().order_by(
+        return MachineInstance.objects.visible().annotate(
+            open_report_count=Count(
+                'problem_reports',
+                filter=Q(problem_reports__status=ProblemReport.STATUS_OPEN)
+            )
+        ).order_by(
+            # Machines with open problem reports first
+            '-open_report_count',
             # Location priority: workshop, storage, floor
             Case(
                 When(location=MachineInstance.LOCATION_WORKSHOP, then=Value(1)),
