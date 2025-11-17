@@ -127,7 +127,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             )
 
         messages.success(self.request, "Log entry recorded.")
-        return redirect("maintenance:machine-log", slug=self.machine.slug)
+        return redirect("log-machine", slug=self.machine.slug)
 
     def match_maintainer(self, name: str):
         normalized = name.lower().strip()

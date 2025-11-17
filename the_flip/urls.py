@@ -15,12 +15,41 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
-from django.views.generic import TemplateView
+from django.urls import path
+from django.views.generic import RedirectView
+
+from the_flip.apps.catalog.views import MachineDetailView, MachineListView
+from the_flip.apps.maintenance import views as maintenance_views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+path("", RedirectView.as_view(pattern_name="problem-report-list", permanent=False), name="home"),
     path("admin/", admin.site.urls),
-    path("", TemplateView.as_view(template_name="base.html"), name="home"),
-    path("machines/", include("the_flip.apps.catalog.urls")),
-    path("maintenance/", include("the_flip.apps.maintenance.urls")),
+    path("login/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+
+    # Public machine pages
+    path("m/", MachineListView.as_view(), name="public-machine-list"),
+    path("m/<slug:slug>/", MachineDetailView.as_view(), name="public-machine-detail"),
+
+    # Problem report submission
+    # path("p/", maintenance_views.ProblemReportCreateView.as_view(), name="problem-report-create-select-machine"),
+    path("p/<slug:slug>/", maintenance_views.ProblemReportCreateView.as_view(), name="problem-report-create"),
+
+    # Maintainer problem report views
+    path("problem-reports/", maintenance_views.ProblemReportListView.as_view(), name="problem-report-list"),
+    # path("problem-reports/<int:pk>/", maintenance_views.ProblemReportDetailView.as_view(), name="problem-report-detail"),
+
+    # Maintainer machine views
+    path("machines/", MachineListView.as_view(), name="maintainer-machine-list"),
+    path("machines/<slug:slug>/", MachineDetailView.as_view(), name="maintainer-machine-detail"),
+    # path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
+
+    # Log views
+    path("logs/", maintenance_views.MachineLogView.as_view(), name="log-list"),
+    path("logs/<slug:slug>/", maintenance_views.MachineLogView.as_view(), name="log-machine"),
+    # path("logs/<int:pk>/", maintenance_views.LogEntryDetailView.as_view(), name="log-detail"),
+    # path("logs/new/", maintenance_views.LogEntryCreateView.as_view(), name="log-create"),
+    path("logs/new/<slug:slug>/", maintenance_views.MachineLogCreateView.as_view(), name="log-create-machine"),
+    path("logs/<slug:slug>/entries/", maintenance_views.MachineLogPartialView.as_view(), name="log-entries"),
 ]

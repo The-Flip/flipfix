@@ -5,8 +5,8 @@
   <h2>{{ machine.display_name }} · Log</h2>
 
   <section>
-    <p><a class="btn btn-primary" href="{% url 'maintenance:machine-log-create' machine.slug %}">Add log entry</a></p>
-    <div id="log-container" data-fetch-url="{% url 'maintenance:machine-log-entries' machine.slug %}">
+    <p><a class="btn btn-primary" href="{% url 'log-create-machine' machine.slug %}">Add log entry</a></p>
+    <div id="log-container" data-fetch-url="{% url 'log-entries' machine.slug %}">
       {% if log_entries %}
         <ul class="list" id="log-list">
           {% for entry in log_entries %}

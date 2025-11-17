@@ -86,7 +86,7 @@ MEDIA_ROOT = REPO_ROOT / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_REDIRECT_URL = "maintenance:dashboard"
-LOGOUT_REDIRECT_URL = "catalog:machine-list"
+LOGIN_REDIRECT_URL = "problem-report-list"
+LOGOUT_REDIRECT_URL = "public-machine-list"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

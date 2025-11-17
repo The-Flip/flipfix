@@ -7,14 +7,14 @@
   <p>Status: {{ object.get_operational_status_display }}</p>
   <p>Location: {{ object.get_location_display }}</p>
 
-  <p><a href="{% url 'maintenance:machine-log' object.slug %}">View maintenance log</a></p>
+  <p><a href="{% url 'log-machine' object.slug %}">View maintenance log</a></p>
 
   <section>
     <h3>About the Model</h3>
     <p>{{ object.model.educational_text|default:"No description yet." }}</p>
   </section>
 
-  <p><a href="{% url 'maintenance:problem-report-create' object.slug %}">Submit a problem report</a></p>
+  <p><a href="{% url 'problem-report-create' object.slug %}">Submit a problem report</a></p>
 
   <section>
     <h3>Problem Reports</h3>

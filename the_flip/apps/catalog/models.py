@@ -150,7 +150,7 @@ class MachineInstance(TimeStampedModel):
     def get_absolute_url(self):
         from django.urls import reverse
 
-        return reverse("catalog:machine-detail", args=[self.slug])
+        return reverse("public-machine-detail", args=[self.slug])
 
     def save(self, *args, **kwargs):
         if not self.slug:
