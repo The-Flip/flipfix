@@ -9,16 +9,14 @@
       <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
     </nav>
 
-    <header class="entry-header">
-      <h2>{{ entry.created_at|smart_date }}</h2>
-      <p class="entry-maintainers">
-        {% if entry.maintainers.all %}
-          by {{ entry.maintainers.all|join:", " }}
-        {% elif entry.maintainer_names %}
-          by {{ entry.maintainer_names }}
-        {% endif %}
-      </p>
-    </header>
+    <h2>{{ entry.created_at|smart_date }}</h2>
+    <p>
+      {% if entry.maintainers.all %}
+        by {{ entry.maintainers.all|join:", " }}
+      {% elif entry.maintainer_names %}
+        by {{ entry.maintainer_names }}
+      {% endif %}
+    </p>
 
     <div class="entry-content">
       <div class="entry-text-container">
@@ -214,19 +212,6 @@
 
     .breadcrumb a:hover {
       text-decoration: underline;
-    }
-
-    .entry-header {
-      margin-bottom: 2rem;
-    }
-
-    .entry-header h2 {
-      margin-bottom: 0.5rem;
-    }
-
-    .entry-maintainers {
-      color: #666;
-      margin: 0;
     }
 
     .entry-text-container {
