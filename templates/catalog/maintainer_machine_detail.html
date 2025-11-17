@@ -6,6 +6,7 @@
     <h2>{{ object.display_name }}</h2>
     <div class="header-actions">
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">View Logs</a>
+      <a class="btn btn-primary" href="{% url 'machine-problem-reports' object.slug %}">All Problem Reports</a>
       <a class="btn btn-primary" href="{% url 'problem-report-create' object.slug %}">Submit Problem Report</a>
     </div>
   </div>

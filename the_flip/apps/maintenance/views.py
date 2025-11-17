@@ -10,7 +10,7 @@ from django.views.generic import ListView, TemplateView, FormView, View, DetailV
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.maintenance.forms import LogEntryQuickForm, ProblemReportForm
+from the_flip.apps.maintenance.forms import LogEntryQuickForm, MachineReportSearchForm, ProblemReportForm
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 
 
@@ -18,6 +18,39 @@ class ProblemReportListView(ListView):
     template_name = "maintenance/problem_report_list.html"
     context_object_name = "reports"
     queryset = ProblemReport.objects.select_related("machine").order_by("-created_at")
+
+
+class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """Paginated list of all problem reports for a specific machine."""
+    template_name = "maintenance/machine_problem_report_list.html"
+    context_object_name = "reports"
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def dispatch(self, request, *args, **kwargs):
+        self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = ProblemReport.objects.filter(machine=self.machine).select_related(
+            "reported_by_user"
+        ).order_by("-created_at")
+
+        # Search by description text if provided
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            queryset = queryset.filter(description__icontains=search_query)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["machine"] = self.machine
+        search_query = self.request.GET.get("q", "")
+        context["search_form"] = MachineReportSearchForm(initial={"q": search_query})
+        return context
 
 
 class ProblemReportCreateView(FormView):

@@ -45,6 +45,7 @@ path("", RedirectView.as_view(pattern_name="problem-report-list", permanent=Fals
 
     # Maintainer problem report views
     path("problem-reports/", maintenance_views.ProblemReportListView.as_view(), name="problem-report-list"),
+    path("problem-reports/<slug:slug>/", maintenance_views.MachineProblemReportListView.as_view(), name="machine-problem-reports"),
     # path("problem-reports/<int:pk>/", maintenance_views.ProblemReportDetailView.as_view(), name="problem-report-detail"),
 
     # Maintainer machine views

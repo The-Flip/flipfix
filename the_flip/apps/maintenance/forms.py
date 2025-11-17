@@ -13,6 +13,14 @@ class ProblemReportForm(forms.ModelForm):
         }
 
 
+class MachineReportSearchForm(forms.Form):
+    q = forms.CharField(
+        label="Search",
+        required=False,
+        widget=forms.TextInput(attrs={"type": "search", "placeholder": "Search..."}),
+    )
+
+
 class LogEntryQuickForm(forms.Form):
     submitter_name = forms.CharField(
         label="Your name",
