@@ -14,16 +14,6 @@ from the_flip.apps.maintenance.forms import LogEntryQuickForm, ProblemReportForm
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 
 
-class MaintenanceIndexView(TemplateView):
-    template_name = "maintenance/index.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["open_reports"] = ProblemReport.objects.open().select_related("machine").order_by("-created_at")
-        context["recent_logs"] = LogEntry.objects.select_related("machine").prefetch_related("maintainers")[:10]
-        return context
-
-
 class ProblemReportListView(ListView):
     template_name = "maintenance/problem_report_list.html"
     context_object_name = "reports"
