@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="log-header">
@@ -11,4 +12,30 @@
   <p>{{ object.model.manufacturer }} · {{ object.model.year }}</p>
   <p>Status: {{ object.get_operational_status_display }}</p>
   <p>Location: {{ object.get_location_display }}</p>
+
+  {% if open_problem_reports %}
+    <section>
+      <h3>Open Problem Reports</h3>
+      <ul class="list machine-list">
+        {% for report in open_problem_reports %}
+          <li class="machine-card">
+            <div class="machine-card__row">
+              <div class="machine-card__row-left">
+                {% if report.problem_type != report.PROBLEM_OTHER %}
+                  <span class="machine-card__problem-label">{{ report.get_problem_type_display }}:</span>
+                {% endif %}
+                {{ report.description|default:"No description provided." }}
+              </div>
+              <div class="machine-card__meta-group">
+                <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
+                <span class="badge badge-status badge-status--{{ report.status }}">
+                  {{ report.get_status_display }}
+                </span>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
 {% endblock %}

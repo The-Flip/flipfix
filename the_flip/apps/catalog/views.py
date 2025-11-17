@@ -62,13 +62,6 @@ class PublicMachineDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        machine = self.object
-        context["problem_reports"] = ProblemReport.objects.filter(machine=machine).select_related("reported_by_user")
-        context["log_entries"] = (
-            LogEntry.objects.filter(machine=machine)
-            .select_related("problem_report")
-            .prefetch_related("maintainers", "media")
-        )
         context["problem_report_form"] = ProblemReportForm()
         return context
 
@@ -77,3 +70,17 @@ class MachineDetailView(PublicMachineDetailView):
     """Maintainer-facing detail page; customize as needed."""
 
     template_name = "catalog/maintainer_machine_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        machine = self.object
+        context["problem_reports"] = ProblemReport.objects.filter(machine=machine).select_related("reported_by_user")
+        context["open_problem_reports"] = ProblemReport.objects.filter(
+            machine=machine,
+            status=ProblemReport.STATUS_OPEN
+        ).select_related("reported_by_user").order_by("-created_at")
+        context["log_entries"] = (
+            LogEntry.objects.filter(machine=machine)
+            .prefetch_related("maintainers", "media")
+        )
+        return context
