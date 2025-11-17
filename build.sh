@@ -17,7 +17,7 @@ python manage.py collectstatic --no-input
 python manage.py import_legacy_maintainers
 
 # Create default pinball machines
-python manage.py create_default_machines
+python manage.py import_machines
 
 # Import legacy maintenance records
 python manage.py import_legacy_maintenance_records
