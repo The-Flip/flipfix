@@ -182,6 +182,28 @@ select:focus {
   margin-bottom: var(--space-4);
 }
 
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.log-header h2 {
+  margin: 0;
+}
+
+.log-entry-meta {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.log-entry-text {
+  margin-top: var(--space-2);
+  font-size: 1rem;
+}
+
 .error {
   color: var(--color-danger);
   font-size: 0.9rem;
@@ -278,5 +300,10 @@ select:focus {
 
   main {
     padding: var(--space-4) var(--space-3);
+  }
+
+  .log-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
