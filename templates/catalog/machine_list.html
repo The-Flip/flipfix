@@ -12,8 +12,8 @@
           role="button"
           aria-label="View {{ machine.display_name }}"
         >
-          <div class="machine-card__header">
-            <div class="machine-card__title">
+          <div class="machine-card__row">
+            <div class="machine-card__row-left">
               <span class="machine-card__name">{{ machine.display_name }}</span>
               <span class="machine-card__meta">・{{ machine.model.year }} {{ machine.model.manufacturer }}</span>
             </div>
@@ -21,15 +21,21 @@
               {{ machine.get_operational_status_display }}
             </span>
           </div>
-          {% if machine.latest_open_report %}
-            <div class="machine-card__problem">
-              <span class="machine-card__problem-label">❗Problem report:</span>
-              {{ machine.latest_open_report.0.description|truncatechars:30 }}
-            </div>
-          {% endif %}
           {% with loc=machine.get_location_display %}
-            {% if loc and loc != "Floor" %}
-              <div class="machine-card__location">Location: {{ loc }}</div>
+            {% if machine.latest_open_report or loc and loc != "Floor" %}
+              <div class="machine-card__row">
+                <div class="machine-card__row-left">
+                  {% if machine.latest_open_report %}
+                    <span class="machine-card__problem">
+                      <span class="machine-card__problem-label">❗Problem report:</span>
+                      {{ machine.latest_open_report.0.description|truncatechars:30 }}
+                    </span>
+                  {% endif %}
+                </div>
+                {% if loc and loc != "Floor" %}
+                  <div class="machine-card__location">Location: {{ loc }}</div>
+                {% endif %}
+              </div>
             {% endif %}
           {% endwith %}
         </li>

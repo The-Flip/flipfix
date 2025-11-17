@@ -212,13 +212,13 @@ select:focus {
   outline-offset: 2px;
 }
 
-.machine-card__header {
+.machine-card__row {
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
 }
 
-.machine-card__title {
+.machine-card__row-left {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
