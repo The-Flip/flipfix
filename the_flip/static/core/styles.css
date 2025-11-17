@@ -230,6 +230,10 @@ select:focus {
 
 .machine-card__name {
   font-weight: 600;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  -webkit-line-clamp: 1;
 }
 
 .machine-card__meta {
