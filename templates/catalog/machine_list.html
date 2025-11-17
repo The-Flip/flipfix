@@ -21,6 +21,12 @@
               {{ machine.get_operational_status_display }}
             </span>
           </div>
+          {% if machine.latest_open_report %}
+            <div class="machine-card__problem">
+              <span class="machine-card__problem-label">❗Problem report:</span>
+              {{ machine.latest_open_report.0.description|truncatechars:30 }}
+            </div>
+          {% endif %}
           {% with loc=machine.get_location_display %}
             {% if loc and loc != "Floor" %}
               <div class="machine-card__location">Location: {{ loc }}</div>

@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Count, Q, Value, When
+from django.db.models import Case, CharField, Count, Prefetch, Q, Value, When
 from django.db.models.functions import Coalesce, Lower
 from django.views.generic import DetailView, ListView
 
@@ -16,6 +16,14 @@ class PublicMachineListView(ListView):
             open_report_count=Count(
                 'problem_reports',
                 filter=Q(problem_reports__status=ProblemReport.STATUS_OPEN)
+            )
+        ).prefetch_related(
+            Prefetch(
+                'problem_reports',
+                queryset=ProblemReport.objects.filter(
+                    status=ProblemReport.STATUS_OPEN
+                ).order_by('-created_at')[:1],
+                to_attr='latest_open_report'
             )
         ).order_by(
             # Machines with open problem reports first
