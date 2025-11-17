@@ -1,3 +1,5 @@
+from django.db.models import Case, CharField, Value, When
+from django.db.models.functions import Coalesce, Lower
 from django.views.generic import DetailView, ListView
 
 from the_flip.apps.catalog.models import MachineInstance
@@ -8,7 +10,29 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 class PublicMachineListView(ListView):
     template_name = "catalog/machine_list_public.html"
     context_object_name = "machines"
-    queryset = MachineInstance.objects.visible().order_by("model__year")
+
+    def get_queryset(self):
+        return MachineInstance.objects.visible().order_by(
+            # Location priority: workshop, storage, floor
+            Case(
+                When(location=MachineInstance.LOCATION_WORKSHOP, then=Value(1)),
+                When(location=MachineInstance.LOCATION_STORAGE, then=Value(2)),
+                When(location=MachineInstance.LOCATION_FLOOR, then=Value(3)),
+                default=Value(4),
+                output_field=CharField(),
+            ),
+            # Status priority: fixing, broken, good, unknown
+            Case(
+                When(operational_status=MachineInstance.STATUS_FIXING, then=Value(1)),
+                When(operational_status=MachineInstance.STATUS_BROKEN, then=Value(2)),
+                When(operational_status=MachineInstance.STATUS_GOOD, then=Value(3)),
+                When(operational_status=MachineInstance.STATUS_UNKNOWN, then=Value(4)),
+                default=Value(5),
+                output_field=CharField(),
+            ),
+            # Alphabetically by display name (name_override if present, else model.name)
+            Lower(Coalesce("name_override", "model__name")),
+        )
 
 
 class MachineListView(PublicMachineListView):
