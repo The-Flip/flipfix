@@ -35,7 +35,9 @@
         <div id="media-container" class="media-grid">
           {% for media in entry.media.all %}
             <div class="media-item" data-media-id="{{ media.id }}">
-              <img src="{{ media.file.url }}" alt="Log entry photo">
+              <a href="{{ media.file.url }}" target="_blank" class="media-link">
+                <img src="{{ media.file.url }}" alt="Log entry photo">
+              </a>
               <button
                 type="button"
                 class="btn-delete-media"
@@ -138,7 +140,9 @@
           mediaItem.className = 'media-item';
           mediaItem.dataset.mediaId = data.media_id;
           mediaItem.innerHTML = `
-            <img src="${data.media_url}" alt="Log entry photo">
+            <a href="${data.media_url}" target="_blank" class="media-link">
+              <img src="${data.media_url}" alt="Log entry photo">
+            </a>
             <button
               type="button"
               class="btn-delete-media"
@@ -280,6 +284,16 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       overflow: hidden;
+    }
+
+    .media-link {
+      display: block;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .media-link:hover {
+      opacity: 0.9;
     }
 
     .media-item img {
