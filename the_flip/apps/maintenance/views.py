@@ -18,7 +18,7 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
     template_name = "maintenance/problem_report_list.html"
     context_object_name = "reports"
-    queryset = ProblemReport.objects.select_related("machine").order_by("-created_at")
+    queryset = ProblemReport.objects.select_related("machine").order_by("-status", "-created_at")
 
     def test_func(self):
         return self.request.user.is_staff
