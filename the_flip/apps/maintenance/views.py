@@ -14,10 +14,14 @@ from the_flip.apps.maintenance.forms import LogEntryQuickForm, MachineReportSear
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 
 
-class ProblemReportListView(ListView):
+class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """Global list of all problem reports across all machines. Maintainer-only access."""
     template_name = "maintenance/problem_report_list.html"
     context_object_name = "reports"
     queryset = ProblemReport.objects.select_related("machine").order_by("-created_at")
+
+    def test_func(self):
+        return self.request.user.is_staff
 
 
 class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -73,6 +77,46 @@ class ProblemReportCreateView(FormView):
         report.save()
         messages.success(self.request, "Thanks! The maintenance team has been notified.")
         return redirect(self.machine.get_absolute_url())
+
+
+class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Detail view for a problem report with status toggle capability. Maintainer-only access."""
+    template_name = "maintenance/problem_report_detail.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        report = get_object_or_404(
+            ProblemReport.objects.select_related("machine", "reported_by_user"),
+            pk=kwargs["pk"]
+        )
+        return self.render_response(request, report)
+
+    def post(self, request, *args, **kwargs):
+        report = get_object_or_404(
+            ProblemReport.objects.select_related("machine", "reported_by_user"),
+            pk=kwargs["pk"]
+        )
+        # Toggle status
+        if report.status == ProblemReport.STATUS_OPEN:
+            report.status = ProblemReport.STATUS_CLOSED
+            message = "Problem report closed."
+        else:
+            report.status = ProblemReport.STATUS_OPEN
+            message = "Problem report re-opened."
+
+        report.save(update_fields=["status", "updated_at"])
+        messages.success(request, message)
+        return redirect("problem-report-detail", pk=report.pk)
+
+    def render_response(self, request, report):
+        from django.shortcuts import render
+        context = {
+            "report": report,
+            "machine": report.machine,
+        }
+        return render(request, self.template_name, context)
 
 
 class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
