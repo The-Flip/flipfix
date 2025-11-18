@@ -423,7 +423,6 @@ select:focus {
 }
 
 .breadcrumb a {
-  color: var(--color-primary);
   text-decoration: none;
   transition: text-decoration 0.2s ease;
 }
