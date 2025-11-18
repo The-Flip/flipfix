@@ -23,7 +23,7 @@ class MachineInstanceForm(forms.ModelForm):
         ]
         widgets = {
             "name_override": forms.TextInput(attrs={
-                "placeholder": "Leave blank to use model name"
+                "placeholder": "Leave blank to use the machine's model name"
             }),
             "serial_number": forms.TextInput(attrs={
                 "placeholder": "e.g., 12345"

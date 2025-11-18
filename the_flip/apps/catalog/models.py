@@ -190,21 +190,25 @@ class MachineInstance(TimeStampedModel):
     name_override = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Override the model name for this specific instance (optional)"
+        verbose_name="Name Override",
+        help_text="Give this machine a name other than the machine's model name"
     )
     serial_number = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Serial number from manufacturer (optional)"
+        verbose_name="Serial Number",
+        help_text="Serial number from manufacturer"
     )
     acquisition_notes = models.TextField(
         blank=True,
+        verbose_name="Acquisition Notes",
         help_text="Details about acquisition history"
     )
     ownership_credit = models.CharField(
         max_length=300,
         blank=True,
-        help_text="Credit for donation or ownership (optional)"
+        verbose_name="Ownership Credit",
+        help_text="Credit for ownership"
     )
     location = models.CharField(
         max_length=20,
@@ -216,6 +220,7 @@ class MachineInstance(TimeStampedModel):
         max_length=20,
         choices=STATUS_CHOICES,
         default=STATUS_UNKNOWN,
+        verbose_name="Status",
         help_text="Current working condition"
     )
     created_by = models.ForeignKey(
