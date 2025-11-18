@@ -40,7 +40,7 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
     def get_queryset(self):
         queryset = ProblemReport.objects.filter(machine=self.machine).select_related(
             "reported_by_user"
-        ).order_by("-created_at")
+        ).order_by("-status", "-created_at")
 
         # Search by description text if provided
         search_query = self.request.GET.get("q", "").strip()

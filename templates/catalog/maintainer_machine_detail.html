@@ -7,8 +7,7 @@
     <div class="header-actions">
       <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">View Logs</a>
-      <a class="btn btn-primary" href="{% url 'machine-problem-reports' object.slug %}">All Problem Reports</a>
-      <a class="btn btn-primary" href="{% url 'problem-report-create' object.slug %}">Submit Problem Report</a>
+      <a class="btn btn-primary" href="{% url 'machine-problem-reports' object.slug %}">Problem Reports</a>
     </div>
   </div>
   <p>{{ object.model.manufacturer }} · {{ object.model.year }}</p>

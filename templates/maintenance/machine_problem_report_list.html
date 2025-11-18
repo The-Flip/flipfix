@@ -2,12 +2,18 @@
 {% load core_extras %}
 {% block title %}{{ machine.display_name }} Problem Reports · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="breadcrumb">
-    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-    <span>›</span>
-    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
-    <span>›</span>
-    <strong>Problem Reports</strong>
+  <nav class="breadcrumb breadcrumb--with-actions">
+    <div class="breadcrumb__trail">
+      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+      <span>›</span>
+      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+      <span>›</span>
+      <strong>Problem Reports</strong>
+    </div>
+
+    <div class="breadcrumb__actions">
+      <a class="btn btn-primary" href="{% url 'problem-report-create' machine.slug %}">Submit Problem Report</a>
+    </div>
   </nav>
 
   <form method="get" action="">
