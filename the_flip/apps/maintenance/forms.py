@@ -7,9 +7,14 @@ from the_flip.apps.maintenance.models import ProblemReport
 class ProblemReportForm(forms.ModelForm):
     class Meta:
         model = ProblemReport
-        fields = ["problem_type", "description", "reported_by_name", "reported_by_contact", "device_info"]
+        fields = ["problem_type", "description"]
         widgets = {
-            "description": forms.Textarea(attrs={"rows": 4}),
+            "problem_type": forms.RadioSelect(),
+            "description": forms.Textarea(attrs={"rows": 4, "placeholder": "Describe the problem..."}),
+        }
+        labels = {
+            "problem_type": "What type of problem?",
+            "description": "",
         }
 
 

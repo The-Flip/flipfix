@@ -52,5 +52,16 @@
     </section>
   {% endif %}
 
+  {% if report.device_info or report.ip_address %}
+    <section class="card">
+      <h3>Submitter Details</h3>
+      {% if report.device_info %}
+        <p><strong>Device:</strong> {{ report.device_info }}</p>
+      {% endif %}
+      {% if report.ip_address %}
+        <p><strong>IP Address:</strong> {{ report.ip_address }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
 
 {% endblock %}

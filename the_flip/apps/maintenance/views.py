@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import base64
+from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
 
 import qrcode
 from PIL import Image
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
@@ -13,6 +15,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import format_html
 from django.views.generic import ListView, TemplateView, FormView, View, DetailView, UpdateView
 
@@ -78,10 +81,33 @@ class ProblemReportCreateView(FormView):
         context["machine"] = self.machine
         return context
 
+    def post(self, request, *args, **kwargs):
+        """Override post to check rate limiting before processing form."""
+        # Check rate limiting
+        ip_address = request.META.get("REMOTE_ADDR")
+        if ip_address and not self._check_rate_limit(ip_address):
+            messages.error(
+                request,
+                "Too many reports submitted recently. Please try again later."
+            )
+            return redirect(self.machine.get_absolute_url())
+
+        return super().post(request, *args, **kwargs)
+
+    def _check_rate_limit(self, ip_address: str) -> bool:
+        """Check if IP address has exceeded rate limit. Returns True if OK to proceed."""
+        time_window = timezone.now() - timedelta(minutes=settings.RATE_LIMIT_WINDOW_MINUTES)
+        recent_reports = ProblemReport.objects.filter(
+            ip_address=ip_address,
+            created_at__gte=time_window
+        ).count()
+        return recent_reports < settings.RATE_LIMIT_REPORTS_PER_IP
+
     def form_valid(self, form):
         report = form.save(commit=False)
         report.machine = self.machine
         report.ip_address = self.request.META.get("REMOTE_ADDR")
+        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]  # Truncate to field max length
         report.save()
         messages.success(self.request, "Thanks! The maintenance team has been notified.")
         return redirect(self.machine.get_absolute_url())
