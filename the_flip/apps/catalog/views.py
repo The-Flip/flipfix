@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.db.models import Case, CharField, Count, Prefetch, Q, Value, When
+from django.db.models import Case, CharField, Count, F, Prefetch, Q, Value, When
 from django.db.models.functions import Coalesce, Lower
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -38,27 +38,18 @@ class PublicMachineListView(ListView):
                 to_attr='latest_open_report'
             )
         ).order_by(
-            # Machines with open problem reports first
-            '-open_report_count',
-            # Location priority: workshop, storage, floor
+            # Location priority: floor, workshop, storage, unknown
             Case(
-                When(location=MachineInstance.LOCATION_WORKSHOP, then=Value(1)),
-                When(location=MachineInstance.LOCATION_STORAGE, then=Value(2)),
-                When(location=MachineInstance.LOCATION_FLOOR, then=Value(3)),
+                When(location=MachineInstance.LOCATION_FLOOR, then=Value(1)),
+                When(location=MachineInstance.LOCATION_WORKSHOP, then=Value(2)),
+                When(location=MachineInstance.LOCATION_STORAGE, then=Value(3)),
                 default=Value(4),
                 output_field=CharField(),
             ),
-            # Status priority: fixing, broken, good, unknown
-            Case(
-                When(operational_status=MachineInstance.STATUS_FIXING, then=Value(1)),
-                When(operational_status=MachineInstance.STATUS_BROKEN, then=Value(2)),
-                When(operational_status=MachineInstance.STATUS_GOOD, then=Value(3)),
-                When(operational_status=MachineInstance.STATUS_UNKNOWN, then=Value(4)),
-                default=Value(5),
-                output_field=CharField(),
-            ),
-            # Alphabetically by display name (name_override if present, else model.name)
-            Lower(Coalesce("name_override", "model__name")),
+            # Year descending (newest first, nulls last)
+            F('model__year').desc(nulls_last=True),
+            # Month descending (nulls last)
+            F('model__month').desc(nulls_last=True),
         )
 
 
