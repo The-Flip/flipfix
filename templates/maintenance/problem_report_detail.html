@@ -10,7 +10,7 @@
       <span>›</span>
       <a href="{% url 'machine-problem-reports' machine.slug %}">Problem Reports</a>
       <span>›</span>
-      <strong>{{ report.created_at|smart_date }} ({{ report.get_status_display }})</strong>
+      <strong>{{ report.created_at|smart_date }} <span class="badge badge-status badge-status--{{ report.status }}">{{ report.get_status_display }}</span></strong>
     </div>
 
     <div class="breadcrumb__actions">
