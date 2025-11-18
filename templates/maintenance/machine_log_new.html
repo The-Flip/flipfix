@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}New Log Entry · {{ block.super }}{% endblock %}
 {% block content %}
-  <h2>Add Log Entry for <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a></h2>
+  <nav class="breadcrumb">
+    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+    <span>›</span>
+    <a href="{% url 'log-machine' machine.slug %}">Logs</a>
+  </nav>
+
+  <h2>Add Log Entry</h2>
 
   <section class="card">
     <form method="post" enctype="multipart/form-data">
