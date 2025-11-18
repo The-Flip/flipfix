@@ -8,13 +8,11 @@
     {% if machine_instance %}
       <a href="{% url 'maintainer-machine-detail' machine_instance.slug %}">{{ machine_instance.display_name }}</a>
       <span>›</span>
+      <a href="{% url 'machine-edit' machine_instance.slug %}">Edit</a>
+      <span>›</span>
     {% endif %}
     <strong>Model</strong>
   </nav>
-
-  <div class="log-header">
-    <h2>Edit Model: {{ object.name }}</h2>
-  </div>
 
   <form method="post" class="form-container">
     {% csrf_token %}
