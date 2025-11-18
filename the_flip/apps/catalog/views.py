@@ -6,6 +6,7 @@ from django.db.models.functions import Coalesce, Lower
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.generic import DetailView, FormView, ListView, UpdateView
 
 from the_flip.apps.catalog.forms import (
@@ -226,10 +227,14 @@ class MachineQuickCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 updated_by=self.request.user
             )
 
-        # Add success message
+        # Add success message with links
         messages.success(
             self.request,
-            f"Machine created! Click Edit or Edit Model Info to add more details."
+            format_html(
+                'Machine created! You can now <a href="{}">edit the machine</a> and <a href="{}">edit the model</a>.',
+                reverse('machine-edit', kwargs={'slug': instance.slug}),
+                reverse('machine-model-edit', kwargs={'slug': instance.model.slug})
+            )
         )
 
         # Redirect to the machine detail page

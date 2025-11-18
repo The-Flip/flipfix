@@ -490,6 +490,79 @@ select:focus {
   color: var(--color-text-muted);
 }
 
+/* Messages */
+.messages {
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.message {
+  display: block;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  border-left: 4px solid;
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.message::before {
+  content: '';
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: inline-block;
+  margin-right: var(--space-3);
+}
+
+.message--success {
+  border-left-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.message--success::before {
+  content: '✓';
+  color: var(--color-accent);
+}
+
+.message--error {
+  border-left-color: var(--color-danger);
+  color: var(--color-text);
+}
+
+.message--error::before {
+  content: '✕';
+  color: var(--color-danger);
+}
+
+.message--warning {
+  border-left-color: var(--color-warning);
+  color: var(--color-text);
+}
+
+.message--warning::before {
+  content: '⚠';
+  color: var(--color-warning);
+}
+
+.message--info {
+  border-left-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.message--info::before {
+  content: 'ℹ';
+  color: var(--color-primary);
+}
+
+.message a {
+  display: inline;
+  padding: 0;
+  margin: 0;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --color-surface: #232b36;

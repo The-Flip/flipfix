@@ -208,7 +208,8 @@ class MachineQuickCreateViewTests(TestCase):
         messages = list(response.context['messages'])
         self.assertEqual(len(messages), 1)
         self.assertIn('Machine created!', str(messages[0]))
-        self.assertIn('Click Edit or Edit Model Info', str(messages[0]))
+        self.assertIn('edit the machine', str(messages[0]))
+        self.assertIn('edit the model', str(messages[0]))
 
     def test_redirect_to_machine_detail(self):
         """Should redirect to the new machine's detail page after creation."""

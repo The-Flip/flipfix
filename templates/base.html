@@ -25,6 +25,15 @@
       </nav>
     </header>
     <main>
+      {% if messages %}
+        <div class="messages" role="alert" aria-live="polite">
+          {% for message in messages %}
+            <div class="message message--{{ message.tags }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
     <script src="{% static 'core/clickable_cards.js' %}" defer></script>
