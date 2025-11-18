@@ -6,6 +6,8 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.html import format_html
 from django.views.generic import ListView, TemplateView, FormView, View, DetailView, UpdateView
 
 from the_flip.apps.accounts.models import Maintainer
@@ -193,7 +195,13 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 file=photo,
             )
 
-        messages.success(self.request, "Log entry recorded.")
+        messages.success(
+            self.request,
+            format_html(
+                'Log entry added. Edit it <a href="{}">here</a>.',
+                reverse('log-detail', kwargs={'pk': log_entry.pk})
+            )
+        )
         return redirect("log-machine", slug=self.machine.slug)
 
     def match_maintainer(self, name: str):
