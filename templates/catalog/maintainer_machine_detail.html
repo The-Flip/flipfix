@@ -11,6 +11,7 @@
 
     <div class="breadcrumb__actions">
       <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
+      <a class="btn btn-secondary" href="{% url 'machine-qr' object.slug %}">QR Code</a>
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">Logs</a>
       <a class="btn btn-primary" href="{% url 'machine-problem-reports' object.slug %}">
         Problem Reports

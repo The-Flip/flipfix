@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+from io import BytesIO
+
+import qrcode
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
@@ -291,3 +295,47 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                 return JsonResponse({"success": False, "error": "Media not found"}, status=404)
 
         return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
+
+
+class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """Generate and display a printable QR code for a machine's public info page."""
+    model = MachineInstance
+    template_name = "maintenance/machine_qr.html"
+    context_object_name = "machine"
+    slug_field = "slug"
+    slug_url_kwarg = "slug"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        machine = self.object
+
+        # Build the absolute URL for the public machine detail page
+        public_url = self.request.build_absolute_uri(
+            reverse("public-machine-detail", args=[machine.slug])
+        )
+
+        # Generate QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(public_url)
+        qr.make(fit=True)
+
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert to base64 for inline display
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        qr_code_data = base64.b64encode(buffer.getvalue()).decode()
+
+        context["qr_code_data"] = qr_code_data
+        context["public_url"] = public_url
+
+        return context

@@ -56,7 +56,7 @@ path("", RedirectView.as_view(pattern_name="problem-report-list", permanent=Fals
     path("machines/new/", MachineQuickCreateView.as_view(), name="machine-quick-create"),
     path("machines/<slug:slug>/", MachineDetailView.as_view(), name="maintainer-machine-detail"),
     path("machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"),
-    # path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
+    path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
 
     # Machine model editing
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
