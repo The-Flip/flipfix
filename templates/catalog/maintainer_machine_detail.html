@@ -19,7 +19,13 @@
       <h3>Open Problem Reports</h3>
       <ul class="list machine-list">
         {% for report in open_problem_reports %}
-          <li class="machine-card">
+          <li
+            class="machine-card js-clickable-card"
+            data-url="{% url 'problem-report-detail' report.pk %}"
+            tabindex="0"
+            role="button"
+            aria-label="View problem report"
+          >
             <div class="machine-card__row">
               <div class="machine-card__row-left">
                 {% if report.problem_type != report.PROBLEM_OTHER %}
