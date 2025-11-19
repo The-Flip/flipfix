@@ -24,7 +24,7 @@
 
   <fieldset class="form-section">
     <div class="inline-edit-group">
-      <div class="inline-edit-field">
+      <div class="form-field inline-edit-field">
         <label for="status-select">Status:</label>
         <select id="status-select" class="inline-edit-select" data-field="operational_status">
           {% for value, label in object.STATUS_CHOICES %}
@@ -34,7 +34,7 @@
         <span class="inline-edit-status" id="status-save-indicator"></span>
       </div>
 
-      <div class="inline-edit-field">
+      <div class="form-field inline-edit-field">
         <label for="location-select">Location:</label>
         <select id="location-select" class="inline-edit-select" data-field="location">
           <option value="" {% if not object.location %}selected{% endif %}>--</option>
