@@ -1,0 +1,36 @@
+{% load static core_extras %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}The Flip{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+  </head>
+  <body>
+    <header class="header-minimal">
+      <div class="header-minimal__content">
+        <h1>The Flip</h1>
+      </div>
+    </header>
+    <main>
+      {% if messages %}
+        <div class="messages" role="alert" aria-live="polite">
+          {% for message in messages %}
+            <div class="message message--{{ message.tags }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer-minimal">
+      <div class="footer-minimal__content">
+        <p>&copy; The Flip</p>
+      </div>
+    </footer>
+    <script src="{% static 'core/clickable_cards.js' %}" defer></script>
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>

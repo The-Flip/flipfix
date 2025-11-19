@@ -18,7 +18,7 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 /media
-/staticfiles
+/static_collected/
 *.pot
 
 # IDEs
@@ -42,12 +42,12 @@ db.sqlite3-journal
 htmlcov/
 .tox/
 
-# Migrations
+# Django schema mgrations
 # */migrations/*.py
 # !*/migrations/__init__.py
 
-# Collected static files
-/static/
+# Django collected static files
+/static_collected/
 
-# Claude Code
-.claude/
+# Claude Code's local settings
+settings.local.json

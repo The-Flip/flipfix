@@ -1,0 +1,26 @@
+{% extends "base_public_minimal.html" %}
+{% block title %}Machines · {{ block.super }}{% endblock %}
+{% block content %}
+  <h2>Machines</h2>
+  {% if machines %}
+    <ul class="list machine-list">
+      {% for machine in machines %}
+        <li class="machine-card js-clickable-card" data-url="{% url 'public-machine-detail' machine.slug %}" tabindex="0" role="button" aria-label="View {{ machine.display_name }}">
+          <div class="machine-card__row">
+            <div class="machine-card__row-left">
+              <span class="machine-card__name">{{ machine.display_name }}</span>
+              <span class="machine-card__meta">・{{ machine.model.year }} {{ machine.model.manufacturer }}</span>
+            </div>
+            <span class="badge badge-status badge-status--{{ machine.operational_status }}">{{ machine.get_operational_status_display }}</span>
+          </div>
+          <div class="machine-card__row">
+            <div class="machine-card__row-left"></div>
+            <div class="machine-card__location">Location: {{ machine.get_location_display }}</div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No machines yet.</p>
+  {% endif %}
+{% endblock %}

@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "cd the_flip && gunicorn the_flip.wsgi:application"
+    startCommand: "gunicorn the_flip.wsgi:application"
     envVars:
       - key: SECRET_KEY
         generateValue: true

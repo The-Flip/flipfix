@@ -7,9 +7,6 @@ set -o errexit
 # Install dependencies
 pip install -r requirements.txt
 
-# Change to the Django project directory
-cd the_flip
-
 # Run migrations
 python manage.py migrate
 
@@ -17,13 +14,10 @@ python manage.py migrate
 python manage.py collectstatic --no-input
 
 # Import legacy maintainers and make some of them admins
-python manage.py import_legacy_maintainers
+python manage.py import_maintainers
 
 # Create default pinball machines
-python manage.py create_default_machines
+python manage.py import_machines
 
 # Import legacy maintenance records
-python manage.py import_legacy_maintenance_records
-
-# Create fake maintenance records on top of the real ones
-python manage.py create_sample_maintenance_data
+python manage.py import_maintenance_records

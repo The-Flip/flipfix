@@ -7,6 +7,9 @@ It allows museum visitors to report problems with pinball machines (via QR codes
 ## Live System
 Check out the prototype live at https://the-flip.onrender.com
 
+## AI Assistant Instructions
+AI helpers like Claude and Codex must read and follow `docs/dev_guide/README.md` before answering questions or generating assets. That guide spells out how AI assistants are to work with HTML, CSS, Django/Python, the project structure, data model, and tests.
+
 ## Local Development Setup
 It's in Django.
 
@@ -42,7 +45,6 @@ It's in Django.
 
 5. **Run migrations**
    ```bash
-   cd the_flip
    python manage.py migrate
    ```
 
@@ -53,8 +55,10 @@ It's in Django.
 
 7. **Load sample data (optional)**
    ```bash
+   python manage.py import_legacy_maintainers
    python manage.py create_default_machines
-   python manage.py create_sample_problem_reports
+   python manage.py import_legacy_maintenance_records
+   python manage.py create_sample_maintenance_data
    ```
 
 8. **Run development server**

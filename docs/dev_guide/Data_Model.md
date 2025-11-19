@@ -1,0 +1,196 @@
+# Data Model
+
+This document describes the system's data model.
+
+
+- **Maintainer**: a person that does work on the machines
+  - CRUD Access
+    - Read: the public can see maintainer names on maintenance records, but no other information. Certainly not contact info like phone or email.
+    - Create: System Administrators only, via Django Admin
+    - Update: System Administrators only, via Django Admin
+    - Delete: System Administrators only, via Django Admin
+  - Default Sort Order: alphabetically by linked Django user name (in practice the admin uses the `__str__` value).
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Help: System-managed timestamp when the maintainer record is first created; not imported from legacy sources.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on each change (required)
+      - Help: System-managed timestamp reflecting the most recent modification to the maintainer.
+    - **User (`user`)** — one-to-one reference to a Django user (required)
+      - Maintainer-specific profile data comes directly from the linked Django user record; no additional fields live on this model.
+      - Help: Connects each maintainer record to the canonical Django account that provides contact info and permissions.
+- **Machine Model**: a model of pinball or other type of game machine
+  - CRUD Access: same as Machine Instances (see below)
+  - Default Sort Order: by machine model name (ascending).
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Help: System-managed timestamp when this machine model record is created.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on each change (required)
+      - Help: System-managed timestamp of the most recent change to the machine model record.
+    - **Name (`name`)** — string, max 200 chars, unique (required)
+      - Help: Official machine model name (e.g., "Godzilla"). Must be unique across all machine models.
+    - **Slug (`slug`)** — slug string, auto-generated, unique (required)
+      - Help: URL-safe identifier derived from the machine model name; auto-generated when blank using Django's slugify utility. Used in URLs like `/models/star-trek/`.
+    - **Manufacturer (`manufacturer`)** — string, max 200 chars (optional)
+      - Help: Manufacturer or publisher responsible for the machine.
+    - **Year Manufactured (`year`)** — positive integer (optional)
+      - Help: Calendar year when the machine model debuted.
+    - **Month Manufactured (`month`)** — positive integer (optional)
+      - Help: Calendar month (1–12) when the machine was manufactured.
+      - Validation: must be between 1 and 12, inclusive.
+    - **Era (`era`)** — enum (required)
+      - Values: Pure Mechanical (`PM`), Electromechanical (`EM`), Solid State (`SS`)
+      - Help: Categorizes the technology era for interpretation and filtering.
+    - **System (`system`)** — string, max 100 chars (optional)
+      - Help: Examples include “WPC”, “System 11”, “MPU-1”.
+    - **Scoring (`scoring`)** — string, max 100 chars (optional)
+      - Help: Display type such as manual, reels, 7-segment, DMD, or video.
+    - **Flipper Count (`flipper_count`)** — non-negative integer (optional)
+      - Help: Number of player-controlled flippers.
+    - **Pinside Rating (`pinside_rating`)** — decimal, precision 4, scale 2 (optional)
+      - Validation: accepts values from 0.00 through 99.99.
+      - Help: Community rating pulled from Pinside.
+    - **IPDB ID (`ipdb_id`)** — positive integer (optional)
+      - Validation: value must be unique when provided.
+      - Help: Identifier from the Internet Pinball Machine Database.
+    - **Production Quantity (`production_quantity`)** — string, max 50 chars (optional)
+      - Help: Friendly strings like “~50,000” or “1,600”.
+    - **Factory Address (`factory_address`)** — string, max 300 chars (optional)
+      - Help: Street address of the factory that produced the machine.
+    - **Design Credit (`design_credit`)** — string, max 200 chars (optional)
+      - Help: Designer credited with “Design by”.
+    - **Concept and Design Credit (`concept_and_design_credit`)** — string, max 200 chars (optional)
+      - Help: Designer credited with “Concept and design by”.
+    - **Art Credit (`art_credit`)** — string, max 200 chars (optional)
+      - Help: Artist credited with “Art by”.
+    - **Sound Credit (`sound_credit`)** — string, max 200 chars (optional)
+      - Help: Sound designer credited with “Sound by”.
+    - **Educational Text (`educational_text`)** — long-form text (optional)
+      - Help: main educational or historical narrative for public display.
+    - **Illustration Filename (`illustration_filename`)** — string, max 255 chars (optional)
+      - Help: file name like `gobble_hole.svg`.
+    - **Sources & Notes (`sources_notes`)** — long-form text (optional)
+      - Help: citations, references, and source materials.
+    - **Created By (`created_by`)** — foreign key to Django user (optional)
+      - Help: User account that created the machine model record.
+    - **Updated By (`updated_by`)** — foreign key to Django user (optional)
+      - Help: User account that most recently updated the machine model record.
+- **Machine Instance**: the museum's specific instance of a model of pinball machine
+  - CRUD Access
+    - Read: everyone, including unauthenticated public
+    - Create: System Administrators only, via Django Admin
+    - Update: System Administrators only, via Django Admin
+    - Delete: System Administrators only, via Django Admin
+  - Default Sort Order: by Machine Model name, then by serial number (ascending).
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Help: System-managed timestamp when this machine instance record is created.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on each change (required)
+      - Help: System-managed timestamp of the latest update to this machine instance.
+    - **Model (`model`)** — foreign key to Machine Model (required)
+      - Help: Identifies which machine model this physical instance represents.
+    - **Slug (`slug`)** — slug string, auto-generated, unique (required)
+      - Help: URL-safe identifier derived from the display name; auto-generated when blank using the Display Name.
+    - **Name Override (`name_override`)** — string, max 200 chars (optional)
+      - Help: custom per-instance name; falls back to the Machine Model name when blank.
+    - **Serial Number (`serial_number`)** — string, max 100 chars (optional)
+      - Help: manufacturer-issued serial number.
+    - **Acquisition Notes (`acquisition_notes`)** — long-form text (optional)
+      - Help: story of the acquisition, date, source, price, initial condition, etc.
+    - **Ownership Credit (`ownership_credit`)** — string, max 300 chars (optional)
+      - Help: credit line such as “On loan from William Pietri”.
+    - **Location (`location`)** — enum (optional)
+      - Values: Floor (`floor`), Workshop (`workshop`), Storage (`storage`)
+      - Help: Physical location of the machine within The Flip.
+    - **Operational Status (`operational_status`)** — enum, defaults to Unknown (required)
+      - Values: Good (`good`), Unknown (`unknown`), Fixing (`fixing`), Broken (`broken`)
+      - Help: condition of the machine.
+    - **Display Name (`name`)** — derived property (read-only)
+      - Help: Returns `name_override` when present, otherwise the linked Machine Model name.
+    - **Ownership Display (`ownership_display`)** — derived property (read-only)
+      - Help: Returns `ownership_credit` when present, otherwise “The Flip Collection”.
+    - **Created By (`created_by`)** — foreign key to Django user (optional)
+      - Help: User that created the machine instance record.
+    - **Updated By (`updated_by`)** — foreign key to Django user (optional)
+      - Help: User that most recently updated the machine instance record.
+- **Problem Report**: an issue reported by an unauthenticated museum visitor
+  - CRUD Access
+    - Read: everyone, including unauthenticated public
+    - Create: public, via a form, but rate-limited
+    - Update: maintainers, but generally only status (open/close)
+    - Delete: System Administrators only, via Django Admin
+  - Default Sort Order: newest first (descending `created_at`).
+  - Indexed Fields
+    - `created_at`: supports newest-first list pages and efficient archival queries.
+    - `status`: supports filtering by open problem reports
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Created_at may be set manually during data imports to preserve existing timestamps.
+      - Help: System-managed timestamp when the report was first submitted.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on each change (required)
+      - Help: System-managed timestamp reflecting the latest update to the report.
+    - **Machine (`machine`)** — foreign key to a Machine Instance (required)
+      - Help: Identifies the specific machine that the visitor reported.
+    - **Status (`status`)** — enum, defaults to Open (required)
+      - Values: Open, Closed
+      - Help: Workflow status shown to staff and the public.
+    - **Problem Type (`problem_type`)** — enum, defaults to Other (required)
+      - Values: Stuck Ball, No Credits, Other
+      - Help: Categorizes the issue for reporting and filtering.
+    - **Description (`description`)** — long-form text (optional)
+      - Help: Visitor-provided details about the issue.
+    - **Reported By User (`reported_by_user`)** — foreign key to Django user (optional)
+      - Used when an authenticated account submits the report.
+      - Help: Captures the logged-in user account of the reporter, when applicable.
+    - **Reporter Name (`reported_by_name`)** — string, max 200 chars (optional)
+      - Help: Name supplied by the visitor when submitting anonymously.
+    - **Reporter Contact (`reported_by_contact`)** — string, max 200 chars (optional)
+      - Help: email or phone number in case staff needs to follow up.
+    - **Reporter Device Info (`device_info`)** — string, max 200 chars (optional)
+      - Help: free-form user agent information such as “iPhone OS 18_6_2”.
+    - **Reporter IP Address (`ip_address`)** — IPv4 or IPv6 address (optional)
+      - Validation: must be a valid IP.
+      - Help: Collected IP for rate limiting, abuse prevention, or follow-up.
+- **Log Entry**: work logged by a maintainer
+  - CRUD: maintainers create entries, public can read entries
+  - Default Sort Order: newest first (descending `created_at`).
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Help: Timestamp when the log entry was recorded.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on each change (required)
+      - Help: System-managed timestamp reflecting the most recent modification to the log entry.
+    - **Machine (`machine`)** — foreign key to Machine Instance (required)
+      - Help: Machine that received the work or inspection.
+    - **Maintainers (`maintainers`)** — many-to-many relationship to Maintainer (optional)
+      - Multiple maintainers can be credited for a single log entry via a combo-box style picker.
+      - Validation: At least one maintainer must be selected unless ad-hoc names are provided (see below).
+      - Help: Credits the maintainers involved in the work.
+    - **Ad-hoc Maintainer Names (`maintainer_names`)** — string, max 120 chars (optional)
+      - Help: Free-form list of up to roughly three names typed in who are not recorded Maintainers (comma separated).
+      - Validation: Required when no  Maintainer records are selected.
+    - **Description (`text`)** — long-form text describing the work done (required)
+      - Help: description of work performed or observations noted.
+- **Log Entry Media**: file attachments tied to a log entry to document the work
+  - CRUD: maintainers manage media alongside the parent log entry; the public can view media for entries
+  - Default Sort Order: by display order, then created date.
+  - Notes
+    - Each log entry can have zero or more media records; ordering is controlled via `display_order`.
+    - Media assets are stored using Django’s file storage backend (local in development, S3/GCS/etc. in production). The application only stores metadata and signed URLs provided by the backend.
+    - Photos render as `<img>` tags; videos render via `<video controls>` or an embedded player referencing the stored file/URL.
+    - Inline formsets in the maintainer UI allow uploading multiple files, adding captions, and reordering attachments.
+  - Fields
+    - **Created At (`created_at`)** — datetime, auto-generated on insert (required)
+      - Help: timestamp for when the media record was first attached.
+    - **Updated At (`updated_at`)** — datetime, auto-updated on change (required)
+      - Help: timestamp for the last metadata change.
+    - **Log Entry (`log_entry`)** — foreign key to Log Entry (required)
+      - Help: identifies which log entry this photo or video supports.
+    - **Media Type (`media_type`)** — enum (required)
+      - Values: Photo, Video
+      - Help: drives rendering decisions and validation rules (e.g., ImageField for photos).
+    - **File (`file`)** — file upload (required)
+      - Help: the stored asset; Django handles streaming the binary via the configured storage backend. Supports large video files so long as storage allows.
+      - Validation: max size configurable via settings (e.g., 200 MB ceiling), limited to approved MIME types.
+    - **Thumbnail File (`thumbnail_file`)** — file upload (optional)
+      - Help: pre-generated preview image for faster display (auto-created for photos, optional for videos using a Celery/ffmpeg job).
+    - **Display Order (`display_order`)** — positive integer (optional)
+      - Help: determines the relative ordering of attachments within a log entry.

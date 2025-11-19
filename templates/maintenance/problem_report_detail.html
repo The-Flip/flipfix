@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}Problem Report #{{ report.pk }} · {{ block.super }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumb breadcrumb--with-actions">
+    <div class="breadcrumb__trail">
+      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+      <span>›</span>
+      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+      <span>›</span>
+      <a href="{% url 'machine-problem-reports' machine.slug %}">Problem Reports</a>
+      <span>›</span>
+      <strong>{{ report.created_at|smart_date }} <span class="badge badge-status badge-status--{{ report.status }}">{{ report.get_status_display }}</span></strong>
+    </div>
+
+    <div class="breadcrumb__actions">
+      {% if report.status == report.STATUS_OPEN %}
+        <form method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">Close Problem Report</button>
+        </form>
+      {% else %}
+        <form method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn">Re-Open Problem Report</button>
+        </form>
+      {% endif %}
+    </div>
+  </nav>
+
+  <section class="card">
+    {% if report.problem_type != report.PROBLEM_OTHER %}
+      <p>{{ report.get_problem_type_display }}</p>
+    {% endif %}
+    {% if report.description %}
+      <p>{{ report.description }}</p>
+    {% endif %}
+  </section>
+
+  {% if report.reported_by_user or report.reported_by_name or report.reported_by_contact %}
+    <section class="card">
+      <h3>Reported By</h3>
+      {% if report.reported_by_user %}
+        <p><strong>User:</strong> {{ report.reported_by_user.get_full_name|default:report.reported_by_user.username }}</p>
+      {% endif %}
+      {% if report.reported_by_name %}
+        <p><strong>Name:</strong> {{ report.reported_by_name }}</p>
+      {% endif %}
+      {% if report.reported_by_contact %}
+        <p><strong>Contact:</strong> {{ report.reported_by_contact }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if report.device_info or report.ip_address %}
+    <section class="card">
+      <h3>Submitter Details</h3>
+      {% if report.device_info %}
+        <p><strong>Device:</strong> {{ report.device_info }}</p>
+      {% endif %}
+      {% if report.ip_address %}
+        <p><strong>IP Address:</strong> {{ report.ip_address }}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+{% endblock %}

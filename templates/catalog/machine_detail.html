@@ -1,0 +1,69 @@
+{% extends "base_public_minimal.html" %}
+{% load core_extras %}
+{% load humanize %}
+{% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
+{% block content %}
+  <h1 class="centered">{{ object.display_name }}</h1>
+
+  {% if object.model.manufacturer or object.model.year %}
+    <p class="text-muted subtitle centered">
+      {{ object.model.manufacturer }}
+      {% if object.model.manufacturer and object.model.year %} • {% endif %}
+      {% if object.model.month and object.model.year %}
+        {{ object.model.month|month_name }} {{ object.model.year }}
+      {% elif object.model.year %}
+        {{ object.model.year }}
+      {% endif %}
+    </p>
+  {% endif %}
+
+  {% if object.model.production_quantity or object.model.factory_address or object.model.design_credit or object.model.concept_and_design_credit or object.model.art_credit or object.model.sound_credit %}
+    <div class="card">
+      {% if object.model.production_quantity %}
+        <p><strong>Production:</strong> {{ object.model.production_quantity }}</p>
+      {% endif %}
+
+      {% if object.model.factory_address %}
+        <p><strong>Factory:</strong> {{ object.model.factory_address }}</p>
+      {% endif %}
+
+      {% if object.model.design_credit %}
+        <p><strong>Design:</strong> {{ object.model.design_credit }}</p>
+      {% endif %}
+
+      {% if object.model.concept_and_design_credit %}
+        <p><strong>Concept & Design:</strong> {{ object.model.concept_and_design_credit }}</p>
+      {% endif %}
+
+      {% if object.model.art_credit %}
+        <p><strong>Art:</strong> {{ object.model.art_credit }}</p>
+      {% endif %}
+
+      {% if object.model.sound_credit %}
+        <p><strong>Sound:</strong> {{ object.model.sound_credit }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if object.model.educational_text %}
+    <div class="educational-text">
+      {{ object.model.educational_text|linebreaks }}
+    </div>
+  {% endif %}
+
+  {% if object.model.sources_notes %}
+    <div class="card">
+      <h2>Sources & References</h2>
+      {{ object.model.sources_notes|linebreaks }}
+    </div>
+  {% endif %}
+
+  <div class="card centered">
+    <p>{{ object.ownership_display }}</p>
+  </div>
+
+  <div class="card centered">
+    <h2>Having trouble with this machine?</h2>
+    <a href="{% url 'problem-report-create' object.slug %}" class="btn btn-primary">Report a Problem</a>
+  </div>
+{% endblock %}

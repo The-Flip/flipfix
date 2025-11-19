@@ -1,0 +1,1 @@
+AI assistant rules live in `docs/dev_guide/README.md`. Read that file before answering questions or making changes.  That guide spells out how AI assistants are to work with HTML, CSS, Django/Python, the project structure, data model, and tests.

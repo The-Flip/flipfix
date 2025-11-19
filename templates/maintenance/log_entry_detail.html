@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}Log Entry · {{ entry.machine.display_name }} · {{ block.super }}{% endblock %}
+{% block content %}
+  <section>
+    <nav class="breadcrumb">
+      <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
+      <span>›</span>
+      <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
+    </nav>
+
+    <h2>{{ entry.created_at|smart_date }}</h2>
+    <p>
+      {% if entry.maintainers.all %}
+        by {{ entry.maintainers.all|join:", " }}
+      {% elif entry.maintainer_names %}
+        by {{ entry.maintainer_names }}
+      {% endif %}
+    </p>
+
+    <div class="entry-content">
+      <div class="entry-text-container">
+        <textarea
+          id="entry-text"
+          class="entry-text-edit"
+          data-entry-id="{{ entry.pk }}"
+        >{{ entry.text }}</textarea>
+        <div id="save-status" class="save-status"></div>
+      </div>
+
+      <div class="entry-media">
+        <h3>Media</h3>
+        <div id="media-container" class="media-grid">
+          {% for media in entry.media.all %}
+            <div class="media-item" data-media-id="{{ media.id }}">
+              <a href="{{ media.file.url }}" target="_blank" class="media-link">
+                <img src="{{ media.file.url }}" alt="Log entry photo">
+              </a>
+              <button
+                type="button"
+                class="btn-delete-media"
+                data-media-id="{{ media.id }}"
+                aria-label="Delete photo"
+              >×</button>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="media-upload">
+          <input
+            type="file"
+            id="media-upload"
+            accept="image/*"
+            style="display: none;"
+          >
+          <button type="button" id="upload-button" class="btn btn-secondary">
+            Upload Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script>
+    const ENTRY_ID = {{ entry.pk }};
+    const CSRF_TOKEN = '{{ csrf_token }}';
+
+    // Auto-save text with debounce
+    const textarea = document.getElementById('entry-text');
+    const saveStatus = document.getElementById('save-status');
+    let saveTimeout;
+
+    textarea.addEventListener('input', () => {
+      clearTimeout(saveTimeout);
+      saveStatus.textContent = 'Editing...';
+      saveStatus.className = 'save-status editing';
+
+      saveTimeout = setTimeout(async () => {
+        try {
+          const formData = new FormData();
+          formData.append('action', 'update_text');
+          formData.append('text', textarea.value);
+          formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+          const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            saveStatus.textContent = 'Saved';
+            saveStatus.className = 'save-status saved';
+            setTimeout(() => {
+              saveStatus.textContent = '';
+              saveStatus.className = 'save-status';
+            }, 2000);
+          } else {
+            saveStatus.textContent = 'Error saving';
+            saveStatus.className = 'save-status error';
+          }
+        } catch (error) {
+          console.error('Save error:', error);
+          saveStatus.textContent = 'Error saving';
+          saveStatus.className = 'save-status error';
+        }
+      }, 1000); // 1 second debounce
+    });
+
+    // Upload media
+    const uploadButton = document.getElementById('upload-button');
+    const mediaInput = document.getElementById('media-upload');
+
+    uploadButton.addEventListener('click', () => {
+      mediaInput.click();
+    });
+
+    mediaInput.addEventListener('change', async (e) => {
+      if (!e.target.files || !e.target.files[0]) return;
+
+      const formData = new FormData();
+      formData.append('action', 'upload_media');
+      formData.append('file', e.target.files[0]);
+      formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+      try {
+        const response = await fetch(window.location.href, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          // Add new media to the grid
+          const mediaContainer = document.getElementById('media-container');
+          const mediaItem = document.createElement('div');
+          mediaItem.className = 'media-item';
+          mediaItem.dataset.mediaId = data.media_id;
+          mediaItem.innerHTML = `
+            <a href="${data.media_url}" target="_blank" class="media-link">
+              <img src="${data.media_url}" alt="Log entry photo">
+            </a>
+            <button
+              type="button"
+              class="btn-delete-media"
+              data-media-id="${data.media_id}"
+              aria-label="Delete photo"
+            >×</button>
+          `;
+          mediaContainer.appendChild(mediaItem);
+
+          // Attach delete handler to new button
+          attachDeleteHandler(mediaItem.querySelector('.btn-delete-media'));
+        } else {
+          alert('Failed to upload media: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload media');
+      }
+
+      // Reset input
+      e.target.value = '';
+    });
+
+    // Delete media
+    function attachDeleteHandler(button) {
+      button.addEventListener('click', async () => {
+        const mediaId = button.dataset.mediaId;
+        const formData = new FormData();
+        formData.append('action', 'delete_media');
+        formData.append('media_id', mediaId);
+        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+        try {
+          const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            // Remove from DOM
+            const mediaItem = button.closest('.media-item');
+            mediaItem.remove();
+          } else {
+            alert('Failed to delete media');
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          alert('Failed to delete media');
+        }
+      });
+    }
+
+    // Attach delete handlers to existing media
+    document.querySelectorAll('.btn-delete-media').forEach(attachDeleteHandler);
+  </script>
+
+  <style>
+    .entry-text-container {
+      margin-bottom: 2rem;
+    }
+
+    .entry-text-edit {
+      width: 100%;
+      min-height: 200px;
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+
+    .entry-text-edit:focus {
+      outline: none;
+      border-color: #0066cc;
+    }
+
+    .save-status {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      min-height: 1.25rem;
+    }
+
+    .save-status.editing {
+      color: #666;
+    }
+
+    .save-status.saved {
+      color: #28a745;
+    }
+
+    .save-status.error {
+      color: #dc3545;
+    }
+
+    .entry-media h3 {
+      margin-bottom: 1rem;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .media-item {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .media-link {
+      display: block;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .media-link:hover {
+      opacity: 0.9;
+    }
+
+    .media-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .btn-delete-media {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 2rem;
+      height: 2rem;
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-delete-media:hover {
+      background: rgba(220, 53, 69, 1);
+    }
+
+    .media-upload {
+      margin-top: 1rem;
+    }
+  </style>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Add Machine · {{ block.super }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumb">
+    <div class="breadcrumb__trail">
+      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+      <span>›</span>
+      <strong>Add Machine</strong>
+    </div>
+  </nav>
+
+  <form method="post" class="form-container">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert--danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <fieldset class="form-section">
+      <legend>Machine Information</legend>
+
+      <div class="form-field">
+        {{ form.model.label_tag }}
+        {{ form.model }}
+        {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
+        {% for error in form.model.errors %}
+          <div class="field-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-field" id="field-model-name" style="display: none;">
+        {{ form.model_name.label_tag }}
+        {{ form.model_name }}
+        {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
+        {% for error in form.model_name.errors %}
+          <div class="field-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-field" id="field-manufacturer" style="display: none;">
+        {{ form.manufacturer.label_tag }}
+        {{ form.manufacturer }}
+        {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
+        {% for error in form.manufacturer.errors %}
+          <div class="field-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-field" id="field-year" style="display: none;">
+        {{ form.year.label_tag }}
+        {{ form.year }}
+        {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
+        {% for error in form.year.errors %}
+          <div class="field-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="form-field" id="field-name-override" style="display: none;">
+        {{ form.name_override.label_tag }}
+        {{ form.name_override }}
+        {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
+        {% for error in form.name_override.errors %}
+          <div class="field-error">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Create Machine</button>
+      <a href="{% url 'maintainer-machine-list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+
+  <script>
+    (function() {
+      const modelSelect = document.getElementById('{{ form.model.id_for_label }}');
+      const modelNameField = document.getElementById('field-model-name');
+      const manufacturerField = document.getElementById('field-manufacturer');
+      const yearField = document.getElementById('field-year');
+      const nameOverrideField = document.getElementById('field-name-override');
+
+      function updateFieldVisibility() {
+        const isCreatingNewModel = !modelSelect.value;
+
+        // Show/hide fields based on whether creating new model or selecting existing
+        if (isCreatingNewModel) {
+          // Show new model fields
+          modelNameField.style.display = 'block';
+          manufacturerField.style.display = 'block';
+          yearField.style.display = 'block';
+          // Hide name override
+          nameOverrideField.style.display = 'none';
+        } else {
+          // Hide new model fields
+          modelNameField.style.display = 'none';
+          manufacturerField.style.display = 'none';
+          yearField.style.display = 'none';
+          // Show name override
+          nameOverrideField.style.display = 'block';
+        }
+      }
+
+      // Initialize on page load
+      updateFieldVisibility();
+
+      // Update when selection changes
+      modelSelect.addEventListener('change', updateFieldVisibility);
+    })();
+  </script>
+{% endblock %}

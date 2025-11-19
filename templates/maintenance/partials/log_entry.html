@@ -1,0 +1,23 @@
+{% load core_extras %}
+<li>
+  <a href="{% url 'log-detail' entry.pk %}" class="log-entry-link">
+    <div class="log-entry-meta">
+      <strong>{{ entry.created_at|smart_date }}</strong>
+      {% if entry.maintainers.all %}
+        <span> by {{ entry.maintainers.all|join:", " }}:</span>
+      {% elif entry.maintainer_names %}
+        <span> by {{ entry.maintainer_names }}:</span>
+      {% else %}
+        <span>:</span>
+      {% endif %}
+    </div>
+    <div class="log-entry-text">{{ entry.text }}</div>
+    {% if entry.media.all %}
+      <div class="log-entry-media">
+        {% for media in entry.media.all %}
+          <img src="{{ media.file.url }}" alt="Photo for {{ machine.display_name }}" width="200">
+        {% endfor %}
+      </div>
+    {% endif %}
+  </a>
+</li>

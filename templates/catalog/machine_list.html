@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Machines · {{ block.super }}{% endblock %}
+{% block content %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h2 style="margin: 0;">Machines</h2>
+    <a href="{% url 'machine-quick-create' %}" class="btn btn-primary">+ Add Machine</a>
+  </div>
+  {% if machines %}
+    <ul class="list machine-list">
+      {% for machine in machines %}
+        <li
+          class="machine-card js-clickable-card"
+          data-url="{% url 'maintainer-machine-detail' machine.slug %}"
+          tabindex="0"
+          role="button"
+          aria-label="View {{ machine.display_name }}"
+        >
+          <div class="machine-card__row">
+            <div class="machine-card__row-left">
+              <span class="machine-card__name">{{ machine.display_name }}</span>
+              <span class="machine-card__meta">・{{ machine.model.year }} {{ machine.model.manufacturer }}</span>
+            </div>
+            <span class="badge badge-status badge-status--{{ machine.operational_status }}">
+              {{ machine.get_operational_status_display }}
+            </span>
+          </div>
+          {% with loc=machine.get_location_display %}
+            {% if machine.latest_open_report or loc and loc != "Floor" %}
+              <div class="machine-card__row">
+                <div class="machine-card__row-left">
+                  {% if machine.latest_open_report %}
+                    <span class="machine-card__problem">
+                      <span class="machine-card__problem-label">❗Problem report:</span>
+                      {{ machine.latest_open_report.0.description }}
+                    </span>
+                  {% endif %}
+                </div>
+                {% if loc and loc != "Floor" %}
+                  <div class="machine-card__location">Location: {{ loc }}</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endwith %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No machines yet.</p>
+  {% endif %}
+{% endblock %}

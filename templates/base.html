@@ -1,0 +1,43 @@
+{% load static core_extras %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}The Flip{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}">
+  </head>
+  <body>
+    <header>
+      <h1><a href="{% url 'home' %}">The Flip</a></h1>
+      <nav>
+        <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+        <a href="{% url 'problem-report-list' %}">Problem Reports</a>
+        {% if user.is_authenticated %}
+          <span>{{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="nav-logout-btn">Logout</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main>
+      {% if messages %}
+        <div class="messages" role="alert" aria-live="polite">
+          {% for message in messages %}
+            <div class="message message--{{ message.tags }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+    <script src="{% static 'core/clickable_cards.js' %}" defer></script>
+    <script src="{% static 'core/timezone.js' %}" defer></script>
+    {% block extra_scripts %}{% endblock %}
+  </body>
+</html>

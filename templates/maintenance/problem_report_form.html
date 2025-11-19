@@ -1,0 +1,33 @@
+{% extends "base_public_minimal.html" %}
+{% block title %}Report a Problem · {{ block.super }}{% endblock %}
+{% block content %}
+  <h2>Report a Problem With {{ machine.display_name }}</h2>
+  <form method="post" class="form-container">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="field-error">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="form-field">
+      {{ form.problem_type.label_tag }}
+      {{ form.problem_type }}
+      {% for error in form.problem_type.errors %}
+        <div class="field-error">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-field">
+      {{ form.description }}
+      {% for error in form.description.errors %}
+        <div class="field-error">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Submit Report</button>
+    </div>
+  </form>
+{% endblock %}
