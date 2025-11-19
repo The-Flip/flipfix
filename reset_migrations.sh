@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Script to reset Django migrations for all apps
-# This will reset migrations to a single 0001_initial.py per app
+# This will reset each app's migrations to a single 0001_initial.py
+# This is only usable during development when we're wiping the database
 
 set -e  # Exit on error
 
