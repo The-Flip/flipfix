@@ -123,8 +123,11 @@ main {
   justify-content: center;
   border-radius: var(--radius-base);
   padding: var(--space-2) var(--space-4);
+  font-family: inherit;
+  font-size: 1rem;
   font-weight: 600;
-  border: none;
+  line-height: 1.2;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
@@ -132,6 +135,7 @@ main {
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-surface);
+  border-color: transparent;
 }
 
 .btn-primary:hover {
@@ -140,7 +144,7 @@ main {
 
 .btn-secondary {
   background: transparent;
-  border: 2px solid var(--color-primary);
+  border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
