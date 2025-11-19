@@ -19,7 +19,7 @@ Use this document when setting up or re-generating the automated test harness fr
 
 ## Sample Data & Fixtures
 
-- Management commands (`create_default_machines`, `create_sample_maintenance_data`, etc.) are for demo data only. Tests should create their own objects via factories or `setUp` methods so they remain deterministic.
+- Management commands (`import_maintainers`, `import_machines`, `import_maintenance_records`) are for demo data only. Tests should create their own objects via factories or `setUp` methods so they remain deterministic.
 - If reusable fixtures are needed (e.g., baseline machine catalog), store them under `tests/fixtures/` and reference them with `fixtures = ['machines.json']` in the relevant `TestCase`.
 - Use Django’s `override_settings` decorator/context manager to inject storage paths, rate limit configuration, or toggle caches.
 

@@ -3,33 +3,36 @@ from django.core.management import call_command
 
 
 class Command(BaseCommand):
-    help = 'Import all legacy data by running import commands in the correct order'
+    help = "Import all legacy data by running import commands in the correct order"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--clear',
-            action='store_true',
-            help='Clear existing data before importing (passed to sub-commands that support it)',
+            "--clear",
+            action="store_true",
+            help="Clear existing data before importing (passed to sub-commands that support it)",
         )
 
     def handle(self, *args, **options):
-        clear = options.get('clear', False)
+        clear = options.get("clear", False)
 
         # Commands with their descriptions and whether they support --clear
         commands = [
-            ('import_legacy_maintainers', 'Importing legacy maintainers', True),
-            ('create_default_machines', 'Creating default machines', True),
-            ('import_legacy_maintenance_records', 'Importing legacy maintenance records', True),
-            ('create_sample_maintenance_data', 'Creating sample maintenance data', True),
+            ("import_maintainers", "Importing maintainers", False),
+            ("import_machines", "Importing machines", False),
+            (
+                "import_maintenance_records",
+                "Importing maintenance records",
+                True,
+            ),
         ]
 
-        self.stdout.write(self.style.SUCCESS('\n=== Starting Legacy Data Import ===\n'))
+        self.stdout.write(self.style.SUCCESS("\n=== Starting Legacy Data Import ===\n"))
         if clear:
-            self.stdout.write(self.style.WARNING('Running with --clear flag\n'))
+            self.stdout.write(self.style.WARNING("Running with --clear flag\n"))
 
         for command_name, description, supports_clear in commands:
-            self.stdout.write(self.style.SUCCESS(f'Step: {description}...'))
-            self.stdout.write('')
+            self.stdout.write(self.style.SUCCESS(f"Step: {description}..."))
+            self.stdout.write("")
 
             try:
                 # Pass --clear to commands that support it
@@ -37,11 +40,11 @@ class Command(BaseCommand):
                     call_command(command_name, clear=True)
                 else:
                     call_command(command_name)
-                self.stdout.write(self.style.SUCCESS(f'✓ {description} completed\n'))
+                self.stdout.write(self.style.SUCCESS(f"✓ {description} completed\n"))
             except Exception as e:
                 self.stdout.write(
-                    self.style.ERROR(f'✗ Error during {description}: {str(e)}\n')
+                    self.style.ERROR(f"✗ Error during {description}: {str(e)}\n")
                 )
                 raise
 
-        self.stdout.write(self.style.SUCCESS('=== Legacy Data Import Complete ==='))
+        self.stdout.write(self.style.SUCCESS("=== Legacy Data Import Complete ==="))

@@ -55,10 +55,9 @@ It's in Django.
 
 7. **Load sample data (optional)**
    ```bash
-   python manage.py import_legacy_maintainers
-   python manage.py create_default_machines
-   python manage.py import_legacy_maintenance_records
-   python manage.py create_sample_maintenance_data
+   python manage.py import_maintainers
+   python manage.py import_machines
+   python manage.py import_maintenance_records
    ```
 
 8. **Run development server**
@@ -85,14 +84,4 @@ Alternatively, staff users (with `is_staff=True`) can also manage reports withou
 
 The prototype at https://the-flip.onrender.com is deployed every time this repo's main branch is pushed to Github.
 
-### Admin Account Setup
-
-The build process automatically creates a default admin account using environment variables. In the Render dashboard, set:
-
-- `ADMIN_USERNAME` (e.g., `admin`)
-- `ADMIN_PASSWORD` (use a strong password!)
-- `ADMIN_EMAIL` (e.g., `admin@theflip.com`)
-
-After each deployment, you can log in at `/admin/` with these credentials. The admin user is automatically created with both superuser privileges and a Maintainer profile.
-
-**Note:** Since the database resets on each deploy (SQLite on Render free tier), the admin account and sample data are recreated automatically by the `build.sh` script.
+Render runs `build.sh`, which installs dependencies, applies migrations, collects static files, and seeds the database by calling the same management commands listed above. That process imports maintainers, machines, and maintenance history on every deploy, so any data added through the site will be wiped the next time the build runs. 
