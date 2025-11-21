@@ -10,6 +10,7 @@ from django.db import models
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.models import TimeStampedModel
+from the_flip.apps.maintenance.utils import resize_image_file
 
 
 class ProblemReportQuerySet(models.QuerySet):
@@ -146,3 +147,13 @@ class LogEntryMedia(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.get_media_type_display()} for log entry {self.log_entry_id}"
+
+    def save(self, *args, **kwargs):
+        if self.media_type == self.TYPE_PHOTO and self.file:
+            try:
+                self.file = resize_image_file(self.file)
+            except Exception:  # pragma: no cover - fallback if Pillow fails unexpectedly
+                import logging
+
+                logging.getLogger(__name__).warning("Could not resize uploaded photo %s", self.file, exc_info=True)
+        super().save(*args, **kwargs)

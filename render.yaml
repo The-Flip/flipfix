@@ -4,7 +4,11 @@ services:
     name: the-flip
     runtime: python
     plan: free
-    buildCommand: "./build.sh"
+    buildCommand: |
+      whoami
+      apt-get update
+      apt-get install -y libheif1 libheif-dev
+      ./build.sh
     startCommand: "gunicorn the_flip.wsgi:application"
     envVars:
       - key: SECRET_KEY
