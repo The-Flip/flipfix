@@ -1,6 +1,6 @@
-# Video Uploads Plan - DB-Backed Version
+# Video Uploads Plan
 
-This document contains the requirements and spec for supporting maintainers uploading videos as part of a log entry. 
+This is the spec for supporting maintainers uploading videos while logging their work. 
 
 ## Goals
 - **Upload any format, transform to a widely understood format**: accept phone-recorded videos (MOV/HEVC/etc.) and transcode to widely playable H.264/AAC MP4.
@@ -18,7 +18,7 @@ This document contains the requirements and spec for supporting maintainers uplo
 
 ## Dependencies
 - Add `django-q2` to `requirements.txt`.
-- Ensure `ffmpeg` is installed (Render/ Railway build steps already add `ffmpeg`).
+- Ensure `ffmpeg` is installed in localhost, Render, Railway.
 
 ## Settings
 
@@ -490,7 +490,7 @@ Add a test case to the Django Test Suite; ensure the suite runs in the CI.  It t
 
 ## Rejected Alternative: Redis + RQ
 
-See [videos_redis.md](videos_redis.md) for the full Redis-backed plan that was considered but not chosen.
+Redis + RQ was considered but not chosen for this project.
 
 ### Decision Factors
 
