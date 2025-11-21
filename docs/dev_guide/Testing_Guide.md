@@ -2,7 +2,7 @@
 
 This is a guide for developers and AI assistants around running and creating automated tests. 
 
-## 1. Scaffolding Reference
+## 1. Scaffolding Reference 
 
 When bootstrapping or reconfiguring the test harness, follow [`scaffolding/Testing_Scaffold.md`](scaffolding/Testing_Scaffold.md). It captures the base settings module, directory layout, and CI hooks that every regenerated project should preserve.
 
