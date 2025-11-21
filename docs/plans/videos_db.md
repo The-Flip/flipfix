@@ -44,7 +44,7 @@ Q_CLUSTER = {
 
 ## Model changes
 - Extend `LogEntryMedia` (already has `transcoded_file`, `poster_file`, `transcode_status`, `duration`).
-- Use transcode status values: pending → processing → ready/failed.
+- `transcode_status` values: pending → processing → ready/failed.
 
 ## Tasks
 
@@ -308,6 +308,17 @@ Recent successful tasks (24h): 5
   ```
   ffmpeg -i "$INPUT" -vf "thumbnail,scale=320:-2" -frames:v 1 -y "$OUTPUT.jpg"
   ```
+
+### Critical FFmpeg parameters (why they matter)
+- `-vf "scale=min(iw\,2400):min(ih\,2400):force_original_aspect_ratio=decrease"`: Resize down so the long side is max 2400px; never upscale; preserves aspect ratio and keeps dimensions even for H.264.
+- `-c:v libx264`: H.264 video codec (universal browser support vs HEVC/H.265).
+- `-pix_fmt yuv420p`: **CRITICAL** for iOS Safari playback; without this, videos won’t play on iPhones.
+- `-profile:v main`: Good compatibility balance (vs high/baseline).
+- `-crf 23`: Quality setting (18–28 range; lower = better quality/bigger files).
+- `-preset medium`: Encoding speed vs compression efficiency (faster/medium/slow/slower).
+- `-c:a aac` / `-b:a 128k`: AAC audio at 128 kbps for broad support.
+- `-movflags +faststart`: **CRITICAL** for progressive streaming; moves metadata to file start.
+- Poster: `thumbnail,scale=320:-2` picks a representative frame and keeps aspect ratio with even dimensions.
 
 ## Monitoring & Debugging
 
