@@ -6,13 +6,8 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import SuspiciousFileOperation
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404
 from django.utils._os import safe_join
-
-
-def health_check(request):
-    """Lightweight health endpoint for platform probes."""
-    return JsonResponse({"status": "ok"})
 
 
 def serve_media(request, path: str):
