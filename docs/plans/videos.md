@@ -105,7 +105,7 @@ def transcode_video_job(media_id):
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
                 '-y', tmp_video.name
-            ], check=True, capture_output=True)
+            ], check=True)
 
             with open(tmp_video.name, 'rb') as f:
                 media.transcoded_file.save(f'video_{media.id}.mp4', File(f), save=False)
@@ -118,7 +118,7 @@ def transcode_video_job(media_id):
                 '-vf', 'thumbnail,scale=320:-2',
                 '-frames:v', '1',
                 '-y', tmp_poster.name
-            ], check=True, capture_output=True)
+            ], check=True)
 
             with open(tmp_poster.name, 'rb') as f:
                 media.poster_file.save(f'poster_{media.id}.jpg', File(f), save=False)
