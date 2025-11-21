@@ -1,6 +1,14 @@
-# Video Uploads with RQ (Render & Railway)
+# Video Uploads Plan - Redis-Backed Version
 
-## Goals
+This document contains the requirements and spec for supporting maintainers uploading videos as part of a log entry. 
+
+**⚠️ THIS DESIGN WAS NOT CHOSEN**
+
+See [videos_db.md](videos_db.md) for the chosen approach, using database-backed queues instead of Redis.
+
+## Plan (NOT IMPLEMENTED)
+
+### Goals
 - Accept phone-recorded videos (MOV/HEVC/etc.) and transcode to widely playable H.264/AAC MP4.
 - Generate a poster image for UI display.
 - Keep uploads responsive by offloading transcode to an RQ worker.
