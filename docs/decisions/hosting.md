@@ -149,7 +149,7 @@ Low latency WOULD be nice; who doesn't appreciate a fast system?
 | [Automatic Upgrades (certs, OS, etc)](#zero-ongoing-maintenance) | ✅  | ✅ | ✅ |
 | [Fully Managed PaaS](#paas-not-vps) | ✅ | ✅ | ✅ |
 | [DB - Supports Postgres](#managed-postgresql) | ✅ | ✅ | ✅ |
-| [DB - Automated Backups](#managed-postgresql) | ❌ Not native. Templates available. Manual pg_dump required. | ✅ Automated daily backups (7-day retention) | ✅ Automated backups |
+| [DB - Automated Backups](#managed-postgresql) | ❌ Not native. Templates available. Manual pg_dump required.  Have to attach S3 or similar. | ✅ Automated daily backups (7-day retention) | ✅ Automated backups |
 | [DB - Simple Restore](#managed-postgresql) | ❌ CLI-based pg_restore | ? | ✅ UI-based Point-in-Time Recovery |
 | [ Files - Automated Backups](#managed-file-storage) | ✅ Daily | ✅ Daily | ✅ Daily snapshots |
 | [ Files - Simple Restore](#managed-file-storage) | ✅ Simple GUI: Select backup by date → Restore → Deploy. Takes seconds to minutes. | ? | ✅ UI-based snapshot restore |
