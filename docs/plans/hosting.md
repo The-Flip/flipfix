@@ -1,6 +1,6 @@
 # Hosting Requirements
 
-This document describes the hosting and devops requirements of this project, alternatives considered, and the final decision of a hosting provider.
+This is the hosting and devops requirements of this project and alternatives considered.
 
 ## Project Description
 
