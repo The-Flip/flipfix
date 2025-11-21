@@ -12,6 +12,12 @@ SECRET_KEY = config("SECRET_KEY", default="dev-secret-key")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
+# Railway health checks sometimes hit the default `*-production.up.railway.app`
+# domain even when the app is served on a custom Railway URL. Allow the base
+# Railway domain alongside any explicitly configured hosts.
+ALLOWED_HOSTS += [".up.railway.app"]
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
