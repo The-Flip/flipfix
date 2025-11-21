@@ -32,10 +32,11 @@ from the_flip.apps.catalog.views import (
 from the_flip.apps.core.views import HomeView
 from the_flip.apps.maintenance import views as maintenance_views
 from django.contrib.auth import views as auth_views
-from the_flip.views import serve_media
+from the_flip.views import health_check, serve_media
 
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),
+    path("healthz/", health_check, name="health-check"),
     
     # Django admin app
     path("admin/", admin.site.urls),
