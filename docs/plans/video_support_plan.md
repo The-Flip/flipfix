@@ -23,7 +23,7 @@
 - **Tasks** (`tasks.py`):
   - `enqueue_transcode(media_id)`: Helper to enqueue job (called from views)
   - `transcode_video_job(media_id)`: RQ job that runs FFmpeg, saves transcoded file + poster, deletes original on success
-- **Validation**: 200MB max file size, accept `image/*,video/*`
+- **Validation**: 200MB max file size; accept `image/*,video/*` plus a small whitelist of video types/extensions (mp4, mov, hevc) to reject junk uploads.
 - **UI**: Show `<video controls poster>` when ready, "Processing..." spinner when pending/processing, "Upload failed" message when failed (no retry button)
 
 ## Deploy: Render (YAML-driven)
@@ -45,7 +45,7 @@
     name: the-flip-rq-worker
     runtime: python
     buildCommand: "<same as web>"
-    startCommand: "rq worker --url $REDIS_URL default"
+    startCommand: "rq worker --url $REDIS_URL --job-timeout 600 default"
     envVars:
       - key: REDIS_URL
         fromService: the-flip-redis
@@ -61,7 +61,7 @@
   ```
 - Worker service (new Railway service) using same repo:
   - Build: reuse `build.sh`.
-  - Start command: `rq worker --url $REDIS_URL default`.
+  - Start command: `rq worker --url $REDIS_URL --job-timeout 600 default`.
   - Env: set `REDIS_URL` from the Redis plugin variable.
 - Web service: add `REDIS_URL` env var.
 
@@ -180,6 +180,7 @@ import subprocess
 import json
 import tempfile
 import logging
+import os
 from pathlib import Path
 from django.core.files import File
 from rq import Queue
@@ -193,7 +194,7 @@ def enqueue_transcode(media_id):
     """Helper to enqueue transcode job. Called from views."""
     redis_url = settings.RQ_QUEUES['default']['URL']
     redis_conn = Redis.from_url(redis_url)
-    queue = Queue('default', connection=redis_conn)
+    queue = Queue('default', connection=redis_conn, default_timeout=settings.RQ_QUEUES['default']['DEFAULT_TIMEOUT'])
     queue.enqueue(transcode_video_job, media_id)
 
 
@@ -230,10 +231,11 @@ def transcode_video_job(media_id):
                 '-c:a', 'aac', '-b:a', '128k',
                 '-movflags', '+faststart',
                 '-y', tmp_video.name
-            ], check=True, capture_output=True)
+            ], check=True)
 
             with open(tmp_video.name, 'rb') as f:
                 media.transcoded_file.save(f'video_{media.id}.mp4', File(f), save=False)
+        os.unlink(tmp_video.name)
 
         # Extract poster frame
         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp_poster:
@@ -242,10 +244,11 @@ def transcode_video_job(media_id):
                 '-vf', 'thumbnail,scale=320:-2',
                 '-frames:v', '1',
                 '-y', tmp_poster.name
-            ], check=True, capture_output=True)
+            ], check=True)
 
             with open(tmp_poster.name, 'rb') as f:
                 media.poster_file.save(f'poster_{media.id}.jpg', File(f), save=False)
+        os.unlink(tmp_poster.name)
 
         # Delete original file to save storage
         media.file.delete(save=False)
