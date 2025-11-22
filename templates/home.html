@@ -10,7 +10,7 @@
     <h3>Public Access</h3>
     <p>Anyone can browse the collection of machines and submit problem reports:</p>
     <p>
-      <a href="{% url 'public-machine-list' %}" class="btn btn-primary">Browse All Machines</a>
+      <a href="{% url 'public-machine-list' %}" class="btn btn-primary">Public List of Machines</a>
     </p>
     The rest is all password-protected.
   </div>
@@ -31,12 +31,12 @@
 
   <div class="card">
     <h3>Superusers</h3>
-        <p>Sysadmins, like William, can access Django Admin. Add new users here.</p>
+        <p>Sysadmins, like <code>william</code>, can access Django Admin. Add new users here (but they might get deleted).</p>
         <a href="/admin/" class="btn btn-primary">Django Admin</a>
   </div>
 
   <div class="card">
-    <h3>Log bug or feature request</h3>
+    <h3>Bugs &amp; Feature Requests</h3>
     <p>Found a bug?  Have an idea?  File an issue.  Requires GitHub account.</p>
     <a href="https://github.com/deanmoses/the_flip/issues" class="btn btn-primary">GitHub Issues</a>
   </div>
