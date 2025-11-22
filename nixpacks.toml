@@ -1,2 +1,2 @@
 [phases.setup]
-aptPkgs = ["libheif1", "libheif-dev"]
+aptPkgs = ["libheif1", "libheif-dev", "ffmpeg"]
