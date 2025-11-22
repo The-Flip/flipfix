@@ -1,10 +1,8 @@
-# Deployment Guide
-
-This guide covers deploying The Flip maintenance system to Railway.
+# Deployment
 
 ## Production Environment
 
-The live production system is deployed at: **https://the-flip-production.up.railway.app/**
+The live production system is deployed at: **`https://the-flip-production.up.railway.app/`**
 
 The system automatically deploys whenever changes are pushed to the `main` branch on GitHub.
 

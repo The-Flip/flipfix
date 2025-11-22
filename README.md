@@ -16,9 +16,9 @@ It's in Django.
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone repo**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/deanmoses/the_flip.git
    cd the_flip
    ```
 
@@ -38,7 +38,7 @@ It's in Django.
    cp .env.example .env
    ```
 
-   Edit `.env` and set all the values, see the examples.
+   Edit `.env` and set values based on the instructions inside
 
 5. **Run migrations**
    ```bash
@@ -66,19 +66,8 @@ It's in Django.
    - Main site: http://localhost:8000/
    - Admin panel: http://localhost:8000/admin/
 
-## Creating Maintainer Accounts
-
-Maintainers need both a Django user account and a Maintainer profile:
-
-1. Create user via Django admin or `createsuperuser` command
-2. In the admin panel (`/admin/`), create a Maintainer record linked to that user
-3. Maintainer can now log in and manage reports
-
-Alternatively, staff users (with `is_staff=True`) can also manage reports without a Maintainer profile.
-
-
 ## Developing, Testing, Deploying
 
 See [docs/README.md](docs/README.md). 
 
-AI helpers like Claude and Codex **MUST** read and follow the docs linked at [docs/README.md](docs/README.md) before answering questions or generating assets. That guide spells out how AI assistants are to work with HTML, CSS, Django/Python, the project structure, data model, and testing.
+AI helpers like Claude and Codex **MUST** read and follow the docs linked at [docs/README.md](docs/README.md) before answering questions or generating assets. Those docs spell out how AI assistants must work with HTML, CSS, Django/Python, the project structure, data model, and testing.
