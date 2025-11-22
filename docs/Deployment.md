@@ -2,20 +2,16 @@
 
 ## Production Environment
 
-The live production system is deployed at: **`https://the-flip-production.up.railway.app/`**
+The live production system is deployed at: https://the-flip-production.up.railway.app/
 
-The system automatically deploys whenever changes are pushed to the `main` branch on GitHub.
+There are no other hosted environments as of yet - no staging, testing, UAT.
+
+It deploys every time the `main` branch is pushed to GitHub.
+
 
 ## Platform: Railway
 
-We use [Railway](https://railway.app/) as our hosting platform. Railway was chosen for its:
-- Simple deployment model (automatic deploys from GitHub)
-- Zero ongoing maintenance (no OS patching, SSL cert renewal, etc.)
-- All-in-one platform (PostgreSQL, file storage, web hosting)
-- Affordable pricing (~$22-25/month)
-- Simple UI suitable for volunteer maintainers
-
-See [plans/Hosting.md](plans/Hosting.md) for the full hosting decision rationale.
+[Railway](https://railway.app/) is the hosting platform.
 
 ## Railway Project Structure
 
