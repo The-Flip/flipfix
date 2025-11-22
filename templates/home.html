@@ -22,6 +22,10 @@
         <a href="/problem-reports/" class="btn btn-primary">Problem Reports</a>
       </li>
       <li>
+        <strong>See recent maintenance logs:</strong>
+        <a href="{% url 'log-list' %}" class="btn btn-primary">Logs</a>
+      </li>
+      <li>
         <strong>Log work:</strong>
         {% if sample_machine %}
           <a href="{% url 'log-create-machine' sample_machine.slug %}" class="btn btn-primary">Add Log for {{ sample_machine.display_name }}</a>

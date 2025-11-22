@@ -14,6 +14,7 @@
       <nav>
         <a href="{% url 'maintainer-machine-list' %}">Machines</a>
         <a href="{% url 'problem-report-list' %}">Problem Reports</a>
+        <a href="{% url 'log-list' %}">Logs</a>
         {% if user.is_authenticated %}
           <span>{{ user.username }}</span>
           <form method="post" action="{% url 'logout' %}" style="display: inline;">

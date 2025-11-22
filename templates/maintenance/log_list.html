@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}Logs · {{ block.super }}{% endblock %}
+{% block content %}
+  <h2>Recent Logs</h2>
+
+  <div id="log-container" data-fetch-url="{% url 'log-list-entries' %}">
+    {% if log_entries %}
+      <ul class="list machine-list log-list" id="log-list">
+        {% for entry in log_entries %}
+          {% include "maintenance/partials/log_list_entry.html" with entry=entry machine=entry.machine %}
+        {% endfor %}
+      </ul>
+      <div id="log-pagination" data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+    {% else %}
+      <p>No log entries yet.</p>
+    {% endif %}
+  </div>
+  <div id="log-loading" class="hidden">Loading…</div>
+  <div id="log-sentinel"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'core/log_infinite.js' %}" defer></script>
+{% endblock %}

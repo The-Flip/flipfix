@@ -288,6 +288,64 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
 
+class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """Global list of all log entries across all machines. Maintainer-only access."""
+    template_name = "maintenance/log_list.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        logs = (
+            LogEntry.objects.all()
+            .select_related("machine")
+            .prefetch_related("maintainers", "media")
+            .order_by("-created_at")
+        )
+        paginator = Paginator(logs, 10)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+        context.update(
+            {
+                "page_obj": page_obj,
+                "log_entries": page_obj.object_list,
+            }
+        )
+        return context
+
+
+class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """AJAX endpoint for infinite scrolling in the global log list."""
+    template_name = "maintenance/partials/log_list_entry.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        logs = (
+            LogEntry.objects.all()
+            .select_related("machine")
+            .prefetch_related("maintainers", "media")
+            .order_by("-created_at")
+        )
+        paginator = Paginator(logs, 10)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        items_html = "".join(
+            render_to_string(
+                self.template_name,
+                {"entry": entry, "machine": entry.machine}
+            )
+            for entry in page_obj.object_list
+        )
+        return JsonResponse(
+            {
+                "items": items_html,
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+            }
+        )
+
+
 class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = LogEntry
     template_name = "maintenance/log_entry_detail.html"

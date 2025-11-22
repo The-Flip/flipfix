@@ -68,7 +68,8 @@ urlpatterns = [
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
 
     # Log views
-    path("logs/", maintenance_views.MachineLogView.as_view(), name="log-list"),
+    path("logs/", maintenance_views.LogListView.as_view(), name="log-list"),
+    path("logs/entries/", maintenance_views.LogListPartialView.as_view(), name="log-list-entries"),
     path("logs/<int:pk>/", maintenance_views.LogEntryDetailView.as_view(), name="log-detail"),
     path("logs/new/<slug:slug>/", maintenance_views.MachineLogCreateView.as_view(), name="log-create-machine"),
     path("logs/<slug:slug>/entries/", maintenance_views.MachineLogPartialView.as_view(), name="log-entries"),
