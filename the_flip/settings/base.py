@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "whitenoise.runserver_nostatic",
+    "django_q",
     "the_flip.apps.core",
     "the_flip.apps.accounts",
     "the_flip.apps.catalog",
@@ -71,6 +72,21 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# django-q2 configuration (DB-backed queue)
+Q_CLUSTER = {
+    "name": "the_flip_worker",
+    "orm": "default",
+    "workers": 1,
+    "timeout": 600,
+    "retry": 660,
+    "save_limit": 50,
+    "queue_limit": 50,
+    "recycle": 5,
+    "bulk": 1,
+    "catch_up": False,
+    "max_attempts": 1,
+}
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"

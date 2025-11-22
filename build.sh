@@ -10,6 +10,11 @@ pip install -r requirements.txt
 # Create media directory if it doesn't exist
 mkdir -p media
 
+# Run tests before deploying (fail fast if any test fails)
+echo "Running tests..."
+make test-ci
+echo "✓ All tests passed"
+
 # Run migrations
 python manage.py migrate
 

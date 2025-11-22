@@ -40,40 +40,47 @@ class LogEntryQuickForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 4, "placeholder": "What work was done?", "autofocus": True}),
         max_length=1000,
     )
-    photo = forms.FileField(
-        label="Photo",
+    media = forms.FileField(
+        label="Photo or Video",
         required=False,
-        widget=forms.ClearableFileInput(attrs={"accept": "image/*,.heic,.heif,image/heic,image/heif"}),
+        widget=forms.ClearableFileInput(attrs={"accept": "image/*,video/*,.heic,.heif,image/heic,image/heif"}),
     )
 
-    def clean_photo(self):
-        """Validate that the uploaded file is an image (including HEIC/HEIF)."""
-        photo = self.cleaned_data.get("photo")
-        if not photo:
-            return photo
+    def clean_media(self):
+        """Validate uploaded media (photo or video)."""
+        media = self.cleaned_data.get("media")
+        if not media:
+            return media
 
-        content_type = getattr(photo, "content_type", "") or ""
-        ext = Path(getattr(photo, "name", "")).suffix.lower()
+        max_size_bytes = 200 * 1024 * 1024
+        if media.size and media.size > max_size_bytes:
+            raise forms.ValidationError("File too large. Maximum size is 200MB.")
+
+        content_type = (getattr(media, "content_type", "") or "").lower()
+        ext = Path(getattr(media, "name", "")).suffix.lower()
+        allowed_video_exts = {".mp4", ".mov", ".m4v", ".hevc"}
+
+        if content_type.startswith("video/") or ext in allowed_video_exts:
+            return media
+
         if content_type and not content_type.startswith("image/") and ext not in {".heic", ".heif"}:
             raise forms.ValidationError(
-                "Upload a valid image. The file you uploaded was either not an image or was corrupted."
+                "Upload a valid image or video."
             )
 
         try:
-            photo.seek(0)
+            media.seek(0)
         except Exception:
             pass
 
         try:
-            Image.open(photo).verify()
+            Image.open(media).verify()
         except (UnidentifiedImageError, OSError):
-            raise forms.ValidationError(
-                "Upload a valid image. The file you uploaded was either not an image or was corrupted."
-            )
+            raise forms.ValidationError("Upload a valid image or video.")
         finally:
             try:
-                photo.seek(0)
+                media.seek(0)
             except Exception:
                 pass
 
-        return photo
+        return media

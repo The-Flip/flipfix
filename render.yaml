@@ -7,7 +7,7 @@ services:
     buildCommand: |
       whoami
       apt-get update
-      apt-get install -y libheif1 libheif-dev
+      apt-get install -y libheif1 libheif-dev ffmpeg
       ./build.sh
     startCommand: "gunicorn the_flip.wsgi:application"
     envVars:
@@ -17,5 +17,18 @@ services:
         value: false
       - key: ALLOWED_HOSTS
         value: the-flip.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.13.2
+
+  - type: worker
+    name: the-flip-worker
+    runtime: python
+    plan: free
+    buildCommand: |
+      apt-get update
+      apt-get install -y libheif1 libheif-dev ffmpeg
+      ./build.sh
+    startCommand: "python manage.py qcluster"
+    envVars:
       - key: PYTHON_VERSION
         value: 3.13.2

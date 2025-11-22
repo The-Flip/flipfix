@@ -23,6 +23,7 @@ from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.maintenance.forms import LogEntryQuickForm, MachineReportSearchForm, ProblemReportForm
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
+from the_flip.apps.maintenance.tasks import enqueue_transcode
 
 
 class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -212,7 +213,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def form_valid(self, form):
         submitter_name = form.cleaned_data["submitter_name"].strip()
         description = form.cleaned_data["text"].strip()
-        photo = form.cleaned_data["photo"]
+        media_file = form.cleaned_data["media"]
         log_entry = LogEntry.objects.create(machine=self.machine, text=description)
 
         maintainer = self.match_maintainer(submitter_name)
@@ -222,12 +223,20 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             log_entry.maintainer_names = submitter_name
             log_entry.save(update_fields=["maintainer_names"])
 
-        if photo:
-            LogEntryMedia.objects.create(
+        if media_file:
+            content_type = (getattr(media_file, "content_type", "") or "").lower()
+            ext = Path(getattr(media_file, "name", "")).suffix.lower()
+            is_video = content_type.startswith("video/") or ext in {".mp4", ".mov", ".m4v", ".hevc"}
+
+            media = LogEntryMedia.objects.create(
                 log_entry=log_entry,
-                media_type=LogEntryMedia.TYPE_PHOTO,
-                file=photo,
+                media_type=LogEntryMedia.TYPE_VIDEO if is_video else LogEntryMedia.TYPE_PHOTO,
+                file=media_file,
+                transcode_status=LogEntryMedia.STATUS_PENDING if is_video else "",
             )
+
+            if is_video:
+                enqueue_transcode(media.id)
 
         messages.success(
             self.request,
@@ -302,15 +311,25 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
         elif action == "upload_media":
             if "file" in request.FILES:
+                upload = request.FILES["file"]
+                content_type = (getattr(upload, "content_type", "") or "").lower()
+                ext = Path(getattr(upload, "name", "")).suffix.lower()
+                is_video = content_type.startswith("video/") or ext in {".mp4", ".mov", ".m4v", ".hevc"}
                 media = LogEntryMedia.objects.create(
                     log_entry=self.object,
-                    media_type=LogEntryMedia.TYPE_PHOTO,
-                    file=request.FILES["file"],
+                    media_type=LogEntryMedia.TYPE_VIDEO if is_video else LogEntryMedia.TYPE_PHOTO,
+                    file=upload,
+                    transcode_status=LogEntryMedia.STATUS_PENDING if is_video else "",
                 )
+                if is_video:
+                    enqueue_transcode(media.id)
                 return JsonResponse({
                     "success": True,
                     "media_id": media.id,
-                    "media_url": media.file.url,
+                    "media_url": media.transcoded_file.url if media.transcoded_file else media.file.url,
+                    "media_type": media.media_type,
+                    "transcode_status": media.transcode_status,
+                    "poster_url": media.poster_file.url if media.poster_file else None,
                 })
             return JsonResponse({"success": False, "error": "No file provided"}, status=400)
 
@@ -318,6 +337,10 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             media_id = request.POST.get("media_id")
             try:
                 media = LogEntryMedia.objects.get(id=media_id, log_entry=self.object)
+                if media.transcoded_file:
+                    media.transcoded_file.delete(save=False)
+                if media.poster_file:
+                    media.poster_file.delete(save=False)
                 media.file.delete()
                 media.delete()
                 return JsonResponse({"success": True})

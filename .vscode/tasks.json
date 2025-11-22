@@ -4,7 +4,7 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "pkill -f 'manage.py runserver' || true && .venv/bin/python manage.py runserver",
+      "command": "make runserver",
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
@@ -13,9 +13,59 @@
       }
     },
     {
-      "label": "Import Legacy Data",
+      "label": "Start Django Q Worker",
       "type": "shell",
-      "command": ".venv/bin/python manage.py import_legacy_data",
+      "command": "make runq",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "make test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Tests (Verbose)",
+      "type": "shell",
+      "command": "make test-verbose",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "group": "test"
+    },
+    {
+      "label": "Run Tests (Clean DB)",
+      "type": "shell",
+      "command": "make test-clean",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "group": "test"
+    },
+    {
+      "label": "Reset Database",
+      "type": "shell",
+      "command": "make reset-db",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
@@ -23,9 +73,29 @@
       }
     },
     {
-      "label": "Reset Database",
+      "label": "Import Legacy Data",
       "type": "shell",
-      "command": "./reset_migrations.sh",
+      "command": "make import-data",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Migrations",
+      "type": "shell",
+      "command": "make migrate",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Create Migrations",
+      "type": "shell",
+      "command": "make migrations",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

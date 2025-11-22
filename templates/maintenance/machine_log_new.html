@@ -29,9 +29,9 @@
         {% endfor %}
       </div>
       <div class="form-field">
-        <label for="{{ form.photo.id_for_label }}">Photo (optional)</label>
-        {{ form.photo }}
-        {% for error in form.photo.errors %}
+        <label for="{{ form.media.id_for_label }}">Photo or Video (optional)</label>
+        {{ form.media }}
+        {% for error in form.media.errors %}
           <div class="error">{{ error }}</div>
         {% endfor %}
       </div>

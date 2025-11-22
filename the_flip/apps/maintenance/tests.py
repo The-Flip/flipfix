@@ -1,5 +1,7 @@
 """Tests for maintenance app views and functionality."""
 from datetime import timedelta
+import shutil
+import subprocess
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -11,6 +13,34 @@ from the_flip.apps.catalog.models import MachineInstance, MachineModel
 from the_flip.apps.maintenance.models import ProblemReport
 
 User = get_user_model()
+
+
+class FFmpegAvailabilityTest(TestCase):
+    """Ensure ffmpeg/ffprobe are available for video processing."""
+
+    def test_ffmpeg_available(self):
+        if not shutil.which("ffmpeg"):
+            self.fail("ffmpeg not found on PATH (video upload/transcode will fail)")
+        result = subprocess.run(
+            ["ffmpeg", "-version"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        self.assertIn("ffmpeg version", (result.stdout or "").lower())
+
+    def test_ffprobe_available(self):
+        if not shutil.which("ffprobe"):
+            self.fail("ffprobe not found on PATH (video upload/transcode will fail)")
+        result = subprocess.run(
+            ["ffprobe", "-version"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        self.assertIn("ffprobe version", (result.stdout or "").lower())
 
 
 class ProblemReportDetailViewTests(TestCase):

@@ -127,9 +127,19 @@ class LogEntryMedia(TimeStampedModel):
 
     TYPE_PHOTO = "photo"
     TYPE_VIDEO = "video"
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_READY = "ready"
+    STATUS_FAILED = "failed"
     MEDIA_CHOICES = [
         (TYPE_PHOTO, "Photo"),
         (TYPE_VIDEO, "Video"),
+    ]
+    TRANSCODE_STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_PROCESSING, "Processing"),
+        (STATUS_READY, "Ready"),
+        (STATUS_FAILED, "Failed"),
     ]
 
     log_entry = models.ForeignKey(
@@ -140,6 +150,15 @@ class LogEntryMedia(TimeStampedModel):
     media_type = models.CharField(max_length=20, choices=MEDIA_CHOICES)
     file = models.FileField(upload_to=log_media_upload_to)
     thumbnail_file = models.FileField(upload_to=log_media_upload_to, blank=True)
+    transcoded_file = models.FileField(upload_to=log_media_upload_to, blank=True, null=True)
+    poster_file = models.ImageField(upload_to=log_media_upload_to, blank=True, null=True)
+    transcode_status = models.CharField(
+        max_length=20,
+        choices=TRANSCODE_STATUS_CHOICES,
+        blank=True,
+        default=STATUS_PENDING,
+    )
+    duration = models.IntegerField(null=True, blank=True, help_text="Duration in seconds")
     display_order = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:

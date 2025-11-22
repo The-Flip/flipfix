@@ -163,45 +163,7 @@ def transcode_video_job(media_id):
 ## Management Commands
 
 ### Check FFmpeg Installation
-**File:** `the_flip/apps/maintenance/management/commands/check_ffmpeg.py`
-
-```python
-from django.core.management.base import BaseCommand
-import subprocess
-
-class Command(BaseCommand):
-    help = 'Check FFmpeg and FFprobe availability'
-
-    def handle(self, *args, **options):
-        try:
-            result = subprocess.run(
-                ['ffmpeg', '-version'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.stdout.write(self.style.SUCCESS('✓ FFmpeg is available'))
-            self.stdout.write(result.stdout.split('\n')[0])
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR('✗ FFmpeg not found'))
-            return
-
-        try:
-            result = subprocess.run(
-                ['ffprobe', '-version'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            self.stdout.write(self.style.SUCCESS('✓ FFprobe is available'))
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR('✗ FFprobe not found'))
-```
-
-**Usage:**
-```bash
-python manage.py check_ffmpeg
-```
+Command: `python manage.py check_ffmpeg` — verifies ffmpeg/ffprobe are on PATH and prints versions.
 
 ### Check Worker Health
 **File:** `the_flip/apps/maintenance/management/commands/check_worker.py`

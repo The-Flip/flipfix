@@ -15,7 +15,17 @@
     {% if entry.media.all %}
       <div class="log-entry-media">
         {% for media in entry.media.all %}
-          <img src="{{ media.file.url }}" alt="Photo for {{ machine.display_name }}" width="200">
+          {% if media.media_type == 'video' %}
+            {% if media.transcode_status == 'ready' and media.poster_file %}
+              <img src="{{ media.poster_file.url }}" alt="Video poster for {{ machine.display_name }}" width="200">
+            {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
+              <span class="media-status">Video processing…</span>
+            {% else %}
+              <span class="media-status error">Video failed</span>
+            {% endif %}
+          {% else %}
+            <img src="{{ media.file.url }}" alt="Photo for {{ machine.display_name }}" width="200">
+          {% endif %}
         {% endfor %}
       </div>
     {% endif %}

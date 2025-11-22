@@ -14,3 +14,4 @@ whitenoise==6.8.2
 qrcode[pil]==8.0
 Pillow==11.0.0
 pillow-heif==0.18.0
+django-q2==1.8.0
