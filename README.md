@@ -101,14 +101,6 @@ After basic setup, install these development tools:
 
    The background worker processes video uploads. Without it, videos will queue but not transcode.
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow:
-- Branch naming conventions
-- Code quality checks
-- Pull request process
-- Development workflow
-
 ## Developer Documentation
 
 See [docs/README.md](docs/README.md) for detailed guides on:
