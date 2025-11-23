@@ -1,70 +1,26 @@
 # Contributing to The Flip
 
-This guide covers the contribution workflow, code quality standards, and testing requirements.
+This guide covers the contribution workflow, code quality standards, and pull request process.
 
 ## Table of Contents
 
 - [Getting Started](#getting-started)
-- [Contributor Setup](#contributor-setup)
 - [Development Workflow](#development-workflow)
 - [Code Quality](#code-quality)
 - [Testing](#testing)
 - [Pull Request Process](#pull-request-process)
 - [Branch Naming Convention](#branch-naming-convention)
+- [Code of Conduct](#code-of-conduct)
 
 ## Getting Started
 
-Before you begin:
-
-1. **Follow the setup in [README.md](README.md)** - Get the app running locally first
-2. **Review [docs/](docs/)** - Understand the architecture and conventions:
+1. **Complete setup** - Follow [README.md](README.md) to get the app running locally (including development tools)
+2. **Read the docs** - Review [docs/](docs/) to understand technical conventions:
    - [Project Structure](docs/Project_Structure.md) - Directory layout and app organization
    - [Data Model](docs/Datamodel.md) - Database schema and relationships
    - [Django/Python](docs/Django_Python.md) - Coding conventions and patterns
    - [HTML/CSS](docs/HTML_CSS.md) - Frontend conventions
    - [Testing](docs/Testing.md) - Testing strategies
-
-## Contributor Setup
-
-After completing the basic setup in README.md, add these contributor tools:
-
-### 1. Install Development Dependencies
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-This installs:
-- **ruff** - Fast linter and formatter
-- **mypy** - Type checker
-- **coverage** - Test coverage reporting
-- **pre-commit** - Git hooks for automated checks
-
-### 2. Install Pre-commit Hooks
-
-```bash
-pre-commit install
-```
-
-This automatically runs code quality checks before each commit. If checks fail, the commit is blocked until you fix the issues.
-
-### 3. Install FFmpeg (for video features)
-
-Required for testing video transcoding:
-- macOS: `brew install ffmpeg`
-- Ubuntu/Debian: `apt-get install ffmpeg`
-- Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
-
-### 4. Run Background Worker (when testing videos)
-
-Video transcoding requires the Django Q worker running:
-
-```bash
-# In a separate terminal
-make runq
-```
-
-Without this, video uploads will queue but not process.
 
 ## Development Workflow
 
@@ -121,42 +77,21 @@ Tool configurations are in `pyproject.toml`:
 
 ## Testing
 
-### Running Tests
+**Before submitting a PR, ensure tests pass:**
 
 ```bash
 # Run all tests
 make test
 
-# Run tests with fresh database
-make test-clean
-
-# Run tests in parallel (faster)
-make test-fast
-
-# Run tests with verbose output
-make test-verbose
-```
-
-### Test Coverage
-
-```bash
-# Generate coverage report
+# Run tests with coverage report
 make coverage
-
-# View HTML coverage report
-# Opens in browser: htmlcov/index.html
 ```
 
-### Writing Tests
-
-- Follow Django's testing conventions
-- Tests live in `tests.py` or `tests/` directories within each app
-- See [docs/Testing.md](docs/Testing.md) for detailed testing guidelines
-- Aim for good coverage of critical paths, especially:
-  - Authentication and permissions
-  - Form validation
-  - Business logic in models
-  - View access controls
+**For detailed testing guidelines, see [docs/Testing.md](docs/Testing.md)**, which covers:
+- Testing conventions and structure
+- How to write effective tests
+- Coverage requirements
+- Test runner configuration
 
 ## Pull Request Process
 
@@ -223,17 +158,12 @@ wip
 updates
 ```
 
+## Code of Conduct
+
+This project follows the Contributor Covenant Code of Conduct. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
+
 ## Questions or Issues?
 
 - Review the [documentation](docs/README.md) first
 - Check existing [GitHub Issues](https://github.com/deanmoses/the_flip/issues)
 - Create a new issue if you're stuck or found a bug
-- For security issues, see [SECURITY.md](SECURITY.md) (if applicable)
-
-## Code of Conduct
-
-Be respectful, collaborative, and constructive. This is a community project for a pinball museum - keep it fun!
-
----
-
-Thank you for contributing to The Flip! 🎮
