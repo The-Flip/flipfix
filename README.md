@@ -66,8 +66,22 @@ It's in Django.
    - Main site: http://localhost:8000/
    - Admin panel: http://localhost:8000/admin/
 
-## Developing, Testing, Deploying
+## Contributing
 
-See [docs/README.md](docs/README.md). 
+Interested in contributing? See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup instructions
+- Code quality guidelines
+- Testing requirements
+- Pull request process
+
+## Developer Documentation
+
+See [docs/README.md](docs/README.md) for detailed guides on:
+- Project structure and architecture
+- Django and Python conventions
+- HTML/CSS patterns
+- Data model documentation
+- Testing strategies
+- Deployment process
 
 AI helpers like Claude and Codex **MUST** read and follow the docs linked at [docs/README.md](docs/README.md) before answering questions or generating assets. Those docs spell out how AI assistants must work with HTML, CSS, Django/Python, the project structure, data model, and testing.

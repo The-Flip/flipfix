@@ -1,0 +1,126 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "the_flip"
+version = "0.1.0"
+description = "Pinball machine maintenance tracking system for The Flip museum"
+readme = "README.md"
+requires-python = ">=3.13"
+license = {text = "Apache-2.0"}
+
+[tool.ruff]
+# Target Python 3.13
+target-version = "py313"
+
+# Line length to match Django conventions
+line-length = 100
+
+# Exclude auto-generated and third-party directories
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*/migrations/*",
+    "static_collected",
+    "media",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+]
+
+[tool.ruff.lint]
+# Enable recommended rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DJ",  # flake8-django
+    "S",   # flake8-bandit (security)
+    "T20", # flake8-print
+]
+
+# Ignore specific rules that conflict with Django patterns
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "DJ001",  # Avoid nullable CharField (common Django pattern)
+    "S101",   # Use of assert (okay in tests)
+    "S311",   # Use of random (not cryptographic in this app)
+]
+
+# Per-file ignores
+[tool.ruff.lint.per-file-ignores]
+"*/tests.py" = ["S101"]  # Allow asserts in tests
+"*/tests/*.py" = ["S101"]  # Allow asserts in test files
+"manage.py" = ["T20"]  # Allow print in manage.py
+"*/management/commands/*.py" = ["T20"]  # Allow print in management commands
+
+[tool.ruff.lint.isort]
+# Django-style import ordering
+known-first-party = ["the_flip"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.format]
+# Use double quotes (Django convention)
+quote-style = "double"
+
+# Indent with 4 spaces (PEP 8)
+indent-style = "space"
+
+# Unix line endings
+line-ending = "lf"
+
+[tool.mypy]
+# Permissive settings for now - can tighten later
+python_version = "3.13"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+# Django-specific settings
+plugins = ["mypy_django_plugin.main"]
+
+[[tool.mypy.overrides]]
+module = "mypy-django-stubs.*"
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "the_flip.settings.dev"
+
+[tool.coverage.run]
+source = ["the_flip"]
+omit = [
+    "*/migrations/*",
+    "*/tests.py",
+    "*/tests/*",
+    "*/settings/*",
+    "manage.py",
+    "*/__pycache__/*",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+# Fail if coverage drops below this percentage
+# Set to 0 initially, can increase as test coverage improves
+fail_under = 0
+
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

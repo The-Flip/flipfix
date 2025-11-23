@@ -1,0 +1,15 @@
+# Development dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Code formatting and linting
+ruff==0.8.4
+
+# Type checking
+mypy==1.13.0
+django-stubs==5.1.1
+
+# Test coverage
+coverage==7.6.9
+
+# Pre-commit hooks
+pre-commit==4.0.1
