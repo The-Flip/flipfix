@@ -1,79 +1,67 @@
 # Deployment
 
-## Production Environment
+How code gets from your local machine to production.
 
-The live production system is deployed at: https://the-flip-production.up.railway.app/
+## Deployment Pipeline
 
-It deploys every time the `main` branch is pushed to GitHub.
+**Local development → PR environment → Production**
 
-There are no other hosted environments as of yet: no staging, testing, UAT.
+1. Develop locally on a feature branch
+2. Push branch and create PR → Automatic PR environment created
+3. Test in PR environment
+4. Merge to `main` → Automatic production deployment
 
+## PR Environments
+
+When you create a pull request, an ephemeral test environment is automatically created.
+
+**Features:**
+- Unique URL for each PR (e.g., `pr-123.up.railway.app`)
+- Full stack deployment (database, storage, background workers)
+- Automatically deleted when PR is closed
+- Fresh database (no production data)
+
+**How to access:**
+- Railway posts the URL in the PR deployment checks
+- Click the URL to test your changes in a live environment
+
+**Limitations:**
+- Fresh database (not a copy of production data)
+- Separate from production (different domain, environment variables)
+
+## Production Deployment
+
+**Live system:** https://the-flip-production.up.railway.app/
+
+**Deployment process:**
+1. Merge PR to `main` branch
+2. GitHub push triggers Railway
+3. Railway runs `build.sh`:
+   - Installs dependencies
+   - Runs tests (`make test-ci`)
+   - Runs migrations
+   - Collects static files
+4. Deployment completes (~2-5 minutes)
+5. New version is live
+
+⚠️ **Production deploys automatically on every `main` branch push**
 
 ## Platform: Railway
 
 [Railway](https://railway.app/) is the hosting platform.
 
-## Deployment
+**Services:**
+- Web application (Django + Gunicorn)
+- PostgreSQL database
+- Persistent disk storage (for media files)
+- Background worker (Django Q)
 
- - Push `main` branch changes to GitHub
- - Railway automatically detects the push
- - Build takes ~2-5 minutes
- - You can follow along and see build logs on Railway
+**Configuration:**
+- Build: `build.sh`
+- Start: `gunicorn the_flip.wsgi:application`
+- Runtime: Python 3.13
+- System dependencies: libheif, ffmpeg (via `nixpacks.toml`)
 
-## Rollback
+---
 
-You can rollback to a previous version via the Railway dashboard.  It's point and click.
-
-Rollbacks only affect application code, not the database.
-
-## Application Logs
-
-View logs in Railway dashboard
-
-### Worker Health
-
-Check worker status with management command:
-```bash
-railway run python manage.py check_worker
-```
-
-This shows:
-- Recent successful tasks (last 24 hours)
-- Recent failures
-- Queued tasks
-- Stuck video transcodes
-
-### Django Admin
-
-Access admin panel at: https://the-flip-production.up.railway.app/admin/
-
-Monitor background tasks:
-- Navigate to "Django Q" section
-- View successful/failed tasks
-- See queued jobs
-- Manually retry failed jobs
-
-
-## Database
-
-### Backups
-
-Railway automatically backs up the PostgreSQL database. It's a daily backup, not point in time (PITR).  Restore is point and click.
-
-
-## Photo & Video File Storage
-
-Railway provides persistent disk storage for uploaded photos and videos.
-
-### File Backups & Restore
-
-Railway automatically creates daily snapshots of the persistent disk. It's point and click.
-
-### Storage Location
-
-Photos and videos are stored in `/media/` directory on the persistent disk:
-
-
-## Cost Monitoring
-
-Monitor costs in Railway's dashboard.
+**For operations (monitoring, rollback, backups), see [Operations.md](Operations.md)**

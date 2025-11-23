@@ -8,7 +8,8 @@ The development documentation for The Flip maintenance system.
 - **[HTML_CSS.md](HTML_CSS.md)** - CSS token system, responsive design rules, component patterns, and styling conventions
 - **[Django_Python.md](Django_Python.md)** - Django app structure, Python conventions, view patterns, form handling, and code organization
 - **[Testing.md](Testing.md)** - Test structure, runner configuration, coverage requirements, and testing best practices
-- **[Deployment.md](Deployment.md)** - Deployment guide
+- **[Deployment.md](Deployment.md)** - Deployment pipeline (PR environments, production)
+- **[Operations.md](Operations.md)** - Operations guide (monitoring, rollback, backups)
 
 ⚠️ The app is deployed every time the main branch is pushed to Github! See [Deployment.md](Deployment.md).
 

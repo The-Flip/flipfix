@@ -109,9 +109,9 @@ make coverage
 
 ### PR Environment Testing
 
-When you create a PR, Railway automatically deploys your changes to a temporary PR environment. You'll get a unique URL (e.g., `pr-123.up.railway.app`) to click-test your changes in a live environment before merging to production.
+When you create a PR, a temporary test environment is automatically created with a unique URL to click-test your changes before merging.
 
-**Note:** Merging to `main` automatically deploys to production at https://the-flip-production.up.railway.app/
+**For deployment details** (PR environments, production deployment, platform info), see [docs/Deployment.md](docs/Deployment.md).
 
 ## Branch Naming Convention
 
