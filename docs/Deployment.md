@@ -51,14 +51,8 @@ When you create a pull request, an ephemeral test environment is automatically c
 **Services:**
 - Web application (Django + Gunicorn)
 - PostgreSQL database
-- Persistent disk storage (for media files)
-- Background worker (Django Q)
-
-**Configuration:**
-- Build: `build.sh`
-- Start: `gunicorn the_flip.wsgi:application`
-- Runtime: Python 3.13
-- System dependencies: libheif, ffmpeg (via `nixpacks.toml`)
+- Persistent disk storage (for photo & video files)
+- Background worker (Django Q, for async video processing)
 
 ---
 
