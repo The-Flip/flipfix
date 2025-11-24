@@ -34,5 +34,6 @@ If you have pre-commit installed, it will run on commit; otherwise rely on the c
 - **Push your branch** to GitHub
 - **Create a Pull Request** against `main`
 - **Write a description** of what changed and why. Link to related issues if applicable.
-- **Test in hosted env**.  A temporary environment is automatically created for testing. See [docs/Deployment.md](docs/Deployment.md).
-- **Merge when ready**. PRs can be self-merged once CI passes
+- **Wait for CI checks** - GitHub Actions will automatically run tests, linting, and type checking
+- **Test in hosted env** - A temporary environment is automatically created for testing. See [docs/Deployment.md](docs/Deployment.md).
+- **Merge when ready** - PRs can be self-merged once CI passes
