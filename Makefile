@@ -55,7 +55,7 @@ runq:
 
 .PHONY: reset-db
 reset-db:
-	./reset_migrations.sh
+	./scripts/reset_migrations.sh
 
 .PHONY: import-data
 import-data:
