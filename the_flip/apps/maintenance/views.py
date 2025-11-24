@@ -494,3 +494,110 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         context["public_url"] = public_url
 
         return context
+
+
+class ReceiveTranscodedMediaView(View):
+    """
+    API endpoint for worker service to upload transcoded video files.
+
+    Expects multipart/form-data with:
+    - video_file: transcoded video file
+    - poster_file: generated poster image
+    - log_entry_media_id: ID of LogEntryMedia record to update
+    - Authorization header: Bearer <token>
+    """
+
+    def post(self, request, *args, **kwargs):
+        # Validate authentication token
+        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+        if not auth_header.startswith("Bearer "):
+            return JsonResponse(
+                {"success": False, "error": "Missing or invalid Authorization header"}, status=401
+            )
+
+        token = auth_header[7:]  # Remove "Bearer " prefix
+        if not settings.TRANSCODING_UPLOAD_TOKEN:
+            return JsonResponse(
+                {"success": False, "error": "Server not configured for transcoding uploads"},
+                status=500,
+            )
+
+        if token != settings.TRANSCODING_UPLOAD_TOKEN:
+            return JsonResponse(
+                {"success": False, "error": "Invalid authentication token"}, status=403
+            )
+
+        # Validate required fields
+        media_id = request.POST.get("log_entry_media_id")
+        if not media_id:
+            return JsonResponse(
+                {"success": False, "error": "Missing log_entry_media_id"}, status=400
+            )
+
+        video_file = request.FILES.get("video_file")
+        poster_file = request.FILES.get("poster_file")
+
+        if not video_file:
+            return JsonResponse({"success": False, "error": "Missing video_file"}, status=400)
+
+        # Validate file types
+        video_content_type = (getattr(video_file, "content_type", "") or "").lower()
+        if not video_content_type.startswith("video/"):
+            return JsonResponse(
+                {"success": False, "error": f"Invalid video file type: {video_content_type}"},
+                status=400,
+            )
+
+        if poster_file:
+            poster_content_type = (getattr(poster_file, "content_type", "") or "").lower()
+            if not poster_content_type.startswith("image/"):
+                return JsonResponse(
+                    {"success": False, "error": f"Invalid poster file type: {poster_content_type}"},
+                    status=400,
+                )
+
+        # Get LogEntryMedia record
+        try:
+            media = LogEntryMedia.objects.get(id=media_id)
+        except LogEntryMedia.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": f"LogEntryMedia with id {media_id} not found"},
+                status=404,
+            )
+
+        # Save transcoded files and update record
+        try:
+            from django.db import transaction
+
+            with transaction.atomic():
+                # Delete original file
+                if media.file:
+                    media.file.delete(save=False)
+
+                # Save transcoded video
+                media.transcoded_file = video_file
+
+                # Save poster if provided
+                if poster_file:
+                    media.poster_file = poster_file
+
+                # Update status
+                media.transcode_status = LogEntryMedia.STATUS_READY
+
+                media.save()
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Transcoded media uploaded successfully",
+                    "media_id": media.id,
+                    "transcoded_url": media.transcoded_file.url,
+                    "poster_url": media.poster_file.url if media.poster_file else None,
+                }
+            )
+
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "error": f"Failed to save transcoded media: {str(e)}"},
+                status=500,
+            )

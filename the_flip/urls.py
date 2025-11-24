@@ -79,6 +79,12 @@ urlpatterns = [
     path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
     # Machine model editing
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
+    # API endpoints
+    path(
+        "api/transcoding/upload/",
+        maintenance_views.ReceiveTranscodedMediaView.as_view(),
+        name="api-transcoding-upload",
+    ),
     # Log views
     path("logs/", maintenance_views.LogListView.as_view(), name="log-list"),
     path("logs/entries/", maintenance_views.LogListPartialView.as_view(), name="log-list-entries"),
