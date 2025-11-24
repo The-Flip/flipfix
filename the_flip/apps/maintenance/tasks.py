@@ -1,4 +1,5 @@
 """Background tasks for maintenance media."""
+
 from __future__ import annotations
 
 import json
@@ -99,7 +100,9 @@ def transcode_video_job(media_id: int):
         media.file.delete(save=False)
 
         media.transcode_status = LogEntryMedia.STATUS_READY
-        media.save(update_fields=["transcoded_file", "poster_file", "transcode_status", "updated_at"])
+        media.save(
+            update_fields=["transcoded_file", "poster_file", "transcode_status", "updated_at"]
+        )
         logger.info("Successfully transcoded video %s", media_id)
 
     except Exception as exc:  # noqa: BLE001

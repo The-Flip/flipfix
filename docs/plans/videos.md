@@ -1,6 +1,6 @@
 # Video Uploads Plan
 
-This is the spec for supporting maintainers uploading videos while logging their work. 
+This is the spec for supporting maintainers uploading videos while logging their work.
 
 ## Goals
 - **Upload any format, transform to a widely understood format**: accept phone-recorded videos (MOV/HEVC/etc.) and transcode to widely playable H.264/AAC MP4.

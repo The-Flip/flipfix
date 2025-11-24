@@ -1,11 +1,9 @@
 {% load core_extras %}
-<li
-  class="machine-card js-clickable-card"
-  data-url="{% url 'log-detail' entry.pk %}"
-  tabindex="0"
-  role="button"
-  aria-label="View log entry for {{ machine.display_name }}"
->
+<li class="machine-card js-clickable-card"
+    data-url="{% url 'log-detail' entry.pk %}"
+    tabindex="0"
+    role="button"
+    aria-label="View log entry for {{ machine.display_name }}">
   <div class="machine-card__row">
     <div class="machine-card__row-left">
       <span class="machine-card__name">{{ machine.display_name }}</span>
@@ -13,13 +11,11 @@
     <div class="log-entry-meta">
       <strong>{{ entry.created_at|smart_date }}</strong>
       {% if entry.maintainers.all %}
-        <span> by {{ entry.maintainers.all|join:", " }}</span>
+        <span>by {{ entry.maintainers.all|join:", " }}</span>
       {% elif entry.maintainer_names %}
-        <span> by {{ entry.maintainer_names }}</span>
+        <span>by {{ entry.maintainer_names }}</span>
       {% endif %}
     </div>
   </div>
-  <div class="machine-card__problem">
-    {{ entry.text }}
-  </div>
+  <div class="machine-card__problem">{{ entry.text }}</div>
 </li>

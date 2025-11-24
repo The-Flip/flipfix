@@ -6,22 +6,18 @@
   {% if reports %}
     <ul class="list machine-list problem-report-list">
       {% for report in reports %}
-        <li
-          class="machine-card js-clickable-card"
-          data-url="{% url 'problem-report-detail' report.pk %}"
-          tabindex="0"
-          role="button"
-          aria-label="View problem report for {{ report.machine.display_name }}"
-        >
+        <li class="machine-card js-clickable-card"
+            data-url="{% url 'problem-report-detail' report.pk %}"
+            tabindex="0"
+            role="button"
+            aria-label="View problem report for {{ report.machine.display_name }}">
           <div class="machine-card__row">
             <div class="machine-card__row-left">
               <span class="machine-card__name">{{ report.machine.display_name }}</span>
             </div>
             <div class="machine-card__meta-group">
               <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
-              <span class="badge badge-status badge-status--{{ report.status }}">
-                {{ report.get_status_display }}
-              </span>
+              <span class="badge badge-status badge-status--{{ report.status }}">{{ report.get_status_display }}</span>
             </div>
           </div>
           <div class="machine-card__problem">

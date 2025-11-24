@@ -56,10 +56,15 @@ ignore = [
 
 # Per-file ignores
 [tool.ruff.lint.per-file-ignores]
-"*/tests.py" = ["S101"]  # Allow asserts in tests
-"*/tests/*.py" = ["S101"]  # Allow asserts in test files
+"*/tests.py" = ["S101", "S106", "S603", "S607"]  # Allow asserts, hardcoded passwords, subprocess in tests
+"*/tests/*.py" = ["S101", "S106", "S603", "S607"]  # Allow asserts, hardcoded passwords, subprocess in test files
 "manage.py" = ["T20"]  # Allow print in manage.py
-"*/management/commands/*.py" = ["T20"]  # Allow print in management commands
+"*/management/commands/*.py" = ["T20", "S603", "S607", "B904"]  # Allow print, subprocess, and error handling patterns in management commands
+"the_flip/settings/prod.py" = ["T201"]  # Allow print for critical startup errors
+"the_flip/settings/test.py" = ["F405"]  # Allow star imports (Django test settings pattern)
+"the_flip/apps/maintenance/utils.py" = ["S110"]  # Allow intentional exception suppression
+"the_flip/apps/maintenance/forms.py" = ["S110", "B904"]  # Allow exception suppression and error handling patterns
+"the_flip/apps/maintenance/tasks.py" = ["S603", "S607"]  # Allow subprocess for ffmpeg/ffprobe
 
 [tool.ruff.lint.isort]
 # Django-style import ordering
@@ -82,6 +87,9 @@ python_version = "3.13"
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
+
+# Suppress warnings for third-party libraries without type stubs
+disable_error_code = ["import-untyped", "import-not-found"]
 
 # Django-specific settings
 plugins = ["mypy_django_plugin.main"]
@@ -124,3 +132,13 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.djlint]
+# Django template linter and formatter
+profile = "django"
+indent = 2
+max_line_length = 120
+format_css = true
+format_js = false  # Don't format inline JS - breaks Django template tags in scripts
+ignore = "H006,H030,H031,T003"  # H006: img without alt, H030/H031: extra blank lines, T003: endblock names (optional in Django)
+exclude = ".venv,node_modules,migrations"

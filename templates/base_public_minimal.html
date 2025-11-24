@@ -1,11 +1,16 @@
 {% load static core_extras %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}The Flip{% endblock %}</title>
-    <link rel="icon" href="{% static 'core/favicon.ico' %}" sizes="any" type="image/x-icon">
+    <title>
+      {% block title %}The Flip{% endblock %}
+    </title>
+    <link rel="icon"
+          href="{% static 'core/favicon.ico' %}"
+          sizes="any"
+          type="image/x-icon">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
@@ -17,11 +22,7 @@
     <main>
       {% if messages %}
         <div class="messages" role="alert" aria-live="polite">
-          {% for message in messages %}
-            <div class="message message--{{ message.tags }}">
-              {{ message }}
-            </div>
-          {% endfor %}
+          {% for message in messages %}<div class="message message--{{ message.tags }}">{{ message }}</div>{% endfor %}
         </div>
       {% endif %}
       {% block content %}{% endblock %}
@@ -32,6 +33,7 @@
       </div>
     </footer>
     <script src="{% static 'core/clickable_cards.js' %}" defer></script>
-    {% block extra_scripts %}{% endblock %}
+    {% block extra_scripts %}
+    {% endblock %}
   </body>
 </html>

@@ -1,4 +1,5 @@
 """Catalog models for machine metadata."""
+
 from __future__ import annotations
 
 from django.conf import settings
@@ -22,104 +23,75 @@ class MachineModel(TimeStampedModel):
     ]
 
     name = models.CharField(
-        max_length=200,
-        unique=True,
-        help_text="Official name of the pinball machine model"
+        max_length=200, unique=True, help_text="Official name of the pinball machine model"
     )
     slug = models.SlugField(unique=True, max_length=200, blank=True)
     manufacturer = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Company that manufactured this machine (e.g., Bally, Williams, Stern)"
+        help_text="Company that manufactured this machine (e.g., Bally, Williams, Stern)",
     )
     month = models.PositiveIntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(12)],
-        help_text="Month of manufacture (1-12)"
+        help_text="Month of manufacture (1-12)",
     )
-    year = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Year of manufacture"
-    )
+    year = models.PositiveIntegerField(null=True, blank=True, help_text="Year of manufacture")
     era = models.CharField(
-        max_length=2,
-        choices=ERA_CHOICES,
-        help_text="Technology era of the machine"
+        max_length=2, choices=ERA_CHOICES, help_text="Technology era of the machine"
     )
     system = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="Electronic system type (e.g., WPC-95, System 11)"
+        max_length=100, blank=True, help_text="Electronic system type (e.g., WPC-95, System 11)"
     )
     scoring = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="Scoring system type (e.g., Reel, 5 Digit, 7 Digit)"
+        max_length=100, blank=True, help_text="Scoring system type (e.g., Reel, 5 Digit, 7 Digit)"
     )
     flipper_count = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        help_text="Number of flippers on the machine"
+        null=True, blank=True, help_text="Number of flippers on the machine"
     )
     pinside_rating = models.DecimalField(
         max_digits=4,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Rating from Pinside (0.00-10.00)"
+        help_text="Rating from Pinside (0.00-10.00)",
     )
     ipdb_id = models.PositiveIntegerField(
         null=True,
         blank=True,
         unique=True,
         verbose_name="IPDB ID",
-        help_text="Internet Pinball Database ID number"
+        help_text="Internet Pinball Database ID number",
     )
     production_quantity = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        help_text="Number of units produced (e.g., ~50,000)"
+        max_length=50, null=True, blank=True, help_text="Number of units produced (e.g., ~50,000)"
     )
     factory_address = models.CharField(
-        max_length=300,
-        blank=True,
-        help_text="Address where the machine was manufactured"
+        max_length=300, blank=True, help_text="Address where the machine was manufactured"
     )
     design_credit = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Designer(s) of the machine"
+        max_length=200, blank=True, help_text="Designer(s) of the machine"
     )
     concept_and_design_credit = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Concept and design credit (if different from designer)"
+        help_text="Concept and design credit (if different from designer)",
     )
     art_credit = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Artist(s) who created the artwork"
+        max_length=200, blank=True, help_text="Artist(s) who created the artwork"
     )
     sound_credit = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Sound designer(s) or composer(s)"
+        max_length=200, blank=True, help_text="Sound designer(s) or composer(s)"
     )
     educational_text = models.TextField(
-        blank=True,
-        help_text="Educational description for museum visitors"
+        blank=True, help_text="Educational description for museum visitors"
     )
     illustration_filename = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Filename of the illustration image"
+        max_length=255, blank=True, help_text="Filename of the illustration image"
     )
     sources_notes = models.TextField(
-        blank=True,
-        help_text="Notes about data sources and references"
+        blank=True, help_text="Notes about data sources and references"
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -192,37 +164,32 @@ class MachineInstance(TimeStampedModel):
         max_length=200,
         blank=True,
         verbose_name="Name Override",
-        help_text="Give this machine a name other than the machine's model name"
+        help_text="Give this machine a name other than the machine's model name",
     )
     serial_number = models.CharField(
         max_length=100,
         blank=True,
         verbose_name="Serial Number",
-        help_text="Serial number from manufacturer"
+        help_text="Serial number from manufacturer",
     )
     acquisition_notes = models.TextField(
-        blank=True,
-        verbose_name="Acquisition Notes",
-        help_text="Details about acquisition history"
+        blank=True, verbose_name="Acquisition Notes", help_text="Details about acquisition history"
     )
     ownership_credit = models.CharField(
         max_length=300,
         blank=True,
         verbose_name="Ownership Credit",
-        help_text="Credit for ownership"
+        help_text="Credit for ownership",
     )
     location = models.CharField(
-        max_length=20,
-        choices=LOCATION_CHOICES,
-        blank=True,
-        help_text="Current physical location"
+        max_length=20, choices=LOCATION_CHOICES, blank=True, help_text="Current physical location"
     )
     operational_status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default=STATUS_UNKNOWN,
         verbose_name="Status",
-        help_text="Current working condition"
+        help_text="Current working condition",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

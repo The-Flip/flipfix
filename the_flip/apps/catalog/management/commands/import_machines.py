@@ -1,4 +1,5 @@
 """Import machine models and instances from legacy JSON data."""
+
 import json
 from decimal import Decimal
 from pathlib import Path

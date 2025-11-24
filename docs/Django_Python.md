@@ -1,6 +1,6 @@
 # Django & Python Development Guide
 
-This is a guide for developers and AI assistants creating the project’s Django and Python. 
+This is a guide for developers and AI assistants creating the project’s Django and Python.
 
 It distills standard, boring-best-practice Django and Python habits so the output stays clear, maintainable, and pleasant for both humans and future AI iterations.
 
@@ -30,7 +30,7 @@ The baseline project layout, settings modules, and deployment hooks live in [`sc
 
 ## 5. Models & Data Access
 
-- Use descriptive fields with validators and `help_text`. 
+- Use descriptive fields with validators and `help_text`.
 - Prefer numeric fields (`PositiveSmallIntegerField`) over string+regex combos when the data is numeric.
 - Keep domain behavior close to the data. Custom `QuerySet`/manager methods encapsulate repeated filters (e.g., `TaskQuerySet.problem_reports()`, `MachineInstanceQuerySet.on_floor()`).
 - Wrap multi-model updates in domain methods that enforce invariants (`Task.set_machine_status` updates both the task and the machine, creates a `LogEntry`, and runs inside `transaction.atomic()`).

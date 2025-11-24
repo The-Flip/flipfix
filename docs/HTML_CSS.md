@@ -1,12 +1,12 @@
 # HTML & CSS Development Guide
 
-This is a guide for developers and AI assistants creating HTML and CSS. 
+This is a guide for developers and AI assistants creating HTML and CSS.
 
 Focus on clean, modern, lightweight mobile-first pages that rely only on system fonts and a single cached stylesheet.
 
 ## 1. Design System Reference
 
-When generating the initial stylesheets, use the color tokens, spacing scales, baseline layout rules, and other scaffold details from [`scaffolding/HTML_CSS_Scaffold.md`](scaffolding/HTML_CSS_Scaffold.md). Review that file when regenerating the base stylesheet or updating global design tokens. 
+When generating the initial stylesheets, use the color tokens, spacing scales, baseline layout rules, and other scaffold details from [`scaffolding/HTML_CSS_Scaffold.md`](scaffolding/HTML_CSS_Scaffold.md). Review that file when regenerating the base stylesheet or updating global design tokens.
 
 The rest of this guide focuses on day-to-day markup and component expectations.
 
@@ -40,24 +40,24 @@ The rest of this guide focuses on day-to-day markup and component expectations.
 
 - **File Structure:** Place CSS sources under the project’s `static/css/` directory (or equivalent) with files such as `base.css` (reset + tokens), `layout.css`, `components.css`, and page-specific modules (`dashboard.css`, `reports.css`, etc.). Concatenate/minify them into a single bundle that the main layout template includes.
 - **No Inline Styles:** Templates should only use class names. Add page-specific CSS via additional `<link>` tags or template blocks instead of `style=` attributes.
-- **Naming Methodologies:**  
-  1. **BEM:** `block__element--modifier` (e.g., `record-card__meta--muted`). Clear intent, low collision risk.  
-  2. **Namespaced Modules:** Prefix class names per page/component (e.g., `.machine-detail-header`, `.machine-detail-meta`). Works well when pages are isolated.  
+- **Naming Methodologies:**
+  1. **BEM:** `block__element--modifier` (e.g., `record-card__meta--muted`). Clear intent, low collision risk.
+  2. **Namespaced Modules:** Prefix class names per page/component (e.g., `.machine-detail-header`, `.machine-detail-meta`). Works well when pages are isolated.
   3. **Utility-First Hybrid:** Small reusable classes (`.text-muted`, `.gap-4`, `.flex-between`) combined with semantic wrappers. Enables rapid layout changes with fewer bespoke selectors. Pick one primary strategy and document modifiers/helpers.
 
 ## 6. Performance & Build
 
-- Stick to vanilla CSS compiled once (no external fonts, minimal animations).  
-- Use `@layer base, components, utilities;` to control cascade if desired.  
-- Minify production CSS and ensure it is fingerprinted via Django’s `collectstatic`.  
+- Stick to vanilla CSS compiled once (no external fonts, minimal animations).
+- Use `@layer base, components, utilities;` to control cascade if desired.
+- Minify production CSS and ensure it is fingerprinted via Django’s `collectstatic`.
 - Document a command such as `npm run css:build` if tooling is added later, but current instructions assume plain CSS maintained manually.
 
 ## 7. Deliverables Checklist
 
- - Reference the tokens defined in the scaffold doc.  
- - Write base reset + typography rules.  
- - Implement components with agreed naming method.  
- - Provide responsive behavior for header, main grids, tables, and cards at the specified breakpoints.  
- - Ensure no inline styles remain; all templates rely solely on classes.  
- - Verify focus styles and reduced-motion handling.  
+ - Reference the tokens defined in the scaffold doc.
+ - Write base reset + typography rules.
+ - Implement components with agreed naming method.
+ - Provide responsive behavior for header, main grids, tables, and cards at the specified breakpoints.
+ - Ensure no inline styles remain; all templates rely solely on classes.
+ - Verify focus styles and reduced-motion handling.
  - Keep CSS lean: no unused classes or framework imports.

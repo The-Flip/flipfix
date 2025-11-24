@@ -1,9 +1,10 @@
 """Base Django settings."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
-from decouple import config, Csv
+from decouple import Csv, config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 BASE_DIR = REPO_ROOT

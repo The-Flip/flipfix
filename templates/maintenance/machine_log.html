@@ -10,21 +10,22 @@
       <span>›</span>
       <strong>Logs</strong>
     </div>
-
     <div class="breadcrumb__actions">
-      <a class="btn btn-primary" href="{% url 'log-create-machine' machine.slug %}">+ Add Log Entry</a>
+      <a class="btn btn-primary"
+         href="{% url 'log-create-machine' machine.slug %}">+ Add Log Entry</a>
     </div>
   </nav>
-
   <section>
-    <div id="log-container" data-fetch-url="{% url 'log-entries' machine.slug %}">
+    <div id="log-container"
+         data-fetch-url="{% url 'log-entries' machine.slug %}">
       {% if log_entries %}
         <ul class="list" id="log-list">
           {% for entry in log_entries %}
             {% include "maintenance/partials/log_entry.html" with entry=entry %}
           {% endfor %}
         </ul>
-        <div id="log-pagination" data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
       {% else %}
         <p>No log entries yet.</p>
       {% endif %}
@@ -33,7 +34,6 @@
     <div id="log-sentinel"></div>
   </section>
 {% endblock %}
-
 {% block extra_scripts %}
   <script src="{% static 'core/log_infinite.js' %}" defer></script>
 {% endblock %}

@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Machines · {{ block.super }}{% endblock %}
 {% block content %}
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div style="display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1.5rem">
     <h2 style="margin: 0;">Machines</h2>
     <a href="{% url 'machine-quick-create' %}" class="btn btn-primary">+ Add Machine</a>
   </div>
   {% if machines %}
     <ul class="list machine-list">
       {% for machine in machines %}
-        <li
-          class="machine-card js-clickable-card"
-          data-url="{% url 'maintainer-machine-detail' machine.slug %}"
-          tabindex="0"
-          role="button"
-          aria-label="View {{ machine.display_name }}"
-        >
+        <li class="machine-card js-clickable-card"
+            data-url="{% url 'maintainer-machine-detail' machine.slug %}"
+            tabindex="0"
+            role="button"
+            aria-label="View {{ machine.display_name }}">
           <div class="machine-card__row">
             <div class="machine-card__row-left">
               <span class="machine-card__name">{{ machine.display_name }}</span>
@@ -35,9 +36,7 @@
                     </span>
                   {% endif %}
                 </div>
-                {% if loc and loc != "Floor" %}
-                  <div class="machine-card__location">Location: {{ loc }}</div>
-                {% endif %}
+                {% if loc and loc != "Floor" %}<div class="machine-card__location">Location: {{ loc }}</div>{% endif %}
               </div>
             {% endif %}
           {% endwith %}

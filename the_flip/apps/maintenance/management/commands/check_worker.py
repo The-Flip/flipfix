@@ -1,4 +1,5 @@
 """Check django-q2 worker health and queue status."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -30,9 +31,7 @@ class Command(BaseCommand):
             stopped__gte=timezone.now() - timedelta(hours=24)
         ).count()
         if recent_failures:
-            self.stdout.write(
-                self.style.WARNING(f"⚠ Recent failed tasks (24h): {recent_failures}")
-            )
+            self.stdout.write(self.style.WARNING(f"⚠ Recent failed tasks (24h): {recent_failures}"))
             latest_failure = Failure.objects.order_by("-stopped").first()
             if latest_failure:
                 self.stdout.write(f"Latest failure: {latest_failure.func}")
@@ -66,9 +65,7 @@ class Command(BaseCommand):
         ).count()
         if stuck_videos:
             self.stdout.write(
-                self.style.ERROR(
-                    f"✗ {stuck_videos} video(s) stuck in processing for >15 minutes"
-                )
+                self.style.ERROR(f"✗ {stuck_videos} video(s) stuck in processing for >15 minutes")
             )
         else:
             self.stdout.write(self.style.SUCCESS("✓ No stuck video transcodes"))

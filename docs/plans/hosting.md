@@ -21,7 +21,7 @@ This project is a small internal web application for maintaining the pinball mac
 ### Extremely Low Operational Burden
 
 This project is maintained by museum volunteers:
- - **Volunteers may come and go**: there may potentially be zero knowledge hand-off from previous volunteers.  
+ - **Volunteers may come and go**: there may potentially be zero knowledge hand-off from previous volunteers.
  - **Volunteers may not be not be super technical**: they may have zero experience with devops, Django.
  - **There may be NO volunteers at times**: the museum may have no IT-proficient volunteers at times, so there can't be any ongoing tasks to keep the system running, like patching the operating system or renewing SSL certs.
 
@@ -29,11 +29,11 @@ So it's vital that deploying, running and maintaining the system is obvious, dea
 
 #### Zero Ongoing Maintenance
 Volunteers must not need to manage:
-- OS patching  
-- SSL/TLS certificate renewal  
-- Server restarts  
-- Container orchestration  
-- Cloud resource sprawl  
+- OS patching
+- SSL/TLS certificate renewal
+- Server restarts
+- Container orchestration
+- Cloud resource sprawl
 - Kubernetes, Docker Swarm, CloudFormation, Terraform, etc.
 
 #### Simple Hosting Platform
@@ -41,7 +41,7 @@ This means favoring platforms with:
 - **Simple deployment model**: ideal would be checking into a GitHub branch auto-deploys the project
 - **Simple logs**
 - **Strong documentation and community footprint**
-- **Simple UI**: geared towards hobbyists or programmers, not professional devops  
+- **Simple UI**: geared towards hobbyists or programmers, not professional devops
 - **Single platform**: a single hosting platform must provide all the services we need; we're not going to, say, use one service for Django hosting and AWS S3 for hosting photos and videos.
 
 #### Paas not VPS
@@ -61,10 +61,10 @@ The size of the database will be negligible.  The only part of the db that grows
 The database must be provided by the same platform that hosts the Django app.  Ideally without it being a separate add-on, with the additional billing complexity that entails.
 
 For the production PostgreSQL, we need:
-- Automated backups  
-- Easy restore  
-- Simple configuration  
-- No direct DBA work required  
+- Automated backups
+- Easy restore
+- Simple configuration
+- No direct DBA work required
 
 
 ### Managed File Storage
@@ -125,7 +125,7 @@ Let's keep things as simple and cheap as possible, meaning:
 
 ### Low Latency
 
-Low latency WOULD be nice; who doesn't appreciate a fast system?  
+Low latency WOULD be nice; who doesn't appreciate a fast system?
  - **Chicago-friendly Region**: Most users will be in Chicago, if there's an option to specify a nearby hosting region.  Considering penalizing non-US hosting providers for this reason.
  - **Dedicated CPU**: a dedicated CPU would be nice, rather than a shared one.
 
@@ -155,7 +155,7 @@ Low latency WOULD be nice; who doesn't appreciate a fast system?
 | [Monthly Cost](#modest-predictable-cost) | ~$22-25 ([details below](#costs)) | $5 now, $13 in 1-2 years ([details below](#costs)) | ❌ ~$64/mo for 2 devs ([details below](#costs)) |
 | [# Developers For Free](#multiple-developers-no-per-seat-charges) | Unlimited | 5 included | None (every seat billed) |
 | [Additional Per-Seat Cost](#multiple-developers-no-per-seat-charges) | $0 | $0 for first 5; unspecified beyond | ❗$19/dev/mo |
-| [GitHub auto-deploys](#simple-hosting-platform) | ✅ | ❌ Does not yet support GitHub - showstopper  | ✅  | 
+| [GitHub auto-deploys](#simple-hosting-platform) | ✅ | ❌ Does not yet support GitHub - showstopper  | ✅  |
 | [Automatic Upgrades (certs, OS, etc)](#zero-ongoing-maintenance) | ✅  | ✅ | ✅ |
 | [Fully Managed PaaS](#paas-not-vps) | ✅ | ✅ | ✅ |
 | [DB - Supports Postgres](#managed-postgresql) | ✅ | ✅ | ✅ |
@@ -253,4 +253,3 @@ Notes:
 - Adding a 3rd developer would increase cost to ~$83/month (seat fees alone: $57/month)
 - Storage costs 67% higher than Railway ($0.25/GB vs $0.15/GB)
 - Strong backup/restore capabilities for production (PITR, automated snapshots)
-

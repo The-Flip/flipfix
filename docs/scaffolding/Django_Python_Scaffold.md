@@ -1,6 +1,6 @@
 # Django & Python Scaffold Reference
 
-Use this document when spinning up or re-generating the Django project from scratch. It captures the baseline layout, settings modules, and deployment hooks that the project relies on. 
+Use this document when spinning up or re-generating the Django project from scratch. It captures the baseline layout, settings modules, and deployment hooks that the project relies on.
 
 Day-to-day feature work should reference [`../Django_Python.md`](../Django_Python.md); this file exists so we can recreate the same foundation consistently.
 
