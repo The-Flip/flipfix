@@ -101,6 +101,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Clean Up Git Branches",
+      "type": "shell",
+      "command": "./scripts/cleanup-branches.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      }
     }
   ]
 }

@@ -6,6 +6,9 @@
 
 set -e  # Exit on error
 
+# Change to project root directory (parent of scripts/)
+cd "$(dirname "$0")/.."
+
 echo "=== Resetting migrations ==="
 echo ""
 
