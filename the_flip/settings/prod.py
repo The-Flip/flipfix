@@ -35,14 +35,19 @@ else:
     db_type = "public"
 
 if not active_db_url:
+    print(
+        f"ERROR: No database URL found. DATABASE_URL={bool(database_url)}, DATABASE_PUBLIC_URL={bool(database_public_url)}, RAILWAY_DEPLOYMENT_ID={bool(os.environ.get('RAILWAY_DEPLOYMENT_ID'))}",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 if not active_db_url.startswith("postgres"):
+    print(f"ERROR: Database URL must be PostgreSQL. Got: {active_db_url[:20]}...", file=sys.stderr)
     sys.exit(1)
 
 
 DATABASES = {
-    "default": dj_database_url.parse(
+    "default": dj_database_url.parse(  # type: ignore[dict-item]
         active_db_url,
         conn_max_age=600,
         conn_health_checks=True,

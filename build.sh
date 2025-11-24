@@ -18,10 +18,10 @@ echo "✓ All tests passed"
 
 # Run migrations
 echo "Running migrations..."
-python manage.py migrate
+DJANGO_SETTINGS_MODULE=the_flip.settings.prod python manage.py migrate
 echo "✓ Migrations complete"
 
 # Collect static files
 echo "Collecting static files..."
-python manage.py collectstatic --no-input
+DJANGO_SETTINGS_MODULE=the_flip.settings.prod python manage.py collectstatic --no-input
 echo "✓ Static files collected"
