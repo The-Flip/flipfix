@@ -7,14 +7,20 @@ import logging
 import os
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
-from django.core.files import File
+import requests
+from decouple import config
 from django_q.tasks import async_task
 
 from the_flip.apps.maintenance.models import LogEntryMedia
 
 logger = logging.getLogger(__name__)
+
+# Worker service settings for HTTP transfer
+DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
+TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
 
 def enqueue_transcode(media_id: int):
@@ -23,7 +29,7 @@ def enqueue_transcode(media_id: int):
 
 
 def transcode_video_job(media_id: int):
-    """Transcode video to H.264/AAC MP4, extract poster, save metadata, delete original."""
+    """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     try:
         media = LogEntryMedia.objects.get(id=media_id)
     except LogEntryMedia.DoesNotExist:
@@ -33,6 +39,16 @@ def transcode_video_job(media_id: int):
     if media.media_type != LogEntryMedia.TYPE_VIDEO:
         logger.info("Transcode skipped for non-video media %s", media_id)
         return
+
+    # Validate HTTP transfer configuration
+    if not DJANGO_WEB_SERVICE_URL or not TRANSCODING_UPLOAD_TOKEN:
+        msg = "DJANGO_WEB_SERVICE_URL and TRANSCODING_UPLOAD_TOKEN must be configured"
+        logger.error("Transcode job %s aborted: %s", media_id, msg)
+        media.transcode_status = LogEntryMedia.STATUS_FAILED
+        media.save(update_fields=["transcode_status", "updated_at"])
+        raise ValueError(msg)
+
+    logger.info("Transcoding video %s for HTTP transfer to web service", media_id)
 
     input_path = Path(media.file.path)
     media.transcode_status = LogEntryMedia.STATUS_PROCESSING
@@ -76,9 +92,6 @@ def transcode_video_job(media_id: int):
             ]
         )
 
-        with open(tmp_video.name, "rb") as f:
-            media.transcoded_file.save(f"video_{media.id}.mp4", File(f), save=False)
-
         tmp_poster = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
         _run_ffmpeg(
             [
@@ -94,16 +107,9 @@ def transcode_video_job(media_id: int):
             ]
         )
 
-        with open(tmp_poster.name, "rb") as f:
-            media.poster_file.save(f"poster_{media.id}.jpg", File(f), save=False)
-
-        media.file.delete(save=False)
-
-        media.transcode_status = LogEntryMedia.STATUS_READY
-        media.save(
-            update_fields=["transcoded_file", "poster_file", "transcode_status", "updated_at"]
-        )
-        logger.info("Successfully transcoded video %s", media_id)
+        # Upload transcoded files to web service via HTTP
+        _upload_transcoded_files(media_id, tmp_video.name, tmp_poster.name)
+        logger.info("Successfully uploaded transcoded video %s", media_id)
 
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to transcode video %s: %s", media_id, exc, exc_info=True)
@@ -117,6 +123,96 @@ def transcode_video_job(media_id: int):
                     os.unlink(tmp.name)
                 except OSError:
                     logger.warning("Could not delete temp file %s", tmp.name)
+
+
+def _upload_transcoded_files(
+    media_id: int, video_path: str, poster_path: str, max_retries: int = 3
+):
+    """
+    Upload transcoded video and poster to Django web service via HTTP.
+
+    Implements retry logic with exponential backoff.
+
+    Args:
+        media_id: ID of LogEntryMedia record
+        video_path: Path to transcoded video file
+        poster_path: Path to poster image file
+        max_retries: Maximum number of upload attempts (default: 3)
+
+    Raises:
+        Exception: If upload fails after all retries
+    """
+    if not DJANGO_WEB_SERVICE_URL or not TRANSCODING_UPLOAD_TOKEN:
+        msg = "DJANGO_WEB_SERVICE_URL and TRANSCODING_UPLOAD_TOKEN must be configured"
+        raise ValueError(msg)
+
+    upload_url = f"{DJANGO_WEB_SERVICE_URL.rstrip('/')}/api/transcoding/upload/"
+    headers = {"Authorization": f"Bearer {TRANSCODING_UPLOAD_TOKEN}"}
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(
+                "Uploading transcoded files for media %s to %s (attempt %d/%d)",
+                media_id,
+                upload_url,
+                attempt,
+                max_retries,
+            )
+
+            with open(video_path, "rb") as video_file, open(poster_path, "rb") as poster_file:
+                files = {
+                    "video_file": ("video.mp4", video_file, "video/mp4"),
+                    "poster_file": ("poster.jpg", poster_file, "image/jpeg"),
+                }
+                data = {"log_entry_media_id": str(media_id)}
+
+                response = requests.post(
+                    upload_url, files=files, data=data, headers=headers, timeout=300
+                )
+
+            if response.status_code == 200:
+                result = response.json()
+                logger.info("Upload successful for media %s: %s", media_id, result.get("message"))
+                return
+
+            # Log error and retry if not successful
+            logger.warning(
+                "Upload attempt %d/%d failed for media %s: HTTP %d - %s",
+                attempt,
+                max_retries,
+                media_id,
+                response.status_code,
+                response.text[:200],
+            )
+
+            if attempt < max_retries:
+                # Exponential backoff: 2^attempt seconds (2s, 4s, 8s)
+                wait_time = 2**attempt
+                logger.info("Waiting %d seconds before retry...", wait_time)
+                time.sleep(wait_time)
+            else:
+                # Final attempt failed
+                error_msg = (
+                    f"Upload failed after {max_retries} attempts: HTTP {response.status_code}"
+                )
+                raise Exception(error_msg)  # noqa: TRY002
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(
+                "Upload attempt %d/%d failed for media %s: %s",
+                attempt,
+                max_retries,
+                media_id,
+                str(e),
+            )
+
+            if attempt < max_retries:
+                wait_time = 2**attempt
+                logger.info("Waiting %d seconds before retry...", wait_time)
+                time.sleep(wait_time)
+            else:
+                error_msg = f"Upload failed after {max_retries} attempts: {e}"
+                raise Exception(error_msg) from e  # noqa: TRY002
 
 
 def _probe_duration_seconds(input_path: Path) -> int | None:

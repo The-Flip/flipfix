@@ -113,3 +113,6 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # Rate limiting for public problem reports
 RATE_LIMIT_REPORTS_PER_IP = config("RATE_LIMIT_REPORTS_PER_IP", default=5, cast=int)
 RATE_LIMIT_WINDOW_MINUTES = config("RATE_LIMIT_WINDOW_MINUTES", default=10, cast=int)
+
+# Transcoding upload authentication token (shared between web and worker services)
+TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
