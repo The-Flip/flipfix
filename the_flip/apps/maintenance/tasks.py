@@ -257,4 +257,16 @@ def _probe_duration_seconds(input_path: Path) -> int | None:
 def _run_ffmpeg(cmd: list[str]):
     """Run ffmpeg/ffprobe with basic logging."""
     logger.info("Running command: %s", " ".join(cmd))
-    subprocess.run(cmd, check=True)
+    try:
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        if result.stdout:
+            logger.debug("FFmpeg stdout: %s", result.stdout)
+        if result.stderr:
+            logger.debug("FFmpeg stderr: %s", result.stderr)
+    except subprocess.CalledProcessError as e:
+        logger.error("FFmpeg command failed with exit code %d", e.returncode)
+        if e.stdout:
+            logger.error("FFmpeg stdout: %s", e.stdout)
+        if e.stderr:
+            logger.error("FFmpeg stderr: %s", e.stderr)
+        raise
