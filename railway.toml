@@ -5,7 +5,7 @@ builder = "NIXPACKS"
 buildCommand = "./build.sh"
 
 [deploy]
-startCommand = "python manage.py migrate && gunicorn the_flip.wsgi:application"
+startCommand = "gunicorn the_flip.wsgi:application"
 # Disable Railway health checks (blank path/null per Railway docs)
 healthcheckPath = ""
 healthcheckTimeout = 100

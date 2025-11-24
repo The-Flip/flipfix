@@ -16,9 +16,12 @@ echo "Running tests..."
 DJANGO_SETTINGS_MODULE=the_flip.settings.test python manage.py test
 echo "✓ All tests passed"
 
+# Run migrations
+echo "Running migrations..."
+DJANGO_SETTINGS_MODULE=the_flip.settings.prod python manage.py migrate
+echo "✓ Migrations complete"
+
 # Collect static files
-# Note: Can't run migrations here because Railway doesn't provide DATABASE_URL during build.
-# Migrations will run at startup via railway.toml startCommand.
 echo "Collecting static files..."
 DJANGO_SETTINGS_MODULE=the_flip.settings.prod python manage.py collectstatic --no-input
 echo "✓ Static files collected"
