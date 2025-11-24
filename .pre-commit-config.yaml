@@ -19,7 +19,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.csv$'
       - id: end-of-file-fixer
+        exclude: '\.csv$'
       - id: check-yaml
       - id: check-added-large-files
         args: ['--maxkb=1000']
@@ -28,13 +30,26 @@ repos:
       - id: check-toml
       - id: mixed-line-ending
         args: ['--fix=lf']
+        exclude: '\.csv$'
 
-  # Django-specific checks
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  # Type checking - runs mypy from your venv with all dependencies
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies: [django-stubs==5.1.1]
+        name: mypy
+        entry: .venv/bin/mypy
+        language: system
+        types: [python]
         args: [--config-file=pyproject.toml]
-        # Only run on Python files, skip migrations
         exclude: ^.*/migrations/.*\.py$
+        require_serial: true
+
+  # Django template linting and formatting
+  - repo: local
+    hooks:
+      - id: djlint
+        name: djlint
+        entry: .venv/bin/djlint
+        language: system
+        types: [html]
+        args: [--reformat, --quiet]

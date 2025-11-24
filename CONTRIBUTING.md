@@ -1,26 +1,12 @@
-# Contributing to The Flip
+# Contributing
 
-This guide covers the contribution workflow, code quality standards, and pull request process.
+This guide covers how to contribute to the project and submit a PR.
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Code Quality](#code-quality)
-- [Testing](#testing)
-- [Pull Request Process](#pull-request-process)
-- [Branch Naming Convention](#branch-naming-convention)
-- [Code of Conduct](#code-of-conduct)
 
 ## Getting Started
 
-1. **Complete setup** - Follow [README.md](README.md) to get the app running locally (including development tools)
-2. **Read the docs** - Review [docs/](docs/) to understand technical conventions:
-   - [Project Structure](docs/Project_Structure.md) - Directory layout and app organization
-   - [Data Model](docs/Datamodel.md) - Database schema and relationships
-   - [Django/Python](docs/Django_Python.md) - Coding conventions and patterns
-   - [HTML/CSS](docs/HTML_CSS.md) - Frontend conventions
-   - [Testing](docs/Testing.md) - Testing strategies
+1. **Developer setup** - Follow [README.md](README.md) to get the app running locally (including development tools)
+2. **Read the docs** - Review [docs/README.md](docs/README.md) to understand technical conventions
 
 ## Development Workflow
 
@@ -34,28 +20,25 @@ This guide covers the contribution workflow, code quality standards, and pull re
 
 ## Code Quality
 
-### Code Formatting and Linting
-
-We use [Ruff](https://github.com/astral-sh/ruff) for both linting and formatting. Ruff is fast and combines the functionality of multiple tools (black, flake8, isort, etc.).
+### Code Quality Checks
 
 **Before committing, run:**
 
 ```bash
 # Check for linting issues
-make lint
-# Or: ruff check .
+make lint # Or .venv/bin/ruff check .
 
 # Auto-format code
-make format
-# Or: ruff format .
-```
+make format # Or .venv/bin/ruff format .
 
-### Type Checking
+# Type checking
+make typecheck # Or .venv/bin/mypy the_flip
 
-We use mypy for optional type checking (currently permissive):
+# Template linting
+make lint-templates # Or .venv/bin/djlint templates/ --check
 
-```bash
-mypy the_flip
+# Run all quality checks at once
+make quality
 ```
 
 ### Pre-commit Hooks
@@ -66,14 +49,6 @@ To manually run all pre-commit checks:
 ```bash
 pre-commit run --all-files
 ```
-
-### Configuration
-
-Tool configurations are in `pyproject.toml`:
-- Ruff linting rules
-- Ruff formatting options
-- Mypy type checking settings
-- Coverage reporting settings
 
 ## Testing
 
@@ -87,31 +62,19 @@ make test
 make coverage
 ```
 
-**For detailed testing guidelines, see [docs/Testing.md](docs/Testing.md)**, which covers:
-- Testing conventions and structure
-- How to write effective tests
-- Coverage requirements
-- Test runner configuration
+**For detailed testing guidelines, see [docs/Testing.md](docs/Testing.md)**
 
 ## Pull Request Process
 
-1. **Ensure all tests pass** locally before pushing
-2. **Update documentation** if you've changed APIs or added features
-3. **Push your branch** to GitHub
-4. **Create a Pull Request** against the `main` branch
-5. **Fill out the PR template** with:
-   - Clear description of what changed and why
-   - Testing steps performed
-   - Any related issues
-6. **Address review feedback** by pushing new commits to your branch
-7. **Wait for approval** - maintainers will review and may request changes
-8. **Merge** - Once approved, your PR will be merged
+- **Push your branch** to GitHub
+- **Create a Pull Request** against the `main` branch
+- **Fill out the [PR template](.github/pull_request_template.md)**
+- **Test in hosted env**.  When you create a PR, a temporary test environment is automatically created with a unique URL to click-test your changes before merging. For details, see [docs/Deployment.md](docs/Deployment.md).
+- **Address review feedback** by pushing new commits to your branch
+- **Wait for approval** - maintainers will review and may request changes
+- **Merge** - Once approved, your PR will be merged
 
-### PR Environment Testing
 
-When you create a PR, a temporary test environment is automatically created with a unique URL to click-test your changes before merging.
-
-**For deployment details** (PR environments, production deployment, platform info), see [docs/Deployment.md](docs/Deployment.md).
 
 ## Branch Naming Convention
 
@@ -157,13 +120,3 @@ fixed stuff
 wip
 updates
 ```
-
-## Code of Conduct
-
-This project follows the Contributor Covenant Code of Conduct. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
-
-## Questions or Issues?
-
-- Review the [documentation](docs/README.md) first
-- Check existing [GitHub Issues](https://github.com/deanmoses/the_flip/issues)
-- Create a new issue if you're stuck or found a bug

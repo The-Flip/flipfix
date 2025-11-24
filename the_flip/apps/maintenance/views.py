@@ -6,7 +6,6 @@ from io import BytesIO
 from pathlib import Path
 
 import qrcode
-from PIL import Image
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -17,17 +16,23 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
-from django.views.generic import ListView, TemplateView, FormView, View, DetailView, UpdateView
+from django.views.generic import DetailView, FormView, ListView, TemplateView, View
+from PIL import Image
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.maintenance.forms import LogEntryQuickForm, MachineReportSearchForm, ProblemReportForm
+from the_flip.apps.maintenance.forms import (
+    LogEntryQuickForm,
+    MachineReportSearchForm,
+    ProblemReportForm,
+)
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 from the_flip.apps.maintenance.tasks import enqueue_transcode
 
 
 class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
+
     template_name = "maintenance/problem_report_list.html"
     context_object_name = "reports"
     queryset = ProblemReport.objects.select_related("machine").order_by("-status", "-created_at")
@@ -38,6 +43,7 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Paginated list of all problem reports for a specific machine."""
+
     template_name = "maintenance/machine_problem_report_list.html"
     context_object_name = "reports"
     paginate_by = 10
@@ -50,9 +56,11 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = ProblemReport.objects.filter(machine=self.machine).select_related(
-            "reported_by_user"
-        ).order_by("-status", "-created_at")
+        queryset = (
+            ProblemReport.objects.filter(machine=self.machine)
+            .select_related("reported_by_user")
+            .order_by("-status", "-created_at")
+        )
 
         # Search by description text if provided
         search_query = self.request.GET.get("q", "").strip()
@@ -87,10 +95,7 @@ class ProblemReportCreateView(FormView):
         # Check rate limiting
         ip_address = request.META.get("REMOTE_ADDR")
         if ip_address and not self._check_rate_limit(ip_address):
-            messages.error(
-                request,
-                "Too many reports submitted recently. Please try again later."
-            )
+            messages.error(request, "Too many reports submitted recently. Please try again later.")
             return redirect(self.machine.get_absolute_url())
 
         return super().post(request, *args, **kwargs)
@@ -99,8 +104,7 @@ class ProblemReportCreateView(FormView):
         """Check if IP address has exceeded rate limit. Returns True if OK to proceed."""
         time_window = timezone.now() - timedelta(minutes=settings.RATE_LIMIT_WINDOW_MINUTES)
         recent_reports = ProblemReport.objects.filter(
-            ip_address=ip_address,
-            created_at__gte=time_window
+            ip_address=ip_address, created_at__gte=time_window
         ).count()
         return recent_reports < settings.RATE_LIMIT_REPORTS_PER_IP
 
@@ -108,7 +112,9 @@ class ProblemReportCreateView(FormView):
         report = form.save(commit=False)
         report.machine = self.machine
         report.ip_address = self.request.META.get("REMOTE_ADDR")
-        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]  # Truncate to field max length
+        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[
+            :200
+        ]  # Truncate to field max length
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         report.save()
@@ -118,6 +124,7 @@ class ProblemReportCreateView(FormView):
 
 class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
     """Detail view for a problem report with status toggle capability. Maintainer-only access."""
+
     template_name = "maintenance/problem_report_detail.html"
 
     def test_func(self):
@@ -125,15 +132,13 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def get(self, request, *args, **kwargs):
         report = get_object_or_404(
-            ProblemReport.objects.select_related("machine", "reported_by_user"),
-            pk=kwargs["pk"]
+            ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
         )
         return self.render_response(request, report)
 
     def post(self, request, *args, **kwargs):
         report = get_object_or_404(
-            ProblemReport.objects.select_related("machine", "reported_by_user"),
-            pk=kwargs["pk"]
+            ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
         )
         # Toggle status
         if report.status == ProblemReport.STATUS_OPEN:
@@ -149,6 +154,7 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def render_response(self, request, report):
         from django.shortcuts import render
+
         context = {
             "report": report,
             "machine": report.machine,
@@ -213,7 +219,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def form_valid(self, form):
         submitter_name = form.cleaned_data["submitter_name"].strip()
         description = form.cleaned_data["text"].strip()
-        media_file = form.cleaned_data["media"]
+        media_file = form.cleaned_data["media_file"]
         log_entry = LogEntry.objects.create(machine=self.machine, text=description)
 
         maintainer = self.match_maintainer(submitter_name)
@@ -242,8 +248,8 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             self.request,
             format_html(
                 'Log entry added. Edit it <a href="{}">here</a>.',
-                reverse('log-detail', kwargs={'pk': log_entry.pk})
-            )
+                reverse("log-detail", kwargs={"pk": log_entry.pk}),
+            ),
         )
         return redirect("log-machine", slug=self.machine.slug)
 
@@ -290,6 +296,7 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
 
 class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Global list of all log entries across all machines. Maintainer-only access."""
+
     template_name = "maintenance/log_list.html"
 
     def test_func(self):
@@ -316,6 +323,7 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
 class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
     """AJAX endpoint for infinite scrolling in the global log list."""
+
     template_name = "maintenance/partials/log_list_entry.html"
 
     def test_func(self):
@@ -331,10 +339,7 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(
-            render_to_string(
-                self.template_name,
-                {"entry": entry, "machine": entry.machine}
-            )
+            render_to_string(self.template_name, {"entry": entry, "machine": entry.machine})
             for entry in page_obj.object_list
         )
         return JsonResponse(
@@ -372,7 +377,12 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                 upload = request.FILES["file"]
                 content_type = (getattr(upload, "content_type", "") or "").lower()
                 ext = Path(getattr(upload, "name", "")).suffix.lower()
-                is_video = content_type.startswith("video/") or ext in {".mp4", ".mov", ".m4v", ".hevc"}
+                is_video = content_type.startswith("video/") or ext in {
+                    ".mp4",
+                    ".mov",
+                    ".m4v",
+                    ".hevc",
+                }
                 media = LogEntryMedia.objects.create(
                     log_entry=self.object,
                     media_type=LogEntryMedia.TYPE_VIDEO if is_video else LogEntryMedia.TYPE_PHOTO,
@@ -381,14 +391,18 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                 )
                 if is_video:
                     enqueue_transcode(media.id)
-                return JsonResponse({
-                    "success": True,
-                    "media_id": media.id,
-                    "media_url": media.transcoded_file.url if media.transcoded_file else media.file.url,
-                    "media_type": media.media_type,
-                    "transcode_status": media.transcode_status,
-                    "poster_url": media.poster_file.url if media.poster_file else None,
-                })
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "media_id": media.id,
+                        "media_url": media.transcoded_file.url
+                        if media.transcoded_file
+                        else media.file.url,
+                        "media_type": media.media_type,
+                        "transcode_status": media.transcode_status,
+                        "poster_url": media.poster_file.url if media.poster_file else None,
+                    }
+                )
             return JsonResponse({"success": False, "error": "No file provided"}, status=400)
 
         elif action == "delete_media":
@@ -410,6 +424,7 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
 class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     """Generate and display a printable QR code for a machine's public info page."""
+
     model = MachineInstance
     template_name = "maintenance/machine_qr.html"
     context_object_name = "machine"
@@ -442,7 +457,9 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
         # Add logo to center of QR code
-        logo_path = Path(__file__).resolve().parent.parent.parent / "static/core/images/the_flip_logo.png"
+        logo_path = (
+            Path(__file__).resolve().parent.parent.parent / "static/core/images/the_flip_logo.png"
+        )
         if logo_path.exists():
             logo = Image.open(logo_path)
 
@@ -455,12 +472,17 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
             # Add white background/padding to logo for better contrast
             padding = 10
-            logo_with_bg = Image.new("RGB", (logo.size[0] + padding * 2, logo.size[1] + padding * 2), "white")
+            logo_with_bg = Image.new(
+                "RGB", (logo.size[0] + padding * 2, logo.size[1] + padding * 2), "white"
+            )
             logo_pos = (padding, padding)
             logo_with_bg.paste(logo, logo_pos, logo if logo.mode == "RGBA" else None)
 
             # Calculate center position and paste logo
-            logo_position = ((qr_width - logo_with_bg.size[0]) // 2, (qr_height - logo_with_bg.size[1]) // 2)
+            logo_position = (
+                (qr_width - logo_with_bg.size[0]) // 2,
+                (qr_height - logo_with_bg.size[1]) // 2,
+            )
             qr_img.paste(logo_with_bg, logo_position)
 
         # Convert to base64 for inline display

@@ -10,28 +10,22 @@
       <span>›</span>
       <strong>Problem Reports</strong>
     </div>
-
     <div class="breadcrumb__actions">
-      <a class="btn btn-primary" href="{% url 'problem-report-create' machine.slug %}">Submit Problem Report</a>
+      <a class="btn btn-primary"
+         href="{% url 'problem-report-create' machine.slug %}">Submit Problem Report</a>
     </div>
   </nav>
-
   <form method="get" action="">
-    <div class="form-field">
-      {{ search_form.q }}
-    </div>
+    <div class="form-field">{{ search_form.q }}</div>
   </form>
-
   {% if reports %}
     <ul class="list machine-list">
       {% for report in reports %}
-        <li
-          class="machine-card js-clickable-card"
-          data-url="{% url 'problem-report-detail' report.pk %}"
-          tabindex="0"
-          role="button"
-          aria-label="View problem report"
-        >
+        <li class="machine-card js-clickable-card"
+            data-url="{% url 'problem-report-detail' report.pk %}"
+            tabindex="0"
+            role="button"
+            aria-label="View problem report">
           <div class="machine-card__row">
             <div class="machine-card__row-left">
               {% if report.problem_type != report.PROBLEM_OTHER %}
@@ -41,29 +35,26 @@
             </div>
             <div class="machine-card__meta-group">
               <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
-              <span class="badge badge-status badge-status--{{ report.status }}">
-                {{ report.get_status_display }}
-              </span>
+              <span class="badge badge-status badge-status--{{ report.status }}">{{ report.get_status_display }}</span>
             </div>
           </div>
         </li>
       {% endfor %}
     </ul>
-
     {% if page_obj.has_other_pages %}
       <div class="pagination">
         {% if page_obj.has_previous %}
-          <a href="?page=1{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}" class="btn">First</a>
-          <a href="?page={{ page_obj.previous_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}" class="btn">Previous</a>
+          <a href="?page=1{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
+             class="btn">First</a>
+          <a href="?page={{ page_obj.previous_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
+             class="btn">Previous</a>
         {% endif %}
-
-        <span class="pagination-info">
-          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
+        <span class="pagination-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}" class="btn">Next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}" class="btn">Last</a>
+          <a href="?page={{ page_obj.next_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
+             class="btn">Next</a>
+          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
+             class="btn">Last</a>
         {% endif %}
       </div>
     {% endif %}

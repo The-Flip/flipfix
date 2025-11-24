@@ -5,7 +5,11 @@
   {% if machines %}
     <ul class="list machine-list">
       {% for machine in machines %}
-        <li class="machine-card js-clickable-card" data-url="{% url 'public-machine-detail' machine.slug %}" tabindex="0" role="button" aria-label="View {{ machine.display_name }}">
+        <li class="machine-card js-clickable-card"
+            data-url="{% url 'public-machine-detail' machine.slug %}"
+            tabindex="0"
+            role="button"
+            aria-label="View {{ machine.display_name }}">
           <div class="machine-card__row">
             <div class="machine-card__row-left">
               <span class="machine-card__name">{{ machine.display_name }}</span>

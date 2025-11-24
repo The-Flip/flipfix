@@ -1,7 +1,8 @@
 """Tests for maintenance app views and functionality."""
-from datetime import timedelta
+
 import shutil
 import subprocess
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -332,7 +333,9 @@ class MachineProblemReportListViewTests(TestCase):
             is_staff=True,
         )
 
-        self.machine_list_url = reverse("machine-problem-reports", kwargs={"slug": self.machine.slug})
+        self.machine_list_url = reverse(
+            "machine-problem-reports", kwargs={"slug": self.machine.slug}
+        )
 
     def test_machine_list_view_contains_link_to_detail(self):
         """Machine-specific list view should contain links to detail pages."""
@@ -417,11 +420,11 @@ class ProblemReportCreateViewTests(TestCase):
             "problem_type": ProblemReport.PROBLEM_NO_CREDITS,
             "description": "Credits not working",
         }
-        response = self.client.post(
+        self.client.post(
             self.url,
             data,
             REMOTE_ADDR="192.168.1.100",
-            HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)"
+            HTTP_USER_AGENT="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
         )
 
         report = ProblemReport.objects.first()

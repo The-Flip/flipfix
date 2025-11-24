@@ -10,16 +10,14 @@
       <span>›</span>
       <strong>Edit</strong>
     </div>
-
     <div class="breadcrumb__actions">
-      <a class="btn btn-secondary" href="{% url 'machine-model-edit' object.model.slug %}">Edit Model Info</a>
+      <a class="btn btn-secondary"
+         href="{% url 'machine-model-edit' object.model.slug %}">Edit Model Info</a>
     </div>
   </nav>
-
   <form method="post" class="form-container">
     {% csrf_token %}
     {{ form.non_field_errors }}
-
     {% for fieldset_title, field_names in form.fieldsets %}
       <fieldset class="form-section">
         <legend>{{ fieldset_title }}</legend>
@@ -29,15 +27,12 @@
               {{ field.label_tag }}
               {{ field }}
               {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-              {% for error in field.errors %}
-                <div class="field-error">{{ error }}</div>
-              {% endfor %}
+              {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
           {% endwith %}
         {% endfor %}
       </fieldset>
     {% endfor %}
-
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save Changes</button>
     </div>

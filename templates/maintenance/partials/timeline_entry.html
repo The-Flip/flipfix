@@ -1,70 +1,68 @@
 {% load core_extras %}
 {% if entry.entry_type == "log" %}
-<li
-  class="machine-card js-clickable-card"
-  data-url="{% url 'log-detail' entry.pk %}"
-  tabindex="0"
-  role="button"
-  aria-label="View log entry"
->
-  <div class="machine-card__row">
-    <div class="machine-card__row-left">
-      <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
-    </div>
-    <div class="log-entry-meta">
-      {% if entry.maintainers.all %}
-        <span>by {{ entry.maintainers.all|join:", " }}</span>
-      {% elif entry.maintainer_names %}
-        <span>by {{ entry.maintainer_names }}</span>
-      {% endif %}
-    </div>
-  </div>
-  <div class="machine-card__problem">
-    {{ entry.text }}
-  </div>
-  {% if entry.media.all %}
+  <li class="machine-card js-clickable-card"
+      data-url="{% url 'log-detail' entry.pk %}"
+      tabindex="0"
+      role="button"
+      aria-label="View log entry">
     <div class="machine-card__row">
       <div class="machine-card__row-left">
-        {% for media in entry.media.all %}
-          {% if media.media_type == 'video' %}
-            {% if media.transcode_status == 'ready' and media.poster_file %}
-              <img src="{{ media.poster_file.url }}" alt="Video poster" width="200" style="margin-right: 0.5rem;">
-            {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-              <span class="media-status">Video processing…</span>
-            {% else %}
-              <span class="media-status error">Video failed</span>
-            {% endif %}
-          {% else %}
-            <img src="{{ media.file.url }}" alt="Photo" width="200" style="margin-right: 0.5rem;">
-          {% endif %}
-        {% endfor %}
+        <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
+      </div>
+      <div class="log-entry-meta">
+        {% if entry.maintainers.all %}
+          <span>by {{ entry.maintainers.all|join:", " }}</span>
+        {% elif entry.maintainer_names %}
+          <span>by {{ entry.maintainer_names }}</span>
+        {% endif %}
       </div>
     </div>
-  {% endif %}
-</li>
-{% elif entry.entry_type == "problem_report" %}
-<li
-  class="machine-card js-clickable-card"
-  data-url="{% url 'problem-report-detail' entry.pk %}"
-  tabindex="0"
-  role="button"
-  aria-label="View problem report"
->
-  <div class="machine-card__row">
-    <div class="machine-card__row-left">
-      <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
-    </div>
-    <div class="log-entry-meta">
-      <span class="badge badge-status badge-status--{{ entry.status }}">
-        {{ entry.get_status_display }}
-      </span>
-    </div>
-  </div>
-  <div class="machine-card__problem">
-    {% if entry.problem_type != entry.PROBLEM_OTHER %}
-      <span class="machine-card__problem-label">{{ entry.get_problem_type_display }}:</span>
+    <div class="machine-card__problem">{{ entry.text }}</div>
+    {% if entry.media.all %}
+      <div class="machine-card__row">
+        <div class="machine-card__row-left">
+          {% for media in entry.media.all %}
+            {% if media.media_type == 'video' %}
+              {% if media.transcode_status == 'ready' and media.poster_file %}
+                <img src="{{ media.poster_file.url }}"
+                     alt="Video poster"
+                     width="200"
+                     style="margin-right: 0.5rem">
+              {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
+                <span class="media-status">Video processing…</span>
+              {% else %}
+                <span class="media-status error">Video failed</span>
+              {% endif %}
+            {% else %}
+              <img src="{{ media.file.url }}"
+                   alt="Photo"
+                   width="200"
+                   style="margin-right: 0.5rem">
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
     {% endif %}
-    {{ entry.description|default:"Problem reported (no description)" }}
-  </div>
-</li>
+  </li>
+{% elif entry.entry_type == "problem_report" %}
+  <li class="machine-card js-clickable-card"
+      data-url="{% url 'problem-report-detail' entry.pk %}"
+      tabindex="0"
+      role="button"
+      aria-label="View problem report">
+    <div class="machine-card__row">
+      <div class="machine-card__row-left">
+        <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
+      </div>
+      <div class="log-entry-meta">
+        <span class="badge badge-status badge-status--{{ entry.status }}">{{ entry.get_status_display }}</span>
+      </div>
+    </div>
+    <div class="machine-card__problem">
+      {% if entry.problem_type != entry.PROBLEM_OTHER %}
+        <span class="machine-card__problem-label">{{ entry.get_problem_type_display }}:</span>
+      {% endif %}
+      {{ entry.description|default:"Problem reported (no description)" }}
+    </div>
+  </li>
 {% endif %}

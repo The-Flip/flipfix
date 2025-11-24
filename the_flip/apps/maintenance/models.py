@@ -1,4 +1,5 @@
 """Maintenance domain models."""
+
 from __future__ import annotations
 
 from uuid import uuid4
@@ -118,7 +119,7 @@ class LogEntry(TimeStampedModel):
             raise ValidationError("Provide at least one maintainer or maintainer name.")
 
 
-def log_media_upload_to(instance: "LogEntryMedia", filename: str) -> str:
+def log_media_upload_to(instance: LogEntryMedia, filename: str) -> str:
     return f"log_entries/{instance.log_entry_id}/{uuid4()}-{filename}"
 
 
@@ -174,5 +175,7 @@ class LogEntryMedia(TimeStampedModel):
             except Exception:  # pragma: no cover - fallback if Pillow fails unexpectedly
                 import logging
 
-                logging.getLogger(__name__).warning("Could not resize uploaded photo %s", self.file, exc_info=True)
+                logging.getLogger(__name__).warning(
+                    "Could not resize uploaded photo %s", self.file, exc_info=True
+                )
         super().save(*args, **kwargs)

@@ -31,8 +31,18 @@ def month_name(month_number):
     if not month_number:
         return ""
     month_names = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
     ]
     try:
         return month_names[int(month_number) - 1]

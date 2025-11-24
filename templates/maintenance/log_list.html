@@ -3,7 +3,6 @@
 {% block title %}Logs · {{ block.super }}{% endblock %}
 {% block content %}
   <h2>Recent Logs</h2>
-
   <section>
     <div id="log-container" data-fetch-url="{% url 'log-list-entries' %}">
       {% if log_entries %}
@@ -12,7 +11,8 @@
             {% include "maintenance/partials/log_list_entry.html" with entry=entry machine=entry.machine %}
           {% endfor %}
         </ul>
-        <div id="log-pagination" data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
       {% else %}
         <p>No log entries yet.</p>
       {% endif %}
@@ -21,7 +21,6 @@
     <div id="log-sentinel"></div>
   </section>
 {% endblock %}
-
 {% block extra_scripts %}
   <script src="{% static 'core/log_infinite.js' %}" defer></script>
 {% endblock %}

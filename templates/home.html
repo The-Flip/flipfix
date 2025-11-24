@@ -3,9 +3,10 @@
 {% block content %}
   <div class="card">
     <p>This is a prototype of The Flip's pinball machine maintenance system.</p>
-    <p><strong>⚠️ Any data you enter may get deleted!</strong> ☠️  This is not a production system yet.</p>
+    <p>
+      <strong>⚠️ Any data you enter may get deleted!</strong> ☠️  This is not a production system yet.
+    </p>
   </div>
-
   <div class="card">
     <h3>Public Access</h3>
     <p>Anyone can browse the collection of machines and submit problem reports:</p>
@@ -14,33 +15,36 @@
     </p>
     The rest is password-protected.
   </div>
-
   <div class="card">
     <h3>Existing Accounts</h3>
-    <p>These are all the accounts in the system.  If your name is here, log in!  Passwords are all <code>test123</code>.</p>
+    <p>
+      These are all the accounts in the system.  If your name is here, log in!  Passwords are all <code>test123</code>.
+    </p>
     {% if maintainers %}
       <p>
         {% for maintainer in maintainers %}
-          <code>{{ maintainer.display_name }}</code>{% if not forloop.last %}, {% endif %}
+          <code>{{ maintainer.display_name }}</code>
+          {% if not forloop.last %},{% endif %}
         {% endfor %}
       </p>
     {% else %}
       <p>No maintainers found.</p>
     {% endif %}
   </div>
-
   <div class="card">
     <h3>Superusers</h3>
-        <p>Sysadmins, like <code>william</code>, can access Django Admin. Add new users here (but they might get deleted).</p>
-        <a href="/admin/" class="btn btn-primary">Django Admin</a>
+    <p>
+      Sysadmins, like <code>william</code>, can access Django Admin. Add new users here (but they might get deleted).
+    </p>
+    <a href="/admin/" class="btn btn-primary">Django Admin</a>
   </div>
-
   <div class="card">
     <h3>Bugs &amp; Feature Requests</h3>
     <p>Found a bug?  Have an idea?</p>
-    <a href="https://github.com/deanmoses/the_flip/issues" class="btn btn-primary">Create a GitHub Issue</a> (requires GitHub account) 
+    <a href="https://github.com/deanmoses/the_flip/issues"
+       class="btn btn-primary">Create a GitHub Issue</a> (requires GitHub account)
     or
-    <a href="https://discord.com/channels/1408179768033149132/1408180474853064798" class="btn btn-primary">Post to The Flip Discord</a>
+    <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
+       class="btn btn-primary">Post to The Flip Discord</a>
   </div>
-
 {% endblock %}

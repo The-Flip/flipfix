@@ -1,16 +1,23 @@
 {% load static core_extras %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}The Flip{% endblock %}</title>
-    <link rel="icon" href="{% static 'core/favicon.ico' %}" sizes="any" type="image/x-icon">
+    <title>
+      {% block title %}The Flip{% endblock %}
+    </title>
+    <link rel="icon"
+          href="{% static 'core/favicon.ico' %}"
+          sizes="any"
+          type="image/x-icon">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
     <header>
-      <h1><a href="{% url 'home' %}">The Flip</a></h1>
+      <h1>
+        <a href="{% url 'home' %}">The Flip</a>
+      </h1>
       <nav>
         <a href="{% url 'maintainer-machine-list' %}">Machines</a>
         <a href="{% url 'problem-report-list' %}">Problem Reports</a>
@@ -29,17 +36,14 @@
     <main>
       {% if messages %}
         <div class="messages" role="alert" aria-live="polite">
-          {% for message in messages %}
-            <div class="message message--{{ message.tags }}">
-              {{ message }}
-            </div>
-          {% endfor %}
+          {% for message in messages %}<div class="message message--{{ message.tags }}">{{ message }}</div>{% endfor %}
         </div>
       {% endif %}
       {% block content %}{% endblock %}
     </main>
     <script src="{% static 'core/clickable_cards.js' %}" defer></script>
     <script src="{% static 'core/timezone.js' %}" defer></script>
-    {% block extra_scripts %}{% endblock %}
+    {% block extra_scripts %}
+    {% endblock %}
   </body>
 </html>

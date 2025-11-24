@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load core_extras %}
 {% block title %}QR Code: {{ machine.display_name }} · {{ block.super }}{% endblock %}
-
 {% block content %}
   <nav class="breadcrumb breadcrumb--with-actions no-print">
     <div class="breadcrumb__trail">
@@ -11,134 +10,128 @@
       <span>›</span>
       <strong>QR Code</strong>
     </div>
-
     <div class="breadcrumb__actions">
       <button class="btn btn-primary" onclick="window.print()">Print QR Code</button>
     </div>
   </nav>
-
   <div class="card no-print qr-instructions">
     <p>Attach this QR code to the machine so visitors can scan.</p>
   </div>
-
   <div class="card qr-printable">
     <h2>More Info / Report Problem</h2>
-    <img
-      src="data:image/png;base64,{{ qr_code_data }}"
-      alt="QR Code for {{ machine.display_name }}"
-      class="qr-image"
-    >
+    <img src="data:image/png;base64,{{ qr_code_data }}"
+         alt="QR Code for {{ machine.display_name }}"
+         class="qr-image">
     <p class="qr-machine-name">{{ machine.display_name }}</p>
   </div>
-
   <div class="card no-print qr-url">
     <strong>URL:</strong> <code><a href="{{ public_url }}">{{ public_url }}</a></code>
   </div>
 {% endblock %}
-
 {% block extra_scripts %}
-<style>
-  /* Screen-only styling */
-  .qr-instructions {
-    text-align: center;
-    color: var(--color-text-muted);
-  }
+  <style>
+      /* Screen-only styling */
+      .qr-instructions {
+          text-align: center;
+          color: var(--color-text-muted);
+      }
 
-  .qr-instructions p {
-    margin: 0;
-  }
+      .qr-instructions p {
+          margin: 0;
+      }
 
-  .qr-printable {
-    text-align: center;
-  }
+      .qr-printable {
+          text-align: center;
+      }
 
-  .qr-printable h2 {
-    font-size: 1.5rem;
-    margin: 0 0 var(--space-6) 0;
-  }
+      .qr-printable h2 {
+          font-size: 1.5rem;
+          margin: 0 0 var(--space-6) 0;
+      }
 
-  .qr-image {
-    display: block;
-    width: 300px;
-    height: 300px;
-    margin: 0 auto;
-  }
+      .qr-image {
+          display: block;
+          width: 300px;
+          height: 300px;
+          margin: 0 auto;
+      }
 
-  .qr-machine-name {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: var(--space-6) 0 0 0;
-  }
+      .qr-machine-name {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin: var(--space-6) 0 0 0;
+      }
 
-  .qr-url {
-    text-align: center;
-  }
+      .qr-url {
+          text-align: center;
+      }
 
-  .qr-url p {
-    margin: 0;
-    font-size: 0.95rem;
-  }
+      .qr-url p {
+          margin: 0;
+          font-size: 0.95rem;
+      }
 
-  .qr-url code {
-    padding: var(--space-1) var(--space-2);
-    background-color: var(--color-surface-muted);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-base);
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    font-size: 0.9rem;
-    word-break: break-all;
-  }
+      .qr-url code {
+          padding: var(--space-1) var(--space-2);
+          background-color: var(--color-surface-muted);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-base);
+          font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+          font-size: 0.9rem;
+          word-break: break-all;
+      }
 
-  /* Print styles */
-  @media print {
-    header,
-    .no-print {
-      display: none !important;
-    }
+      /* Print styles */
+      @media print {
 
-    body {
-      margin: 0;
-      padding: 0;
-    }
+          header,
+          .no-print {
+              display: none !important;
+          }
 
-    main {
-      max-width: 100%;
-      padding: 2rem;
-    }
+          body {
+              margin: 0;
+              padding: 0;
+          }
 
-    .qr-printable {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      margin: 0;
-      padding: 2rem;
-      background: white;
-      border: none;
-      box-shadow: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
+          main {
+              max-width: 100%;
+              padding: 2rem;
+          }
 
-    .qr-printable h2 {
-      font-size: 1.5rem;
-      margin-bottom: 2rem;
-      color: black;
-    }
+          .qr-printable {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100vh;
+              margin: 0;
+              padding: 2rem;
+              background: white;
+              border: none;
+              box-shadow: none;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+          }
 
-    .qr-image {
-      width: 400px;
-      height: 400px;
-    }
+          .qr-printable h2 {
+              font-size: 1.5rem;
+              margin-bottom: 2rem;
+              color: black;
+          }
 
-    .qr-machine-name {
-      font-size: 1.75rem;
-      color: black;
-      margin-top: 2rem;
-    }
-  }
-</style>
+          .qr-image {
+              width: 400px;
+              height: 400px;
+          }
+
+          .qr-machine-name {
+              font-size: 1.75rem;
+              color: black;
+              margin-top: 2rem;
+          }
+      }
+  </style>
 {% endblock %}

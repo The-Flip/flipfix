@@ -12,7 +12,6 @@
       <span>›</span>
       <strong>{{ report.created_at|smart_date }} <span class="badge badge-status badge-status--{{ report.status }}">{{ report.get_status_display }}</span></strong>
     </div>
-
     <div class="breadcrumb__actions">
       {% if report.status == report.STATUS_OPEN %}
         <form method="post" style="display: inline;">
@@ -27,36 +26,39 @@
       {% endif %}
     </div>
   </nav>
-
   <section class="card">
-    {% if report.problem_type != report.PROBLEM_OTHER %}
-      <p>{{ report.get_problem_type_display }}</p>
-    {% endif %}
-    {% if report.description %}
-      <p>{{ report.description }}</p>
-    {% endif %}
+    {% if report.problem_type != report.PROBLEM_OTHER %}<p>{{ report.get_problem_type_display }}</p>{% endif %}
+    {% if report.description %}<p>{{ report.description }}</p>{% endif %}
   </section>
-
   {% if report.reported_by_user or report.reported_by_name or report.reported_by_contact or report.device_info or report.ip_address %}
     <section class="card">
       <h3>Reported By</h3>
       {% if report.reported_by_user %}
-        <p><strong>User:</strong> {{ report.reported_by_user.get_full_name|default:report.reported_by_user.username }}</p>
+        <p>
+          <strong>User:</strong> {{ report.reported_by_user.get_full_name|default:report.reported_by_user.username }}
+        </p>
       {% else %}
         {% if report.reported_by_name %}
-          <p><strong>Name:</strong> {{ report.reported_by_name }}</p>
+          <p>
+            <strong>Name:</strong> {{ report.reported_by_name }}
+          </p>
         {% endif %}
         {% if report.reported_by_contact %}
-          <p><strong>Contact:</strong> {{ report.reported_by_contact }}</p>
+          <p>
+            <strong>Contact:</strong> {{ report.reported_by_contact }}
+          </p>
         {% endif %}
         {% if report.device_info %}
-          <p><strong>Device:</strong> {{ report.device_info }}</p>
+          <p>
+            <strong>Device:</strong> {{ report.device_info }}
+          </p>
         {% endif %}
         {% if report.ip_address %}
-          <p><strong>IP Address:</strong> {{ report.ip_address }}</p>
+          <p>
+            <strong>IP Address:</strong> {{ report.ip_address }}
+          </p>
         {% endif %}
       {% endif %}
     </section>
   {% endif %}
-
 {% endblock %}

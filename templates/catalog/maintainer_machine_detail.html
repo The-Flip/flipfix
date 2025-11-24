@@ -8,12 +8,12 @@
       <span>›</span>
       <strong>{{ object.display_name }}</strong>
     </div>
-
     <div class="breadcrumb__actions">
       <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
       <a class="btn btn-secondary" href="{% url 'machine-qr' object.slug %}">QR Code</a>
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">Logs</a>
-      <a class="btn btn-primary" href="{% url 'machine-problem-reports' object.slug %}">
+      <a class="btn btn-primary"
+         href="{% url 'machine-problem-reports' object.slug %}">
         Problem Reports
         {% if open_problem_reports.count > 0 %}
           <span class="badge badge--status-open" style="margin-left: var(--space-2);">{{ open_problem_reports.count }}</span>
@@ -21,40 +21,42 @@
       </a>
     </div>
   </nav>
-
   <fieldset class="form-section">
     <div class="inline-edit-group">
       <div class="form-field inline-edit-field">
         <label for="status-select">Status:</label>
-        <select id="status-select" class="inline-edit-select" data-field="operational_status">
+        <select id="status-select"
+                class="inline-edit-select"
+                data-field="operational_status">
           {% for value, label in object.STATUS_CHOICES %}
-            <option value="{{ value }}" {% if object.operational_status == value %}selected{% endif %}>{{ label }}</option>
+            <option value="{{ value }}"
+                    {% if object.operational_status == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
         <span class="inline-edit-status" id="status-save-indicator"></span>
       </div>
-
       <div class="form-field inline-edit-field">
         <label for="location-select">Location:</label>
         <select id="location-select" class="inline-edit-select" data-field="location">
           <option value="" {% if not object.location %}selected{% endif %}>--</option>
           {% for value, label in object.LOCATION_CHOICES %}
-            <option value="{{ value }}" {% if object.location == value %}selected{% endif %}>{{ label }}</option>
+            <option value="{{ value }}"
+                    {% if object.location == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
         <span class="inline-edit-status" id="location-save-indicator"></span>
       </div>
     </div>
   </fieldset>
-
   <div class="section-header">
     <h2>Recent Activity</h2>
     <div class="section-header__actions">
-      <a class="btn btn-primary" href="{% url 'log-create-machine' object.slug %}">Add Log Entry</a>
-      <a class="btn btn-secondary" href="{% url 'problem-report-create' object.slug %}">Add Problem Report</a>
+      <a class="btn btn-primary"
+         href="{% url 'log-create-machine' object.slug %}">Add Log Entry</a>
+      <a class="btn btn-secondary"
+         href="{% url 'problem-report-create' object.slug %}">Add Problem Report</a>
     </div>
   </div>
-
   {% if timeline_entries %}
     <ul class="list machine-list">
       {% for entry in timeline_entries %}
@@ -65,122 +67,120 @@
     <p>No recent activity.</p>
   {% endif %}
 {% endblock %}
-
 {% block extra_js %}
-<script>
-  // Inline editing for status and location
-  document.addEventListener('DOMContentLoaded', function() {
-    const statusSelect = document.getElementById('status-select');
-    const locationSelect = document.getElementById('location-select');
-    const statusIndicator = document.getElementById('status-save-indicator');
-    const locationIndicator = document.getElementById('location-save-indicator');
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  <script>
+      // Inline editing for status and location
+      document.addEventListener('DOMContentLoaded', function() {
+          const statusSelect = document.getElementById('status-select');
+          const locationSelect = document.getElementById('location-select');
+          const statusIndicator = document.getElementById('status-save-indicator');
+          const locationIndicator = document.getElementById('location-save-indicator');
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
 
-    function getCsrfToken() {
-      // Try to get CSRF token from cookie
-      const cookieValue = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-      return cookieValue || csrfToken;
-    }
+          function getCsrfToken() {
+              // Try to get CSRF token from cookie
+              const cookieValue = document.cookie
+                  .split('; ')
+                  .find(row => row.startsWith('csrftoken='))
+                  ?.split('=')[1];
+              return cookieValue || csrfToken;
+          }
 
-    function updateField(field, value, indicator) {
-      indicator.textContent = 'Saving...';
-      indicator.className = 'inline-edit-status saving';
+          function updateField(field, value, indicator) {
+              indicator.textContent = 'Saving...';
+              indicator.className = 'inline-edit-status saving';
 
-      const formData = new FormData();
-      formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
-      formData.append(field, value);
-      formData.append('csrfmiddlewaretoken', getCsrfToken());
+              const formData = new FormData();
+              formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
+              formData.append(field, value);
+              formData.append('csrfmiddlewaretoken', getCsrfToken());
 
-      fetch(window.location.href, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-CSRFToken': getCsrfToken()
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          indicator.textContent = 'Saved';
-          indicator.className = 'inline-edit-status saved';
-          setTimeout(() => {
-            indicator.textContent = '';
-            indicator.className = 'inline-edit-status';
-          }, 2000);
-        } else {
-          indicator.textContent = 'Error';
-          indicator.className = 'inline-edit-status error';
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        indicator.textContent = 'Error';
-        indicator.className = 'inline-edit-status error';
+              fetch(window.location.href, {
+                      method: 'POST',
+                      body: formData,
+                      headers: {
+                          'X-CSRFToken': getCsrfToken()
+                      }
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                      if (data.status === 'success') {
+                          indicator.textContent = 'Saved';
+                          indicator.className = 'inline-edit-status saved';
+                          setTimeout(() => {
+                              indicator.textContent = '';
+                              indicator.className = 'inline-edit-status';
+                          }, 2000);
+                      } else {
+                          indicator.textContent = 'Error';
+                          indicator.className = 'inline-edit-status error';
+                      }
+                  })
+                  .catch(error => {
+                      console.error('Error:', error);
+                      indicator.textContent = 'Error';
+                      indicator.className = 'inline-edit-status error';
+                  });
+          }
+
+          if (statusSelect) {
+              statusSelect.addEventListener('change', function() {
+                  updateField('operational_status', this.value, statusIndicator);
+              });
+          }
+
+          if (locationSelect) {
+              locationSelect.addEventListener('change', function() {
+                  updateField('location', this.value, locationIndicator);
+              });
+          }
       });
-    }
+  </script>
+  <style>
+      .inline-edit-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1.5rem;
+          margin: 1rem 0 2rem 0;
+      }
 
-    if (statusSelect) {
-      statusSelect.addEventListener('change', function() {
-        updateField('operational_status', this.value, statusIndicator);
-      });
-    }
+      .inline-edit-field {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+      }
 
-    if (locationSelect) {
-      locationSelect.addEventListener('change', function() {
-        updateField('location', this.value, locationIndicator);
-      });
-    }
-  });
-</script>
+      .inline-edit-field label {
+          display: inline-block !important;
+          font-weight: 600;
+          margin: 0 !important;
+          margin-bottom: 0 !important;
+          white-space: nowrap;
+      }
 
-<style>
-  .inline-edit-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    margin: 1rem 0 2rem 0;
-  }
+      .inline-edit-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid var(--border-color, #ccc);
+          border-radius: 4px;
+          font-size: 0.95rem;
+          min-width: 120px;
+      }
 
-  .inline-edit-field {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
+      .inline-edit-status {
+          font-size: 0.85rem;
+          white-space: nowrap;
+      }
 
-  .inline-edit-field label {
-    display: inline-block !important;
-    font-weight: 600;
-    margin: 0 !important;
-    margin-bottom: 0 !important;
-    white-space: nowrap;
-  }
+      .inline-edit-status.saving {
+          color: #666;
+      }
 
-  .inline-edit-select {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--border-color, #ccc);
-    border-radius: 4px;
-    font-size: 0.95rem;
-    min-width: 120px;
-  }
+      .inline-edit-status.saved {
+          color: #28a745;
+      }
 
-  .inline-edit-status {
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  .inline-edit-status.saving {
-    color: #666;
-  }
-
-  .inline-edit-status.saved {
-    color: #28a745;
-  }
-
-  .inline-edit-status.error {
-    color: #dc3545;
-  }
-</style>
+      .inline-edit-status.error {
+          color: #dc3545;
+      }
+  </style>
 {% endblock %}

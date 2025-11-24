@@ -1,4 +1,5 @@
 """Import legacy maintenance CSV data into the new maintenance models."""
+
 from __future__ import annotations
 
 import csv
@@ -12,7 +13,7 @@ from django.utils import timezone
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
+from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 class Command(BaseCommand):

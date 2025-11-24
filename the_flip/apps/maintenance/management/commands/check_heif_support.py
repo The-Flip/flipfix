@@ -1,4 +1,5 @@
 """Check HEIC/HEIF support and resize pipeline."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,7 +44,9 @@ class Command(BaseCommand):
             register_heif_opener()
             self.stdout.write(f"pillow-heif: {pillow_heif.__version__} (opener registered)")
         except ImportError:
-            self.stdout.write(self.style.WARNING("pillow-heif not installed; HEIC may fail to decode."))
+            self.stdout.write(
+                self.style.WARNING("pillow-heif not installed; HEIC may fail to decode.")
+            )
         except Exception as exc:  # pragma: no cover
             self.stdout.write(self.style.ERROR(f"pillow-heif import/registration failed: {exc}"))
 
@@ -65,10 +68,15 @@ class Command(BaseCommand):
 
         # Run through resize/conversion pipeline
         with path.open("rb") as fh:
+            content_type = (
+                "image/heic"
+                if path.suffix.lower() in {".heic", ".heif"}
+                else "application/octet-stream"
+            )
             uploaded = SimpleUploadedFile(
                 name=path.name,
                 content=fh.read(),
-                content_type="image/heic" if path.suffix.lower() in {".heic", ".heif"} else None,
+                content_type=content_type,
             )
 
         try:
@@ -79,6 +87,4 @@ class Command(BaseCommand):
         name = getattr(processed, "name", "<no name>")
         ctype = getattr(processed, "content_type", "<no content_type>")
         size_kb = round((getattr(processed, "size", 0) or 0) / 1024, 1)
-        self.stdout.write(
-            f"Processed file: name={name}, content_type={ctype}, size={size_kb} KB"
-        )
+        self.stdout.write(f"Processed file: name={name}, content_type={ctype}, size={size_kb} KB")

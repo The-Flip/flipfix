@@ -13,11 +13,9 @@
     {% endif %}
     <strong>Model</strong>
   </nav>
-
   <form method="post" class="form-container">
     {% csrf_token %}
     {{ form.non_field_errors }}
-
     {% for fieldset_title, field_names in form.fieldsets %}
       <fieldset class="form-section">
         <legend>{{ fieldset_title }}</legend>
@@ -27,15 +25,12 @@
               {{ field.label_tag }}
               {{ field }}
               {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-              {% for error in field.errors %}
-                <div class="field-error">{{ error }}</div>
-              {% endfor %}
+              {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
           {% endwith %}
         {% endfor %}
       </fieldset>
     {% endfor %}
-
     <div class="form-actions">
       <a class="btn btn-secondary" href="{% url 'maintainer-machine-list' %}">Cancel</a>
       <button type="submit" class="btn btn-primary">Save Changes</button>

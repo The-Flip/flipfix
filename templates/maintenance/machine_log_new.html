@@ -10,30 +10,23 @@
     <span>›</span>
     <strong>New Log Entry</strong>
   </nav>
-
   <section class="card">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="form-field">
         <label for="{{ form.submitter_name.id_for_label }}">Your name</label>
         {{ form.submitter_name }}
-        {% for error in form.submitter_name.errors %}
-          <div class="error">{{ error }}</div>
-        {% endfor %}
+        {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-field">
         <label for="{{ form.text.id_for_label }}">Description</label>
         {{ form.text }}
-        {% for error in form.text.errors %}
-          <div class="error">{{ error }}</div>
-        {% endfor %}
+        {% for error in form.text.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-field">
-        <label for="{{ form.media.id_for_label }}">Photo or Video (optional)</label>
-        {{ form.media }}
-        {% for error in form.media.errors %}
-          <div class="error">{{ error }}</div>
-        {% endfor %}
+        <label for="{{ form.media_file.id_for_label }}">Photo or Video (optional)</label>
+        {{ form.media_file }}
+        {% for error in form.media_file.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
       <button type="submit" class="btn btn-primary">Create Log Entry</button>
     </form>

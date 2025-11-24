@@ -94,8 +94,16 @@ format:
 typecheck:
 	.venv/bin/mypy the_flip
 
+.PHONY: lint-templates
+lint-templates:
+	.venv/bin/djlint templates/ --check
+
+.PHONY: format-templates
+format-templates:
+	.venv/bin/djlint templates/ --reformat --quiet
+
 .PHONY: quality
-quality: lint typecheck
+quality: lint typecheck lint-templates
 	@echo "All quality checks passed!"
 
 .PHONY: coverage
