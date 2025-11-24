@@ -1,3 +1,6 @@
+/* ==========================================================================
+   CSS Variables & Tokens
+   ========================================================================== */
 :root {
   --font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --color-primary: #1f7aea;
@@ -22,6 +25,9 @@
   --shadow-card: 0 8px 20px rgba(15, 23, 42, 0.08);
 }
 
+/* ==========================================================================
+   Base Reset & Typography
+   ========================================================================== */
 *,
 *::before,
 *::after {
@@ -45,6 +51,9 @@ a:hover {
   text-decoration: underline;
 }
 
+/* ==========================================================================
+   Layout Components
+   ========================================================================== */
 header {
   background: var(--color-secondary);
   color: var(--color-surface);
@@ -105,6 +114,11 @@ main {
   padding: var(--space-5) var(--space-4);
 }
 
+/* ==========================================================================
+   Cards
+   Base: .card
+   BEM Elements: .card__header, .card__body, .card__footer
+   ========================================================================== */
 .card {
   background: var(--color-surface);
   border-radius: var(--radius-card);
@@ -117,6 +131,11 @@ main {
   margin-top: 0;
 }
 
+/* ==========================================================================
+   Buttons
+   Base: .btn
+   Modifiers: .btn-primary, .btn-secondary
+   ========================================================================== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -153,6 +172,10 @@ main {
   color: var(--color-surface);
 }
 
+/* ==========================================================================
+   Forms
+   Base: .form-field
+   ========================================================================== */
 .form-field {
   margin-bottom: var(--space-4);
 }
@@ -226,6 +249,12 @@ input[type="radio"] {
   cursor: pointer;
 }
 
+/* ==========================================================================
+   Badges / tags (pill-shaped status indicators)
+   Base: .badge
+   Modifiers: .badge-good, .badge-broken, .badge-fixing, etc.
+   Utilities: .badge-right (align right in flex containers)
+   ========================================================================== */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -269,6 +298,9 @@ input[type="radio"] {
   color: #fff;
 }
 
+/* ==========================================================================
+   Lists
+   ========================================================================== */
 .list {
   list-style: none;
   padding: 0;
@@ -293,6 +325,11 @@ input[type="radio"] {
   margin: 0;
 }
 
+/* ==========================================================================
+   Machine Cards
+   Base: .machine-card
+   BEM Elements: .machine-card__row, .machine-card__name, .machine-card__meta, etc.
+   ========================================================================== */
 .machine-card {
   display: flex;
   flex-direction: column;
@@ -376,15 +413,18 @@ input[type="radio"] {
 }
 
 /* Badge positioning utility - aligns badge to right */
-.badge-status {
+.badge-right {
   margin-left: auto;
   white-space: nowrap;
 }
 
-.machine-card__meta-group .badge-status {
+.machine-card__meta-group .badge-right {
   margin-left: 0;
 }
 
+/* ==========================================================================
+   Section Headers & Page Layout
+   ========================================================================== */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -404,6 +444,9 @@ input[type="radio"] {
   margin-left: auto;
 }
 
+/* ==========================================================================
+   Log Entries
+   ========================================================================== */
 .log-entry-link {
   display: block;
   color: inherit;
@@ -427,6 +470,16 @@ input[type="radio"] {
   white-space: pre-wrap;
 }
 
+.log-entry-media img {
+  border-radius: var(--radius-base);
+  margin-top: var(--space-2);
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================================================================
+   Form Utilities & Helpers
+   ========================================================================== */
 .error {
   color: var(--color-danger);
   font-size: 0.9rem;
@@ -443,6 +496,9 @@ input[type="radio"] {
   min-width: 120px;
 }
 
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
 .pagination {
   display: flex;
   align-items: center;
@@ -455,13 +511,12 @@ input[type="radio"] {
   font-weight: 600;
 }
 
-.log-entry-media img {
-  border-radius: var(--radius-base);
-  margin-top: var(--space-2);
-  max-width: 100%;
-  height: auto;
-}
-
+/* ==========================================================================
+   Breadcrumbs
+   Base: .breadcrumb
+   Variant: .breadcrumb-with-actions
+   BEM Elements: .breadcrumb__trail, .breadcrumb__actions
+   ========================================================================== */
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -508,8 +563,30 @@ input[type="radio"] {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
 .hidden {
   display: none;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-5);
+}
+
+.educational-text {
+  margin: var(--space-5) 0;
+  line-height: 1.7;
+}
+
+.centered {
+  text-align: center;
 }
 
 #log-loading {
@@ -517,7 +594,11 @@ input[type="radio"] {
   color: var(--color-text-muted);
 }
 
-/* Messages */
+/* ==========================================================================
+   Messages & Alerts
+   Base: .message
+   Modifiers: .message--success, .message--error, .message--warning, .message--info
+   ========================================================================== */
 .messages {
   margin-bottom: var(--space-5);
   display: flex;
@@ -590,6 +671,50 @@ input[type="radio"] {
   margin: 0;
 }
 
+/* ==========================================================================
+   Minimal Header & Footer (for public QR pages)
+   ========================================================================== */
+.header-minimal {
+  background: var(--color-secondary);
+  color: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-minimal__content {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.header-minimal h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-surface-text-muted);
+  font-weight: 700;
+}
+
+.footer-minimal {
+  background: var(--color-secondary);
+  color: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+.footer-minimal__content {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.footer-minimal p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-surface-text-muted);
+}
+
+/* ==========================================================================
+   Dark Mode
+   ========================================================================== */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-surface: #232b36;
@@ -629,7 +754,9 @@ input[type="radio"] {
   }
 }
 
-
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
 @media (min-width: 769px) {
   .machine-card__problem {
     -webkit-line-clamp: 2;
@@ -680,63 +807,4 @@ input[type="radio"] {
     white-space: normal;
     flex-wrap: wrap;
   }
-}
-
-/* Minimal header and footer for public QR-accessible pages */
-.header-minimal {
-  background: var(--color-secondary);
-  color: var(--color-surface);
-  padding: var(--space-3) var(--space-4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header-minimal__content {
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.header-minimal h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: var(--color-surface-text-muted);
-  font-weight: 700;
-}
-
-.footer-minimal {
-  background: var(--color-secondary);
-  color: var(--color-surface);
-  padding: var(--space-3) var(--space-4);
-  margin-top: var(--space-6);
-  text-align: center;
-}
-
-.footer-minimal__content {
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-.footer-minimal p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-surface-text-muted);
-}
-
-/* Machine detail page styles */
-.text-muted {
-  color: var(--color-text-muted);
-}
-
-.subtitle {
-  font-size: 1.1rem;
-  margin-top: calc(var(--space-2) * -1);
-  margin-bottom: var(--space-5);
-}
-
-.educational-text {
-  margin: var(--space-5) 0;
-  line-height: 1.7;
-}
-
-.centered {
-  text-align: center;
 }
