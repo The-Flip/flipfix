@@ -10,14 +10,12 @@ pip install -r requirements.txt
 # Create media directory if it doesn't exist
 mkdir -p media
 
-# Run tests before deploying (fail fast if any test fails)
+# Run tests
 echo "Running tests..."
-make test-ci
+DJANGO_SETTINGS_MODULE=the_flip.settings.test python manage.py test
 echo "✓ All tests passed"
 
 # Run migrations
-# Note: Railway's private networking is not available during build
-# We need to use the public database URL if DATABASE_URL uses private networking
 python manage.py migrate
 
 # Collect static files
