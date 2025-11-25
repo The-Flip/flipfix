@@ -21,7 +21,10 @@
       </div>
       <div class="form-field">
         <label for="{{ form.submitter_name.id_for_label }}">Your name</label>
-        {{ form.submitter_name }}
+        <div class="autocomplete" id="submitter-autocomplete">
+          {{ form.submitter_name }}
+          <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
+        </div>
         {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-field">
@@ -58,5 +61,88 @@
       if (workDateInput) {
           workDateInput.value = toDateTimeLocalValue(new Date());
       }
+
+      // Maintainer autocomplete
+      (function() {
+          const input = document.getElementById('{{ form.submitter_name.id_for_label }}');
+          const dropdown = document.getElementById('submitter-dropdown');
+          let maintainers = [];
+          let activeIndex = -1;
+
+          // Fetch maintainers on page load
+          fetch('{% url "api-maintainer-autocomplete" %}')
+              .then(response => response.json())
+              .then(data => { maintainers = data.maintainers || []; })
+              .catch(() => { maintainers = []; });
+
+          function showDropdown(filtered) {
+              if (filtered.length === 0) {
+                  dropdown.classList.add('hidden');
+                  return;
+              }
+              dropdown.innerHTML = filtered.map((m, i) =>
+                  `<div class="autocomplete__item${i === activeIndex ? ' autocomplete__item-active' : ''}" data-index="${i}" data-name="${m.name}">${m.name}</div>`
+              ).join('');
+              dropdown.classList.remove('hidden');
+          }
+
+          function hideDropdown() {
+              dropdown.classList.add('hidden');
+              activeIndex = -1;
+          }
+
+          function filterMaintainers(query) {
+              const q = query.toLowerCase().trim();
+              if (!q) return maintainers;
+              return maintainers.filter(m => m.name.toLowerCase().includes(q));
+          }
+
+          input.addEventListener('focus', () => {
+              const filtered = filterMaintainers(input.value);
+              showDropdown(filtered);
+          });
+
+          input.addEventListener('input', () => {
+              activeIndex = -1;
+              const filtered = filterMaintainers(input.value);
+              showDropdown(filtered);
+          });
+
+          input.addEventListener('keydown', (e) => {
+              const filtered = filterMaintainers(input.value);
+              if (dropdown.classList.contains('hidden') || filtered.length === 0) return;
+
+              if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  activeIndex = Math.min(activeIndex + 1, filtered.length - 1);
+                  showDropdown(filtered);
+              } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  activeIndex = Math.max(activeIndex - 1, 0);
+                  showDropdown(filtered);
+              } else if (e.key === 'Enter' && activeIndex >= 0) {
+                  e.preventDefault();
+                  input.value = filtered[activeIndex].name;
+                  hideDropdown();
+              } else if (e.key === 'Escape') {
+                  hideDropdown();
+              }
+          });
+
+          dropdown.addEventListener('click', (e) => {
+              const item = e.target.closest('.autocomplete__item');
+              if (item) {
+                  input.value = item.dataset.name;
+                  hideDropdown();
+              }
+          });
+
+          // Hide dropdown when clicking outside
+          document.addEventListener('click', (e) => {
+              if (!e.target.closest('#submitter-autocomplete')) {
+                  hideDropdown();
+              }
+          });
+      })();
   </script>
 {% endblock %}

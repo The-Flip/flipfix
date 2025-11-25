@@ -10,6 +10,10 @@ from the_flip.apps.core.models import TimeStampedModel
 
 class Maintainer(TimeStampedModel):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_shared_account = models.BooleanField(
+        default=False,
+        help_text="Shared accounts are used on workshop terminals by multiple maintainers.",
+    )
 
     class Meta:
         ordering = ["user__username"]

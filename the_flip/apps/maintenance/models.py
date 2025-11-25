@@ -111,6 +111,14 @@ class LogEntry(TimeStampedModel):
         default=timezone.now,
         help_text="When the work was performed. Defaults to now if not specified.",
     )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="log_entries_created",
+        help_text="The user who created this log entry (for audit trail).",
+    )
 
     class Meta:
         ordering = ["-work_date"]

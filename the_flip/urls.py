@@ -89,6 +89,11 @@ urlpatterns = [
         maintenance_views.ReceiveTranscodedMediaView.as_view(),
         name="api-transcoding-upload",
     ),
+    path(
+        "api/maintainers/",
+        maintenance_views.MaintainerAutocompleteView.as_view(),
+        name="api-maintainer-autocomplete",
+    ),
     # Log views
     path("logs/", maintenance_views.LogListView.as_view(), name="log-list"),
     path("logs/entries/", maintenance_views.LogListPartialView.as_view(), name="log-list-entries"),

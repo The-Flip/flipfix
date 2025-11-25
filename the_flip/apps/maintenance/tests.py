@@ -10,6 +10,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
 from the_flip.apps.maintenance.forms import LogEntryQuickForm
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
@@ -995,3 +996,176 @@ class LogEntryDetailViewWorkDateTests(TestCase):
         self.assertEqual(response.status_code, 400)
         result = response.json()
         self.assertFalse(result["success"])
+
+
+class LogEntryCreatedByTests(TestCase):
+    """Tests for LogEntry created_by field."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.machine_model = MachineModel.objects.create(
+            name="Test Machine",
+            manufacturer="Test Mfg",
+            year=2020,
+            era=MachineModel.ERA_SS,
+        )
+        self.machine = MachineInstance.objects.create(
+            model=self.machine_model,
+            slug="test-machine",
+            operational_status=MachineInstance.STATUS_GOOD,
+        )
+        self.staff_user = User.objects.create_user(
+            username="staffuser",
+            password="testpass123",
+            is_staff=True,
+        )
+        self.create_url = reverse("log-create-machine", kwargs={"slug": self.machine.slug})
+
+    def test_created_by_set_when_creating_log_entry(self):
+        """Creating a log entry should set the created_by field."""
+        self.client.login(username="staffuser", password="testpass123")
+
+        response = self.client.post(
+            self.create_url,
+            {
+                "work_date": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+                "submitter_name": "Some Other Person",
+                "text": "Work performed",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(LogEntry.objects.count(), 1)
+
+        log_entry = LogEntry.objects.first()
+        self.assertEqual(log_entry.created_by, self.staff_user)
+
+    def test_created_by_can_differ_from_maintainer(self):
+        """created_by (who entered data) can be different from maintainer (who did work)."""
+        # Create another maintainer who did the work
+        work_doer = User.objects.create_user(
+            username="workdoer",
+            first_name="Work",
+            last_name="Doer",
+            password="testpass123",
+            is_staff=True,
+        )
+
+        self.client.login(username="staffuser", password="testpass123")
+
+        response = self.client.post(
+            self.create_url,
+            {
+                "work_date": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+                "submitter_name": "Work Doer",  # Name of who did the work
+                "text": "Work performed by someone else",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        log_entry = LogEntry.objects.first()
+
+        # created_by is the logged-in user (who entered the data)
+        self.assertEqual(log_entry.created_by, self.staff_user)
+
+        # maintainers is who did the actual work
+        self.assertIn(Maintainer.objects.get(user=work_doer), log_entry.maintainers.all())
+
+
+class MaintainerAutocompleteViewTests(TestCase):
+    """Tests for the maintainer autocomplete API endpoint."""
+
+    def setUp(self):
+        """Set up test data."""
+        # Create regular maintainers
+        self.user1 = User.objects.create_user(
+            username="alice",
+            first_name="Alice",
+            last_name="Smith",
+            password="testpass123",
+            is_staff=True,
+        )
+        self.user2 = User.objects.create_user(
+            username="bob",
+            first_name="Bob",
+            last_name="Jones",
+            password="testpass123",
+            is_staff=True,
+        )
+        # Create a shared account
+        self.shared_user = User.objects.create_user(
+            username="workshop-terminal",
+            password="testpass123",
+            is_staff=True,
+        )
+        shared_maintainer = Maintainer.objects.get(user=self.shared_user)
+        shared_maintainer.is_shared_account = True
+        shared_maintainer.save()
+
+        self.autocomplete_url = reverse("api-maintainer-autocomplete")
+
+    def test_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.autocomplete_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_requires_staff_permission(self):
+        """Non-staff users should be denied access."""
+        User.objects.create_user(username="regular", password="testpass123", is_staff=False)
+        self.client.login(username="regular", password="testpass123")
+        response = self.client.get(self.autocomplete_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_returns_maintainers_list(self):
+        """Should return a list of maintainers."""
+        self.client.login(username="alice", password="testpass123")
+        response = self.client.get(self.autocomplete_url)
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("maintainers", data)
+        self.assertIsInstance(data["maintainers"], list)
+
+    def test_excludes_shared_accounts(self):
+        """Shared accounts should not appear in the autocomplete list."""
+        self.client.login(username="alice", password="testpass123")
+        response = self.client.get(self.autocomplete_url)
+
+        data = response.json()
+        names = [m["name"] for m in data["maintainers"]]
+
+        self.assertIn("Alice Smith", names)
+        self.assertIn("Bob Jones", names)
+        self.assertNotIn("workshop-terminal", names)
+
+    def test_filters_by_query(self):
+        """Should filter results by query parameter."""
+        self.client.login(username="alice", password="testpass123")
+        response = self.client.get(self.autocomplete_url + "?q=alice")
+
+        data = response.json()
+        names = [m["name"] for m in data["maintainers"]]
+
+        self.assertIn("Alice Smith", names)
+        self.assertNotIn("Bob Jones", names)
+
+    def test_case_insensitive_filter(self):
+        """Query filtering should be case-insensitive."""
+        self.client.login(username="alice", password="testpass123")
+        response = self.client.get(self.autocomplete_url + "?q=ALICE")
+
+        data = response.json()
+        names = [m["name"] for m in data["maintainers"]]
+
+        self.assertIn("Alice Smith", names)
+
+    def test_returns_sorted_results(self):
+        """Results should be sorted alphabetically."""
+        self.client.login(username="alice", password="testpass123")
+        response = self.client.get(self.autocomplete_url)
+
+        data = response.json()
+        names = [m["name"] for m in data["maintainers"]]
+
+        self.assertEqual(names, sorted(names, key=str.lower))

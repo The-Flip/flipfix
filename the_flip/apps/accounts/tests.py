@@ -10,6 +10,28 @@ from .models import Invitation, Maintainer
 User = get_user_model()
 
 
+class MaintainerModelTests(TestCase):
+    """Tests for the Maintainer model."""
+
+    def test_is_shared_account_defaults_to_false(self):
+        """New maintainers should not be shared accounts by default."""
+        user = User.objects.create_user(username="testuser", password="testpass123", is_staff=True)
+        maintainer = Maintainer.objects.get(user=user)
+        self.assertFalse(maintainer.is_shared_account)
+
+    def test_can_create_shared_account(self):
+        """Can create a maintainer with is_shared_account=True."""
+        user = User.objects.create_user(
+            username="workshop-terminal", password="testpass123", is_staff=True
+        )
+        maintainer = Maintainer.objects.get(user=user)
+        maintainer.is_shared_account = True
+        maintainer.save()
+
+        maintainer.refresh_from_db()
+        self.assertTrue(maintainer.is_shared_account)
+
+
 class InvitationModelTests(TestCase):
     """Tests for the Invitation model."""
 

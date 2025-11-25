@@ -31,6 +31,29 @@ from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemRep
 from the_flip.apps.maintenance.tasks import enqueue_transcode
 
 
+class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """JSON endpoint for maintainer name autocomplete."""
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("q", "").strip().lower()
+        maintainers = Maintainer.objects.filter(is_shared_account=False).select_related("user")
+
+        results = []
+        for m in maintainers:
+            display_name = m.display_name
+            # Filter by query if provided
+            if query and query not in display_name.lower():
+                continue
+            results.append({"id": m.id, "name": display_name})
+
+        # Sort alphabetically by name
+        results.sort(key=lambda x: x["name"].lower())
+        return JsonResponse({"maintainers": results})
+
+
 class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
 
@@ -239,7 +262,10 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 pass  # Keep original work_date if conversion fails
 
         log_entry = LogEntry.objects.create(
-            machine=self.machine, text=description, work_date=work_date
+            machine=self.machine,
+            text=description,
+            work_date=work_date,
+            created_by=self.request.user,
         )
 
         maintainer = self.match_maintainer(submitter_name)
