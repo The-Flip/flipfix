@@ -29,6 +29,9 @@
       <datalist id="username-suggestions"></datalist>
       <small id="username-status"></small>
       {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      <a href="{% url 'home' %}"
+         class="btn btn-secondary"
+         id="cancel-username">Cancel</a>
     </div>
     <!-- Profile section (revealed after username check) -->
     <div id="profile-section" class="profile-section" hidden>
@@ -81,7 +84,7 @@
         {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
       </div>
       <button type="submit" class="btn btn-primary">Register</button>
-      <a href="/" class="btn btn-secondary">Cancel</a>
+      <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
   <style>
@@ -142,6 +145,7 @@
       const datalist = document.getElementById('username-suggestions');
       const passwordInput = document.getElementById('id_password');
       const hidePasswordCheckbox = document.getElementById('hide-password');
+      const cancelUsername = document.getElementById('cancel-username');
 
       let debounceTimer;
 
@@ -189,12 +193,14 @@
               statusEl.textContent = data.exists ? 'Available to claim' : 'Available';
               statusEl.className = 'available';
               profileSection.hidden = false;
+              cancelUsername.style.display = 'none';
               usernameHidden.value = username;
               registeringAs.innerHTML = (data.exists ? 'Claiming existing account: ' : 'Registering as: ') + '<code>' + username + '</code>';
               // Focus the first name field
               document.getElementById('id_first_name').focus();
             } else {
               statusEl.textContent = 'Not available';
+              cancelUsername.style.display = '';
               statusEl.className = 'unavailable';
               profileSection.hidden = true;
             }
@@ -219,6 +225,7 @@
       // If form has errors, show profile section
       {% if form.errors %}
         profileSection.hidden = false;
+        cancelUsername.style.display = 'none';
         usernameHidden.value = usernameInput.value;
         registeringAs.innerHTML = 'Registering as: ' + '<code>' + usernameInput.value + '</code>';
       {% endif %}
