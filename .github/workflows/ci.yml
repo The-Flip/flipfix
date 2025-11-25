@@ -70,7 +70,7 @@ jobs:
     - name: Run linting
       run: |
         ruff check .
-        djlint templates/ --check
+        python -m djlint templates/ --check
 
     - name: Run type checking
       run: |
