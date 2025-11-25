@@ -54,8 +54,9 @@
       document.getElementById('tz-offset').value = new Date().getTimezoneOffset();
 
       // Set default work_date to today at midnight in browser's local time
+      // Always override server's initial value since it's in server timezone
       const workDateInput = document.getElementById('{{ form.work_date.id_for_label }}');
-      if (workDateInput && !workDateInput.value) {
+      if (workDateInput) {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           workDateInput.value = toDateTimeLocalValue(today);

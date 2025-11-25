@@ -210,8 +210,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             initial["submitter_name"] = (
                 self.request.user.get_full_name() or self.request.user.get_username()
             )
-        # Default to today at midnight (00:00)
-        initial["work_date"] = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        # work_date default is set by JavaScript to use browser's local timezone
         return initial
 
     def get_context_data(self, **kwargs):
