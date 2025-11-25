@@ -3,18 +3,26 @@ name: CI
 on:
   push:
     branches: [ main ]
+    # When updating this, also update what's ignored in railway.toml
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.vscode/**'
       - '.claude/**'
+      - '.pre-commit-config.yaml'
+      - '.env.example'
+      - '.env.vscode'
   pull_request:
     branches: [ main ]
+    # When updating this, also update what's ignored in railway.toml
     paths-ignore:
       - '**.md'
       - 'docs/**'
       - '.vscode/**'
       - '.claude/**'
+      - '.pre-commit-config.yaml'
+      - '.env.example'
+      - '.env.vscode'
 
 jobs:
   test:
