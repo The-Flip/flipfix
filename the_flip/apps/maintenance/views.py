@@ -421,9 +421,7 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                 self.object.save(update_fields=["work_date", "updated_at"])
                 return JsonResponse({"success": True})
             except ValueError:
-                return JsonResponse(
-                    {"success": False, "error": "Invalid date format"}, status=400
-                )
+                return JsonResponse({"success": False, "error": "Invalid date format"}, status=400)
 
         elif action == "upload_media":
             if "file" in request.FILES:
