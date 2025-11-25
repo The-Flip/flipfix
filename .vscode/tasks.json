@@ -73,9 +73,9 @@
       }
     },
     {
-      "label": "Import Legacy Data",
+      "label": "Create Sample Data",
       "type": "shell",
-      "command": "make import-data",
+      "command": "make sample-data",
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",

@@ -1,4 +1,4 @@
-"""Import legacy maintenance CSV data into the new maintenance models."""
+"""Create sample maintenance records from legacy CSV data."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ from datetime import datetime
 from pathlib import Path
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 from django.utils import timezone
 
 from the_flip.apps.accounts.models import Maintainer
@@ -17,7 +18,7 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 class Command(BaseCommand):
-    help = "Import legacy problem reports and log entries"
+    help = "Create sample maintenance records from legacy CSV data (dev/PR only)"
 
     problems_filename = "Maintenance - Problems.csv"
     logs_filename = "Maintenance - Log entries.csv"
@@ -35,6 +36,19 @@ class Command(BaseCommand):
         }
 
     def handle(self, *args, **options):
+        # Safety check: SQLite only (blocks production PostgreSQL)
+        if "sqlite" not in connection.settings_dict["ENGINE"].lower():
+            raise CommandError(
+                "This command only runs on SQLite databases (local dev or PR environments)"
+            )
+
+        # Safety check: empty database only
+        if ProblemReport.objects.exists() or LogEntry.objects.exists():
+            raise CommandError(
+                "Database already contains maintenance records. "
+                "This command only runs on empty databases."
+            )
+
         base_path = Path(settings.BASE_DIR) / "docs" / "legacy_data"
         problems_path = base_path / self.problems_filename
         logs_path = base_path / self.logs_filename
@@ -113,7 +127,7 @@ class Command(BaseCommand):
 
     # ---- importers -------------------------------------------------------
     def import_problems(self, csv_path: Path) -> None:
-        self.stdout.write(self.style.SUCCESS("\nImporting problem reports..."))
+        self.stdout.write(self.style.SUCCESS("\nCreating sample problem reports..."))
         created = 0
         errors = 0
 
@@ -155,14 +169,14 @@ class Command(BaseCommand):
                 )
                 ProblemReport.objects.filter(pk=report.pk).update(created_at=created_at)
                 created += 1
-                self.stdout.write(f"• Problem report added for {machine.display_name}")
+                self.stdout.write(f"Created problem report for {machine.display_name}")
 
         self.stdout.write(
-            self.style.SUCCESS(f"Problems import complete. Created {created}, errors {errors}.")
+            self.style.SUCCESS(f"Problem reports complete. Created {created}, errors {errors}.")
         )
 
     def import_log_entries(self, csv_path: Path) -> None:
-        self.stdout.write(self.style.SUCCESS("\nImporting log entries..."))
+        self.stdout.write(self.style.SUCCESS("\nCreating sample log entries..."))
         created = 0
         errors = 0
 
@@ -208,10 +222,10 @@ class Command(BaseCommand):
                     entry.maintainers.set(matched)
                 LogEntry.objects.filter(pk=entry.pk).update(created_at=date)
                 created += 1
-                self.stdout.write(f"• Log entry added for {machine.display_name}")
+                self.stdout.write(f"Created log entry for {machine.display_name}")
 
         self.stdout.write(
-            self.style.SUCCESS(f"Log import complete. Created {created}, errors {errors}.")
+            self.style.SUCCESS(f"Log entries complete. Created {created}, errors {errors}.")
         )
 
     @staticmethod

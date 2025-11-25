@@ -52,9 +52,7 @@ It's in Django.
 
 7. **Load sample data (optional)**
    ```bash
-   python manage.py import_maintainers
-   python manage.py import_machines
-   python manage.py import_maintenance_records
+   python manage.py create_sample_data
    ```
 
 8. **Run development server**

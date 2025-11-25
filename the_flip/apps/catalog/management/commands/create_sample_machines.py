@@ -1,26 +1,36 @@
-"""Import machine models and instances from legacy JSON data."""
+"""Create sample machine models and instances from legacy JSON data."""
 
 import json
 from decimal import Decimal
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
 
 
 class Command(BaseCommand):
-    help = "Import machine models and instances from docs/legacy_data/machines.json"
+    help = "Create sample machine data from docs/legacy_data/machines.json (dev/PR only)"
 
     data_path = Path("docs/legacy_data/machines.json")
 
     def handle(self, *args, **options):
+        # Safety check: SQLite only (blocks production PostgreSQL)
+        if "sqlite" not in connection.settings_dict["ENGINE"].lower():
+            raise CommandError(
+                "This command only runs on SQLite databases (local dev or PR environments)"
+            )
+
+        # Safety check: empty database only
+        if MachineModel.objects.exists() or MachineInstance.objects.exists():
+            raise CommandError(
+                "Database already contains machine data. "
+                "This command only runs on empty databases."
+            )
+
         if not self.data_path.exists():
             raise CommandError(f"Data file not found: {self.data_path}")
-
-        MachineInstance.objects.all().delete()
-        MachineModel.objects.all().delete()
-        self.stdout.write(self.style.WARNING("Cleared existing catalog data."))
 
         with self.data_path.open() as fh:
             payload = json.load(fh)
@@ -31,13 +41,12 @@ class Command(BaseCommand):
             pinside = model_data.get("pinside_rating")
             if pinside is not None:
                 model_data["pinside_rating"] = Decimal(str(pinside))
-            model, created = MachineModel.objects.update_or_create(
+            model = MachineModel.objects.create(
                 name=model_data.pop("name"),
-                defaults=model_data,
+                **model_data,
             )
             models_map[model.name] = model
-            action = "Created" if created else "Updated"
-            self.stdout.write(f"{action} model: {model.name}")
+            self.stdout.write(f"Created model: {model.name}")
 
         for data in payload.get("instances", []):
             model_name = data.pop("model_name")
@@ -46,13 +55,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Skipping unknown model {model_name}"))
                 continue
             instance_data = data.copy()
-            serial_number = instance_data.get("serial_number", "")
-            instance, created = MachineInstance.objects.update_or_create(
+            instance = MachineInstance.objects.create(
                 model=model,
-                serial_number=serial_number,
-                defaults=instance_data,
+                **instance_data,
             )
-            action = "Created" if created else "Updated"
-            self.stdout.write(f"{action} instance: {instance.display_name}")
+            self.stdout.write(f"Created instance: {instance.display_name}")
 
-        self.stdout.write(self.style.SUCCESS("Import complete."))
+        self.stdout.write(self.style.SUCCESS("Sample machine data created."))

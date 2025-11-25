@@ -22,7 +22,7 @@ help:
 	@echo "  make migrations     - Create new migrations"
 	@echo "  make reset-db       - Reset database and migrations"
 	@echo "  make superuser      - Create superuser"
-	@echo "  make import-data    - Import legacy data"
+	@echo "  make sample-data    - Create sample data (dev only)"
 	@echo ""
 
 .PHONY: test
@@ -57,9 +57,9 @@ runq:
 reset-db:
 	./scripts/reset_migrations.sh
 
-.PHONY: import-data
-import-data:
-	.venv/bin/python manage.py import_legacy_data
+.PHONY: sample-data
+sample-data:
+	.venv/bin/python manage.py create_sample_data
 
 .PHONY: lint
 lint:

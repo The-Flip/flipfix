@@ -43,12 +43,12 @@ python manage.py migrate
 echo "✓ Migrations applied"
 echo ""
 
-# Import legacy data
-echo "Importing legacy data..."
-python manage.py import_legacy_data
+# Create sample data
+echo "Creating sample data..."
+python manage.py create_sample_data
 echo ""
 
 echo "=== Migration reset complete! ==="
 echo ""
 echo "You now have fresh 0001_initial.py migrations for all apps."
-echo "Legacy data has been imported."
+echo "Sample data has been created."

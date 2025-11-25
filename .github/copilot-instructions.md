@@ -25,7 +25,7 @@ This guide enables AI coding agents to work productively in this Django-based co
 - **Run tests:** `make test` (uses test settings)
 - **Code quality:** `make quality` (format, lint, typecheck)
 - **Migrations:** `make migrate` / `make migrations`
-- **Import legacy data:** `make import-data`
+- **Create sample data:** `make sample-data` (dev only)
 - **Reset DB/migrations:** `make reset-db`
 - **Create superuser:** `make superuser`
 
