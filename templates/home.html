@@ -2,18 +2,7 @@
 {% block title %}Home · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="card">
-    <p>This is a prototype of The Flip's pinball machine maintenance system.</p>
-    <p>
-      <strong>⚠️ Any data you enter may get deleted!</strong> ☠️  This is not a production system yet.
-    </p>
-  </div>
-  <div class="card">
-    <h3>Public Access</h3>
-    <p>Anyone can browse the collection of machines and submit problem reports:</p>
-    <p>
-      <a href="{% url 'public-machine-list' %}" class="btn btn-primary">Public List of Machines</a>
-    </p>
-    The rest is password-protected.
+    <p>Welcone to The Flip's pinball machine maintenance system.</p>
   </div>
   <div class="card">
     <h3>Existing Accounts</h3>
@@ -30,13 +19,7 @@
     {% else %}
       <p>No maintainers found.</p>
     {% endif %}
-  </div>
-  <div class="card">
-    <h3>Superusers</h3>
-    <p>
-      Sysadmins, like <code>william</code>, can access Django Admin. Add new users here (but they might get deleted).
-    </p>
-    <a href="/admin/" class="btn btn-primary">Django Admin</a>
+    If you don't see your name here, ask William for an account.
   </div>
   <div class="card">
     <h3>Bugs &amp; Feature Requests</h3>
@@ -46,5 +29,12 @@
     or
     <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
        class="btn btn-primary">Post to The Flip Discord</a>
+  </div>
+  <div class="card">
+    <h3>Superusers</h3>
+    <p>
+      Sysadmins, like <code>william</code>, can access the admin console.
+    </p>
+    <a href="{% url 'admin:index' %}" class="btn btn-primary">Django Admin</a>
   </div>
 {% endblock %}
