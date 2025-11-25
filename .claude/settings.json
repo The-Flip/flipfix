@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq libheif1 libheif-dev ffmpeg)"
+      }
+    ]
+  }
+}
