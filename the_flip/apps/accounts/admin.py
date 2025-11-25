@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
@@ -44,6 +45,12 @@ class InvitationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+    def response_add(self, request, obj, post_url_continue=None):
+        """After creating an invitation, redirect to its detail page to show the link."""
+        return HttpResponseRedirect(
+            reverse("admin:accounts_invitation_change", args=[obj.pk])
+        )
 
     @admin.display(description="Registration Link")
     def registration_link(self, obj):
