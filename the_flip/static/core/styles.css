@@ -412,7 +412,7 @@ input[type="radio"] {
   margin: 0;
 }
 
-.list li {
+.list > li {
   padding: var(--space-4);
   background: var(--color-surface);
   border-radius: var(--radius-card);
@@ -934,7 +934,7 @@ input[type="radio"] {
   }
 
   .card,
-  .list li {
+  .list > li {
     background: var(--color-surface);
   }
 

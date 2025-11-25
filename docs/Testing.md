@@ -8,10 +8,10 @@ make test #runs test suite
 ```
 
 ## Suite Layout
-Automated tests live under each app’s `tests/` package and follow Django's discovery rules (`test_*.py`, `Test*` classes).
+Automated tests live in each app's `tests.py` file and follow Django's discovery rules (`Test*` classes, `test_*` methods).
 
 When adding new tests:
- - Place them in the app-specific `tests/` package next to the feature being exercised.
+ - Place them in the app-specific `tests.py` file next to the feature being exercised.
  - Keep each test independent by creating its own data in `setUp()` or factory helpers.
  - **Base classes:** Prefer `django.test.TestCase`, `TransactionTestCase`, and Django's `Client` for integration-style checks. These give you database isolation and fixtures without extra dependencies.
 

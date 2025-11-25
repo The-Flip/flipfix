@@ -1,4 +1,4 @@
-# The Flip Pinball Musuem's Maintenance System
+# The Flip Pinball Museum's Maintenance System
 
 [![CI](https://github.com/deanmoses/the_flip/actions/workflows/ci.yml/badge.svg)](https://github.com/deanmoses/the_flip/actions/workflows/ci.yml)
 

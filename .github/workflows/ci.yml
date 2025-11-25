@@ -53,6 +53,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install -r requirements-dev.txt
 
     - name: Create required directories
       run: |
@@ -67,11 +68,10 @@ jobs:
         python manage.py test
 
     - name: Run linting
-      if: always()
       run: |
-        make lint || true
+        ruff check .
+        djlint templates/ --check
 
     - name: Run type checking
-      if: always()
       run: |
-        make typecheck || true
+        mypy the_flip
