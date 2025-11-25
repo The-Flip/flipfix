@@ -61,7 +61,6 @@ class ProblemReportDetailViewTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
 
@@ -246,7 +245,6 @@ class ProblemReportListViewTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
 
@@ -316,7 +314,6 @@ class MachineProblemReportListViewTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
 
@@ -363,7 +360,6 @@ class ProblemReportCreateViewTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
 
@@ -540,7 +536,6 @@ class ReceiveTranscodedMediaViewTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
         self.log_entry = LogEntry.objects.create(

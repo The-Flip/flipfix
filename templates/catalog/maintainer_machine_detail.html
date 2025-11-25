@@ -39,9 +39,9 @@
         <label for="location-select">Location:</label>
         <select id="location-select" class="inline-edit-select" data-field="location">
           <option value="" {% if not object.location %}selected{% endif %}>--</option>
-          {% for value, label in object.LOCATION_CHOICES %}
-            <option value="{{ value }}"
-                    {% if object.location == value %}selected{% endif %}>{{ label }}</option>
+          {% for loc in locations %}
+            <option value="{{ loc.slug }}"
+                    {% if object.location == loc %}selected{% endif %}>{{ loc.name }}</option>
           {% endfor %}
         </select>
         <span class="inline-edit-status" id="location-save-indicator"></span>

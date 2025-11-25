@@ -19,7 +19,7 @@
           </div>
           <div class="machine-card__row">
             <div class="machine-card__row-left"></div>
-            <div class="machine-card__location">Location: {{ machine.get_location_display }}</div>
+            <div class="machine-card__location">Location: {{ machine.location.name|default:"—" }}</div>
           </div>
         </li>
       {% endfor %}

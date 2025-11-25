@@ -14,7 +14,7 @@ from the_flip.apps.catalog.forms import (
     MachineModelForm,
     MachineQuickCreateForm,
 )
-from the_flip.apps.catalog.models import MachineInstance, MachineModel
+from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.maintenance.forms import ProblemReportForm
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
@@ -101,6 +101,9 @@ class MachineDetailView(PublicMachineDetailView):
             "maintainers", "media"
         )
 
+        # Provide locations for the dropdown (ordered by sort_order)
+        context["locations"] = Location.objects.all()
+
         # Combine logs and problem reports into a unified timeline
         recent_logs = list(
             LogEntry.objects.filter(machine=machine)
@@ -152,19 +155,33 @@ class MachineDetailView(PublicMachineDetailView):
             return JsonResponse({"error": "Invalid status"}, status=400)
 
         elif action == "update_location":
-            location = request.POST.get("location")
-            if location in dict(MachineInstance.LOCATION_CHOICES):
+            location_slug = request.POST.get("location")
+            if not location_slug:
+                # Clear location
+                self.object.location = None
+                self.object.updated_by = request.user
+                self.object.save(update_fields=["location", "updated_by", "updated_at"])
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "location": "",
+                        "location_display": "",
+                    }
+                )
+            try:
+                location = Location.objects.get(slug=location_slug)
                 self.object.location = location
                 self.object.updated_by = request.user
                 self.object.save(update_fields=["location", "updated_by", "updated_at"])
                 return JsonResponse(
                     {
                         "status": "success",
-                        "location": location,
-                        "location_display": self.object.get_location_display(),
+                        "location": location.slug,
+                        "location_display": location.name,
                     }
                 )
-            return JsonResponse({"error": "Invalid location"}, status=400)
+            except Location.DoesNotExist:
+                return JsonResponse({"error": "Invalid location"}, status=400)
 
         return JsonResponse({"error": "Unknown action"}, status=400)
 
@@ -257,7 +274,7 @@ class MachineQuickCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 model=model,
                 name_override=name_override or "",
                 operational_status=MachineInstance.STATUS_UNKNOWN,
-                location="",  # Empty string for no location set
+                location=None,  # No location set initially
                 created_by=self.request.user,
                 updated_by=self.request.user,
             )

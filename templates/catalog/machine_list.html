@@ -25,8 +25,8 @@
               {{ machine.get_operational_status_display }}
             </span>
           </div>
-          {% with loc=machine.get_location_display %}
-            {% if machine.latest_open_report or loc and loc != "Floor" %}
+          {% with loc=machine.location %}
+            {% if machine.latest_open_report or loc and loc.slug != "floor" %}
               <div class="machine-card__row">
                 <div class="machine-card__row-left">
                   {% if machine.latest_open_report %}
@@ -36,7 +36,7 @@
                     </span>
                   {% endif %}
                 </div>
-                {% if loc and loc != "Floor" %}<div class="machine-card__location">Location: {{ loc }}</div>{% endif %}
+                {% if loc and loc.slug != "floor" %}<div class="machine-card__location">Location: {{ loc.name }}</div>{% endif %}
               </div>
             {% endif %}
           {% endwith %}

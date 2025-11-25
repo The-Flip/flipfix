@@ -101,7 +101,7 @@ class MachineQuickCreateViewTests(TestCase):
         # Verify the new instance was created correctly
         new_instance = MachineInstance.objects.get(model=new_model)
         self.assertEqual(new_instance.operational_status, MachineInstance.STATUS_UNKNOWN)
-        self.assertEqual(new_instance.location, "")
+        self.assertIsNone(new_instance.location)
         self.assertEqual(new_instance.created_by, self.staff_user)
         self.assertEqual(new_instance.updated_by, self.staff_user)
 
@@ -156,7 +156,7 @@ class MachineQuickCreateViewTests(TestCase):
         new_instance = MachineInstance.objects.get(name_override="Machine #2")
         self.assertEqual(new_instance.model, self.existing_model)
         self.assertEqual(new_instance.operational_status, MachineInstance.STATUS_UNKNOWN)
-        self.assertEqual(new_instance.location, "")
+        self.assertIsNone(new_instance.location)
 
     def test_validation_error_no_model_or_model_name(self):
         """Should show validation error if neither model nor model_name provided."""

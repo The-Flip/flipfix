@@ -10,6 +10,29 @@ from django.utils.text import slugify
 from the_flip.apps.core.models import TimeStampedModel
 
 
+class Location(models.Model):
+    """Physical location where a machine can be placed."""
+
+    name = models.CharField(max_length=100, unique=True, help_text="Display name for this location")
+    slug = models.SlugField(
+        max_length=100, unique=True, blank=True, help_text="URL-friendly identifier"
+    )
+    sort_order = models.PositiveIntegerField(
+        default=0, help_text="Order in which locations appear in lists"
+    )
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name) or "location"
+        super().save(*args, **kwargs)
+
+
 class MachineModel(TimeStampedModel):
     """Represents a pinball machine model."""
 
@@ -128,20 +151,11 @@ class MachineModel(TimeStampedModel):
 
 class MachineInstanceQuerySet(models.QuerySet):
     def visible(self):
-        return self.select_related("model")
+        return self.select_related("model", "location")
 
 
 class MachineInstance(TimeStampedModel):
     """Physical machine owned by the museum."""
-
-    LOCATION_FLOOR = "floor"
-    LOCATION_WORKSHOP = "workshop"
-    LOCATION_STORAGE = "storage"
-    LOCATION_CHOICES = [
-        (LOCATION_FLOOR, "Floor"),
-        (LOCATION_WORKSHOP, "Workshop"),
-        (LOCATION_STORAGE, "Storage"),
-    ]
 
     STATUS_GOOD = "good"
     STATUS_UNKNOWN = "unknown"
@@ -181,8 +195,13 @@ class MachineInstance(TimeStampedModel):
         verbose_name="Ownership Credit",
         help_text="Credit for ownership",
     )
-    location = models.CharField(
-        max_length=20, choices=LOCATION_CHOICES, blank=True, help_text="Current physical location"
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="machines",
+        help_text="Current physical location",
     )
     operational_status = models.CharField(
         max_length=20,
