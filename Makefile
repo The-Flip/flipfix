@@ -31,6 +31,7 @@ test:
 
 .PHONY: runserver
 runserver:
+	@pkill -f "manage.py runserver" 2>/dev/null || true
 	.venv/bin/python manage.py runserver
 
 .PHONY: migrate

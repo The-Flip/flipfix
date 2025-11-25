@@ -48,9 +48,7 @@ class InvitationAdmin(admin.ModelAdmin):
 
     def response_add(self, request, obj, post_url_continue=None):
         """After creating an invitation, redirect to its detail page to show the link."""
-        return HttpResponseRedirect(
-            reverse("admin:accounts_invitation_change", args=[obj.pk])
-        )
+        return HttpResponseRedirect(reverse("admin:accounts_invitation_change", args=[obj.pk]))
 
     @admin.display(description="Registration Link")
     def registration_link(self, obj):

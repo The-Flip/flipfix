@@ -45,3 +45,17 @@ class InvitationRegistrationForm(forms.Form):
         if password and password_confirm and password != password_confirm:
             self.add_error("password_confirm", "Passwords do not match.")
         return cleaned_data
+
+
+class ProfileForm(forms.ModelForm):
+    """Form for users to update their profile information."""
+
+    class Meta:
+        model = User
+        fields = ["email", "first_name", "last_name"]
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This email is already registered.")
+        return email
