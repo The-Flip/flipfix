@@ -22,9 +22,15 @@
       <h3>Admin</h3>
       <p>This only appears for admins.</p>
       <ul>
-        <li><a href="{% url 'admin:accounts_invitation_add' %}">Invite new user</a></li>
-        <li><a href="{% url 'admin:catalog_location_changelist' %}">Manage locations</a></li>
-        <li><a href="{% url 'admin:index' %}">Admin home</a></li>
+        <li>
+          <a href="{% url 'admin:accounts_invitation_add' %}">Invite new user</a>
+        </li>
+        <li>
+          <a href="{% url 'admin:catalog_location_changelist' %}">Manage locations</a>
+        </li>
+        <li>
+          <a href="{% url 'admin:index' %}">Admin home</a>
+        </li>
       </ul>
     </div>
   {% endif %}

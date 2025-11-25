@@ -21,7 +21,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
 
-from the_flip.apps.accounts.views import invitation_register
+from the_flip.apps.accounts.views import ProfileUpdateView, invitation_register
 from the_flip.apps.catalog.views import (
     MachineDetailView,
     MachineListView,
@@ -50,6 +50,22 @@ urlpatterns = [
         "register/<str:token>/",
         invitation_register,
         name="invitation-register",
+    ),
+    # Profile
+    path("profile/", ProfileUpdateView.as_view(), name="profile"),
+    path(
+        "profile/password/",
+        auth_views.PasswordChangeView.as_view(
+            template_name="registration/password_change_form.html"
+        ),
+        name="password_change",
+    ),
+    path(
+        "profile/password/done/",
+        auth_views.PasswordChangeDoneView.as_view(
+            template_name="registration/password_change_done.html"
+        ),
+        name="password_change_done",
     ),
     # Public machine pages
     path("m/", PublicMachineListView.as_view(), name="public-machine-list"),

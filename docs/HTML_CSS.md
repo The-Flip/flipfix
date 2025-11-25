@@ -28,6 +28,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **Machine Cards** (`.machine-card` with structured BEM elements)
 - **Forms** (`.form-field` wrapper pattern)
 - **Messages & Alerts** (`.message` with type modifiers)
+- **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
 - **Utility classes** (`.hidden`, `.text-muted`, `.badge-right`)
 
 **Do not introduce new component patterns without documenting them here**.

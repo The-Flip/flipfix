@@ -108,6 +108,111 @@ header nav span {
   text-decoration: underline;
 }
 
+/* ==========================================================================
+   User Menu (avatar dropdown in header)
+   Base: .user-menu
+   BEM Elements: .user-menu__avatar, .user-menu__dropdown, .user-menu__item
+   ========================================================================== */
+.user-menu {
+  position: relative;
+}
+
+.user-menu__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.user-menu__avatar:hover,
+.user-menu__avatar:focus-visible {
+  background: #1a66c0;
+}
+
+.user-menu__avatar:focus-visible {
+  outline: 2px solid var(--color-surface);
+  outline-offset: 2px;
+}
+
+.user-menu__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 100;
+}
+
+.user-menu:hover .user-menu__dropdown,
+.user-menu:focus-within .user-menu__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-menu__item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.user-menu__item:hover,
+.user-menu__item:focus-visible {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.user-menu__item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.user-menu__dropdown form {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-menu__dropdown {
+    transition: none;
+  }
+
+  .user-menu__avatar {
+    transition: none;
+  }
+
+  .user-menu__item {
+    transition: none;
+  }
+}
+
 main {
   max-width: 960px;
   margin: 0 auto;

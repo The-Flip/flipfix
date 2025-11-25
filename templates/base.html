@@ -23,11 +23,27 @@
         <a href="{% url 'problem-report-list' %}">Problem Reports</a>
         <a href="{% url 'log-list' %}">Logs</a>
         {% if user.is_authenticated %}
-          <span>{{ user.username }}</span>
-          <form method="post" action="{% url 'logout' %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" class="nav-logout-btn">Logout</button>
-          </form>
+          <div class="user-menu">
+            <button type="button"
+                    class="user-menu__avatar"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+              {% if user.first_name and user.last_name %}
+                {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
+              {% elif user.first_name %}
+                {{ user.first_name|make_list|first }}
+              {% else %}
+                {{ user.username|make_list|first }}
+              {% endif %}
+            </button>
+            <div class="user-menu__dropdown">
+              <a href="{% url 'profile' %}" class="user-menu__item">Profile</a>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="user-menu__item">Logout</button>
+              </form>
+            </div>
+          </div>
         {% else %}
           <a href="{% url 'login' %}">Login</a>
         {% endif %}
