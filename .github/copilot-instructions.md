@@ -64,7 +64,6 @@ This guide enables AI coding agents to work productively in this Django-based co
 
 ## Key References
 - `README.md`, `docs/README.md`, `docs/Architecture.md`, `docs/Project_Structure.md`, `docs/Datamodel.md`, `docs/Django_Python.md`, `docs/HTML_CSS.md`, `docs/Testing.md`, `docs/Deployment.md`, `docs/Operations.md`
-- Scaffolding: `docs/scaffolding/` for regenerating from scratch
 
 ---
 If any section is unclear or missing, ask for feedback and iterate to improve coverage.
