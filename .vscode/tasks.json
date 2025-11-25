@@ -4,23 +4,25 @@
     {
       "label": "Start Dev Server",
       "type": "shell",
-      "command": "make runserver",
+      "command": "exec make runserver",
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared",
+        "group": "web"
       }
     },
     {
       "label": "Start Queue Worker",
       "type": "shell",
-      "command": "make runq",
+      "command": "exec make runq",
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated"
+        "panel": "shared",
+        "group": "worker"
       }
     },
     {
@@ -30,7 +32,8 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "shared",
+        "group": "test",
         "focus": true
       },
       "group": {
@@ -45,7 +48,8 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "shared",
+        "group": "test",
         "focus": true
       },
       "group": "test"
@@ -57,7 +61,8 @@
       "problemMatcher": [],
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
+        "panel": "shared",
+        "group": "test",
         "focus": true
       },
       "group": "test"
