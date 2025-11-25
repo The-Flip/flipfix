@@ -42,6 +42,10 @@ db.sqlite3-journal
 htmlcov/
 .tox/
 
+# Linting/Type checking caches
+.ruff_cache/
+.mypy_cache/
+
 # Django schema mgrations
 # */migrations/*.py
 # !*/migrations/__init__.py
