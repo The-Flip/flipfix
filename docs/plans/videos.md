@@ -18,7 +18,7 @@ This is the spec for supporting maintainers uploading videos while logging their
 
 ## Dependencies
 - Add `django-q2` to `requirements.txt`.
-- Ensure `ffmpeg` is installed in localhost, Render, Railway.
+- Ensure `ffmpeg` is installed in localhost and Railway.
 
 ## Settings
 
@@ -156,7 +156,6 @@ def transcode_video_job(media_id):
 
 ## Worker
 - Command: `python manage.py qcluster`.
-- Render: add a worker service running that command (shares code/build with web).
 - Railway: add a worker service with start command `python manage.py qcluster`.
 - Local: run in a terminal alongside `runserver`.
 
@@ -300,7 +299,7 @@ Django-Q2 provides built-in admin views at `/admin/django_q/`:
 ### Debugging Failed Jobs
 If video processing fails:
 1. Check django-q2 admin for error message
-2. Check worker logs: `railway logs` or Render dashboard
+2. Check worker logs: `railway logs` or Railway dashboard
 3. FFmpeg stderr is captured in exception logs
 4. User can re-upload (simpler than retry mechanism)
 
@@ -411,8 +410,8 @@ After deploying worker:
 ## Test for FFmpeg in CI Pipeline
 
 Add automated testing for FFmpeg availability in your CI pipeline to catch deployment issues early:
-- Railway/Render build changes could break FFmpeg installation
-- nixpacks.toml or render.yaml edits might remove FFmpeg
+- Railway build changes could break FFmpeg installation
+- nixpacks.toml edits might remove FFmpeg
 - Dependency conflicts could prevent FFmpeg from being available
 - Catch issues before deploying to production
 
@@ -465,7 +464,7 @@ Redis + RQ was considered but not chosen for this project.
    - 2 services instead of 3
    - One database instead of database + Redis
    - Fewer environment variables to configure
-   - Single platform (Railway/Render) vs potential multi-platform
+   - Single platform (Railway) vs potential multi-platform
 
 2. **Lower Cost**
    - No Redis monthly fee ($60-120/year savings)

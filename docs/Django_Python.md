@@ -1,75 +1,20 @@
-# Django & Python Development Guide
+# Django & Python Conventions
 
-This is a guide for developers and AI assistants creating the project's Django and Python.
+## Rules
 
-It distills standard, boring-best-practice Django and Python habits so the output stays clear, maintainable, and pleasant for both humans and future AI iterations.
+- **URLs**: All routes live in root `urls.py` (not per-app) for scannability
+- **Shared code**: Put helpers in `core` app, never in `__init__.py`
+- **Settings**: Layered modules (`settings/base.py`, `dev.py`, `test.py`, `prod.py`). Set `DJANGO_SETTINGS_MODULE` accordingly.
+- **Secrets**: Use `python-decouple` to read from environment variables. Never hardcode keys or passwords.
+- **Form styling**: Apply CSS classes from [HTML_CSS.md](HTML_CSS.md)
+- **Testing**: Follow [Testing.md](Testing.md) for strategy and coverage expectations
 
-## Goals & Principles
+## File Organization
 
-- **Prefer the conventional solution** over clever abstractions. Follow Django docs, PEP 8/PEP 257, and keep code self-explanatory.
-- **Keep responsibilities focused**: each module should do one thing well (models define data, forms validate/persist, views orchestrate HTTP).
-- **Bias toward readability** by naming things explicitly, writing docstrings that describe why, and using type hints where they provide clarity.
-- **Optimize for future edits**: avoid hidden coupling, keep side effects local, and document expectations in tests.
+Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focused on its domain. Split into packages (e.g., `models/task.py`) when modules exceed ~500 lines.
 
-## Project Organization
+## Documentation
 
-- Follow the structure documented in [`Project_Structure.md`](Project_Structure.md) so apps stay grouped by domain.
-- Each app should keep the standard files (`models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py`, `management/commands/`), splitting further into packages when modules get large (e.g., `maintenance/models/task.py`).
-- Store shared helpers (decorators, template tags, mixins) in the `core` app or clearly named utility modules. Never hide functionality inside `__init__.py`.
-
-## Settings & Configuration
-
-- Use layered settings modules (`settings/base.py`, `dev.py`, `test.py`, `prod.py`). Import `base` everywhere, override environment-specific values (databases, caches, logging, security) per file.
-- Read secrets and environment-specific flags via `python-decouple` or `django-environ`. Never hardcode keys, passwords, or hostnames.
-- Enable secure defaults in `prod.py`: `SECURE_HSTS_SECONDS`, `SECURE_SSL_REDIRECT`, `CSRF_COOKIE_SECURE`, `SESSION_COOKIE_SECURE`, and WhiteNoise or CDN-backed static config.
-- Keep `LOGGING` explicit so errors from AI-generated code land in log files or stdout for Heroku/Render.
-
-## Models & Data Access
-
-- Use descriptive fields with validators and `help_text`.
-- Prefer numeric fields (`PositiveSmallIntegerField`) over string+regex combos when the data is numeric.
-- Keep domain behavior close to the data. Custom `QuerySet`/manager methods encapsulate repeated filters (e.g., `TaskQuerySet.problem_reports()`, `MachineInstanceQuerySet.on_floor()`).
-- Wrap multi-model updates in domain methods that enforce invariants (`Task.set_machine_status` updates both the task and the machine, creates a `LogEntry`, and runs inside `transaction.atomic()`).
-- Leverage Django features before writing custom code: constraints (`UniqueConstraint`, `CheckConstraint`), database indexes, choices enums, `AutoSlugField` packages if helpful.
-- Maintain forward-only migrations with descriptive names; avoid data migrations unless necessary and document each one’s purpose.
-
-## Forms & Validation
-
-- Use `ModelForm`s for CRUD flows; add `clean_*` methods for business rules and keep view logic simple.
-- Build reusable widget mixins (e.g., `FormStyleMixin` that applies the classes defined in [`HTML_CSS.md`](HTML_CSS.md)) instead of copy/pasting `attrs={'class': 'form-control'}`.
-- Keep `__init__` overrides minimal. If a form depends on request context (current user, machine slug), accept those as keyword arguments, pop them, and document assumptions in docstrings.
-- Always validate that the generated queryset matches current permissions (public visitors see only floor machines, maintainers see all). Tests should cover these cases.
-
-## Views, URLs & Services
-
-- Keep all routes in the root `urls.py` rather than per-app files, so they stay scannable in one place. Keep path names stable and descriptive.
-- Favor class-based views (`ListView`, `DetailView`, `FormView`) for CRUD or list/detail flows, but don’t hesitate to use function-based views when the logic reads clearer.
-- Enforce access control through decorators/mixins (`login_required`, `permission_required`, or custom `MaintainerRequiredMixin`). Public endpoints should still validate input and CSRF tokens.
-- Delegate complex operations to service/helper modules (e.g., `maintenance.services.task_creation`). Views gather request data, call services, and handle redirects/messages.
-- Use Django’s pagination helpers and keep filter state in GET parameters so pages stay shareable.
-
-## Templates & Static Assets
-
-- Organize templates under `templates/<app>/`. Use app-specific base templates that extend a project-wide `base.html`.
-- Keep HTML semantic, push repeated UI chunks into `include`s or template tags, and minimize inline CSS/JS. Reference shared CSS guidance in [`HTML_CSS.md`](HTML_CSS.md).
-- Never expose private data (reporter contact info, IPs) in public templates. Add template tags to encapsulate privacy rules, and test them.
-- Use the `{% static %}` and `{% url %}` tags everywhere; never hardcode paths.
-
-## Admin, Commands & Utilities
-
-- Register models in their native apps with tailored `ModelAdmin`s (search, filters, list display). Keep admin-only helpers under `admin.py` or `admin/` packages.
-- Management commands live under `app/management/commands/` with clear names, docstrings, and friendly `self.stdout.write` output. Validate prerequisites before mutating data and wrap large imports in transactions.
-- Custom decorators or template tags should import only what they need, catch specific exceptions, and log unexpected states instead of silent `except:` blocks.
-
-## Testing & Quality
-
-- See [`Testing.md`](Testing.md) for the full testing strategy, coverage expectations, and runner instructions. Follow that doc whenever creating or updating tests.
-- This section simply reiterates the core expectation: every feature must be backed by automated tests (unit, form, view, or integration) before merging to `main`.
-
-## Documentation & Communication
-
-- When generating new modules, include docstrings summarizing intent and reference related docs ([`Datamodel.md`](Datamodel.md), [`plans/Maintenance_Workflows.md`](plans/Maintenance_Workflows.md)) when relevant.
-- Update [`README.md`](../README.md) and domain docs whenever behavior changes so humans and future AI runs have accurate context.
-- Prefer explicit TODO comments over implied context; include the “why” so a later generation can safely finish or remove the item.
-
-Adhering to these guidelines keeps regenerated Django projects predictable, secure, and easy to maintain—exactly what both humans and AI helpers need for long-term success.
+- Include docstrings summarizing intent on classes and complex functions
+- Update docs when behavior changes
+- Use explicit TODO comments with rationale for unfinished work
