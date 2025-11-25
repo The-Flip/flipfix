@@ -745,7 +745,6 @@ class LogEntryWorkDateTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
 
@@ -844,7 +843,6 @@ class MachineLogCreateViewWorkDateTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
         self.staff_user = User.objects.create_user(
@@ -911,7 +909,6 @@ class LogEntryDetailViewWorkDateTests(TestCase):
         self.machine = MachineInstance.objects.create(
             model=self.machine_model,
             slug="test-machine",
-            location=MachineInstance.LOCATION_FLOOR,
             operational_status=MachineInstance.STATUS_GOOD,
         )
         self.log_entry = LogEntry.objects.create(
