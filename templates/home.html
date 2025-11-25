@@ -30,11 +30,15 @@
     <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
        class="btn btn-primary">Post to The Flip Discord</a>
   </div>
-  <div class="card">
-    <h3>Superusers</h3>
-    <p>
-      Sysadmins, like <code>william</code>, can access the admin console.
-    </p>
-    <a href="{% url 'admin:index' %}" class="btn btn-primary">Django Admin</a>
-  </div>
+  {% if user.is_superuser %}
+    <div class="card">
+      <h3>Admin</h3>
+      <p>This only appears for admins.</p>
+      <ul>
+        <li><a href="{% url 'admin:accounts_invitation_add' %}">Invite new user</a></li>
+        <li><a href="{% url 'admin:catalog_location_changelist' %}">Manage locations</a></li>
+        <li><a href="{% url 'admin:index' %}">Admin home</a></li>
+      </ul>
+    </div>
+  {% endif %}
 {% endblock %}
