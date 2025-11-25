@@ -22,3 +22,7 @@ django-q2==1.8.0
 
 # HTTP Requests (for worker → web service transfer)
 requests==2.32.3
+
+# Markdown Rendering
+Markdown==3.7
+nh3==0.2.18
