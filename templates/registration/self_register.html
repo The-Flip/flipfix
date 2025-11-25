@@ -19,13 +19,19 @@
                id="id_username"
                value="{{ form.username.value|default:'' }}"
                required
-               autocomplete="username"
-               list="username-suggestions">
+               autocomplete="off"
+               list="username-suggestions"
+               placeholder="New or existing username"
+               data-1p-ignore="true"
+               data-lpignore="true">
         <button type="button" id="check-username-btn" class="btn btn-secondary">Check</button>
       </div>
       <datalist id="username-suggestions"></datalist>
       <small id="username-status"></small>
       {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      <a href="{% url 'home' %}"
+         class="btn btn-secondary"
+         id="cancel-username">Cancel</a>
     </div>
     <!-- Profile section (revealed after username check) -->
     <div id="profile-section" class="profile-section" hidden>
@@ -78,6 +84,7 @@
         {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
       </div>
       <button type="submit" class="btn btn-primary">Register</button>
+      <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
   <style>
@@ -138,6 +145,7 @@
       const datalist = document.getElementById('username-suggestions');
       const passwordInput = document.getElementById('id_password');
       const hidePasswordCheckbox = document.getElementById('hide-password');
+      const cancelUsername = document.getElementById('cancel-username');
 
       let debounceTimer;
 
@@ -148,6 +156,13 @@
 
         if (query.length < 2) {
           datalist.innerHTML = '';
+          return;
+        }
+
+        // Check if user selected from datalist (value matches an option exactly)
+        const options = Array.from(datalist.options).map(o => o.value);
+        if (options.includes(query)) {
+          checkUsername();
           return;
         }
 
@@ -163,7 +178,7 @@
       });
 
       // Check username availability
-      checkBtn.addEventListener('click', function() {
+      function checkUsername() {
         const username = usernameInput.value.trim();
         if (!username) {
           statusEl.textContent = 'Please enter a username';
@@ -178,23 +193,27 @@
               statusEl.textContent = data.exists ? 'Available to claim' : 'Available';
               statusEl.className = 'available';
               profileSection.hidden = false;
+              cancelUsername.style.display = 'none';
               usernameHidden.value = username;
               registeringAs.innerHTML = (data.exists ? 'Claiming existing account: ' : 'Registering as: ') + '<code>' + username + '</code>';
               // Focus the first name field
               document.getElementById('id_first_name').focus();
             } else {
               statusEl.textContent = 'Not available';
+              cancelUsername.style.display = '';
               statusEl.className = 'unavailable';
               profileSection.hidden = true;
             }
           });
-      });
+      }
+
+      checkBtn.addEventListener('click', checkUsername);
 
       // Also check on Enter key in username field
       usernameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          checkBtn.click();
+          checkUsername();
         }
       });
 
@@ -206,6 +225,7 @@
       // If form has errors, show profile section
       {% if form.errors %}
         profileSection.hidden = false;
+        cancelUsername.style.display = 'none';
         usernameHidden.value = usernameInput.value;
         registeringAs.innerHTML = 'Registering as: ' + '<code>' + usernameInput.value + '</code>';
       {% endif %}

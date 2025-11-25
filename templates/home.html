@@ -5,23 +5,22 @@
     <p>Welcome to The Flip's pinball machine maintenance system.</p>
   </div>
   <div class="card">
-    <h3>Register</h3>
+    <h3>👤  Register</h3>
     <p>During beta, you can register yourself.</p>
     <a href="{% url 'self-register' %}" class="btn btn-primary">Register</a>
   </div>
   <div class="card">
-    <h3>Bugs &amp; Feature Requests</h3>
+    <h3>🪲 Bugs &amp; 💡 Feature Requests</h3>
     <p>Found a bug?  Have an idea?</p>
-    <a href="https://github.com/deanmoses/the_flip/issues"
-       class="btn btn-primary">Create a GitHub Issue</a> (requires GitHub account)
-    or
     <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
        class="btn btn-primary">Post to The Flip Discord</a>
+    or
+    <a href="https://github.com/deanmoses/the_flip/issues"
+       class="btn btn-primary">Create a GitHub Issue</a> <em>(requires GitHub account)</em>
   </div>
   {% if user.is_superuser %}
     <div class="card">
       <h3>Admin</h3>
-      <p>This only appears for admins.</p>
       <ul>
         <li>
           <a href="{% url 'admin:accounts_invitation_add' %}">Invite new user</a>
@@ -33,6 +32,7 @@
           <a href="{% url 'admin:index' %}">Admin home</a>
         </li>
       </ul>
+      <em>This only appears for admins</em>
     </div>
   {% endif %}
 {% endblock %}
