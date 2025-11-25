@@ -3,6 +3,7 @@
 
 # Code formatting and linting
 ruff==0.8.4
+djlint==1.36.4
 
 # Type checking
 mypy==1.13.0
