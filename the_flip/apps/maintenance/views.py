@@ -178,7 +178,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             LogEntry.objects.filter(machine=self.machine)
             .select_related("machine")
             .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
+            .order_by("-work_date")
         )
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -209,6 +209,8 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             initial["submitter_name"] = (
                 self.request.user.get_full_name() or self.request.user.get_username()
             )
+        # Default to today at midnight (00:00)
+        initial["work_date"] = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
         return initial
 
     def get_context_data(self, **kwargs):
@@ -220,7 +222,10 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         submitter_name = form.cleaned_data["submitter_name"].strip()
         description = form.cleaned_data["text"].strip()
         media_file = form.cleaned_data["media_file"]
-        log_entry = LogEntry.objects.create(machine=self.machine, text=description)
+        work_date = form.cleaned_data["work_date"]
+        log_entry = LogEntry.objects.create(
+            machine=self.machine, text=description, work_date=work_date
+        )
 
         maintainer = self.match_maintainer(submitter_name)
         if maintainer:
@@ -277,7 +282,7 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
             LogEntry.objects.filter(machine=machine)
             .select_related("machine")
             .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
+            .order_by("-work_date")
         )
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -308,7 +313,7 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             LogEntry.objects.all()
             .select_related("machine")
             .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
+            .order_by("-work_date")
         )
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -334,7 +339,7 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
             LogEntry.objects.all()
             .select_related("machine")
             .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
+            .order_by("-work_date")
         )
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -371,6 +376,29 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             self.object.text = request.POST.get("text", "")
             self.object.save(update_fields=["text", "updated_at"])
             return JsonResponse({"success": True})
+
+        elif action == "update_work_date":
+            from datetime import datetime
+
+            work_date_str = request.POST.get("work_date", "")
+            if not work_date_str:
+                return JsonResponse({"success": False, "error": "No date provided"}, status=400)
+            try:
+                # Parse datetime-local format: YYYY-MM-DDTHH:MM
+                naive_dt = datetime.strptime(work_date_str, "%Y-%m-%dT%H:%M")
+                work_date = timezone.make_aware(naive_dt)
+                # Validate not in the future
+                if work_date.date() > timezone.localdate():
+                    return JsonResponse(
+                        {"success": False, "error": "Date cannot be in the future."}, status=400
+                    )
+                self.object.work_date = work_date
+                self.object.save(update_fields=["work_date", "updated_at"])
+                return JsonResponse({"success": True})
+            except ValueError:
+                return JsonResponse(
+                    {"success": False, "error": "Invalid date format"}, status=400
+                )
 
         elif action == "upload_media":
             if "file" in request.FILES:

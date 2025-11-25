@@ -14,6 +14,11 @@
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="form-field">
+        <label for="{{ form.work_date.id_for_label }}">Date of work</label>
+        {{ form.work_date }}
+        {% for error in form.work_date.errors %}<div class="error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
         <label for="{{ form.submitter_name.id_for_label }}">Your name</label>
         {{ form.submitter_name }}
         {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}

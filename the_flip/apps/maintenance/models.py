@@ -7,6 +7,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
@@ -106,9 +107,13 @@ class LogEntry(TimeStampedModel):
         help_text="Comma-separated names when maintainers are not in the system.",
     )
     text = models.TextField()
+    work_date = models.DateTimeField(
+        default=timezone.now,
+        help_text="When the work was performed. Defaults to now if not specified.",
+    )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-work_date"]
 
     def __str__(self) -> str:
         return f"Log entry for {self.machine.display_name}"

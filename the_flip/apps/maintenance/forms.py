@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from django import forms
+from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
 from the_flip.apps.maintenance.models import ProblemReport
@@ -33,6 +34,13 @@ class MachineReportSearchForm(forms.Form):
 
 
 class LogEntryQuickForm(forms.Form):
+    work_date = forms.DateTimeField(
+        label="Date of work",
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
     submitter_name = forms.CharField(
         label="Your name",
         max_length=200,
@@ -52,6 +60,16 @@ class LogEntryQuickForm(forms.Form):
             attrs={"accept": "image/*,video/*,.heic,.heif,image/heic,image/heif"}
         ),
     )
+
+    def clean_work_date(self):
+        """Validate that work_date is not in the future."""
+        work_date = self.cleaned_data.get("work_date")
+        if work_date:
+            # Allow any time today, reject future dates
+            today = timezone.localdate()
+            if work_date.date() > today:
+                raise forms.ValidationError("Date cannot be in the future.")
+        return work_date
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video)."""
