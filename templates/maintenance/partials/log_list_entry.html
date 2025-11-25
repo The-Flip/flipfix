@@ -17,5 +17,5 @@
       {% endif %}
     </div>
   </div>
-  <div class="machine-card__problem">{{ entry.text }}</div>
+  <div class="machine-card__problem markdown-content">{{ entry.text|render_markdown }}</div>
 </li>

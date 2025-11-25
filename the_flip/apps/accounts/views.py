@@ -1,8 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import UpdateView
 
-from .forms import InvitationRegistrationForm
+from .forms import InvitationRegistrationForm, ProfileForm
 from .models import Invitation, Maintainer
 
 User = get_user_model()
@@ -48,3 +51,18 @@ def invitation_register(request, token):
         "registration/invitation_register.html",
         {"form": form, "invitation": invitation},
     )
+
+
+class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """Allow users to update their profile information."""
+
+    form_class = ProfileForm
+    template_name = "accounts/profile.html"
+    success_url = reverse_lazy("profile")
+
+    def get_object(self):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, "Profile updated successfully.")
+        return super().form_valid(form)

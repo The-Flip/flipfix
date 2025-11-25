@@ -108,6 +108,111 @@ header nav span {
   text-decoration: underline;
 }
 
+/* ==========================================================================
+   User Menu (avatar dropdown in header)
+   Base: .user-menu
+   BEM Elements: .user-menu__avatar, .user-menu__dropdown, .user-menu__item
+   ========================================================================== */
+.user-menu {
+  position: relative;
+}
+
+.user-menu__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.user-menu__avatar:hover,
+.user-menu__avatar:focus-visible {
+  background: #1a66c0;
+}
+
+.user-menu__avatar:focus-visible {
+  outline: 2px solid var(--color-surface);
+  outline-offset: 2px;
+}
+
+.user-menu__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  z-index: 100;
+}
+
+.user-menu:hover .user-menu__dropdown,
+.user-menu:focus-within .user-menu__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-menu__item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.user-menu__item:hover,
+.user-menu__item:focus-visible {
+  background: var(--color-surface-muted);
+  text-decoration: none;
+}
+
+.user-menu__item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.user-menu__dropdown form {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-menu__dropdown {
+    transition: none;
+  }
+
+  .user-menu__avatar {
+    transition: none;
+  }
+
+  .user-menu__item {
+    transition: none;
+  }
+}
+
 main {
   max-width: 960px;
   margin: 0 auto;
@@ -592,6 +697,98 @@ input[type="radio"] {
 #log-loading {
   margin-top: var(--space-3);
   color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Markdown Content
+   Styling for rendered markdown text
+   ========================================================================== */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content p {
+  margin: 0 0 var(--space-3) 0;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0 0 var(--space-3) 0;
+  padding-left: var(--space-5);
+}
+
+.markdown-content li {
+  margin-bottom: var(--space-1);
+}
+
+.markdown-content code {
+  background: var(--color-surface);
+  padding: 0.125em 0.375em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background: var(--color-surface);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 0 0 var(--space-3) 0;
+}
+
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--color-border);
+  margin: 0 0 var(--space-3) 0;
+  padding-left: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: var(--space-4) 0 var(--space-2) 0;
+  line-height: 1.3;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child,
+.markdown-content h4:first-child,
+.markdown-content h5:first-child,
+.markdown-content h6:first-child {
+  margin-top: 0;
+}
+
+/* Compact markdown in truncated/card contexts */
+.machine-card__problem.markdown-content p,
+.machine-card__problem.markdown-content ul,
+.machine-card__problem.markdown-content ol {
+  margin: 0;
+  display: inline;
+}
+
+.machine-card__problem.markdown-content li {
+  display: inline;
+}
+
+.machine-card__problem.markdown-content li::before {
+  content: " • ";
+}
+
+.machine-card__problem.markdown-content li:first-child::before {
+  content: "";
 }
 
 /* ==========================================================================

@@ -26,10 +26,20 @@
     </p>
     <div class="entry-content">
       <div class="entry-text-container">
-        <textarea id="entry-text"
-                  class="entry-text-edit"
-                  data-entry-id="{{ entry.pk }}">{{ entry.text }}</textarea>
-        <div id="save-status" class="save-status"></div>
+        <div id="text-view-mode">
+          <div id="entry-text-display" class="markdown-content">{{ entry.text|render_markdown }}</div>
+          <button type="button" id="edit-button" class="btn btn-secondary">Edit</button>
+        </div>
+        <div id="text-edit-mode" class="hidden">
+          <textarea id="entry-text"
+                    class="entry-text-edit"
+                    data-entry-id="{{ entry.pk }}">{{ entry.text }}</textarea>
+          <div class="edit-actions">
+            <button type="button" id="save-button" class="btn btn-primary">Save</button>
+            <button type="button" id="cancel-button" class="btn btn-secondary">Cancel</button>
+            <span id="save-status" class="save-status"></span>
+          </div>
+        </div>
       </div>
       <div class="entry-media">
         <h3>Media</h3>
@@ -134,45 +144,60 @@
           }
       });
 
-      // Auto-save text with debounce
+      // Text edit mode switching
       const textarea = document.getElementById('entry-text');
       const saveStatus = document.getElementById('save-status');
-      let saveTimeout;
+      const textViewMode = document.getElementById('text-view-mode');
+      const textEditMode = document.getElementById('text-edit-mode');
+      const editButton = document.getElementById('edit-button');
+      const saveButton = document.getElementById('save-button');
+      const cancelButton = document.getElementById('cancel-button');
+      const textDisplay = document.getElementById('entry-text-display');
 
-      textarea.addEventListener('input', () => {
-          clearTimeout(saveTimeout);
-          saveStatus.textContent = 'Editing...';
+      let originalText = textarea.value;
+
+      editButton.addEventListener('click', () => {
+          originalText = textarea.value;
+          textViewMode.classList.add('hidden');
+          textEditMode.classList.remove('hidden');
+          textarea.focus();
+      });
+
+      cancelButton.addEventListener('click', () => {
+          textarea.value = originalText;
+          saveStatus.textContent = '';
+          saveStatus.className = 'save-status';
+          textEditMode.classList.add('hidden');
+          textViewMode.classList.remove('hidden');
+      });
+
+      saveButton.addEventListener('click', async () => {
+          saveStatus.textContent = 'Saving...';
           saveStatus.className = 'save-status editing';
 
-          saveTimeout = setTimeout(async () => {
-              try {
-                  const formData = new FormData();
-                  formData.append('action', 'update_text');
-                  formData.append('text', textarea.value);
-                  formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+          try {
+              const formData = new FormData();
+              formData.append('action', 'update_text');
+              formData.append('text', textarea.value);
+              formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
 
-                  const response = await fetch(window.location.href, {
-                      method: 'POST',
-                      body: formData
-                  });
+              const response = await fetch(window.location.href, {
+                  method: 'POST',
+                  body: formData
+              });
 
-                  if (response.ok) {
-                      saveStatus.textContent = 'Saved';
-                      saveStatus.className = 'save-status saved';
-                      setTimeout(() => {
-                          saveStatus.textContent = '';
-                          saveStatus.className = 'save-status';
-                      }, 2000);
-                  } else {
-                      saveStatus.textContent = 'Error saving';
-                      saveStatus.className = 'save-status error';
-                  }
-              } catch (error) {
-                  console.error('Save error:', error);
+              if (response.ok) {
+                  // Reload page to get server-rendered markdown
+                  window.location.reload();
+              } else {
                   saveStatus.textContent = 'Error saving';
                   saveStatus.className = 'save-status error';
               }
-          }, 1000); // 1 second debounce
+          } catch (error) {
+              console.error('Save error:', error);
+              saveStatus.textContent = 'Error saving';
+              saveStatus.className = 'save-status error';
+          }
       });
 
       // Upload media
@@ -322,22 +347,27 @@
           border-color: #0066cc;
       }
 
+      .edit-actions {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          margin-top: var(--space-2);
+      }
+
       .save-status {
-          margin-top: 0.5rem;
           font-size: 0.875rem;
-          min-height: 1.25rem;
       }
 
       .save-status.editing {
-          color: #666;
-      }
-
-      .save-status.saved {
-          color: #28a745;
+          color: var(--color-text-muted);
       }
 
       .save-status.error {
-          color: #dc3545;
+          color: var(--color-danger);
+      }
+
+      #edit-button {
+          margin-top: var(--space-2);
       }
 
       .entry-media h3 {

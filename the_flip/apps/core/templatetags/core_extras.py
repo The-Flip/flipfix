@@ -1,8 +1,49 @@
+import markdown
+import nh3
 from django import template
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 register = template.Library()
+
+# Allowed HTML tags for markdown rendering
+ALLOWED_TAGS = {
+    "p",
+    "br",
+    "strong",
+    "em",
+    "ul",
+    "ol",
+    "li",
+    "code",
+    "pre",
+    "blockquote",
+    "a",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+}
+
+# Allowed attributes per tag
+ALLOWED_ATTRIBUTES = {
+    "a": {"href", "title"},
+}
+
+
+@register.filter
+def render_markdown(text):
+    """Convert markdown text to sanitized HTML."""
+    if not text:
+        return ""
+    # Convert markdown to HTML
+    html = markdown.markdown(text, extensions=["fenced_code", "nl2br"])
+    # Sanitize to prevent XSS
+    safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
+    return mark_safe(safe_html)  # noqa: S308 - HTML sanitized by nh3
 
 
 @register.filter
