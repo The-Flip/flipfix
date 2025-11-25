@@ -44,7 +44,14 @@ class LogEntryQuickForm(forms.Form):
     submitter_name = forms.CharField(
         label="Your name",
         max_length=200,
-        widget=forms.TextInput(attrs={"enterkeyhint": "next", "autocomplete": "name"}),
+        widget=forms.TextInput(
+            attrs={
+                "enterkeyhint": "next",
+                "autocomplete": "off",
+                "data-1p-ignore": "true",
+                "data-lpignore": "true",
+            }
+        ),
     )
     text = forms.CharField(
         label="Description",
