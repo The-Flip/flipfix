@@ -21,6 +21,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
 
+from the_flip.apps.accounts.views import invitation_register
 from the_flip.apps.catalog.views import (
     MachineDetailView,
     MachineListView,
@@ -45,6 +46,11 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path(
+        "register/<str:token>/",
+        invitation_register,
+        name="invitation-register",
+    ),
     # Public machine pages
     path("m/", PublicMachineListView.as_view(), name="public-machine-list"),
     path("m/<slug:slug>/", PublicMachineDetailView.as_view(), name="public-machine-detail"),
