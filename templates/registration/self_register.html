@@ -1,0 +1,214 @@
+{% extends "base_public_minimal.html" %}
+{% block title %}Register - The Flip{% endblock %}
+{% block content %}
+  <h2>Register</h2>
+  <p>Create a new account or claim an existing one.</p>
+  <form method="post" id="registration-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <!-- Username section -->
+    <div class="form-field">
+      <label for="id_username">Username</label>
+      <div class="input-with-button">
+        <input type="text"
+               name="username"
+               id="id_username"
+               value="{{ form.username.value|default:'' }}"
+               required
+               autocomplete="username"
+               list="username-suggestions">
+        <button type="button" id="check-username-btn" class="btn btn-secondary">Check</button>
+      </div>
+      <datalist id="username-suggestions"></datalist>
+      <small id="username-status"></small>
+      {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <!-- Profile section (revealed after username check) -->
+    <div id="profile-section" class="profile-section" hidden>
+      <p id="registering-as" class="registering-as"></p>
+      <!-- Hidden username field for password managers -->
+      <input type="hidden"
+             name="username_hidden"
+             autocomplete="username"
+             id="id_username_hidden">
+      <div class="form-field">
+        <label for="id_first_name">First name</label>
+        <input type="text"
+               name="first_name"
+               id="id_first_name"
+               value="{{ form.first_name.value|default:'' }}"
+               autocomplete="given-name">
+        {% for error in form.first_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_last_name">Last name</label>
+        <input type="text"
+               name="last_name"
+               id="id_last_name"
+               value="{{ form.last_name.value|default:'' }}"
+               autocomplete="family-name">
+        {% for error in form.last_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_email">
+          Email <span class="optional">(optional)</span>
+        </label>
+        <input type="email"
+               name="email"
+               id="id_email"
+               value="{{ form.email.value|default:'' }}"
+               autocomplete="email">
+        {% for error in form.email.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_password">Password</label>
+        <input type="text"
+               name="password"
+               id="id_password"
+               required
+               autocomplete="new-password">
+        <label class="checkbox-label">
+          <input type="checkbox" id="hide-password">
+          Hide password
+        </label>
+        {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      <button type="submit" class="btn btn-primary">Register</button>
+    </div>
+  </form>
+  <style>
+      .input-with-button {
+          display: flex;
+          gap: var(--space-2);
+      }
+
+      .input-with-button input {
+          flex: 1;
+      }
+
+      .profile-section {
+          margin-top: var(--space-4);
+          padding-top: var(--space-4);
+          border-top: 1px solid var(--color-border);
+      }
+
+      .registering-as {
+          font-weight: 500;
+          margin-bottom: var(--space-4);
+      }
+
+      .optional {
+          font-weight: normal;
+          color: var(--color-muted);
+      }
+
+      .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          font-weight: normal;
+          margin-top: var(--space-2);
+      }
+
+      #username-status {
+          display: block;
+          margin-top: var(--space-1);
+      }
+
+      #username-status.available {
+          color: var(--color-accent);
+      }
+
+      #username-status.unavailable {
+          color: var(--color-danger);
+      }
+  </style>
+  <script>
+    (function() {
+      const usernameInput = document.getElementById('id_username');
+      const usernameHidden = document.getElementById('id_username_hidden');
+      const checkBtn = document.getElementById('check-username-btn');
+      const statusEl = document.getElementById('username-status');
+      const profileSection = document.getElementById('profile-section');
+      const registeringAs = document.getElementById('registering-as');
+      const datalist = document.getElementById('username-suggestions');
+      const passwordInput = document.getElementById('id_password');
+      const hidePasswordCheckbox = document.getElementById('hide-password');
+
+      let debounceTimer;
+
+      // Fetch suggestions as user types
+      usernameInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+          datalist.innerHTML = '';
+          return;
+        }
+
+        debounceTimer = setTimeout(function() {
+          fetch('/register/check-username/?q=' + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(data => {
+              datalist.innerHTML = data.suggestions
+                .map(s => '<option value="' + s + '">')
+                .join('');
+            });
+        }, 200);
+      });
+
+      // Check username availability
+      checkBtn.addEventListener('click', function() {
+        const username = usernameInput.value.trim();
+        if (!username) {
+          statusEl.textContent = 'Please enter a username';
+          statusEl.className = 'unavailable';
+          return;
+        }
+
+        fetch('/register/check-username/?q=' + encodeURIComponent(username))
+          .then(r => r.json())
+          .then(data => {
+            if (data.available) {
+              statusEl.textContent = data.exists ? 'Available to claim' : 'Available';
+              statusEl.className = 'available';
+              profileSection.hidden = false;
+              usernameHidden.value = username;
+              registeringAs.textContent = 'Registering as: ' + username;
+              // Focus the first name field
+              document.getElementById('id_first_name').focus();
+            } else {
+              statusEl.textContent = 'Not available';
+              statusEl.className = 'unavailable';
+              profileSection.hidden = true;
+            }
+          });
+      });
+
+      // Also check on Enter key in username field
+      usernameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkBtn.click();
+        }
+      });
+
+      // Toggle password visibility
+      hidePasswordCheckbox.addEventListener('change', function() {
+        passwordInput.type = this.checked ? 'password' : 'text';
+      });
+
+      // If form has errors, show profile section
+      {% if form.errors %}
+        profileSection.hidden = false;
+        usernameHidden.value = usernameInput.value;
+        registeringAs.textContent = 'Registering as: ' + usernameInput.value;
+      {% endif %}
+    })();
+  </script>
+{% endblock %}

@@ -353,6 +353,262 @@ class PasswordChangeViewTests(TestCase):
         self.assertContains(response, "Password Changed")
 
 
+class SelfRegistrationViewTests(TestCase):
+    """Tests for the self-registration view (beta feature)."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.register_url = reverse("self-register")
+        self.check_username_url = reverse("check-username")
+
+        # Create an unclaimed user (has @example.com email, not admin)
+        self.unclaimed_user = User.objects.create_user(
+            username="unclaimed",
+            email="unclaimed@example.com",
+            password="test123",
+            first_name="Old",
+            last_name="Name",
+            is_staff=True,
+        )
+        Maintainer.objects.get_or_create(user=self.unclaimed_user)
+
+        # Create an admin user (cannot be claimed)
+        self.admin_user = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass",
+        )
+
+        # Create a claimed user (has real email, not @example.com)
+        self.claimed_user = User.objects.create_user(
+            username="claimed",
+            email="claimed@realemail.com",
+            password="SecurePass123!",
+            is_staff=True,
+        )
+        Maintainer.objects.get_or_create(user=self.claimed_user)
+
+    def test_registration_page_loads(self):
+        """Registration page should load."""
+        response = self.client.get(self.register_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "registration/self_register.html")
+        self.assertContains(response, "Register")
+
+    def test_claim_existing_unclaimed_account(self):
+        """Should be able to claim an unclaimed account."""
+        data = {
+            "username": "unclaimed",
+            "first_name": "New",
+            "last_name": "Name",
+            "email": "real@email.com",
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data, follow=True)
+
+        self.assertRedirects(response, reverse("home"))
+
+        # User should be updated
+        self.unclaimed_user.refresh_from_db()
+        self.assertEqual(self.unclaimed_user.email, "real@email.com")
+        self.assertEqual(self.unclaimed_user.first_name, "New")
+        self.assertEqual(self.unclaimed_user.last_name, "Name")
+        self.assertTrue(self.unclaimed_user.check_password("SecurePass123!"))
+
+        # User should be logged in
+        self.assertTrue(response.context["user"].is_authenticated)
+        self.assertEqual(response.context["user"].username, "unclaimed")
+
+        # Should show welcome message
+        messages = list(response.context["messages"])
+        self.assertEqual(len(messages), 1)
+        self.assertIn("Welcome to The Flip", str(messages[0]))
+
+    def test_claim_without_email_clears_example_email(self):
+        """Claiming without email should clear the @example.com email."""
+        data = {
+            "username": "unclaimed",
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data, follow=True)
+
+        self.assertRedirects(response, reverse("home"))
+        self.unclaimed_user.refresh_from_db()
+        self.assertEqual(self.unclaimed_user.email, "")
+
+    def test_claim_preserves_existing_names_if_not_provided(self):
+        """Claiming should preserve existing first/last name if not provided."""
+        data = {
+            "username": "unclaimed",
+            "password": "SecurePass123!",
+        }
+        self.client.post(self.register_url, data, follow=True)
+
+        self.unclaimed_user.refresh_from_db()
+        self.assertEqual(self.unclaimed_user.first_name, "Old")
+        self.assertEqual(self.unclaimed_user.last_name, "Name")
+
+    def test_create_new_account(self):
+        """Should be able to create a new account."""
+        data = {
+            "username": "brandnew",
+            "first_name": "Brand",
+            "last_name": "New",
+            "email": "brandnew@email.com",
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data, follow=True)
+
+        self.assertRedirects(response, reverse("home"))
+
+        # User should be created
+        user = User.objects.get(username="brandnew")
+        self.assertEqual(user.email, "brandnew@email.com")
+        self.assertEqual(user.first_name, "Brand")
+        self.assertEqual(user.last_name, "New")
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.check_password("SecurePass123!"))
+
+        # Maintainer should be created
+        self.assertTrue(Maintainer.objects.filter(user=user).exists())
+
+        # User should be logged in
+        self.assertTrue(response.context["user"].is_authenticated)
+
+    def test_cannot_claim_admin_account(self):
+        """Should not be able to claim an admin account."""
+        data = {
+            "username": "admin",
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "not available")
+
+    def test_cannot_claim_already_claimed_account(self):
+        """Should not be able to claim an already-claimed account."""
+        data = {
+            "username": "claimed",
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already taken")
+
+    def test_password_validation(self):
+        """Registration should enforce password validation rules."""
+        data = {
+            "username": "newuser",
+            "password": "123",  # Too short
+        }
+        response = self.client.post(self.register_url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_email_uniqueness(self):
+        """Registration should reject email already used by another user."""
+        data = {
+            "username": "newuser",
+            "email": "claimed@realemail.com",  # Already used
+            "password": "SecurePass123!",
+        }
+        response = self.client.post(self.register_url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already registered")
+
+
+class CheckUsernameViewTests(TestCase):
+    """Tests for the check-username AJAX endpoint."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.check_url = reverse("check-username")
+
+        # Unclaimed user
+        User.objects.create_user(
+            username="unclaimed",
+            email="unclaimed@example.com",
+            password="test123",
+            is_staff=True,
+        )
+
+        # Admin user
+        User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="adminpass",
+        )
+
+        # Claimed user
+        User.objects.create_user(
+            username="claimed",
+            email="claimed@realemail.com",
+            password="pass123",
+            is_staff=True,
+        )
+
+    def test_unclaimed_username_is_available(self):
+        """Unclaimed usernames should be available."""
+        response = self.client.get(self.check_url + "?q=unclaimed")
+        data = response.json()
+
+        self.assertTrue(data["available"])
+        self.assertTrue(data["exists"])
+
+    def test_new_username_is_available(self):
+        """New usernames should be available."""
+        response = self.client.get(self.check_url + "?q=brandnew")
+        data = response.json()
+
+        self.assertTrue(data["available"])
+        self.assertFalse(data["exists"])
+
+    def test_admin_username_not_available(self):
+        """Admin usernames should not be available."""
+        response = self.client.get(self.check_url + "?q=admin")
+        data = response.json()
+
+        self.assertFalse(data["available"])
+        self.assertTrue(data["exists"])
+
+    def test_claimed_username_not_available(self):
+        """Already-claimed usernames should not be available."""
+        response = self.client.get(self.check_url + "?q=claimed")
+        data = response.json()
+
+        self.assertFalse(data["available"])
+        self.assertTrue(data["exists"])
+
+    def test_suggestions_only_include_claimable_users(self):
+        """Suggestions should only include claimable (unclaimed, non-admin) users."""
+        response = self.client.get(self.check_url + "?q=un")
+        data = response.json()
+
+        self.assertIn("unclaimed", data["suggestions"])
+        self.assertNotIn("admin", data["suggestions"])
+        self.assertNotIn("claimed", data["suggestions"])
+
+    def test_minimum_query_length(self):
+        """Should require minimum 2 characters for suggestions."""
+        response = self.client.get(self.check_url + "?q=u")
+        data = response.json()
+
+        self.assertFalse(data["available"])
+        self.assertEqual(data["suggestions"], [])
+
+    def test_case_insensitive_check(self):
+        """Username check should be case-insensitive."""
+        response = self.client.get(self.check_url + "?q=UNCLAIMED")
+        data = response.json()
+
+        self.assertTrue(data["available"])
+        self.assertTrue(data["exists"])
+
+
 class NavigationTests(TestCase):
     """Tests for navigation display based on auth state."""
 

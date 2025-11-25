@@ -72,7 +72,7 @@ class RenderMarkdownFilterTests(TestCase):
 
     def test_xss_javascript_urls_stripped(self):
         """JavaScript URLs are stripped for XSS protection."""
-        result = render_markdown('[click](javascript:alert(1))')
+        result = render_markdown("[click](javascript:alert(1))")
         # The link should be sanitized - either href removed or link not rendered
         self.assertNotIn("javascript:", result)
 

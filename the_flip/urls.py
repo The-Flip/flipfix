@@ -4,7 +4,12 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
 
-from the_flip.apps.accounts.views import ProfileUpdateView, invitation_register
+from the_flip.apps.accounts.views import (
+    ProfileUpdateView,
+    check_username,
+    invitation_register,
+    self_register,
+)
 from the_flip.apps.catalog.views import (
     MachineDetailView,
     MachineListView,
@@ -29,6 +34,10 @@ urlpatterns = [
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    # Self-registration (beta)
+    path("register/", self_register, name="self-register"),
+    path("register/check-username/", check_username, name="check-username"),
+    # Invitation-based registration
     path(
         "register/<str:token>/",
         invitation_register,
