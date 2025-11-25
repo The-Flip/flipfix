@@ -239,6 +239,11 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
+        # Check if current user is a shared account (show autocomplete for maintainer selection)
+        is_shared_account = False
+        if hasattr(self.request.user, "maintainer"):
+            is_shared_account = self.request.user.maintainer.is_shared_account
+        context["is_shared_account"] = is_shared_account
         return context
 
     def form_valid(self, form):

@@ -21,10 +21,14 @@
       </div>
       <div class="form-field">
         <label for="{{ form.submitter_name.id_for_label }}">Your name</label>
-        <div class="autocomplete" id="submitter-autocomplete">
+        {% if is_shared_account %}
+          <div class="autocomplete" id="submitter-autocomplete">
+            {{ form.submitter_name }}
+            <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
+          </div>
+        {% else %}
           {{ form.submitter_name }}
-          <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
-        </div>
+        {% endif %}
         {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
       <div class="form-field">
@@ -62,7 +66,8 @@
           workDateInput.value = toDateTimeLocalValue(new Date());
       }
 
-      // Maintainer autocomplete
+      {% if is_shared_account %}
+      // Maintainer autocomplete (only for shared accounts)
       (function() {
           const input = document.getElementById('{{ form.submitter_name.id_for_label }}');
           const dropdown = document.getElementById('submitter-dropdown');
@@ -144,5 +149,6 @@
               }
           });
       })();
+      {% endif %}
   </script>
 {% endblock %}
