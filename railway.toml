@@ -3,6 +3,18 @@
 [build]
 builder = "NIXPACKS"
 buildCommand = "./build.sh"
+# When updating this, also update what's ignored in .github/workflows/ci.yml
+watchPatterns = [
+  "**",
+  "!**/*.md",
+  "!docs/**",
+  "!.github/**",
+  "!.claude/**",
+  "!.vscode/**",
+  "!.pre-commit-config.yaml",
+  "!.env.example",
+  "!.env.vscode"
+]
 
 [deploy]
 # startCommand intentionally omitted - configure per service:
