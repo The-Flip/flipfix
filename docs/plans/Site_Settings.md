@@ -20,12 +20,13 @@ At several points with this project, we've built features that we've wanted to b
 
 ## Options
 
-| Approach | No Mirgrations | No Restarts | Notes |
+| Approach | No Migrations | No Restarts | Notes |
 |----------|--------------------------------|---------------------|-------|
+| Environment variables | ✅ | ❌ | Requires restart |
 | Custom singleton model | ❌ | ✅ | Simple, full control |
-| Key-value store model | ✅ | ✅ | More complex admin UI |
-| django-constance | ✅ | ✅ | Mature library, nice admin UI |
-| django-waffle | ✅ | ✅ | Overkill unless needing rollouts/A/B |
+| Custom key-value store | ✅ | ✅ | More complex admin UI |
+| [django-constance](https://github.com/jazzband/django-constance) | ✅ | ✅ | Mature library, nice admin UI |
+| [django-waffle](https://github.com/django-waffle/django-waffle) | ✅ | ✅ | Overkill unless needing rollouts/A/B |
 
 ## django-constance Details
 
