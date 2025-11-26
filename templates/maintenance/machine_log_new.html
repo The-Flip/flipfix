@@ -43,7 +43,10 @@
         {{ form.media_file }}
         {% for error in form.media_file.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
-      <button type="submit" class="btn btn-primary">Create Log Entry</button>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create Log Entry</button>
+        <a class="btn btn-secondary" href="{% url 'log-machine' machine.slug %}">Cancel</a>
+      </div>
     </form>
   </section>
 {% endblock %}
