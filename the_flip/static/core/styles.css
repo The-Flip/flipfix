@@ -1008,7 +1008,7 @@ input[type="radio"] {
 /* ==========================================================================
    Inline Edit (for status/location dropdowns on machine detail)
    Base: .inline-edit-group
-   BEM Elements: .inline-edit-field, .inline-edit-select, .inline-edit-status
+   BEM Elements: .inline-edit-field, .inline-edit-select
    ========================================================================== */
 .inline-edit-group {
   display: flex;
@@ -1038,41 +1038,25 @@ input[type="radio"] {
   min-width: 120px;
 }
 
-.inline-edit-status {
-  font-size: 0.85rem;
+/* ==========================================================================
+   Status Indicator (for async save feedback)
+   Base: .status-indicator
+   Modifiers: .status-indicator.saving, .status-indicator.saved, .status-indicator.error
+   ========================================================================== */
+.status-indicator {
+  font-size: 0.875rem;
   white-space: nowrap;
 }
 
-.inline-edit-status.saving {
+.status-indicator.saving {
   color: var(--color-text-muted);
 }
 
-.inline-edit-status.saved {
+.status-indicator.saved {
   color: var(--color-accent);
 }
 
-.inline-edit-status.error {
-  color: var(--color-danger);
-}
-
-/* ==========================================================================
-   Save Status Indicator (for async save feedback)
-   Base: .save-status
-   Modifiers: .save-status.editing, .save-status.saved, .save-status.error
-   ========================================================================== */
-.save-status {
-  font-size: 0.875rem;
-}
-
-.save-status.editing {
-  color: var(--color-text-muted);
-}
-
-.save-status.saved {
-  color: var(--color-accent);
-}
-
-.save-status.error {
+.status-indicator.error {
   color: var(--color-danger);
 }
 

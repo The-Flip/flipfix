@@ -33,7 +33,7 @@
                     {% if object.operational_status == value %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <span class="inline-edit-status" id="status-save-indicator"></span>
+        <span class="status-indicator" id="status-save-indicator"></span>
       </div>
       <div class="form-field inline-edit-field">
         <label for="location-select">Location:</label>
@@ -44,7 +44,7 @@
                     {% if object.location == loc %}selected{% endif %}>{{ loc.name }}</option>
           {% endfor %}
         </select>
-        <span class="inline-edit-status" id="location-save-indicator"></span>
+        <span class="status-indicator" id="location-save-indicator"></span>
       </div>
     </div>
   </fieldset>
@@ -109,7 +109,7 @@
 
           function updateField(field, value, indicator) {
               indicator.textContent = 'Saving...';
-              indicator.className = 'inline-edit-status saving';
+              indicator.className = 'status-indicator saving';
 
               const formData = new FormData();
               formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
@@ -127,20 +127,20 @@
                   .then(data => {
                       if (data.status === 'success') {
                           indicator.textContent = 'Saved';
-                          indicator.className = 'inline-edit-status saved';
+                          indicator.className = 'status-indicator saved';
                           setTimeout(() => {
                               indicator.textContent = '';
-                              indicator.className = 'inline-edit-status';
+                              indicator.className = 'status-indicator';
                           }, 2000);
                       } else {
                           indicator.textContent = 'Error';
-                          indicator.className = 'inline-edit-status error';
+                          indicator.className = 'status-indicator error';
                       }
                   })
                   .catch(error => {
                       console.error('Error:', error);
                       indicator.textContent = 'Error';
-                      indicator.className = 'inline-edit-status error';
+                      indicator.className = 'status-indicator error';
                   });
           }
 
