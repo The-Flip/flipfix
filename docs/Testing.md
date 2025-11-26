@@ -59,6 +59,6 @@ class MyTestCase(TestDataMixin, TestCase):
 2. Add `@tag` decorators for selective execution
 3. Use factory functions instead of manual object creation
 4. Keep tests independent — each test sets up its own data
-5. Prefer descriptive test names over docstrings; add a short comment only when intent isn't obvious
+5. Use descriptive test names AND one-line docstrings; docstrings clarify intent and appear in test failure output
 
 For mocking patterns (subprocess, HTTP, settings, time), see `maintenance/tests/test_tasks.py`.

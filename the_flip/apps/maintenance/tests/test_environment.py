@@ -8,7 +8,10 @@ from django.test import TestCase, tag
 
 @tag("integration", "environment")
 class FFmpegAvailabilityTest(TestCase):
+    """Tests that verify video transcoding dependencies are available."""
+
     def test_ffmpeg_available_on_path(self):
+        """Verify ffmpeg is installed and returns version info."""
         if not shutil.which("ffmpeg"):
             self.skipTest("ffmpeg not found on PATH (video upload/transcode will fail)")
         result = subprocess.run(
@@ -21,6 +24,7 @@ class FFmpegAvailabilityTest(TestCase):
         self.assertIn("ffmpeg version", (result.stdout or "").lower())
 
     def test_ffprobe_available_on_path(self):
+        """Verify ffprobe is installed and returns version info."""
         if not shutil.which("ffprobe"):
             self.skipTest("ffprobe not found on PATH (video upload/transcode will fail)")
         result = subprocess.run(
