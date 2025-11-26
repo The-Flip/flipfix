@@ -4,8 +4,7 @@
 
 ## Problem Description
 
-At several points with this project, we've built features that we've wanted to be able to enable and disable in different environments.  What are our options for something similar to a feature flag system, or maybe admin settings?
-
+At several points with this project, we've built features that we've wanted to easily enable and disable in different environments, from a UI, without restarting the server.
 
 
 ## Requirements
