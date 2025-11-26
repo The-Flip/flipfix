@@ -482,6 +482,7 @@ input[type="radio"] {
   -webkit-box-orient: vertical;
   overflow: hidden;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .machine-card__meta {
@@ -510,6 +511,7 @@ input[type="radio"] {
   -webkit-box-orient: vertical;
   overflow: hidden;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 
 .machine-card__problem-label {
@@ -1038,12 +1040,14 @@ input[type="radio"] {
 @media (min-width: 769px) {
   .machine-card__problem {
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 
 @media (min-width: 960px) {
   .machine-card__problem {
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 }
 
