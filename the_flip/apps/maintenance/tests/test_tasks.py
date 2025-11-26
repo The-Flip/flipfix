@@ -74,6 +74,68 @@ class TranscodeVideoJobTests(TestCase):
 
 
 @tag("tasks", "unit")
+class TranscodeVideoErrorHandlingTests(TestCase):
+    """Tests for error handling in video transcoding."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.machine = create_machine()
+        self.log_entry = LogEntry.objects.create(
+            machine=self.machine,
+            text="Test entry with video",
+        )
+        self.video_file = SimpleUploadedFile(
+            "test.mp4", b"fake video content", content_type="video/mp4"
+        )
+        self.media = LogEntryMedia.objects.create(
+            log_entry=self.log_entry,
+            media_type=LogEntryMedia.TYPE_VIDEO,
+            file=self.video_file,
+            transcode_status=LogEntryMedia.STATUS_PENDING,
+        )
+
+    @patch("the_flip.apps.maintenance.tasks.DJANGO_WEB_SERVICE_URL", "http://test.com")
+    @patch("the_flip.apps.maintenance.tasks.TRANSCODING_UPLOAD_TOKEN", "test-token")
+    @patch("the_flip.apps.maintenance.tasks._run_ffmpeg")
+    def test_transcode_handles_ffmpeg_failure(self, mock_ffmpeg):
+        """Transcode should set status to FAILED when ffmpeg fails."""
+        import subprocess
+
+        from the_flip.apps.maintenance.tasks import transcode_video_job
+
+        # Simulate ffmpeg failing with non-zero exit code
+        mock_ffmpeg.side_effect = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["ffmpeg", "-i", "input.mp4"],
+            stderr="Error: corrupt input file",
+        )
+
+        with self.assertRaises(subprocess.CalledProcessError):
+            transcode_video_job(self.media.id)
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
+
+    @patch("the_flip.apps.maintenance.tasks.DJANGO_WEB_SERVICE_URL", "http://test.com")
+    @patch("the_flip.apps.maintenance.tasks.TRANSCODING_UPLOAD_TOKEN", "test-token")
+    def test_transcode_handles_missing_file(self):
+        """Transcode should fail gracefully when source file is missing."""
+        import os
+
+        from the_flip.apps.maintenance.tasks import transcode_video_job
+
+        # Delete the source file before transcoding
+        if os.path.exists(self.media.file.path):
+            os.remove(self.media.file.path)
+
+        with self.assertRaises(Exception):
+            transcode_video_job(self.media.id)
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
+
+
+@tag("tasks", "unit")
 class EnqueueTranscodeTests(TestCase):
     """Tests for the enqueue_transcode function."""
 
