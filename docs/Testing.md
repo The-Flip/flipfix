@@ -1,26 +1,64 @@
 # Automated Testing Guide
 
-This is a guide for developers and AI assistants around running and creating automated tests.
-
 ## Running Tests
+
 ```bash
-make test #runs test suite
+make test              # Run full test suite
+make test-fast         # Run fast tests only (exclude integration)
+make test-models       # Run model tests only
 ```
 
-## Suite Layout
-Automated tests live in each app's `tests.py` file and follow Django's discovery rules (`Test*` classes, `test_*` methods).
+### In CI
 
-When adding new tests:
- - Place them in the app-specific `tests.py` file next to the feature being exercised.
- - Keep each test independent by creating its own data in `setUp()` or factory helpers.
- - **Base classes:** Prefer `django.test.TestCase`, `TransactionTestCase`, and Django's `Client` for integration-style checks. These give you database isolation and fixtures without extra dependencies.
+- GitHub Actions installs ffmpeg/ffprobe and runs the full suite (`python manage.py test`) with `DJANGO_SETTINGS_MODULE=the_flip.settings.test`, so `integration` tests are expected to pass there.
+- Keep `integration` tests runnable locally, but prefer `make test-fast` for quick iteration if you don't have ffmpeg installed; env-dependent checks will be skipped when the binaries are missing. Unit tests mock ffmpeg/probe/upload to stay fast and quiet.
 
+### Running Tests by Tag
 
-## Coverage
-Prioritize highest-value flows:
-1. **Domain models & business rules:** Core data behaviors, status transitions, and queryset/helpers should always have regression coverage.
-2. **Forms & public views:** Anything that processes user input (especially rate-limiting or privacy-sensitive code) needs targeted tests.
-3. **Authenticated workflows:** Staff-only dashboards, status updates, and permissions should have tests using authenticated users.
-4. **APIs or integrations:** When new endpoints are added, cover success and failure cases; use Django's test client or `APIClient` if DRF enters the stack.
+```bash
+python manage.py test --tag=models       # Model unit tests
+python manage.py test --tag=views        # View/HTTP tests
+python manage.py test --tag=api          # API endpoint tests
+python manage.py test --exclude-tag=integration  # Skip slow tests
+```
 
-End-to-end browser coverage is intentionally out of scope right now to keep the suite fast. If we later need smoke tests, consider lightweight HTTP checks or component-level tests before introducing heavier tooling.
+Available tags: `models`, `forms`, `views`, `api`, `ajax`, `admin`, `auth`, `registration`, `terminals`, `public`, `unit`, `integration`, `environment`, `tasks`
+
+## Test Utilities
+
+Shared utilities in `the_flip.apps.core.test_utils`:
+
+### Factory Functions
+
+```python
+from the_flip.apps.core.test_utils import (
+    create_user, create_staff_user, create_superuser,
+    create_machine_model, create_machine,
+    create_problem_report, create_log_entry, create_shared_terminal,
+)
+
+user = create_staff_user()  # Auto-generates username
+machine = create_machine()  # Creates model + instance
+user = create_staff_user(username="alice", first_name="Alice")
+```
+
+### TestDataMixin
+
+```python
+from the_flip.apps.core.test_utils import TestDataMixin
+
+class MyTestCase(TestDataMixin, TestCase):
+    def setUp(self):
+        super().setUp()
+        # Provides: self.machine, self.staff_user, self.regular_user, self.superuser
+```
+
+## Writing New Tests
+
+1. Place tests in appropriate `test_*.py` file by domain
+2. Add `@tag` decorators for selective execution
+3. Use factory functions instead of manual object creation
+4. Keep tests independent — each test sets up its own data
+5. Prefer descriptive test names over docstrings; add a short comment only when intent isn't obvious
+
+For mocking patterns (subprocess, HTTP, settings, time), see `maintenance/tests/test_tasks.py`.

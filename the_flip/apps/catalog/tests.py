@@ -1,21 +1,24 @@
 """Tests for catalog app views and functionality."""
 
-from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
+from the_flip.apps.core.test_utils import (
+    create_machine_model,
+    create_staff_user,
+    create_user,
+)
 
-User = get_user_model()
 
-
+@tag("views")
 class MachineQuickCreateViewTests(TestCase):
     """Tests for the machine quick create view."""
 
     def setUp(self):
         """Set up test data for quick create view tests."""
         # Create an existing machine model for testing instance creation
-        self.existing_model = MachineModel.objects.create(
+        self.existing_model = create_machine_model(
             name="Existing Machine",
             manufacturer="Williams",
             year=1995,
@@ -23,18 +26,10 @@ class MachineQuickCreateViewTests(TestCase):
         )
 
         # Create staff user (maintainer)
-        self.staff_user = User.objects.create_user(
-            username="staffuser",
-            password="testpass123",
-            is_staff=True,
-        )
+        self.staff_user = create_staff_user(username="staffuser")
 
         # Create regular user (non-staff)
-        self.regular_user = User.objects.create_user(
-            username="regularuser",
-            password="testpass123",
-            is_staff=False,
-        )
+        self.regular_user = create_user(username="regularuser")
 
         self.create_url = reverse("machine-quick-create")
 
