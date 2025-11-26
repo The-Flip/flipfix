@@ -8,15 +8,24 @@
       {% block title %}The Flip{% endblock %}
     </title>
     <link rel="icon"
-          href="{% static 'core/favicon.ico' %}"
-          sizes="any"
-          type="image/x-icon">
+          href="{% static 'core/favicon.svg' %}"
+          type="image/svg+xml">
+    <link rel="icon"
+          href="{% static 'core/favicon.png' %}"
+          sizes="16x16"
+          type="image/png">
+    <link rel="apple-touch-icon"
+          href="{% static 'core/images/logo_blue.png' %}">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
     <header>
       <h1>
-        <a href="{% url 'home' %}">The Flip</a>
+        <a href="{% url 'home' %}">
+          <img src="{% static 'core/images/logo_white.svg' %}"
+               alt="The Flip"
+               class="header-logo">
+        </a>
       </h1>
       <nav>
         <a href="{% url 'maintainer-machine-list' %}">Machines</a>

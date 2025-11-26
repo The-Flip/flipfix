@@ -561,10 +561,11 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
         # Add logo to center of QR code
         logo_path = (
-            Path(__file__).resolve().parent.parent.parent / "static/core/images/the_flip_logo.png"
+            Path(__file__).resolve().parent.parent.parent / "static/core/images/logo_blue.png"
         )
         if logo_path.exists():
-            logo = Image.open(logo_path)
+            # Convert to grayscale then back to RGB for proper QR code contrast
+            logo = Image.open(logo_path).convert("L").convert("RGB")
 
             # Calculate logo size (20% of QR code size for safe scanning)
             qr_width, qr_height = qr_img.size

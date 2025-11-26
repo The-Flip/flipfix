@@ -8,15 +8,24 @@
       {% block title %}The Flip{% endblock %}
     </title>
     <link rel="icon"
-          href="{% static 'core/favicon.ico' %}"
-          sizes="any"
-          type="image/x-icon">
+          href="{% static 'core/favicon.svg' %}"
+          type="image/svg+xml">
+    <link rel="icon"
+          href="{% static 'core/favicon.png' %}"
+          sizes="16x16"
+          type="image/png">
+    <link rel="apple-touch-icon"
+          href="{% static 'core/images/logo_blue.png' %}">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
     <header class="header-minimal">
       <div class="header-minimal__content">
-        <h1>The Flip</h1>
+        <h1>
+          <img src="{% static 'core/images/logo_white.svg' %}"
+               alt="The Flip"
+               class="header-logo">
+        </h1>
       </div>
     </header>
     <main>
@@ -33,7 +42,6 @@
       </div>
     </footer>
     <script src="{% static 'core/clickable_cards.js' %}" defer></script>
-    {% block extra_scripts %}
-    {% endblock %}
+    {% block extra_scripts %}{% endblock %}
   </body>
 </html>
