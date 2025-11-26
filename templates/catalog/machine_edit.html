@@ -2,15 +2,15 @@
 {% load core_extras %}
 {% block title %}Edit {{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="breadcrumb breadcrumb-with-actions">
-    <div class="breadcrumb__trail">
+  <nav class="page-header">
+    <div class="page-header__left breadcrumb">
       <a href="{% url 'maintainer-machine-list' %}">Machines</a>
       <span>›</span>
       <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.display_name }}</a>
       <span>›</span>
       <strong>Edit</strong>
     </div>
-    <div class="breadcrumb__actions">
+    <div class="page-header__right">
       <a class="btn btn-secondary"
          href="{% url 'machine-model-edit' object.model.slug %}">Edit Model Info</a>
     </div>

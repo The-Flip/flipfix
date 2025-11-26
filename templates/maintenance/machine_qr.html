@@ -2,15 +2,15 @@
 {% load core_extras %}
 {% block title %}QR Code: {{ machine.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="breadcrumb breadcrumb-with-actions no-print">
-    <div class="breadcrumb__trail">
+  <nav class="page-header no-print">
+    <div class="page-header__left breadcrumb">
       <a href="{% url 'maintainer-machine-list' %}">Machines</a>
       <span>›</span>
       <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
       <span>›</span>
       <strong>QR Code</strong>
     </div>
-    <div class="breadcrumb__actions">
+    <div class="page-header__right">
       <button class="btn btn-primary" onclick="window.print()">Print QR Code</button>
     </div>
   </nav>

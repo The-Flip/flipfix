@@ -2,13 +2,13 @@
 {% load core_extras %}
 {% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="breadcrumb breadcrumb-with-actions">
-    <div class="breadcrumb__trail">
+  <nav class="page-header">
+    <div class="page-header__left breadcrumb">
       <a href="{% url 'maintainer-machine-list' %}">Machines</a>
       <span>›</span>
       <strong>{{ object.display_name }}</strong>
     </div>
-    <div class="breadcrumb__actions">
+    <div class="page-header__right">
       <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
       <a class="btn btn-secondary" href="{% url 'machine-qr' object.slug %}">QR Code</a>
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">Logs</a>
