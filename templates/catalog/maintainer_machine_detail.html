@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_extras %}
+{% load static core_extras %}
 {% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <nav class="page-header">
@@ -48,26 +48,47 @@
       </div>
     </div>
   </fieldset>
-  <div class="section-header">
-    <h2>Recent Activity</h2>
-    <div class="section-header__actions">
+  <h2>Activity</h2>
+  <div class="list-header">
+    <div class="list-header__left">
+      <form method="get" action="">
+        <div class="form-field">{{ search_form.q }}</div>
+      </form>
+    </div>
+    <div class="list-header__right">
       <a class="btn btn-primary"
          href="{% url 'log-create-machine' object.slug %}">Add Log Entry</a>
       <a class="btn btn-secondary"
          href="{% url 'problem-report-create' object.slug %}">Add Problem Report</a>
     </div>
   </div>
-  {% if timeline_entries %}
-    <ul class="list machine-list">
-      {% for entry in timeline_entries %}
-        {% include "maintenance/partials/timeline_entry.html" with entry=entry %}
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No recent activity.</p>
-  {% endif %}
+  <section>
+    <div id="log-container"
+         data-fetch-url="{% url 'machine-activity-entries' object.slug %}">
+      {% if activity_entries %}
+        <ul class="list machine-list" id="log-list">
+          {% for entry in activity_entries %}
+            {% include "maintenance/partials/activity_entry.html" with entry=entry %}
+          {% endfor %}
+        </ul>
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+      {% else %}
+        <p>
+          {% if search_form.q.value %}
+            No activity matches your search.
+          {% else %}
+            No activity yet.
+          {% endif %}
+        </p>
+      {% endif %}
+    </div>
+    <div id="log-loading" class="hidden">Loading…</div>
+    <div id="log-sentinel"></div>
+  </section>
 {% endblock %}
-{% block extra_js %}
+{% block extra_scripts %}
+  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
   <script>
       // Inline editing for status and location
       document.addEventListener('DOMContentLoaded', function() {
@@ -183,4 +204,4 @@
           color: #dc3545;
       }
   </style>
-{% endblock %}
+{% endblock extra_scripts %}

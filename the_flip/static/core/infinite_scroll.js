@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
             list.appendChild(node);
           });
           if (typeof applySmartDates === "function") {
-            applySmartDates(fragment);
+            applySmartDates(list);
           }
         }
         if (data.has_next) {

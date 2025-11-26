@@ -12,15 +12,19 @@ function applySmartDates(root = document) {
 
 document.addEventListener("DOMContentLoaded", () => applySmartDates());
 
+function formatTime(date) {
+  const minutes = date.getMinutes();
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: minutes === 0 ? undefined : "2-digit",
+  });
+  return formatter.format(date).toLowerCase();
+}
+
 function formatRelative(date) {
   const now = new Date();
   const diffMs = now - date;
   const oneDay = 24 * 60 * 60 * 1000;
-
-  const timeFormatter = new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
 
   const sameDay = isSameDay(date, now);
   const yesterday = isSameDay(
@@ -29,18 +33,18 @@ function formatRelative(date) {
   );
 
   if (sameDay) {
-    return timeFormatter.format(date).toLowerCase();
+    return formatTime(date);
   }
 
   if (yesterday) {
-    return `Yesterday ${timeFormatter.format(date).toLowerCase()}`;
+    return `Yesterday ${formatTime(date)}`;
   }
 
   if (diffMs < 7 * oneDay) {
     const weekday = new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(
       date
     );
-    return `${weekday} ${timeFormatter.format(date).toLowerCase()}`;
+    return `${weekday} ${formatTime(date)}`;
   }
 
   if (date.getFullYear() === now.getFullYear()) {
@@ -48,7 +52,7 @@ function formatRelative(date) {
       month: "short",
       day: "numeric",
     }).format(date);
-    return `${monthDay} ${timeFormatter.format(date).toLowerCase()}`;
+    return `${monthDay} ${formatTime(date)}`;
   }
 
   const full = new Intl.DateTimeFormat(undefined, {
@@ -56,7 +60,7 @@ function formatRelative(date) {
     day: "numeric",
     year: "numeric",
   }).format(date);
-  return `${full} ${timeFormatter.format(date).toLowerCase()}`;
+  return `${full} ${formatTime(date)}`;
 }
 
 function isSameDay(a, b) {

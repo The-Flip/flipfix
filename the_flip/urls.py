@@ -17,6 +17,7 @@ from the_flip.apps.accounts.views import (
     self_register,
 )
 from the_flip.apps.catalog.views import (
+    MachineActivityPartialView,
     MachineDetailView,
     MachineListView,
     MachineModelUpdateView,
@@ -114,6 +115,11 @@ urlpatterns = [
     path("machines/", MachineListView.as_view(), name="maintainer-machine-list"),
     path("machines/new/", MachineQuickCreateView.as_view(), name="machine-quick-create"),
     path("machines/<slug:slug>/", MachineDetailView.as_view(), name="maintainer-machine-detail"),
+    path(
+        "machines/<slug:slug>/activity/",
+        MachineActivityPartialView.as_view(),
+        name="machine-activity-entries",
+    ),
     path("machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"),
     path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
     # Machine model editing
