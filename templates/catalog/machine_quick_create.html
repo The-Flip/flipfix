@@ -19,25 +19,25 @@
         {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
         {% for error in form.model.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
-      <div class="form-field" id="field-model-name" style="display: none;">
+      <div class="form-field hidden" id="field-model-name">
         {{ form.model_name.label_tag }}
         {{ form.model_name }}
         {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
         {% for error in form.model_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
-      <div class="form-field" id="field-manufacturer" style="display: none;">
+      <div class="form-field hidden" id="field-manufacturer">
         {{ form.manufacturer.label_tag }}
         {{ form.manufacturer }}
         {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
         {% for error in form.manufacturer.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
-      <div class="form-field" id="field-year" style="display: none;">
+      <div class="form-field hidden" id="field-year">
         {{ form.year.label_tag }}
         {{ form.year }}
         {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
         {% for error in form.year.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
-      <div class="form-field" id="field-name-override" style="display: none;">
+      <div class="form-field hidden" id="field-name-override">
         {{ form.name_override.label_tag }}
         {{ form.name_override }}
         {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
@@ -63,18 +63,18 @@
               // Show/hide fields based on whether creating new model or selecting existing
               if (isCreatingNewModel) {
                   // Show new model fields
-                  modelNameField.style.display = 'block';
-                  manufacturerField.style.display = 'block';
-                  yearField.style.display = 'block';
+                  modelNameField.classList.remove('hidden');
+                  manufacturerField.classList.remove('hidden');
+                  yearField.classList.remove('hidden');
                   // Hide name override
-                  nameOverrideField.style.display = 'none';
+                  nameOverrideField.classList.add('hidden');
               } else {
                   // Hide new model fields
-                  modelNameField.style.display = 'none';
-                  manufacturerField.style.display = 'none';
-                  yearField.style.display = 'none';
+                  modelNameField.classList.add('hidden');
+                  manufacturerField.classList.add('hidden');
+                  yearField.classList.add('hidden');
                   // Show name override
-                  nameOverrideField.style.display = 'block';
+                  nameOverrideField.classList.remove('hidden');
               }
           }
 

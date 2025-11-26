@@ -14,12 +14,12 @@
     </div>
     <div class="page-header__right">
       {% if report.status == report.STATUS_OPEN %}
-        <form method="post" style="display: inline;">
+        <form method="post" class="form-inline">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">Close Problem Report</button>
         </form>
       {% else %}
-        <form method="post" style="display: inline;">
+        <form method="post" class="form-inline">
           {% csrf_token %}
           <button type="submit" class="btn">Re-Open Problem Report</button>
         </form>

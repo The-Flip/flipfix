@@ -22,18 +22,53 @@ Focus on clean, modern, lightweight mobile-friendly pages that rely only on syst
 ## Component Expectations
 
 The project establishes component patterns in [the_flip/static/core/styles.css](../the_flip/static/core/styles.css). Before creating new components, review existing patterns:
+
+### Layout Components
 - **Page Header** (`.page-header` with `.page-header__left`, `.page-header__right` for breadcrumbs and actions)
 - **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
-- **Buttons** (`.btn` with modifiers like `.btn-primary`)
-- **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`)
+- **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
+
+### UI Components
+- **Buttons** (`.btn` with modifiers like `.btn-primary`, `.btn-secondary`)
+- **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`, `.badge-inline`)
 - **Cards** (`.card` with BEM elements like `.card__header`, `.card__body`)
 - **Machine Cards** (`.machine-card` with structured BEM elements)
-- **Forms** (`.form-field` wrapper pattern)
-- **Messages & Alerts** (`.message` with type modifiers)
+- **Forms** (`.form-field` wrapper pattern, `.form-inline` for inline forms)
+- **Messages & Alerts** (`.message` with type modifiers like `.message--success`, `.message--error`)
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
-- **Utility classes** (`.hidden`, `.text-muted`, `.badge-right`)
+
+### Interactive Components
+- **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`, `.inline-edit-status`)
+- **Save Status** (`.save-status` with modifiers `.editing`, `.saved`, `.error`)
+- **Media Grid** (`.media-grid`, `.media-item`, `.media-link`, `.media-video`, `.btn-delete-media`)
+
+### Utility Classes
+- `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
+- `.text-muted` - Muted text color
+- `.form-inline` - Display form inline
+- `.badge-inline` - Badge with left margin (for badges inside buttons)
+- `.media-thumbnail` - Thumbnail image spacing
 
 **Do not introduce new component patterns without documenting them here**.
+
+## JavaScript Visibility Pattern
+
+When toggling element visibility with JavaScript, use the `.hidden` class instead of `style.display`:
+
+```html
+<!-- In template -->
+<div id="my-element" class="hidden">...</div>
+```
+
+```javascript
+// In JavaScript - show element
+element.classList.remove('hidden');
+
+// Hide element
+element.classList.add('hidden');
+```
+
+This keeps styling in CSS and makes the pattern consistent across the codebase.
 
 ## CSS Class Naming
 

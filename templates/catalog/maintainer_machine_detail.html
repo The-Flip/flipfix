@@ -16,7 +16,7 @@
          href="{% url 'machine-problem-reports' object.slug %}">
         Problem Reports
         {% if open_problem_reports.count > 0 %}
-          <span class="badge badge-open" style="margin-left: var(--space-2);">{{ open_problem_reports.count }}</span>
+          <span class="badge badge-open badge-inline">{{ open_problem_reports.count }}</span>
         {% endif %}
       </a>
     </div>
@@ -157,51 +157,4 @@
           }
       });
   </script>
-  <style>
-      .inline-edit-group {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1.5rem;
-          margin: 1rem 0 2rem 0;
-      }
-
-      .inline-edit-field {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-      }
-
-      .inline-edit-field label {
-          display: inline-block !important;
-          font-weight: 600;
-          margin: 0 !important;
-          margin-bottom: 0 !important;
-          white-space: nowrap;
-      }
-
-      .inline-edit-select {
-          padding: 0.25rem 0.5rem;
-          border: 1px solid var(--border-color, #ccc);
-          border-radius: 4px;
-          font-size: 0.95rem;
-          min-width: 120px;
-      }
-
-      .inline-edit-status {
-          font-size: 0.85rem;
-          white-space: nowrap;
-      }
-
-      .inline-edit-status.saving {
-          color: #666;
-      }
-
-      .inline-edit-status.saved {
-          color: #28a745;
-      }
-
-      .inline-edit-status.error {
-          color: #dc3545;
-      }
-  </style>
 {% endblock extra_scripts %}

@@ -761,6 +761,22 @@ input[type="radio"] {
   color: var(--color-text-muted);
 }
 
+/* Display utilities */
+.form-inline {
+  display: inline;
+}
+
+/* Spacing utilities */
+.badge-inline {
+  margin-left: var(--space-2);
+}
+
+/* Media thumbnail spacing (for inline image lists) */
+.media-thumbnail {
+  margin-right: var(--space-2);
+  border-radius: var(--radius-base);
+}
+
 .subtitle {
   font-size: 1.1rem;
   margin-top: calc(var(--space-2) * -1);
@@ -987,6 +1003,260 @@ input[type="radio"] {
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-surface-text-muted);
+}
+
+/* ==========================================================================
+   Inline Edit (for status/location dropdowns on machine detail)
+   Base: .inline-edit-group
+   BEM Elements: .inline-edit-field, .inline-edit-select, .inline-edit-status
+   ========================================================================== */
+.inline-edit-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-3) 0 var(--space-5) 0;
+}
+
+.inline-edit-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inline-edit-field label {
+  display: inline-block;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.inline-edit-select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  font-size: 0.95rem;
+  min-width: 120px;
+}
+
+.inline-edit-status {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.inline-edit-status.saving {
+  color: var(--color-text-muted);
+}
+
+.inline-edit-status.saved {
+  color: var(--color-accent);
+}
+
+.inline-edit-status.error {
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Save Status Indicator (for async save feedback)
+   Base: .save-status
+   Modifiers: .save-status.editing, .save-status.saved, .save-status.error
+   ========================================================================== */
+.save-status {
+  font-size: 0.875rem;
+}
+
+.save-status.editing {
+  color: var(--color-text-muted);
+}
+
+.save-status.saved {
+  color: var(--color-accent);
+}
+
+.save-status.error {
+  color: var(--color-danger);
+}
+
+/* ==========================================================================
+   Entry Edit (for log entry detail page editing)
+   ========================================================================== */
+.work-date-container {
+  margin-bottom: var(--space-4);
+}
+
+.work-date-container label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.work-date-edit {
+  padding: var(--space-2);
+  font-size: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+.work-date-edit:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 122, 234, 0.25);
+  border-color: var(--color-primary);
+}
+
+.entry-text-container {
+  margin-bottom: var(--space-5);
+}
+
+.entry-text-edit {
+  width: 100%;
+  min-height: 200px;
+  padding: var(--space-3);
+  font-family: inherit;
+  font-size: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+.entry-text-edit:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 122, 234, 0.25);
+  border-color: var(--color-primary);
+}
+
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ==========================================================================
+   Media Grid (for displaying uploaded photos/videos)
+   Base: .media-grid
+   BEM Elements: .media-item, .media-link, .media-video, .media-status
+   ========================================================================== */
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.media-item {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+}
+
+.media-link {
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.media-link:hover {
+  opacity: 0.9;
+}
+
+.media-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.media-video {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  display: block;
+  object-fit: contain;
+  background: #000;
+}
+
+.media-status {
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.media-status.error {
+  color: var(--color-danger);
+}
+
+.btn-delete-media {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 2rem;
+  height: 2rem;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete-media:hover {
+  background: var(--color-danger);
+}
+
+.media-upload {
+  margin-top: var(--space-3);
+}
+
+/* ==========================================================================
+   Registration Form Components
+   ========================================================================== */
+.input-with-button {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.profile-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.registering-as {
+  font-weight: 500;
+  margin-bottom: var(--space-4);
+}
+
+.optional {
+  font-weight: normal;
+  color: var(--color-text-muted);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: normal;
+  margin-top: var(--space-2);
+}
+
+#username-status {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+#username-status.available {
+  color: var(--color-accent);
+}
+
+#username-status.unavailable {
+  color: var(--color-danger);
 }
 
 /* ==========================================================================

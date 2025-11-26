@@ -27,7 +27,7 @@
                 <img src="{{ media.poster_file.url }}"
                      alt="Video poster"
                      width="200"
-                     style="margin-right: 0.5rem">
+                     class="media-thumbnail">
               {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
                 <span class="media-status">Video processing…</span>
               {% else %}
@@ -37,7 +37,7 @@
               <img src="{{ media.file.url }}"
                    alt="Photo"
                    width="200"
-                   style="margin-right: 0.5rem">
+                   class="media-thumbnail">
             {% endif %}
           {% endfor %}
         </div>
