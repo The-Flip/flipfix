@@ -8,15 +8,17 @@
   · {{ block.super }}
 {% endblock %}
 {% block content %}
-  <div class="breadcrumb">
-    <a href="{% url 'terminal-list' %}">Shared Terminal Accounts</a>
-    <span>›</span>
-    {% if is_create %}
-      Add Terminal
-    {% else %}
-      Edit Terminal <code>{{ terminal.user.username }}</code>
-    {% endif %}
-  </div>
+  <nav class="page-header">
+    <div class="page-header__left breadcrumb">
+      <a href="{% url 'terminal-list' %}">Shared Terminal Accounts</a>
+      <span>›</span>
+      {% if is_create %}
+        <strong>Add Terminal</strong>
+      {% else %}
+        <strong><code>{{ terminal.user.username }}</code></strong>
+      {% endif %}
+    </div>
+  </nav>
   {% if not is_create %}
     <div class="section-header">
       <h2>

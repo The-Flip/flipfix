@@ -313,6 +313,7 @@ legend {
 input[type="text"],
 input[type="email"],
 input[type="password"],
+input[type="search"],
 textarea,
 select {
   width: 100%;
@@ -321,6 +322,10 @@ select {
   padding: var(--space-2);
   font-family: inherit;
   font-size: 1rem;
+}
+
+input.search-input {
+  width: 22ch;
 }
 
 input:focus,
@@ -700,55 +705,49 @@ input[type="radio"] {
 }
 
 /* ==========================================================================
-   Breadcrumbs
-   Base: .breadcrumb
-   Variant: .breadcrumb-with-actions
-   BEM Elements: .breadcrumb__trail, .breadcrumb__actions
+   Page Header & List Header
+   Flex containers for left/right content layout.
+   - .page-header: Top of page (breadcrumbs, titles, primary actions)
+   - .list-header: Above lists (search, filters, list-specific actions)
    ========================================================================== */
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-}
-
-.breadcrumb a {
-  text-decoration: none;
-  transition: text-decoration 0.2s ease;
-}
-
-.breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb span {
-  color: var(--color-text-muted);
-  user-select: none;
-}
-
-.breadcrumb-with-actions {
+.page-header,
+.list-header {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+}
+
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.list-header {
   margin-bottom: var(--space-4);
 }
 
-.breadcrumb__trail {
+.page-header__left,
+.list-header__left {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.breadcrumb {
   font-size: 0.9rem;
   color: var(--color-text-muted);
   white-space: nowrap;
 }
 
-.breadcrumb__actions {
+.page-header__right,
+.list-header__right {
   display: flex;
   gap: var(--space-2);
   margin-left: auto;
   white-space: nowrap;
+}
+
+.list-header .form-field {
+  margin-bottom: 0;
 }
 
 /* ==========================================================================
@@ -1036,6 +1035,8 @@ input[type="radio"] {
 
 /* ==========================================================================
    Responsive Breakpoints
+   - Tablet: 768px
+   - Desktop: 960px
    ========================================================================== */
 @media (min-width: 769px) {
   .machine-card__problem {
@@ -1075,18 +1076,21 @@ input[type="radio"] {
     margin-top: var(--space-3);
   }
 
-  .breadcrumb-with-actions {
+  .page-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .breadcrumb__actions {
+  .page-header__right {
     margin-left: 0;
     margin-top: var(--space-3);
   }
 
-  .breadcrumb__trail {
+  .breadcrumb {
     white-space: normal;
+  }
+
+  .page-header__left {
     flex-wrap: wrap;
   }
 }

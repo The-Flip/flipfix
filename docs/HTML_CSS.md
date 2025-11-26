@@ -2,7 +2,7 @@
 
 This is a guide for developers and AI assistants creating HTML and CSS.
 
-Focus on clean, modern, lightweight mobile-first pages that rely only on system fonts and a single cached stylesheet.
+Focus on clean, modern, lightweight mobile-friendly pages that rely only on system fonts and a single cached stylesheet.
 
 
 ## Things to Avoid
@@ -22,6 +22,8 @@ Focus on clean, modern, lightweight mobile-first pages that rely only on system 
 ## Component Expectations
 
 The project establishes component patterns in [the_flip/static/core/styles.css](../the_flip/static/core/styles.css). Before creating new components, review existing patterns:
+- **Page Header** (`.page-header` with `.page-header__left`, `.page-header__right` for breadcrumbs and actions)
+- **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
 - **Buttons** (`.btn` with modifiers like `.btn-primary`)
 - **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`)
 - **Cards** (`.card` with BEM elements like `.card__header`, `.card__body`)
@@ -41,16 +43,19 @@ This project uses a "BEM-ish" approach to naming CSS classes:
 Use `block__element` when creating component subparts (header, body, footer, meta, etc.).  Examples:
 - `.machine-card__row` - row is part of machine-card
 - `.machine-card__name` - name is part of machine-card
-- `.breadcrumb__trail` - trail is part of breadcrumb
+- `.page-header__left` - left section is part of page-header
 
 ### Use `Block-modifier` (single hyphen) for variants/states
 Use `block-modifier` when adding variants (colors, sizes, states).  Examples:
 - `.badge-open`, `.badge-closed`, `.badge-fixing`
 - `.btn-primary`, `.btn-secondary`
-- `.breadcrumb-with-actions`
 
 ### Don't use hyphens for standalone utilities
 Use simple names for standalone utilities (`.card`, `.btn`, `.hidden`)
+
+## Responsive Design
+
+The site must be optimized for mobile, tablet, and desktop. Breakpoints are defined in the stylesheet.  Avoid tables; hard to make those responsive.
 
 ## Accessibility & Interaction
 - Use semantic HTML elements (e.g., `<nav>`, `<main>`, `<section>`, `<table>`).

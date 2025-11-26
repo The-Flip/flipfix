@@ -25,11 +25,15 @@ class ProblemReportForm(forms.ModelForm):
         }
 
 
-class MachineReportSearchForm(forms.Form):
+class SearchForm(forms.Form):
+    """Reusable search form for list pages."""
+
     q = forms.CharField(
-        label="Search",
+        label="",
         required=False,
-        widget=forms.TextInput(attrs={"type": "search", "placeholder": "Search..."}),
+        widget=forms.TextInput(
+            attrs={"type": "search", "placeholder": "Search...", "class": "search-input"}
+        ),
     )
 
 

@@ -11,6 +11,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -24,8 +25,8 @@ from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.maintenance.forms import (
     LogEntryQuickForm,
-    MachineReportSearchForm,
     ProblemReportForm,
+    SearchForm,
 )
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
 from the_flip.apps.maintenance.tasks import enqueue_transcode
@@ -112,7 +113,7 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
         search_query = self.request.GET.get("q", "")
-        context["search_form"] = MachineReportSearchForm(initial={"q": search_query})
+        context["search_form"] = SearchForm(initial={"q": search_query})
         return context
 
 
@@ -219,6 +220,16 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
+
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            logs = logs.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+            ).distinct()
+
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
         context.update(
@@ -226,6 +237,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "machine": self.machine,
                 "page_obj": page_obj,
                 "log_entries": page_obj.object_list,
+                "search_form": SearchForm(initial={"q": search_query}),
             }
         )
         return context
@@ -351,6 +363,16 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            logs = logs.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+            ).distinct()
+
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(
@@ -378,16 +400,29 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         logs = (
             LogEntry.objects.all()
-            .select_related("machine")
+            .select_related("machine", "machine__model")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
+
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            logs = logs.filter(
+                Q(text__icontains=search_query)
+                | Q(machine__model__name__icontains=search_query)
+                | Q(machine__name_override__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+            ).distinct()
+
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
         context.update(
             {
                 "page_obj": page_obj,
                 "log_entries": page_obj.object_list,
+                "search_form": SearchForm(initial={"q": search_query}),
             }
         )
         return context
@@ -404,10 +439,22 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         logs = (
             LogEntry.objects.all()
-            .select_related("machine")
+            .select_related("machine", "machine__model")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            logs = logs.filter(
+                Q(text__icontains=search_query)
+                | Q(machine__model__name__icontains=search_query)
+                | Q(machine__name_override__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+            ).distinct()
+
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(

@@ -3,10 +3,12 @@
 {% block title %}Log Entry · {{ entry.machine.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <section>
-    <nav class="breadcrumb">
-      <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
-      <span>›</span>
-      <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
+    <nav class="page-header">
+      <div class="page-header__left breadcrumb">
+        <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
+        <span>›</span>
+        <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
+      </div>
     </nav>
     <div class="work-date-container">
       <label for="work-date">Date of work</label>

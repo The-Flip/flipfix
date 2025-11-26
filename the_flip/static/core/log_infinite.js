@@ -35,7 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
     isLoading = true;
     loading.classList.remove("hidden");
 
-    fetch(`${fetchUrl}?page=${nextPage}`, {
+    const params = new URLSearchParams(window.location.search);
+    params.set("page", nextPage);
+    fetch(`${fetchUrl}?${params.toString()}`, {
       headers: { "X-Requested-With": "XMLHttpRequest" },
       credentials: "same-origin",
     })
