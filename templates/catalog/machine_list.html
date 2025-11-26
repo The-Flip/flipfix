@@ -1,18 +1,27 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Machines · {{ block.super }}{% endblock %}
 {% block content %}
-  <div style="display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 1.5rem">
-    <h2 style="margin: 0;">Machines</h2>
-    <a href="{% url 'machine-quick-create' %}" class="btn btn-primary">+ Add Machine</a>
+  <h2>Machines</h2>
+  <div class="list-header">
+    <div class="list-header__left">
+      <div class="form-field">
+        <input type="search"
+               id="machine-search"
+               placeholder="Search..."
+               class="search-input">
+      </div>
+    </div>
+    <div class="list-header__right">
+      <a href="{% url 'machine-quick-create' %}" class="btn btn-primary">+ Add Machine</a>
+    </div>
   </div>
   {% if machines %}
-    <ul class="list machine-list">
+    <ul class="list machine-list" id="machine-list">
       {% for machine in machines %}
         <li class="machine-card js-clickable-card"
             data-url="{% url 'maintainer-machine-detail' machine.slug %}"
+            data-search-text="{{ machine.display_name }} {{ machine.model.year }} {{ machine.model.manufacturer }} {{ machine.get_operational_status_display }}{% if machine.location %} {{ machine.location.name }}{% endif %}"
             tabindex="0"
             role="button"
             aria-label="View {{ machine.display_name }}">
@@ -46,4 +55,7 @@
   {% else %}
     <p>No machines yet.</p>
   {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/machine_filter.js' %}" defer></script>
 {% endblock %}

@@ -96,6 +96,11 @@ urlpatterns = [
         name="problem-report-list",
     ),
     path(
+        "problem-reports/entries/",
+        maintenance_views.ProblemReportListPartialView.as_view(),
+        name="problem-report-list-entries",
+    ),
+    path(
         "problem-reports/<int:pk>/",
         maintenance_views.ProblemReportDetailView.as_view(),
         name="problem-report-detail",

@@ -298,6 +298,157 @@ class ProblemReportListViewTests(TestCase):
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
         self.assertContains(response, detail_url)
 
+    def test_list_view_pagination(self):
+        """List view should paginate results."""
+        self.client.login(username="staffuser", password="testpass123")
+        # Create 15 more reports (16 total with the one from setUp)
+        for i in range(15):
+            ProblemReport.objects.create(
+                machine=self.machine,
+                status=ProblemReport.STATUS_OPEN,
+                problem_type=ProblemReport.PROBLEM_OTHER,
+                description=f"Problem {i}",
+            )
+
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 200)
+        # Should have 10 reports on first page
+        self.assertEqual(len(response.context["reports"]), 10)
+        self.assertTrue(response.context["page_obj"].has_next())
+
+    def test_list_view_search_by_description(self):
+        """List view should filter by description text."""
+        self.client.login(username="staffuser", password="testpass123")
+        # Create a report with distinct description
+        ProblemReport.objects.create(
+            machine=self.machine,
+            status=ProblemReport.STATUS_OPEN,
+            problem_type=ProblemReport.PROBLEM_OTHER,
+            description="Unique flippers broken",
+        )
+
+        response = self.client.get(self.list_url, {"q": "flippers"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["reports"]), 1)
+        self.assertContains(response, "Unique flippers broken")
+
+    def test_list_view_search_by_machine_name(self):
+        """List view should filter by machine model name."""
+        self.client.login(username="staffuser", password="testpass123")
+
+        response = self.client.get(self.list_url, {"q": "Test Machine"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["reports"]), 1)
+
+    def test_list_view_search_no_results(self):
+        """List view should show empty message when search has no results."""
+        self.client.login(username="staffuser", password="testpass123")
+
+        response = self.client.get(self.list_url, {"q": "nonexistent"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["reports"]), 0)
+        self.assertContains(response, "No problem reports match your search")
+
+
+class ProblemReportListPartialViewTests(TestCase):
+    """Tests for the problem report list AJAX endpoint."""
+
+    def setUp(self):
+        """Set up test data for partial view tests."""
+        self.machine_model = MachineModel.objects.create(
+            name="Test Machine",
+            manufacturer="Test Mfg",
+            year=2020,
+            era=MachineModel.ERA_SS,
+        )
+        self.machine = MachineInstance.objects.create(
+            model=self.machine_model,
+            slug="test-machine",
+            operational_status=MachineInstance.STATUS_GOOD,
+        )
+        self.staff_user = User.objects.create_user(
+            username="staffuser",
+            password="testpass123",
+            is_staff=True,
+        )
+        self.entries_url = reverse("problem-report-list-entries")
+
+    def test_partial_view_returns_json(self):
+        """AJAX endpoint should return JSON response."""
+        self.client.login(username="staffuser", password="testpass123")
+        # Create a report
+        ProblemReport.objects.create(
+            machine=self.machine,
+            status=ProblemReport.STATUS_OPEN,
+            problem_type=ProblemReport.PROBLEM_OTHER,
+            description="Test problem",
+        )
+
+        response = self.client.get(self.entries_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+        data = response.json()
+        self.assertIn("items", data)
+        self.assertIn("has_next", data)
+        self.assertIn("next_page", data)
+
+    def test_partial_view_pagination(self):
+        """AJAX endpoint should paginate and return correct metadata."""
+        self.client.login(username="staffuser", password="testpass123")
+        # Create 15 reports
+        for i in range(15):
+            ProblemReport.objects.create(
+                machine=self.machine,
+                status=ProblemReport.STATUS_OPEN,
+                problem_type=ProblemReport.PROBLEM_OTHER,
+                description=f"Problem {i}",
+            )
+
+        # First page
+        response = self.client.get(self.entries_url, {"page": 1})
+        data = response.json()
+        self.assertTrue(data["has_next"])
+        self.assertEqual(data["next_page"], 2)
+
+        # Second page
+        response = self.client.get(self.entries_url, {"page": 2})
+        data = response.json()
+        self.assertFalse(data["has_next"])
+        self.assertIsNone(data["next_page"])
+
+    def test_partial_view_search(self):
+        """AJAX endpoint should respect search query."""
+        self.client.login(username="staffuser", password="testpass123")
+        ProblemReport.objects.create(
+            machine=self.machine,
+            status=ProblemReport.STATUS_OPEN,
+            problem_type=ProblemReport.PROBLEM_OTHER,
+            description="Flipper issue",
+        )
+        ProblemReport.objects.create(
+            machine=self.machine,
+            status=ProblemReport.STATUS_OPEN,
+            problem_type=ProblemReport.PROBLEM_OTHER,
+            description="Display broken",
+        )
+
+        response = self.client.get(self.entries_url, {"q": "Flipper"})
+        data = response.json()
+        self.assertIn("Flipper issue", data["items"])
+        self.assertNotIn("Display broken", data["items"])
+
+    def test_partial_view_requires_staff(self):
+        """AJAX endpoint should require staff permission."""
+        User.objects.create_user(
+            username="regularuser",
+            password="testpass123",
+            is_staff=False,
+        )
+        self.client.login(username="regularuser", password="testpass123")
+        response = self.client.get(self.entries_url)
+        self.assertEqual(response.status_code, 403)
+
 
 class MachineProblemReportListViewTests(TestCase):
     """Tests for the machine-specific problem report list view."""

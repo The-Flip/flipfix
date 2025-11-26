@@ -1,35 +1,40 @@
 {% extends "base.html" %}
-{% load core_extras %}
+{% load static core_extras %}
 {% block title %}Problem Reports · {{ block.super }}{% endblock %}
 {% block content %}
   <h2>Problem Reports</h2>
-  {% if reports %}
-    <ul class="list machine-list problem-report-list">
-      {% for report in reports %}
-        <li class="machine-card js-clickable-card"
-            data-url="{% url 'problem-report-detail' report.pk %}"
-            tabindex="0"
-            role="button"
-            aria-label="View problem report for {{ report.machine.display_name }}">
-          <div class="machine-card__row">
-            <div class="machine-card__row-left">
-              <span class="machine-card__name">{{ report.machine.display_name }}</span>
-            </div>
-            <div class="machine-card__meta-group">
-              <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
-              <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
-            </div>
-          </div>
-          <div class="machine-card__problem">
-            {% if report.problem_type != report.PROBLEM_OTHER %}
-              <span class="machine-card__problem-label">{{ report.get_problem_type_display }}:</span>
-            {% endif %}
-            {{ report.description|default:"No description provided." }}
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No reports yet.</p>
-  {% endif %}
+  <div class="list-header">
+    <div class="list-header__right">
+      <form method="get" action="">
+        <div class="form-field">{{ search_form.q }}</div>
+      </form>
+    </div>
+  </div>
+  <section>
+    <div id="log-container"
+         data-fetch-url="{% url 'problem-report-list-entries' %}">
+      {% if reports %}
+        <ul class="list machine-list problem-report-list" id="log-list">
+          {% for report in reports %}
+            {% include "maintenance/partials/problem_report_list_entry.html" with report=report %}
+          {% endfor %}
+        </ul>
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+      {% else %}
+        <p>
+          {% if search_form.q.value %}
+            No problem reports match your search.
+          {% else %}
+            No problem reports yet.
+          {% endif %}
+        </p>
+      {% endif %}
+    </div>
+    <div id="log-loading" class="hidden">Loading…</div>
+    <div id="log-sentinel"></div>
+  </section>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/log_infinite.js' %}" defer></script>
 {% endblock %}

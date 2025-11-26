@@ -70,15 +70,74 @@ class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"maintainers": results})
 
 
-class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
 
     template_name = "maintenance/problem_report_list.html"
-    context_object_name = "reports"
-    queryset = ProblemReport.objects.select_related("machine").order_by("-status", "-created_at")
 
     def test_func(self):
         return self.request.user.is_staff
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        reports = ProblemReport.objects.select_related("machine", "machine__model").order_by(
+            "-status", "-created_at"
+        )
+
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            reports = reports.filter(
+                Q(description__icontains=search_query)
+                | Q(machine__model__name__icontains=search_query)
+                | Q(machine__name_override__icontains=search_query)
+            )
+
+        paginator = Paginator(reports, 10)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+        context.update(
+            {
+                "page_obj": page_obj,
+                "reports": page_obj.object_list,
+                "search_form": SearchForm(initial={"q": search_query}),
+            }
+        )
+        return context
+
+
+class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """AJAX endpoint for infinite scrolling in the global problem report list."""
+
+    template_name = "maintenance/partials/problem_report_list_entry.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        reports = ProblemReport.objects.select_related("machine", "machine__model").order_by(
+            "-status", "-created_at"
+        )
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            reports = reports.filter(
+                Q(description__icontains=search_query)
+                | Q(machine__model__name__icontains=search_query)
+                | Q(machine__name_override__icontains=search_query)
+            )
+
+        paginator = Paginator(reports, 10)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        items_html = "".join(
+            render_to_string(self.template_name, {"report": report})
+            for report in page_obj.object_list
+        )
+        return JsonResponse(
+            {
+                "items": items_html,
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+            }
+        )
 
 
 class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
