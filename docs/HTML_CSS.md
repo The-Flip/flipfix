@@ -38,8 +38,8 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
 
 ### Interactive Components
-- **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`, `.inline-edit-status`)
-- **Save Status** (`.save-status` with modifiers `.editing`, `.saved`, `.error`)
+- **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`)
+- **Status Indicator** (`.status-indicator` with modifiers `.saving`, `.saved`, `.error`)
 - **Media Grid** (`.media-grid`, `.media-item`, `.media-link`, `.media-video`, `.btn-delete-media`)
 
 ### Utility Classes

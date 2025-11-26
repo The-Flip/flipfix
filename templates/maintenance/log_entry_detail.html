@@ -19,7 +19,7 @@
              class="work-date-edit"
              data-utc="{{ entry.work_date.isoformat }}"
              data-entry-id="{{ entry.pk }}">
-      <div id="work-date-status" class="save-status"></div>
+      <div id="work-date-status" class="status-indicator"></div>
     </div>
     <p>
       {% if entry.maintainers.all %}
@@ -41,7 +41,7 @@
           <div class="edit-actions">
             <button type="button" id="save-button" class="btn btn-primary">Save</button>
             <button type="button" id="cancel-button" class="btn btn-secondary">Cancel</button>
-            <span id="save-status" class="save-status"></span>
+            <span id="save-status" class="status-indicator"></span>
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@
 
       workDateInput.addEventListener('change', async () => {
           workDateStatus.textContent = 'Saving...';
-          workDateStatus.className = 'save-status editing';
+          workDateStatus.className = 'status-indicator saving';
 
           try {
               // Get timezone offset in minutes (negative for ahead of UTC)
@@ -132,19 +132,19 @@
               const data = await response.json();
               if (response.ok && data.success) {
                   workDateStatus.textContent = 'Saved';
-                  workDateStatus.className = 'save-status saved';
+                  workDateStatus.className = 'status-indicator saved';
                   setTimeout(() => {
                       workDateStatus.textContent = '';
-                      workDateStatus.className = 'save-status';
+                      workDateStatus.className = 'status-indicator';
                   }, 2000);
               } else {
                   workDateStatus.textContent = data.error || 'Error saving';
-                  workDateStatus.className = 'save-status error';
+                  workDateStatus.className = 'status-indicator error';
               }
           } catch (error) {
               console.error('Save error:', error);
               workDateStatus.textContent = 'Error saving';
-              workDateStatus.className = 'save-status error';
+              workDateStatus.className = 'status-indicator error';
           }
       });
 
@@ -170,14 +170,14 @@
       cancelButton.addEventListener('click', () => {
           textarea.value = originalText;
           saveStatus.textContent = '';
-          saveStatus.className = 'save-status';
+          saveStatus.className = 'status-indicator';
           textEditMode.classList.add('hidden');
           textViewMode.classList.remove('hidden');
       });
 
       saveButton.addEventListener('click', async () => {
           saveStatus.textContent = 'Saving...';
-          saveStatus.className = 'save-status editing';
+          saveStatus.className = 'status-indicator saving';
 
           try {
               const formData = new FormData();
@@ -195,12 +195,12 @@
                   window.location.reload();
               } else {
                   saveStatus.textContent = 'Error saving';
-                  saveStatus.className = 'save-status error';
+                  saveStatus.className = 'status-indicator error';
               }
           } catch (error) {
               console.error('Save error:', error);
               saveStatus.textContent = 'Error saving';
-              saveStatus.className = 'save-status error';
+              saveStatus.className = 'status-indicator error';
           }
       });
 
