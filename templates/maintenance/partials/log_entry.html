@@ -11,7 +11,7 @@
         <span>:</span>
       {% endif %}
     </div>
-    <div class="log-entry-text markdown-content">{{ entry.text|render_markdown }}</div>
+    <div class="log-entry-text markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
     {% if entry.media.all %}
       <div class="log-entry-media">
         {% for media in entry.media.all %}

@@ -617,7 +617,7 @@ input[type="radio"] {
 .log-entry-text {
   margin-top: var(--space-2);
   font-size: 1rem;
-  white-space: pre-wrap;
+  white-space: normal;
 }
 
 .log-entry-media img {
@@ -853,24 +853,22 @@ input[type="radio"] {
   margin-top: 0;
 }
 
-/* Compact markdown in truncated/card contexts */
-.machine-card__problem.markdown-content p,
-.machine-card__problem.markdown-content ul,
-.machine-card__problem.markdown-content ol {
-  margin: 0;
-  display: inline;
+.markdown-content--compact p,
+.markdown-content--compact ul,
+.markdown-content--compact ol {
+  margin: 0 0 var(--space-2) 0;
 }
 
-.machine-card__problem.markdown-content li {
-  display: inline;
+.markdown-content--compact li {
+  margin-bottom: 0;
 }
 
-.machine-card__problem.markdown-content li::before {
-  content: " • ";
-}
-
-.machine-card__problem.markdown-content li:first-child::before {
-  content: "";
+.machine-card__problem.markdown-content {
+  display: block;
+  -webkit-box-orient: unset;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
 }
 
 /* ==========================================================================
