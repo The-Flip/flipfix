@@ -15,7 +15,6 @@
              name="email"
              id="id_email"
              value="{{ form.email.value|default:'' }}"
-             required
              autocomplete="email">
       {% for error in form.email.errors %}<p class="error">{{ error }}</p>{% endfor %}
     </div>
