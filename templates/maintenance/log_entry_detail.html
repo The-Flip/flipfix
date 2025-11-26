@@ -5,6 +5,8 @@
   <section>
     <nav class="page-header">
       <div class="page-header__left breadcrumb">
+        <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+        <span>›</span>
         <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
         <span>›</span>
         <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
