@@ -528,6 +528,39 @@ input[type="radio"] {
 }
 
 /* ==========================================================================
+   Terminal Cards (for shared terminal management)
+   Base: .terminal-card
+   BEM Elements: .terminal-card__info, .terminal-card__name, .terminal-card__actions
+   ========================================================================== */
+.terminal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.terminal-card__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.terminal-card__name {
+  font-weight: 600;
+}
+
+.terminal-card__actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.terminal-card__actions form {
+  margin: 0;
+}
+
+/* ==========================================================================
    Section Headers & Page Layout
    ========================================================================== */
 .section-header {

@@ -6,6 +6,12 @@ from django.urls import path, re_path
 
 from the_flip.apps.accounts.views import (
     ProfileUpdateView,
+    TerminalCreateView,
+    TerminalDeactivateView,
+    TerminalListView,
+    TerminalLoginView,
+    TerminalReactivateView,
+    TerminalUpdateView,
     check_username,
     invitation_register,
     self_register,
@@ -58,6 +64,21 @@ urlpatterns = [
             template_name="registration/password_change_done.html"
         ),
         name="password_change_done",
+    ),
+    # Shared terminal account management
+    path("terminals/", TerminalListView.as_view(), name="terminal-list"),
+    path("terminals/add/", TerminalCreateView.as_view(), name="terminal-add"),
+    path("terminals/<int:pk>/login/", TerminalLoginView.as_view(), name="terminal-login"),
+    path("terminals/<int:pk>/edit/", TerminalUpdateView.as_view(), name="terminal-edit"),
+    path(
+        "terminals/<int:pk>/deactivate/",
+        TerminalDeactivateView.as_view(),
+        name="terminal-deactivate",
+    ),
+    path(
+        "terminals/<int:pk>/reactivate/",
+        TerminalReactivateView.as_view(),
+        name="terminal-reactivate",
     ),
     # Public machine pages
     path("m/", PublicMachineListView.as_view(), name="public-machine-list"),

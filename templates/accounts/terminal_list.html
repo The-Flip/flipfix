@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Shared Terminal Accounts · {{ block.super }}{% endblock %}
+{% block content %}
+  <div class="section-header">
+    <h2>Shared Terminal Accounts</h2>
+    <div class="section-header__actions">
+      <a href="{% url 'terminal-add' %}" class="btn btn-primary">Add Terminal</a>
+    </div>
+  </div>
+  {% if terminals %}
+    <ul class="list">
+      {% for terminal in terminals %}
+        <li class="card terminal-card">
+          <div class="terminal-card__info">
+            <span class="terminal-card__name">{{ terminal.display_name }}</span>
+            {% if not terminal.user.is_active %}<span class="text-muted">(deactivated)</span>{% endif %}
+          </div>
+          <div class="terminal-card__actions">
+            {% if terminal.user.is_active %}
+              <form method="post" action="{% url 'terminal-login' terminal.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Login</button>
+              </form>
+            {% endif %}
+            <a href="{% url 'terminal-edit' terminal.pk %}"
+               class="btn btn-secondary">Edit</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No shared terminal accounts have been created yet.</p>
+  {% endif %}
+{% endblock %}

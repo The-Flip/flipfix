@@ -108,3 +108,74 @@ class SelfRegistrationForm(forms.Form):
         if password:
             validate_password(password)
         return password
+
+
+class TerminalCreateForm(forms.Form):
+    """Form for creating shared terminal accounts."""
+
+    username = forms.CharField(
+        max_length=150,
+        help_text="Login identifier for this terminal.",
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-1p-ignore": "",
+                "data-lpignore": "true",
+            }
+        ),
+    )
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-1p-ignore": "",
+                "data-lpignore": "true",
+            }
+        ),
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-1p-ignore": "",
+                "data-lpignore": "true",
+            }
+        ),
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
+
+
+class TerminalUpdateForm(forms.Form):
+    """Form for editing shared terminal accounts."""
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-1p-ignore": "",
+                "data-lpignore": "true",
+            }
+        ),
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-1p-ignore": "",
+                "data-lpignore": "true",
+            }
+        ),
+    )

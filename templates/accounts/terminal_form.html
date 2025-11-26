@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if is_create %}
+    Add Terminal
+  {% else %}
+    Edit Terminal {{ terminal.user.username }}
+  {% endif %}
+  · {{ block.super }}
+{% endblock %}
+{% block content %}
+  <div class="breadcrumb">
+    <a href="{% url 'terminal-list' %}">Shared Terminal Accounts</a>
+    <span>&rsaquo;</span>
+    {% if is_create %}
+      Add Terminal
+    {% else %}
+      Edit Terminal <code>{{ terminal.user.username }}</code>
+    {% endif %}
+  </div>
+  {% if not is_create %}
+    <div class="section-header">
+      <h2>
+        Edit Terminal <code>{{ terminal.user.username }}</code>
+      </h2>
+      <div class="section-header__actions">
+        {% if terminal.user.is_active %}
+          <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary">Deactivate</button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Re-activate</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <h2>Add Terminal</h2>
+  {% endif %}
+  <form method="post" autocomplete="off">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% if is_create %}
+      <div class="form-field">
+        <label for="id_username">Username</label>
+        <input type="text"
+               name="username"
+               id="id_username"
+               value="{{ form.username.value|default:'' }}"
+               autocomplete="off"
+               data-1p-ignore
+               data-lpignore="true"
+               required>
+        {% if form.username.help_text %}<p class="text-muted">{{ form.username.help_text }}</p>{% endif %}
+        {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    <div class="form-field">
+      <label for="id_first_name">First name</label>
+      <input type="text"
+             name="first_name"
+             id="id_first_name"
+             value="{{ form.first_name.value|default:'' }}"
+             autocomplete="off"
+             data-1p-ignore
+             data-lpignore="true">
+      {% for error in form.first_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="form-field">
+      <label for="id_last_name">Last name</label>
+      <input type="text"
+             name="last_name"
+             id="id_last_name"
+             value="{{ form.last_name.value|default:'' }}"
+             autocomplete="off"
+             data-1p-ignore
+             data-lpignore="true">
+      {% for error in form.last_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        {% if is_create %}
+          Create Terminal
+        {% else %}
+          Save Changes
+        {% endif %}
+      </button>
+    </div>
+  </form>
+{% endblock %}

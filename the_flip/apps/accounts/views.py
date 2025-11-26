@@ -1,12 +1,21 @@
+import secrets
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import UpdateView
+from django.views import View
+from django.views.generic import FormView, ListView, UpdateView
 
-from .forms import InvitationRegistrationForm, ProfileForm, SelfRegistrationForm
+from .forms import (
+    InvitationRegistrationForm,
+    ProfileForm,
+    SelfRegistrationForm,
+    TerminalCreateForm,
+    TerminalUpdateForm,
+)
 from .models import Invitation, Maintainer
 
 User = get_user_model()
@@ -152,3 +161,117 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Profile updated successfully.")
         return super().form_valid(form)
+
+
+class SuperuserRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Mixin that requires the user to be a superuser."""
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class TerminalListView(SuperuserRequiredMixin, ListView):
+    """List all shared terminal accounts."""
+
+    template_name = "accounts/terminal_list.html"
+    context_object_name = "terminals"
+
+    def get_queryset(self):
+        return Maintainer.objects.filter(is_shared_account=True).select_related("user")
+
+
+class TerminalLoginView(SuperuserRequiredMixin, View):
+    """Log in as a shared terminal account."""
+
+    def post(self, request, pk):
+        terminal = get_object_or_404(
+            Maintainer, pk=pk, is_shared_account=True, user__is_active=True
+        )
+        login(request, terminal.user)
+        messages.success(request, f"Logged in as {terminal.display_name}.")
+        return redirect("home")
+
+
+class TerminalCreateView(SuperuserRequiredMixin, FormView):
+    """Create a new shared terminal account."""
+
+    template_name = "accounts/terminal_form.html"
+    form_class = TerminalCreateForm
+    success_url = reverse_lazy("terminal-list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_create"] = True
+        return context
+
+    def form_valid(self, form):
+        # Create user with random password
+        user = User.objects.create_user(
+            username=form.cleaned_data["username"],
+            first_name=form.cleaned_data.get("first_name") or "",
+            last_name=form.cleaned_data.get("last_name") or "",
+            password=secrets.token_urlsafe(32),
+            is_staff=True,
+        )
+        # Signal auto-creates Maintainer, update it to be shared
+        maintainer = Maintainer.objects.get(user=user)
+        maintainer.is_shared_account = True
+        maintainer.save()
+
+        messages.success(self.request, f"Terminal '{maintainer.display_name}' created.")
+        return super().form_valid(form)
+
+
+class TerminalUpdateView(SuperuserRequiredMixin, FormView):
+    """Edit a shared terminal account."""
+
+    template_name = "accounts/terminal_form.html"
+    form_class = TerminalUpdateForm
+    success_url = reverse_lazy("terminal-list")
+
+    def get_terminal(self):
+        return get_object_or_404(Maintainer, pk=self.kwargs["pk"], is_shared_account=True)
+
+    def get_initial(self):
+        terminal = self.get_terminal()
+        return {
+            "first_name": terminal.user.first_name,
+            "last_name": terminal.user.last_name,
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_create"] = False
+        context["terminal"] = self.get_terminal()
+        return context
+
+    def form_valid(self, form):
+        terminal = self.get_terminal()
+        terminal.user.first_name = form.cleaned_data.get("first_name") or ""
+        terminal.user.last_name = form.cleaned_data.get("last_name") or ""
+        terminal.user.save()
+
+        messages.success(self.request, f"Terminal '{terminal.display_name}' updated.")
+        return super().form_valid(form)
+
+
+class TerminalDeactivateView(SuperuserRequiredMixin, View):
+    """Deactivate a shared terminal account."""
+
+    def post(self, request, pk):
+        terminal = get_object_or_404(Maintainer, pk=pk, is_shared_account=True)
+        terminal.user.is_active = False
+        terminal.user.save()
+        messages.success(request, f"Terminal '{terminal.display_name}' deactivated.")
+        return redirect("terminal-list")
+
+
+class TerminalReactivateView(SuperuserRequiredMixin, View):
+    """Reactivate a shared terminal account."""
+
+    def post(self, request, pk):
+        terminal = get_object_or_404(Maintainer, pk=pk, is_shared_account=True)
+        terminal.user.is_active = True
+        terminal.user.save()
+        messages.success(request, f"Terminal '{terminal.display_name}' reactivated.")
+        return redirect("terminal-list")
