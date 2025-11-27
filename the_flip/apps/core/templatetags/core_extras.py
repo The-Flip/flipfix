@@ -113,3 +113,47 @@ def problem_report_summary(report):
     if description:
         return f"{type_display}: {description}"
     return type_display
+
+
+@register.filter
+def problem_report_meta(report):
+    """
+    Render reporter name (if present) followed by timestamp (emphasized).
+    Example: "Alice on <strong><time ...>…</time></strong>"
+    If no reporter, only render the timestamp emphasized.
+    """
+    if not report:
+        return ""
+
+    ts = smart_date(getattr(report, "created_at", None))
+    name = (getattr(report, "reporter_display", "") or "").strip()
+
+    if name:
+        return format_html("{} on <strong>{}</strong>", name, ts)
+    return format_html("<strong>{}</strong>", ts)
+
+
+@register.filter
+def log_entry_meta(entry):
+    """
+    Render maintainer name(s) (if present) followed by timestamp (emphasized).
+    Example: "Alice on <strong><time ...>…</time></strong>"
+    If no maintainer name, only render the timestamp emphasized.
+    """
+    if not entry:
+        return ""
+
+    ts = smart_date(getattr(entry, "work_date", None))
+    names = ""
+    try:
+        if hasattr(entry, "maintainers") and entry.maintainers.exists():
+            names = ", ".join(str(m) for m in entry.maintainers.all())
+        elif getattr(entry, "maintainer_names", ""):
+            names = entry.maintainer_names
+    except Exception:
+        names = getattr(entry, "maintainer_names", "") or ""
+
+    names = (names or "").strip()
+    if names:
+        return format_html("{} on <strong>{}</strong>", names, ts)
+    return format_html("<strong>{}</strong>", ts)

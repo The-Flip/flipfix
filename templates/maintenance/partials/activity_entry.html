@@ -7,14 +7,7 @@
       aria-label="View log entry">
     <div class="machine-card__row">
       <div class="machine-card__row-left"></div>
-      <div class="log-entry-meta machine-card__top-right">
-        <strong>{{ entry.created_at|smart_date }}</strong>
-        {% if entry.maintainers.all %}
-          by {{ entry.maintainers.all|join:", " }}
-        {% elif entry.maintainer_names %}
-          by {{ entry.maintainer_names }}
-        {% endif %}
-      </div>
+      <div class="log-entry-meta machine-card__top-right">{{ entry|log_entry_meta }}</div>
     </div>
     <div class="machine-card__problem markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
     {% if entry.problem_report %}
@@ -62,9 +55,7 @@
         <span class="badge badge-status badge-{{ entry.status }}">{{ entry.get_status_display }}</span>
         <span class="text-muted">Problem Report</span>
       </div>
-      <div class="log-entry-meta machine-card__top-right">
-        <strong>{{ entry.created_at|smart_date }}</strong>
-      </div>
+      <div class="log-entry-meta machine-card__top-right">{{ entry|problem_report_meta }}</div>
     </div>
     <div class="machine-card__problem">{{ entry|problem_report_summary }}</div>
     {% if entry.prefetched_log_entries %}

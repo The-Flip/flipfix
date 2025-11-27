@@ -9,7 +9,7 @@
       <span class="machine-card__name">{{ report.machine.display_name }}</span>
     </div>
     <div class="machine-card__meta-group">
-      <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
+      <span class="machine-card__timestamp">{{ report|problem_report_meta }}</span>
       <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
     </div>
   </div>

@@ -35,7 +35,7 @@
               <div class="flip-card__top-left">
                 <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
               </div>
-              <div class="flip-card__top-right log-entry-meta">{{ report.created_at|smart_date }}</div>
+              <div class="flip-card__top-right log-entry-meta">{{ report|problem_report_meta }}</div>
             </div>
             <div class="flip-card__main">
               <p>{{ report|problem_report_summary }}</p>
