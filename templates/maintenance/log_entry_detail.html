@@ -66,14 +66,18 @@
         </div>
         <div class="entry-content">
           <div class="entry-text-container">
-            <div class="entry-panel">
-              <div class="entry-panel__header">
-                <h3 class="entry-panel__title">Description</h3>
-                <div>
-                  <button type="button" id="edit-button" class="btn btn-secondary">Edit</button>
-                  <div id="save-status" class="status-indicator"></div>
+            <div class="entry-panel__header">
+              <h3 class="entry-panel__title">Description</h3>
+              <div>
+                <button type="button" id="edit-button" class="btn btn-secondary">Edit</button>
+                <div id="edit-actions-header" class="hidden">
+                  <button type="button" id="save-button" class="btn btn-primary">Save</button>
+                  <button type="button" id="cancel-button" class="btn btn-secondary">Cancel</button>
                 </div>
+                <div id="save-status" class="status-indicator"></div>
               </div>
+            </div>
+            <div class="entry-panel">
               <div id="text-view-mode">
                 <div id="entry-text-display" class="markdown-content">{{ entry.text|render_markdown }}</div>
               </div>
@@ -81,10 +85,6 @@
                 <textarea id="entry-text"
                           class="entry-text-edit"
                           data-entry-id="{{ entry.pk }}">{{ entry.text }}</textarea>
-                <div class="edit-actions">
-                  <button type="button" id="save-button" class="btn btn-primary">Save</button>
-                  <button type="button" id="cancel-button" class="btn btn-secondary">Cancel</button>
-                </div>
               </div>
             </div>
           </div>
@@ -199,6 +199,7 @@
       const textViewMode = document.getElementById('text-view-mode');
       const textEditMode = document.getElementById('text-edit-mode');
       const editButton = document.getElementById('edit-button');
+      const headerActions = document.getElementById('edit-actions-header');
       const saveButton = document.getElementById('save-button');
       const cancelButton = document.getElementById('cancel-button');
       const textDisplay = document.getElementById('entry-text-display');
@@ -210,6 +211,8 @@
           textViewMode.classList.add('hidden');
           textEditMode.classList.remove('hidden');
           textarea.focus();
+          editButton.classList.add('hidden');
+          headerActions.classList.remove('hidden');
       });
 
       cancelButton.addEventListener('click', () => {
@@ -218,6 +221,8 @@
           saveStatus.className = 'status-indicator';
           textEditMode.classList.add('hidden');
           textViewMode.classList.remove('hidden');
+          headerActions.classList.add('hidden');
+          editButton.classList.remove('hidden');
       });
 
       saveButton.addEventListener('click', async () => {
