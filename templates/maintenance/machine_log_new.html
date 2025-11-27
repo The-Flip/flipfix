@@ -66,6 +66,18 @@
         {{ form.work_date }}
         {% for error in form.work_date.errors %}<div class="error">{{ error }}</div>{% endfor %}
       </div>
+      <div class="form-field">
+        <label for="{{ form.submitter_name.id_for_label }}">Maintainer name</label>
+        {% if is_shared_account %}
+          <div class="autocomplete" id="submitter-autocomplete">
+            {{ form.submitter_name }}
+            <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
+          </div>
+        {% else %}
+          {{ form.submitter_name }}
+        {% endif %}
+        {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
+      </div>
       {% if is_global %}
         <div class="form-field">
           <label for="machine-log-search">Machine</label>
@@ -89,18 +101,6 @@
           {% for error in form.machine_slug.errors %}<div class="error">{{ error }}</div>{% endfor %}
         </div>
       {% endif %}
-      <div class="form-field">
-        <label for="{{ form.submitter_name.id_for_label }}">Maintainer name</label>
-        {% if is_shared_account %}
-          <div class="autocomplete" id="submitter-autocomplete">
-            {{ form.submitter_name }}
-            <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
-          </div>
-        {% else %}
-          {{ form.submitter_name }}
-        {% endif %}
-        {% for error in form.submitter_name.errors %}<div class="error">{{ error }}</div>{% endfor %}
-      </div>
       <div class="form-field">
         <label for="{{ form.text.id_for_label }}">Description</label>
         {{ form.text }}
