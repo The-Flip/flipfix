@@ -215,16 +215,25 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        latest_log_prefetch = Prefetch(
+            "log_entries",
+            queryset=LogEntry.objects.order_by("-created_at"),
+            to_attr="prefetched_log_entries",
+        )
         queryset = (
             ProblemReport.objects.filter(machine=self.machine)
             .select_related("reported_by_user")
+            .prefetch_related(latest_log_prefetch)
             .order_by("-status", "-created_at")
         )
 
         # Search by description text if provided
         search_query = self.request.GET.get("q", "").strip()
         if search_query:
-            queryset = queryset.filter(description__icontains=search_query)
+            queryset = queryset.filter(
+                Q(description__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
+            ).distinct()
 
         return queryset
 
