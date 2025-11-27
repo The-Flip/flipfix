@@ -30,7 +30,9 @@ def get_activity_entries(machine, search_query=None):
     reports = ProblemReport.objects.filter(machine=machine).select_related("reported_by_user")
 
     if search_query:
-        logs = logs.filter(text__icontains=search_query)
+        logs = logs.filter(
+            Q(text__icontains=search_query) | Q(problem_report__description__icontains=search_query)
+        ).distinct()
         reports = reports.filter(description__icontains=search_query)
 
     logs = logs.order_by("-created_at")
