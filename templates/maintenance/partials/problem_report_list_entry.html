@@ -1,27 +1,31 @@
 {% load core_extras %}
-<li class="machine-card js-clickable-card"
-    data-url="{% url 'problem-report-detail' report.pk %}"
-    tabindex="0"
-    role="button"
-    aria-label="View problem report for {{ report.machine.display_name }}">
-  <div class="machine-card__row">
-    <div class="machine-card__row-left">
-      <span class="machine-card__name">{{ report.machine.display_name }}</span>
-    </div>
-    <div class="machine-card__meta-group">
-      <span class="machine-card__timestamp">{{ report|problem_report_meta }}</span>
-      <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
-    </div>
-  </div>
-  <div class="machine-card__problem">{{ report|problem_report_summary }}</div>
-  {% if report.prefetched_log_entries %}
-    {% with latest_log=report.prefetched_log_entries.0 %}
-      <div class="machine-card__row">
-        <div class="machine-card__row-left"></div>
-        <div class="machine-card__location machine-card__problem-report-snippet">
-          <strong>Latest log:</strong> {{ latest_log.text }}
-        </div>
+<li>
+  <article class="flip-card flip-card--clickable js-clickable-card"
+           data-url="{% url 'problem-report-detail' report.pk %}"
+           tabindex="0"
+           role="button"
+           aria-label="View problem report for {{ report.machine.display_name }}">
+    <div class="flip-card__top">
+      <div class="flip-card__top-left">
+        <span class="machine-card__name">{{ report.machine.display_name }}</span>
       </div>
-    {% endwith %}
-  {% endif %}
+      <div class="flip-card__top-right log-entry-meta">
+        {{ report|problem_report_meta }}
+        <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
+      </div>
+    </div>
+    <div class="flip-card__main">
+      <p class="machine-card__problem">{{ report|problem_report_summary }}</p>
+    </div>
+    {% if report.prefetched_log_entries %}
+      {% with latest_log=report.prefetched_log_entries.0 %}
+        <div class="flip-card__bottom">
+          <div class="flip-card__bottom-left"></div>
+          <div class="flip-card__bottom-right text-muted machine-card__problem-report-snippet">
+            <strong>Latest log:</strong> {{ latest_log.text }}
+          </div>
+        </div>
+      {% endwith %}
+    {% endif %}
+  </article>
 </li>

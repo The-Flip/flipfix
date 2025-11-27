@@ -38,13 +38,13 @@
               <div class="flip-card__top-right log-entry-meta">{{ report|problem_report_meta }}</div>
             </div>
             <div class="flip-card__main">
-              <p>{{ report|problem_report_summary }}</p>
+              <p class="machine-card__problem">{{ report|problem_report_summary }}</p>
             </div>
             {% if report.prefetched_log_entries %}
               {% with latest_log=report.prefetched_log_entries.0 %}
                 <div class="flip-card__bottom">
                   <div class="flip-card__bottom-left"></div>
-                  <div class="flip-card__bottom-right text-muted">
+                  <div class="flip-card__bottom-right text-muted machine-card__problem-report-snippet">
                     <strong>Latest log:</strong> {{ latest_log.text }}
                   </div>
                 </div>

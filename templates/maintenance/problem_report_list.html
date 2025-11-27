@@ -17,7 +17,7 @@
     <div id="log-container"
          data-fetch-url="{% url 'problem-report-list-entries' %}">
       {% if reports %}
-        <ul class="list machine-list problem-report-list" id="log-list">
+        <ul class="flip-card-list" id="log-list">
           {% for report in reports %}
             {% include "maintenance/partials/problem_report_list_entry.html" with report=report %}
           {% endfor %}
