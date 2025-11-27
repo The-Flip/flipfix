@@ -232,6 +232,8 @@ main {
              .flip-card__top-left, .flip-card__top-right,
              .flip-card__bottom-left, .flip-card__bottom-right
    Modifiers / helpers: .flip-card--clickable, .flip-card-list
+   Usage: use .flip-card (and .flip-card-list) for list-style or interactive cards with
+          top/main/bottom regions; keep .card for simple, static content containers.
    ========================================================================== */
 .flip-card-list {
   list-style: none;
