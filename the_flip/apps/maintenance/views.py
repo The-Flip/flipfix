@@ -895,7 +895,36 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
             except LogEntryMedia.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Media not found"}, status=404)
 
+        elif action == "update_maintainers":
+            names_raw = request.POST.get("maintainers", "")
+            names = [name.strip() for name in names_raw.split(",") if name.strip()]
+
+            matched = []
+            unmatched = []
+            for name in names:
+                maintainer = self.match_maintainer(name)
+                if maintainer:
+                    matched.append(maintainer)
+                else:
+                    unmatched.append(name)
+
+            self.object.maintainers.set(matched)
+            self.object.maintainer_names = ", ".join(unmatched)
+            self.object.save(update_fields=["maintainer_names", "updated_at"])
+            return JsonResponse({"success": True})
+
         return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
+
+    def match_maintainer(self, name: str):
+        normalized = name.lower().strip()
+        if not normalized:
+            return None
+        for maintainer in Maintainer.objects.select_related("user"):
+            username = maintainer.user.username.lower()
+            full_name = (maintainer.user.get_full_name() or "").lower()
+            if normalized in {username, full_name}:
+                return maintainer
+        return None
 
 
 class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
