@@ -28,13 +28,11 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
 - **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
 - **Flip Card** (`.flip-card` with `.flip-card__top`, `.flip-card__main`, `.flip-card__bottom` and optional left/right sub-elements for aligning content; use `.flip-card--clickable` when the whole card should be a link, and `.flip-card-list` to reset list spacing when rendering multiple flip-cards)
-- **List Cards**: Prefer `.flip-card` (and `.flip-card-list` for grouped renders) for new card-style lists instead of `.card` or `.machine-card`, unless legacy styling is required.
 
 ### UI Components
 - **Buttons** (`.btn` with modifiers like `.btn-primary`, `.btn-secondary`)
 - **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`, `.badge-inline`)
 - **Cards** (`.card` with BEM elements like `.card__header`, `.card__body`)
-- **Machine Cards** (`.machine-card` with structured BEM elements)
 - **Forms** (`.form-field` wrapper pattern, `.form-inline` for inline forms)
 - **Messages & Alerts** (`.message` with type modifiers like `.message--success`, `.message--error`)
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
@@ -77,10 +75,10 @@ This keeps styling in CSS and makes the pattern consistent across the codebase.
 This project uses a "BEM-ish" approach to naming CSS classes:
 
 ### Use `Block__Element` (double underscore) for component hierarchy
-Use `block__element` when creating component subparts (header, body, footer, meta, etc.).  Examples:
-- `.machine-card__row` - row is part of machine-card
-- `.machine-card__name` - name is part of machine-card
-- `.page-header__left` - left section is part of page-header
+Use `block__element` when creating component subparts (header, body, footer, meta, etc.). Examples:
+- `.flip-card__top` - top section of flip-card
+- `.flip-card__bottom-right` - right-aligned bottom content of flip-card
+- `.page-header__left` - left section of page-header
 
 ### Use `Block-modifier` (single hyphen) for variants/states
 Use `block-modifier` when adding variants (colors, sizes, states).  Examples:

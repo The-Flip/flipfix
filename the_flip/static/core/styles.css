@@ -528,122 +528,6 @@ input[type="radio"] {
   margin-bottom: var(--space-4);
 }
 
-.machine-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.machine-list > li {
-  margin: 0;
-}
-
-/* ==========================================================================
-   Machine Cards
-   Base: .machine-card
-   BEM Elements: .machine-card__row, .machine-card__name, .machine-card__meta, etc.
-   ========================================================================== */
-.machine-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.machine-card:hover,
-.machine-card:focus-visible {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.machine-card:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.machine-card__row {
-  display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-}
-
-.machine-card__row-left {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  font-size: 1rem;
-  line-height: 1.4;
-  color: var(--color-text);
-}
-
-.machine-card__name {
-  font-weight: 600;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-}
-
-.machine-card__meta {
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-
-.machine-card__location {
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-  text-align: right;
-}
-
-.machine-card__problem-report-snippet {
-  max-width: clamp(38ch, 80vw, 64ch);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.machine-card__meta-group {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  text-align: right;
-}
-
-.machine-card__problem {
-  font-size: 0.95rem;
-  color: var(--color-text);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-}
-
-.machine-card__problem-label {
-  font-weight: 600;
-  margin-right: var(--space-1);
-}
-
-.machine-card__timestamp {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-}
-
-/* Badge positioning utility - aligns badge to right */
-.badge-right {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.machine-card__meta-group .badge-right {
-  margin-left: 0;
-}
-
 /* ==========================================================================
    Terminal Cards (for shared terminal management)
    Base: .terminal-card
@@ -972,14 +856,6 @@ input[type="radio"] {
 
 .markdown-content--compact li {
   margin-bottom: 0;
-}
-
-.machine-card__problem.markdown-content {
-  display: block;
-  -webkit-box-orient: unset;
-  -webkit-line-clamp: unset;
-  line-clamp: unset;
-  overflow: visible;
 }
 
 /* ==========================================================================
@@ -1392,7 +1268,6 @@ input[type="radio"] {
    - Desktop: 960px
    ========================================================================== */
 @media (min-width: 769px) {
-  .machine-card__problem,
   .flip-card__summary {
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -1400,7 +1275,6 @@ input[type="radio"] {
 }
 
 @media (min-width: 960px) {
-  .machine-card__problem,
   .flip-card__summary {
     -webkit-line-clamp: 3;
     line-clamp: 3;
