@@ -23,35 +23,40 @@
     </div>
   </div>
   {% if reports %}
-    <ul class="list machine-list">
+    <ul class="flip-card-list">
       {% for report in reports %}
-        <li class="machine-card js-clickable-card"
-            data-url="{% url 'problem-report-detail' report.pk %}"
-            tabindex="0"
-            role="button"
-            aria-label="View problem report">
-          <div class="machine-card__row">
-            <div class="machine-card__row-left">
-              {% if report.problem_type != report.PROBLEM_OTHER %}
-                <span class="machine-card__problem-label">{{ report.get_problem_type_display }}:</span>
-              {% endif %}
-              {{ report.description|default:"No description provided." }}
-            </div>
-            <div class="machine-card__meta-group">
-              <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
-              <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
-            </div>
-          </div>
-          {% if report.prefetched_log_entries %}
-            {% with latest_log=report.prefetched_log_entries.0 %}
-              <div class="machine-card__row">
-                <div class="machine-card__row-left"></div>
-                <div class="machine-card__location machine-card__problem-report-snippet">
-                  <strong>Latest log:</strong> {{ latest_log.text }}
-                </div>
+        <li>
+          <article class="flip-card flip-card--clickable js-clickable-card"
+                   data-url="{% url 'problem-report-detail' report.pk %}"
+                   tabindex="0"
+                   role="button"
+                   aria-label="View problem report">
+            <div class="flip-card__top">
+              <div class="flip-card__top-left">
+                <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
               </div>
-            {% endwith %}
-          {% endif %}
+              <div class="flip-card__top-right log-entry-meta">{{ report.created_at|smart_date }}</div>
+            </div>
+            <div class="flip-card__main">
+              {% if report.problem_type != report.PROBLEM_OTHER %}
+                <p>
+                  <strong>{{ report.get_problem_type_display }}:</strong> {{ report.description|default:"No description provided." }}
+                </p>
+              {% else %}
+                <p>{{ report.description|default:"No description provided." }}</p>
+              {% endif %}
+            </div>
+            {% if report.prefetched_log_entries %}
+              {% with latest_log=report.prefetched_log_entries.0 %}
+                <div class="flip-card__bottom">
+                  <div class="flip-card__bottom-left"></div>
+                  <div class="flip-card__bottom-right text-muted">
+                    <strong>Latest log:</strong> {{ latest_log.text }}
+                  </div>
+                </div>
+              {% endwith %}
+            {% endif %}
+          </article>
         </li>
       {% endfor %}
     </ul>

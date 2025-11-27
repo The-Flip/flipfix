@@ -406,9 +406,8 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         report.save()
-        if machine:
-            return redirect("machine-problem-reports", slug=machine.slug)
-        return redirect("problem-report-list")
+        messages.success(self.request, "Problem report created.")
+        return redirect("problem-report-detail", pk=report.pk)
 
 
 class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
