@@ -225,12 +225,12 @@ main {
 }
 
 /* ==========================================================================
-   Flip Cards (experimental component)
+   Flip Cards
    Base: .flip-card
    Elements: .flip-card__top, .flip-card__main, .flip-card__bottom,
              .flip-card__top-left, .flip-card__top-right,
              .flip-card__bottom-left, .flip-card__bottom-right
-   Modifier: .flip-card--clickable
+   Modifiers / helpers: .flip-card--clickable, .flip-card-list
    ========================================================================== */
 .flip-card-list {
   list-style: none;
