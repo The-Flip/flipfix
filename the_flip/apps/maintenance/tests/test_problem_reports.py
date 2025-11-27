@@ -7,6 +7,7 @@ from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
+from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
     create_log_entry,
@@ -176,6 +177,49 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         messages = list(response.context["messages"])
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Problem report re-opened.")
+
+    def test_detail_view_search_filters_log_entries_by_text(self):
+        """Search should filter log entries by text on the detail page."""
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Investigated coil stop issue",
+        )
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Adjusted flipper alignment",
+        )
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url, {"q": "coil"})
+
+        self.assertContains(response, "Investigated coil stop issue")
+        self.assertNotContains(response, "Adjusted flipper alignment")
+
+    def test_detail_view_search_filters_log_entries_by_maintainer(self):
+        """Search should match maintainer names on log entries."""
+        tech = create_staff_user(username="techuser", first_name="Tech", last_name="Person")
+        other = create_staff_user(username="otheruser", first_name="Other", last_name="Maintainer")
+
+        log_with_tech = create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Investigated coil stop issue",
+        )
+        log_with_other = create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Adjusted flipper alignment",
+        )
+        log_with_tech.maintainers.add(Maintainer.objects.get(user=tech))
+        log_with_other.maintainers.add(Maintainer.objects.get(user=other))
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url, {"q": "Tech"})
+
+        self.assertContains(response, "Investigated coil stop issue")
+        self.assertNotContains(response, "Adjusted flipper alignment")
 
 
 @tag("views")

@@ -41,9 +41,12 @@
     </div>
   </section>
   <section>
+    <h2>Logs</h2>
     <div class="list-header">
       <div class="list-header__left">
-        <h3>Log Entries</h3>
+        <form method="get" action="">
+          <div class="form-field">{{ search_form.q }}</div>
+        </form>
       </div>
       <div class="list-header__right">
         <a href="{% url 'log-create-problem-report' report.pk %}"
@@ -61,7 +64,13 @@
         <div id="log-pagination"
              data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
       {% else %}
-        <p class="text-muted">No log entries yet.</p>
+        <p>
+          {% if search_form.q.value %}
+            No log entries match your search.
+          {% else %}
+            No log entries yet.
+          {% endif %}
+        </p>
       {% endif %}
     </div>
     <div id="log-loading" class="hidden">Loading…</div>

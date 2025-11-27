@@ -166,12 +166,21 @@ class ProblemReportLogEntriesPartialView(LoginRequiredMixin, UserPassesTestMixin
 
     def get(self, request, *args, **kwargs):
         problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
-        log_entries = (
-            LogEntry.objects.filter(problem_report=problem_report)
-            .select_related("machine")
-            .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
+        log_entries = LogEntry.objects.filter(problem_report=problem_report).select_related(
+            "machine"
         )
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            log_entries = log_entries.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
+            ).distinct()
+
+        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
 
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -313,12 +322,19 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
         from django.shortcuts import render
 
         # Get log entries for this problem report with pagination
-        log_entries = (
-            LogEntry.objects.filter(problem_report=report)
-            .select_related("machine")
-            .prefetch_related("maintainers", "media")
-            .order_by("-created_at")
-        )
+        log_entries = LogEntry.objects.filter(problem_report=report).select_related("machine")
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            log_entries = log_entries.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
+            ).distinct()
+
+        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -327,6 +343,7 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
             "machine": report.machine,
             "page_obj": page_obj,
             "log_entries": page_obj.object_list,
+            "search_form": SearchForm(initial={"q": search_query}),
         }
         return render(request, self.template_name, context)
 
