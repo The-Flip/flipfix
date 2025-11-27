@@ -290,11 +290,22 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
         if report.status == ProblemReport.STATUS_OPEN:
             report.status = ProblemReport.STATUS_CLOSED
             message = "Problem report closed."
+            log_text = "Closed problem report"
         else:
             report.status = ProblemReport.STATUS_OPEN
             message = "Problem report re-opened."
+            log_text = "Re-opened problem report"
 
         report.save(update_fields=["status", "updated_at"])
+        log_entry = LogEntry.objects.create(
+            machine=report.machine,
+            problem_report=report,
+            text=log_text,
+            created_by=request.user,
+        )
+        maintainer = Maintainer.objects.filter(user=request.user).first()
+        if maintainer:
+            log_entry.maintainers.add(maintainer)
         messages.success(request, message)
         return redirect("problem-report-detail", pk=report.pk)
 

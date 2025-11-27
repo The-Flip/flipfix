@@ -13,7 +13,7 @@ from the_flip.apps.core.test_utils import (
     create_problem_report,
     create_staff_user,
 )
-from the_flip.apps.maintenance.models import ProblemReport
+from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 @tag("views")
@@ -131,6 +131,12 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.STATUS_CLOSED)
+        log_entry = LogEntry.objects.latest("created_at")
+        self.assertEqual(log_entry.text, "Closed problem report")
+        self.assertEqual(log_entry.problem_report, self.report)
+        self.assertEqual(log_entry.machine, self.machine)
+        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
 
     def test_status_toggle_from_closed_to_open(self):
         """Staff users should be able to re-open a closed report."""
@@ -143,6 +149,12 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.STATUS_OPEN)
+        log_entry = LogEntry.objects.latest("created_at")
+        self.assertEqual(log_entry.text, "Re-opened problem report")
+        self.assertEqual(log_entry.problem_report, self.report)
+        self.assertEqual(log_entry.machine, self.machine)
+        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
 
     def test_status_toggle_shows_close_message(self):
         """Closing a report should show appropriate success message."""
