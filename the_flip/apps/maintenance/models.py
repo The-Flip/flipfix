@@ -12,7 +12,7 @@ from django.utils import timezone
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.models import TimeStampedModel
-from the_flip.apps.maintenance.utils import resize_image_file
+from the_flip.apps.maintenance.utils import THUMB_IMAGE_DIMENSION, resize_image_file
 
 
 class ProblemReportQuerySet(models.QuerySet):
@@ -192,12 +192,14 @@ class LogEntryMedia(TimeStampedModel):
     def save(self, *args, **kwargs):
         if self.media_type == self.TYPE_PHOTO and self.file:
             try:
-                # Convert to browser-friendly format without shrinking
-                converted = resize_image_file(self.file, max_dimension=None)
+                # Convert to browser-friendly format and size
+                converted = resize_image_file(self.file)
                 self.file = converted
                 # Generate a resized thumbnail for grid display if missing
                 if not self.thumbnail_file:
-                    self.thumbnail_file = resize_image_file(converted)
+                    self.thumbnail_file = resize_image_file(
+                        converted, max_dimension=THUMB_IMAGE_DIMENSION
+                    )
             except Exception:  # pragma: no cover - fallback if Pillow fails unexpectedly
                 import logging
 

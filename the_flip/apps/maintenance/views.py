@@ -895,6 +895,8 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                     media.transcoded_file.delete(save=False)
                 if media.poster_file:
                     media.poster_file.delete(save=False)
+                if media.thumbnail_file:
+                    media.thumbnail_file.delete(save=False)
                 media.file.delete()
                 media.delete()
                 return JsonResponse({"success": True})
