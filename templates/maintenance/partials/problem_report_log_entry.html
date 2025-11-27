@@ -1,37 +1,37 @@
 {% load core_extras %}
 <li>
-  <a href="{% url 'log-detail' entry.pk %}" class="log-entry-link">
-    <div class="log-entry-meta">
-      <strong>{{ entry.work_date|smart_date }}</strong>
-      {% if entry.maintainers.all %}
-        <span>by {{ entry.maintainers.all|join:", " }}:</span>
-      {% elif entry.maintainer_names %}
-        <span>by {{ entry.maintainer_names }}:</span>
-      {% else %}
-        <span>:</span>
+  <a href="{% url 'log-detail' entry.pk %}"
+     class="flip-card flip-card--clickable">
+    <div class="flip-card__top log-entry-meta">
+      <div></div>
+      <div class="flip-card__top-right">
+        <strong>{{ entry.work_date|smart_date }}</strong>
+        {% if entry.maintainers.all %}
+          by {{ entry.maintainers.all|join:", " }}
+        {% elif entry.maintainer_names %}
+          by {{ entry.maintainer_names }}
+        {% endif %}
+      </div>
+    </div>
+    <div class="flip-card__main">
+      <div class="markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+      {% if entry.media.all %}
+        <div class="log-entry-media">
+          {% for media in entry.media.all %}
+            {% if media.media_type == 'video' %}
+              {% if media.transcode_status == 'ready' and media.poster_file %}
+                <img src="{{ media.poster_file.url }}" alt="Video poster" width="200">
+              {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
+                <span class="media-status">Video processing…</span>
+              {% else %}
+                <span class="media-status error">Video failed</span>
+              {% endif %}
+            {% else %}
+              <img src="{{ media.file.url }}" alt="Photo" width="200">
+            {% endif %}
+          {% endfor %}
+        </div>
       {% endif %}
     </div>
-    <div class="log-entry-text markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
-    {% if entry.media.all %}
-      <div class="log-entry-media">
-        {% for media in entry.media.all %}
-          {% if media.media_type == 'video' %}
-            {% if media.transcode_status == 'ready' and media.poster_file %}
-              <img src="{{ media.poster_file.url }}"
-                   alt="Video poster"
-                   width="200">
-            {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-              <span class="media-status">Video processing…</span>
-            {% else %}
-              <span class="media-status error">Video failed</span>
-            {% endif %}
-          {% else %}
-            <img src="{{ media.file.url }}"
-                 alt="Photo"
-                 width="200">
-          {% endif %}
-        {% endfor %}
-      </div>
-    {% endif %}
   </a>
 </li>

@@ -13,7 +13,7 @@ from the_flip.apps.core.test_utils import (
     create_problem_report,
     create_staff_user,
 )
-from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+from the_flip.apps.maintenance.models import ProblemReport
 
 
 @tag("views")
@@ -53,17 +53,14 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.assertTemplateUsed(response, "maintenance/problem_report_detail.html")
 
     def test_detail_view_displays_report_information(self):
-        """Detail page should display all report information."""
+        """Detail page should display core report information with reporter when available."""
         self.client.login(username="staffuser", password="testpass123")
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, self.machine.display_name)
         self.assertContains(response, "Stuck Ball")
         self.assertContains(response, "Ball is stuck in the upper playfield")
-        self.assertContains(response, "John Doe")
-        self.assertContains(response, "john@example.com")
-        self.assertContains(response, "iPhone 12")
-        self.assertContains(response, "192.168.1.1")
+        self.assertContains(response, "by John Doe")
         self.assertContains(response, "Open")
 
     def test_detail_view_with_reported_by_user_hides_device_information(self):
@@ -77,11 +74,24 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.client.login(username="staffuser", password="testpass123")
         response = self.client.get(self.detail_url)
 
-        self.assertContains(response, "Report Submitter")
-        self.assertNotContains(response, "John Doe")
+        self.assertContains(response, "by Report Submitter")
         self.assertNotContains(response, "john@example.com")
         self.assertNotContains(response, "iPhone 12")
         self.assertNotContains(response, "192.168.1.1")
+
+    def test_detail_view_hides_reporter_for_anonymous_submission(self):
+        """Anonymous submissions should not render reporter details."""
+        self.report.reported_by_user = None
+        self.report.reported_by_name = ""
+        self.report.reported_by_contact = ""
+        self.report.device_info = ""
+        self.report.ip_address = None
+        self.report.save()
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        self.assertNotContains(response, "by ")
 
     def test_detail_view_shows_close_button_for_open_report(self):
         """Detail page should show 'Close Problem Report' button for open reports."""

@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load core_extras %}
-{% block title %}New Log Entry · {{ block.super }}{% endblock %}
+{% block title %}
+  {% if problem_report %}
+    Log Entry for Problem Report
+  {% else %}
+    New Log Entry
+  {% endif %}
+  · {{ block.super }}
+{% endblock %}
 {% block content %}
   <nav class="page-header">
     <div class="page-header__left breadcrumb">
@@ -26,15 +33,24 @@
     </div>
   </nav>
   {% if problem_report %}
-    <section class="card">
-      <h3>Problem Report</h3>
-      <p><strong>Machine:</strong> {{ machine.display_name }}</p>
-      {% if problem_report.problem_type != problem_report.PROBLEM_OTHER %}
-        <p><strong>Type:</strong> {{ problem_report.get_problem_type_display }}</p>
-      {% endif %}
-      {% if problem_report.description %}
-        <p>{{ problem_report.description }}</p>
-      {% endif %}
+    <section>
+      <h3>New Log Entry</h3>
+      <div class="flip-card">
+        <div class="flip-card__top log-entry-meta">
+          <div>Problem Report</div>
+          {% if problem_report.reporter_display %}
+            <div class="flip-card__top-right">
+              <strong>{{ problem_report.created_at|smart_date }}</strong> by {{ problem_report.reporter_display }}
+            </div>
+          {% endif %}
+        </div>
+        <div class="flip-card__main">
+          {% if problem_report.problem_type != problem_report.PROBLEM_OTHER %}
+            <p>{{ problem_report.get_problem_type_display }}</p>
+          {% endif %}
+          {% if problem_report.description %}<p>{{ problem_report.description }}</p>{% endif %}
+        </div>
+      </div>
     </section>
   {% endif %}
   <section class="card">
