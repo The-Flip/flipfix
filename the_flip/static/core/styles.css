@@ -571,6 +571,13 @@ input[type="radio"] {
   text-align: right;
 }
 
+.machine-card__problem-report-snippet {
+  max-width: clamp(38ch, 80vw, 64ch);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .machine-card__meta-group {
   margin-left: auto;
   display: flex;
