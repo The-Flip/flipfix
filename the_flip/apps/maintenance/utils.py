@@ -58,12 +58,22 @@ def resize_image_file(
         return uploaded_file
 
     transposed = ImageOps.exif_transpose(image)
+    needs_transpose = transposed is not None and transposed is not image
     if transposed is None:
         transposed = image
     image = transposed
     original_format = (image.format or "").upper()
     is_heif = original_format in {"HEIC", "HEIF"}
     needs_resize = max_dimension is not None and max(image.size) > max_dimension
+    needs_format_conversion = is_heif or original_format not in {"JPEG", "PNG"}
+
+    # Skip re-encoding if no transformation needed
+    if not needs_resize and not needs_format_conversion and not needs_transpose:
+        try:
+            uploaded_file.seek(0)
+        except (OSError, AttributeError):
+            pass
+        return uploaded_file
 
     target_format = "PNG" if original_format == "PNG" and image.mode in {"RGBA", "LA"} else "JPEG"
     content_type_out = "image/png" if target_format == "PNG" else "image/jpeg"

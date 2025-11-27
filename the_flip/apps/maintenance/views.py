@@ -877,8 +877,9 @@ class LogEntryDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
                     {
                         "success": True,
                         "media_id": media.id,
-                        "media_url": media.transcoded_file.url
-                        if media.transcoded_file
+                        "media_url": media.file.url,
+                        "thumbnail_url": media.thumbnail_file.url
+                        if media.thumbnail_file
                         else media.file.url,
                         "media_type": media.media_type,
                         "transcode_status": media.transcode_status,

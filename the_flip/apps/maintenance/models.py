@@ -205,19 +205,31 @@ class LogEntryMedia(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if self.media_type == self.TYPE_PHOTO and self.file:
-            try:
-                # Convert to browser-friendly format and size
-                converted = resize_image_file(self.file)
-                self.file = converted
-                # Generate a resized thumbnail for grid display if missing
-                if not self.thumbnail_file:
-                    self.thumbnail_file = resize_image_file(
-                        converted, max_dimension=THUMB_IMAGE_DIMENSION
-                    )
-            except Exception:  # pragma: no cover - fallback if Pillow fails unexpectedly
-                import logging
+            # Only process fresh uploads (UploadedFile), not already-saved files (FieldFile)
+            from django.core.files.uploadedfile import UploadedFile
 
-                logging.getLogger(__name__).warning(
-                    "Could not resize uploaded photo %s", self.file, exc_info=True
-                )
+            is_fresh_upload = hasattr(self.file, "file") and isinstance(
+                self.file.file, UploadedFile
+            )
+            if is_fresh_upload:
+                try:
+                    original = self.file
+                    # Generate thumbnail from original (before any JPEG compression)
+                    if not self.thumbnail_file:
+                        self.thumbnail_file = resize_image_file(
+                            original, max_dimension=THUMB_IMAGE_DIMENSION
+                        )
+                        # Seek back to start for the next resize
+                        try:
+                            original.seek(0)
+                        except (OSError, AttributeError):
+                            pass  # File doesn't support seeking, proceed anyway
+                    # Convert to browser-friendly format and size
+                    self.file = resize_image_file(original)
+                except Exception:  # pragma: no cover - fallback if Pillow fails unexpectedly
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        "Could not resize uploaded photo %s", self.file, exc_info=True
+                    )
         super().save(*args, **kwargs)
