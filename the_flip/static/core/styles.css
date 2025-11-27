@@ -1150,6 +1150,28 @@ input[type="radio"] {
   margin-top: var(--space-2);
 }
 
+.entry-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  padding: var(--space-4);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.entry-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.entry-panel__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: var(--weight-semibold);
+}
+
 /* ==========================================================================
    Media Grid (for displaying uploaded photos/videos)
    Base: .media-grid
