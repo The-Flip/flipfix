@@ -21,8 +21,11 @@
   </div>
   {% if report.prefetched_log_entries %}
     {% with latest_log=report.prefetched_log_entries.0 %}
-      <div class="machine-card__log-excerpt text-muted">
-        <strong>Latest log:</strong> {{ latest_log.text|truncatewords:15 }}
+      <div class="machine-card__row">
+        <div class="machine-card__row-left"></div>
+        <div class="machine-card__location machine-card__problem-report-snippet">
+          <strong>Latest log:</strong> {{ latest_log.text }}
+        </div>
       </div>
     {% endwith %}
   {% endif %}
