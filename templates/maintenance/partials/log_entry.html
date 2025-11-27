@@ -1,18 +1,26 @@
 {% load core_extras %}
 <li>
   <a href="{% url 'log-detail' entry.pk %}" class="log-entry-link">
-    <div class="log-entry-meta">
-      <strong>{{ entry.work_date|smart_date }}</strong>
-      {% if entry.maintainers.all %}
-        <span>by {{ entry.maintainers.all|join:", " }}:</span>
-      {% elif entry.maintainer_names %}
-        <span>by {{ entry.maintainer_names }}:</span>
-      {% else %}
-        <span>:</span>
-      {% endif %}
-      {% if entry.problem_report %}<span class="badge badge-problem-report">Problem Report</span>{% endif %}
+    <div class="log-entry-meta machine-card__row">
+      <div class="machine-card__row-left"></div>
+      <div class="machine-card__top-right">
+        <strong>{{ entry.work_date|smart_date }}</strong>
+        {% if entry.maintainers.all %}
+          by {{ entry.maintainers.all|join:", " }}
+        {% elif entry.maintainer_names %}
+          by {{ entry.maintainer_names }}
+        {% endif %}
+      </div>
     </div>
     <div class="log-entry-text markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+    {% if entry.problem_report %}
+      <div class="machine-card__row">
+        <div class="machine-card__row-left"></div>
+        <div class="machine-card__location machine-card__problem-report-snippet">
+          <strong>Problem report:</strong> {{ entry.problem_report.description|default:entry.problem_report.get_problem_type_display }}
+        </div>
+      </div>
+    {% endif %}
     {% if entry.media.all %}
       <div class="log-entry-media">
         {% for media in entry.media.all %}
