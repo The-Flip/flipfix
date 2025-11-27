@@ -1080,7 +1080,7 @@ input[type="radio"] {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
-  margin: var(--space-3) 0 var(--space-5) 0;
+  margin: 0;
 }
 
 .inline-edit-group:last-child {
@@ -1091,6 +1091,7 @@ input[type="radio"] {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  margin-bottom: 0;
 }
 
 .inline-edit-field label {
