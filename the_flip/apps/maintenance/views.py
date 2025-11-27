@@ -396,7 +396,7 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
             slug = (form.cleaned_data.get("machine_slug") or "").strip()
             machine = MachineInstance.objects.filter(slug=slug).first()
             if not machine:
-                form.add_error("machine_slug", "Select a machine from the list.")
+                form.add_error("machine_slug", "Select a machine.")
                 return self.form_invalid(form)
 
         report = form.save(commit=False)
@@ -622,7 +622,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             slug = (form.cleaned_data.get("machine_slug") or "").strip()
             machine = MachineInstance.objects.filter(slug=slug).first()
             if not machine:
-                form.add_error("machine_slug", "Select a machine from the list.")
+                form.add_error("machine_slug", "Select a machine.")
                 return self.form_invalid(form)
 
         log_entry = LogEntry.objects.create(
