@@ -11,15 +11,18 @@
       <strong>Logs</strong>
     </div>
   </nav>
+  <div class="section-header">
+    <h2>Logs for {{ machine.display_name }}</h2>
+    <div class="section-header__actions">
+      <a class="btn btn-primary"
+         href="{% url 'log-create-machine' machine.slug %}">+ Add Log Entry</a>
+    </div>
+  </div>
   <div class="list-header">
     <div class="list-header__left">
       <form method="get" action="">
         <div class="form-field">{{ search_form.q }}</div>
       </form>
-    </div>
-    <div class="list-header__right">
-      <a class="btn btn-primary"
-         href="{% url 'log-create-machine' machine.slug %}">+ Add Log Entry</a>
     </div>
   </div>
   <section>

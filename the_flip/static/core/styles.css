@@ -513,6 +513,8 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 textarea {
   resize: vertical;
+  /* Keep at least one line + padding visible when resizing */
+  min-height: calc(1.4em + var(--space-2) * 2);
 }
 
 /* Radio buttons */

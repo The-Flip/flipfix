@@ -19,6 +19,7 @@
       {% endif %}
     </div>
   </nav>
+  <h2>New Problem Report</h2>
   <section class="card">
     <form method="post" class="form-container">
       {% csrf_token %}
@@ -67,4 +68,18 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
+  <script>
+      // Auto-resize description textarea to fit content
+      (function() {
+          const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+          if (!descriptionInput) return;
+          const resize = () => {
+              descriptionInput.style.height = 'auto';
+              descriptionInput.style.height = `${descriptionInput.scrollHeight}px`;
+              descriptionInput.style.overflowY = 'hidden';
+          };
+          resize();
+          descriptionInput.addEventListener('input', resize);
+      })();
+  </script>
 {% endblock %}

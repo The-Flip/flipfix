@@ -396,7 +396,7 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
             slug = (form.cleaned_data.get("machine_slug") or "").strip()
             machine = MachineInstance.objects.filter(slug=slug).first()
             if not machine:
-                form.add_error("machine_slug", "Select a machine from the list.")
+                form.add_error("machine_slug", "Select a machine.")
                 return self.form_invalid(form)
 
         report = form.save(commit=False)
@@ -428,6 +428,14 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
         report = get_object_or_404(
             ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
         )
+        action = request.POST.get("action")
+
+        # Handle AJAX description update
+        if action == "update_description":
+            report.description = request.POST.get("description", "")
+            report.save(update_fields=["description", "updated_at"])
+            return JsonResponse({"success": True})
+
         # Toggle status
         if report.status == ProblemReport.STATUS_OPEN:
             report.status = ProblemReport.STATUS_CLOSED
@@ -614,7 +622,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             slug = (form.cleaned_data.get("machine_slug") or "").strip()
             machine = MachineInstance.objects.filter(slug=slug).first()
             if not machine:
-                form.add_error("machine_slug", "Select a machine from the list.")
+                form.add_error("machine_slug", "Select a machine.")
                 return self.form_invalid(form)
 
         log_entry = LogEntry.objects.create(

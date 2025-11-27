@@ -10,10 +10,13 @@
       <span>›</span>
       <strong>QR Code</strong>
     </div>
-    <div class="page-header__right">
+  </nav>
+  <div class="section-header no-print">
+    <h2>QR Code for {{ machine.display_name }}</h2>
+    <div class="section-header__actions">
       <button class="btn btn-primary" onclick="window.print()">Print QR Code</button>
     </div>
-  </nav>
+  </div>
   <div class="card no-print qr-instructions">
     <p>Attach this QR code to the machine so visitors can scan.</p>
   </div>

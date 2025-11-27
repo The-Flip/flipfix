@@ -11,15 +11,18 @@
       <strong>Problem Reports</strong>
     </div>
   </nav>
+  <div class="section-header">
+    <h2>Problem Reports for {{ machine.display_name }}</h2>
+    <div class="section-header__actions">
+      <a class="btn btn-primary"
+         href="{% url 'problem-report-create-machine' machine.slug %}">Submit Problem Report</a>
+    </div>
+  </div>
   <div class="list-header">
     <div class="list-header__left">
       <form method="get" action="">
         <div class="form-field">{{ search_form.q }}</div>
       </form>
-    </div>
-    <div class="list-header__right">
-      <a class="btn btn-primary"
-         href="{% url 'problem-report-create-machine' machine.slug %}">Submit Problem Report</a>
     </div>
   </div>
   {% if reports %}
@@ -38,7 +41,16 @@
               <div class="flip-card__top-right log-entry-meta">{{ report|problem_report_meta }}</div>
             </div>
             <div class="flip-card__main">
-              <p class="flip-card__summary">{{ report|problem_report_summary }}</p>
+              {% if report.problem_type != report.PROBLEM_OTHER %}
+                <p>
+                  <strong>{{ report.get_problem_type_display }}</strong>
+                </p>
+              {% endif %}
+              {% if report.description %}
+                <div class="markdown-content markdown-content--compact">{{ report.description|render_markdown }}</div>
+              {% elif report.problem_type == report.PROBLEM_OTHER %}
+                <p class="text-muted">No description provided.</p>
+              {% endif %}
             </div>
             {% if report.prefetched_log_entries %}
               {% with latest_log=report.prefetched_log_entries.0 %}

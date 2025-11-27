@@ -68,7 +68,7 @@ class ProblemReportForm(forms.ModelForm):
             return ""
         if MachineInstance.objects.filter(slug=slug).exists():
             return slug
-        raise forms.ValidationError("Select a machine from the list.")
+        raise forms.ValidationError("Select a machine.")
 
     def clean(self):
         cleaned = super().clean()
@@ -202,4 +202,4 @@ class LogEntryQuickForm(forms.Form):
             return ""
         if MachineInstance.objects.filter(slug=slug).exists():
             return slug
-        raise forms.ValidationError("Select a machine from the list.")
+        raise forms.ValidationError("Select a machine.")

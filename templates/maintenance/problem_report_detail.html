@@ -10,9 +10,16 @@
       <span>›</span>
       <a href="{% url 'machine-problem-reports' machine.slug %}">Problem Reports</a>
       <span>›</span>
-      <strong>{{ report.created_at|smart_date }} <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span></strong>
+      <strong>{{ report.created_at|smart_date }}</strong>
     </div>
-    <div class="page-header__right">
+  </nav>
+  <div class="section-header">
+    <h2>
+      <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
+      Problem Report
+      {% if report.problem_type != report.PROBLEM_OTHER %}: {{ report.get_problem_type_display }}{% endif %}
+    </h2>
+    <div class="section-header__actions">
       {% if report.status == report.STATUS_OPEN %}
         <form method="post" class="form-inline">
           {% csrf_token %}
@@ -25,16 +32,47 @@
         </form>
       {% endif %}
     </div>
-  </nav>
+  </div>
   <section class="flip-card">
-    {% if report.reporter_display %}
-      <div class="flip-card__top log-entry-meta">
-        <strong>{{ report.created_at|smart_date }}</strong> by {{ report.reporter_display }}
-      </div>
-    {% endif %}
+    <div class="flip-card__top">
+      {% if report.reporter_display %}
+        <div class="flip-card__top-right log-entry-meta">
+          <strong>{{ report.created_at|smart_date }}</strong> by {{ report.reporter_display }}
+        </div>
+      {% endif %}
+    </div>
     <div class="flip-card__main">
-      {% if report.problem_type != report.PROBLEM_OTHER %}<p>{{ report.get_problem_type_display }}</p>{% endif %}
-      {% if report.description %}<p>{{ report.description }}</p>{% endif %}
+      <div class="entry-content">
+        <div class="entry-text-container">
+          <div class="entry-panel__header">
+            <h3 class="entry-panel__title">Description</h3>
+            <div>
+              <button type="button" id="edit-button" class="btn btn-secondary">Edit</button>
+              <div id="edit-actions-header" class="hidden">
+                <button type="button" id="save-button" class="btn btn-primary">Save</button>
+                <button type="button" id="cancel-button" class="btn btn-secondary">Cancel</button>
+              </div>
+              <div id="save-status" class="status-indicator"></div>
+            </div>
+          </div>
+          <div class="entry-panel">
+            <div id="text-view-mode">
+              <div id="description-display" class="markdown-content">
+                {% if report.description %}
+                  {{ report.description|render_markdown }}
+                {% else %}
+                  <p class="text-muted">No description provided.</p>
+                {% endif %}
+              </div>
+            </div>
+            <div id="text-edit-mode" class="hidden">
+              <textarea id="description-text"
+                        class="entry-text-edit"
+                        data-report-id="{{ report.pk }}">{{ report.description }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
   <section>
@@ -76,4 +114,80 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+  <script>
+      const CSRF_TOKEN = '{{ csrf_token }}';
+
+      // Text edit mode switching
+      const textarea = document.getElementById('description-text');
+      const saveStatus = document.getElementById('save-status');
+      const textViewMode = document.getElementById('text-view-mode');
+      const textEditMode = document.getElementById('text-edit-mode');
+      const editButton = document.getElementById('edit-button');
+      const headerActions = document.getElementById('edit-actions-header');
+      const saveButton = document.getElementById('save-button');
+      const cancelButton = document.getElementById('cancel-button');
+
+      let originalText = textarea.value;
+
+      function setTextareaHeight() {
+          if (!textarea) return;
+          textarea.style.height = 'auto';
+          textarea.style.height = `${textarea.scrollHeight}px`;
+          textarea.style.overflowY = 'hidden';
+      }
+
+      editButton.addEventListener('click', () => {
+          originalText = textarea.value;
+          textViewMode.classList.add('hidden');
+          textEditMode.classList.remove('hidden');
+          textarea.focus();
+          editButton.classList.add('hidden');
+          headerActions.classList.remove('hidden');
+          // Grow the textarea to fit existing content on first show
+          setTextareaHeight();
+          // If styles need a tick to apply, adjust once more
+          requestAnimationFrame(setTextareaHeight);
+      });
+
+      textarea.addEventListener('input', setTextareaHeight);
+
+      cancelButton.addEventListener('click', () => {
+          textarea.value = originalText;
+          saveStatus.textContent = '';
+          saveStatus.className = 'status-indicator';
+          textEditMode.classList.add('hidden');
+          textViewMode.classList.remove('hidden');
+          headerActions.classList.add('hidden');
+          editButton.classList.remove('hidden');
+      });
+
+      saveButton.addEventListener('click', async () => {
+          saveStatus.textContent = 'Saving...';
+          saveStatus.className = 'status-indicator saving';
+
+          try {
+              const formData = new FormData();
+              formData.append('action', 'update_description');
+              formData.append('description', textarea.value);
+              formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+              const response = await fetch(window.location.href, {
+                  method: 'POST',
+                  body: formData
+              });
+
+              if (response.ok) {
+                  // Reload page to get server-rendered markdown
+                  window.location.reload();
+              } else {
+                  saveStatus.textContent = 'Error saving';
+                  saveStatus.className = 'status-indicator error';
+              }
+          } catch (error) {
+              console.error('Save error:', error);
+              saveStatus.textContent = 'Error saving';
+              saveStatus.className = 'status-indicator error';
+          }
+      });
+  </script>
 {% endblock %}

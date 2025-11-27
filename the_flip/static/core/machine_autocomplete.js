@@ -20,6 +20,10 @@ function initMachineAutocomplete(container) {
   function selectMachine(machine) {
     input.value = machine.display_name;
     hiddenInput.value = machine.slug;
+    const errorMessages = container.parentElement?.querySelectorAll(".field-error");
+    if (errorMessages?.length) {
+      errorMessages.forEach((el) => el.remove());
+    }
     hideDropdown();
   }
 

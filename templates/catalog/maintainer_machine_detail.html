@@ -8,7 +8,10 @@
       <span>›</span>
       <strong>{{ object.display_name }}</strong>
     </div>
-    <div class="page-header__right">
+  </nav>
+  <div class="section-header">
+    <h2>{{ object.display_name }}</h2>
+    <div class="section-header__actions">
       <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
       <a class="btn btn-secondary" href="{% url 'machine-qr' object.slug %}">QR Code</a>
       <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">Logs</a>
@@ -20,7 +23,7 @@
         {% endif %}
       </a>
     </div>
-  </nav>
+  </div>
   <fieldset class="form-section">
     <div class="inline-edit-group">
       <div class="form-field inline-edit-field">
