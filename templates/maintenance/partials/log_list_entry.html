@@ -1,29 +1,26 @@
 {% load core_extras %}
-<li class="machine-card js-clickable-card"
-    data-url="{% url 'log-detail' entry.pk %}"
-    tabindex="0"
-    role="button"
-    aria-label="View log entry for {{ machine.display_name }}">
-  <div class="machine-card__row">
-    <div class="machine-card__row-left">
-      <span class="machine-card__name">{{ machine.display_name }}</span>
-    </div>
-    <div class="log-entry-meta">
-      <strong>{{ entry.work_date|smart_date }}</strong>
-      {% if entry.maintainers.all %}
-        <span>by {{ entry.maintainers.all|join:", " }}</span>
-      {% elif entry.maintainer_names %}
-        <span>by {{ entry.maintainer_names }}</span>
-      {% endif %}
-    </div>
-  </div>
-  <div class="machine-card__problem markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
-  {% if entry.problem_report %}
-    <div class="machine-card__row">
-      <div class="machine-card__row-left"></div>
-      <div class="machine-card__location machine-card__problem-report-snippet">
-        <strong>Problem report:</strong> {{ entry.problem_report|problem_report_summary }}
+<li>
+  <article class="flip-card flip-card--clickable js-clickable-card"
+           data-url="{% url 'log-detail' entry.pk %}"
+           tabindex="0"
+           role="button"
+           aria-label="View log entry for {{ machine.display_name }}">
+    <div class="flip-card__top">
+      <div class="flip-card__top-left">
+        <span class="flip-card__title">{{ machine.display_name }}</span>
       </div>
+      <div class="flip-card__top-right log-entry-meta">{{ entry|log_entry_meta }}</div>
     </div>
-  {% endif %}
+    <div class="flip-card__main">
+      <div class="markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+    </div>
+    {% if entry.problem_report %}
+      <div class="flip-card__bottom">
+        <div class="flip-card__bottom-left"></div>
+        <div class="flip-card__bottom-right text-muted flip-card__snippet">
+          <strong>Problem report:</strong> {{ entry.problem_report|problem_report_summary }}
+        </div>
+      </div>
+    {% endif %}
+  </article>
 </li>
