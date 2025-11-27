@@ -21,7 +21,7 @@
       {% for machine in machines %}
         <li class="js-clickable-card"
             data-url="{% url 'maintainer-machine-detail' machine.slug %}"
-            data-search-text="{{ machine.display_name }} {{ machine.model.year }} {{ machine.model.manufacturer }} {{ machine.get_operational_status_display }}{% if machine.location %} {{ machine.location.name }}{% endif %}"
+            data-search-text="{{ machine.display_name }} {{ machine.model.year }} {{ machine.model.manufacturer }} {{ machine.get_operational_status_display }}{% if machine.location %} {{ machine.location.name }}{% endif %}{% if machine.latest_open_report %} {{ machine.latest_open_report.0.description }}{% endif %}"
             tabindex="0"
             role="button"
             aria-label="View {{ machine.display_name }}">
