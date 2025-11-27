@@ -130,13 +130,25 @@ class LogEntry(TimeStampedModel):
 
     class Meta:
         ordering = ["-work_date"]
+        verbose_name = "Log entry"
+        verbose_name_plural = "Log entries"
 
     def __str__(self) -> str:
         return f"Log entry for {self.machine.display_name}"
 
     def clean(self):
         super().clean()
-        if not self.pk and not self.maintainers.exists() and not self.maintainer_names:
+        has_maintainer_names = bool((self.maintainer_names or "").strip())
+        pending_maintainers = getattr(self, "_pending_maintainers", None)
+
+        try:
+            has_saved_maintainers = self.pk and self.maintainers.exists()
+        except ValueError:
+            has_saved_maintainers = False
+
+        has_any_maintainer = has_saved_maintainers or bool(pending_maintainers)
+
+        if not has_any_maintainer and not has_maintainer_names:
             raise ValidationError("Provide at least one maintainer or maintainer name.")
 
 
@@ -185,6 +197,8 @@ class LogEntryMedia(TimeStampedModel):
 
     class Meta:
         ordering = ["display_order", "created_at"]
+        verbose_name = "Log entry media"
+        verbose_name_plural = "Log entry media"
 
     def __str__(self) -> str:
         return f"{self.get_media_type_display()} for log entry {self.log_entry_id}"
