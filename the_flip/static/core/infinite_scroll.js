@@ -48,6 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
           fragment.innerHTML = data.items;
           Array.from(fragment.children).forEach((node) => {
             list.appendChild(node);
+            const event = new CustomEvent("card:initialize", { detail: node });
+            document.dispatchEvent(event);
           });
           if (typeof applySmartDates === "function") {
             applySmartDates(list);
