@@ -12,7 +12,13 @@
       <span>›</span>
       <strong>{{ report.created_at|smart_date }} <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span></strong>
     </div>
-    <div class="page-header__right">
+  </nav>
+  <div class="section-header">
+    <h2>
+      Problem Report
+      {% if report.problem_type != report.PROBLEM_OTHER %}: {{ report.get_problem_type_display }}{% endif %}
+    </h2>
+    <div class="section-header__actions">
       {% if report.status == report.STATUS_OPEN %}
         <form method="post" class="form-inline">
           {% csrf_token %}
@@ -25,19 +31,16 @@
         </form>
       {% endif %}
     </div>
-  </nav>
-  <section class="card">
-    <div class="form-container">
+  </div>
+  <section class="flip-card">
+    <div class="flip-card__top">
       {% if report.reporter_display %}
-        <div class="log-entry-meta">
+        <div class="flip-card__top-right log-entry-meta">
           <strong>{{ report.created_at|smart_date }}</strong> by {{ report.reporter_display }}
         </div>
       {% endif %}
-      {% if report.problem_type != report.PROBLEM_OTHER %}
-        <p>
-          <strong>Problem type:</strong> {{ report.get_problem_type_display }}
-        </p>
-      {% endif %}
+    </div>
+    <div class="flip-card__main">
       <div class="entry-content">
         <div class="entry-text-container">
           <div class="entry-panel__header">
