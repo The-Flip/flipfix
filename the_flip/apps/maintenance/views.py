@@ -98,7 +98,9 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
                 Q(description__icontains=search_query)
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
             )
+            reports = reports.distinct()
 
         paginator = Paginator(reports, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -139,7 +141,9 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
                 Q(description__icontains=search_query)
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
             )
+            reports = reports.distinct()
 
         paginator = Paginator(reports, 10)
         page_obj = paginator.get_page(request.GET.get("page"))

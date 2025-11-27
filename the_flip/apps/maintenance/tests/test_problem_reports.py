@@ -294,6 +294,18 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
         self.assertEqual(len(response.context["reports"]), 0)
         self.assertContains(response, "No problem reports match your search")
 
+    def test_list_view_search_matches_log_entry_text(self):
+        """List search should include attached log entry text."""
+        create_log_entry(machine=self.machine, problem_report=self.report, text="Fixed coil stop")
+        other_report = create_problem_report(machine=self.machine, description="Other issue")
+        create_log_entry(machine=self.machine, problem_report=other_report, text="Different work")
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.list_url, {"q": "coil stop"})
+
+        self.assertContains(response, self.report.description)
+        self.assertNotContains(response, other_report.description)
+
 
 @tag("views", "ajax")
 class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
@@ -343,6 +355,24 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
         data = response.json()
         self.assertIn("Flipper issue", data["items"])
         self.assertNotIn("Display broken", data["items"])
+
+    def test_partial_view_search_matches_log_entry_text(self):
+        """AJAX endpoint search should include attached log entry text."""
+        self.client.login(username="staffuser", password="testpass123")
+        report_with_match = create_problem_report(machine=self.machine, description="Has match")
+        create_log_entry(
+            machine=self.machine, problem_report=report_with_match, text="Investigated coil stop"
+        )
+        report_no_match = create_problem_report(machine=self.machine, description="No match")
+        create_log_entry(
+            machine=self.machine, problem_report=report_no_match, text="Different work"
+        )
+
+        response = self.client.get(self.entries_url, {"q": "coil stop"})
+        data = response.json()
+
+        self.assertIn("Has match", data["items"])
+        self.assertNotIn("No match", data["items"])
 
     def test_partial_view_requires_staff(self):
         """AJAX endpoint should require staff permission."""
