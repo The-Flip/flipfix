@@ -447,6 +447,7 @@ legend {
 }
 
 input[type="text"],
+input[type="number"],
 input[type="email"],
 input[type="password"],
 input[type="search"],
