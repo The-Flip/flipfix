@@ -18,4 +18,12 @@
     </div>
   </div>
   <div class="machine-card__problem markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+  {% if entry.problem_report %}
+    <div class="machine-card__row">
+      <div class="machine-card__row-left"></div>
+      <div class="machine-card__location machine-card__problem-report-snippet">
+        <strong>Problem report:</strong> {{ entry.problem_report|problem_report_summary }}
+      </div>
+    </div>
+  {% endif %}
 </li>

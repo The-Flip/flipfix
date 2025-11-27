@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static core_extras %}
-{% block title %}Log Entry · {{ entry.machine.display_name }} · {{ block.super }}{% endblock %}
+{% block title %}Edit Log Entry · {{ block.super }}{% endblock %}
 {% block content %}
   <section>
     <nav class="page-header">
@@ -8,10 +8,38 @@
         <a href="{% url 'maintainer-machine-list' %}">Machines</a>
         <span>›</span>
         <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
+        {% if entry.problem_report %}
+          <span>›</span>
+          <a href="{% url 'machine-problem-reports' entry.machine.slug %}">Problem Reports</a>
+          <span>›</span>
+          <a href="{% url 'problem-report-detail' entry.problem_report.pk %}">{{ entry.problem_report.created_at|smart_date }}</a>
+        {% else %}
+          <span>›</span>
+          <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
+        {% endif %}
         <span>›</span>
-        <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
+        <strong>Edit Log Entry</strong>
       </div>
     </nav>
+    <h3>Edit Log Entry</h3>
+    {% if entry.problem_report %}
+      <section class="flip-card">
+        <div class="flip-card__top log-entry-meta">
+          <div>Problem Report</div>
+          {% if entry.problem_report.reporter_display %}
+            <div class="flip-card__top-right">
+              <strong>{{ entry.problem_report.created_at|smart_date }}</strong> by {{ entry.problem_report.reporter_display }}
+            </div>
+          {% endif %}
+        </div>
+        <div class="flip-card__main">
+          {% if entry.problem_report.problem_type != entry.problem_report.PROBLEM_OTHER %}
+            <p>{{ entry.problem_report.get_problem_type_display }}</p>
+          {% endif %}
+          {% if entry.problem_report.description %}<p>{{ entry.problem_report.description }}</p>{% endif %}
+        </div>
+      </section>
+    {% endif %}
     <div class="work-date-container">
       <label for="work-date">Date of work</label>
       <input type="datetime-local"

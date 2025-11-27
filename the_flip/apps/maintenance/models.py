@@ -100,6 +100,14 @@ class LogEntry(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="log_entries",
     )
+    problem_report = models.ForeignKey(
+        ProblemReport,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="log_entries",
+        help_text="Optional link to a problem report this log entry addresses.",
+    )
     maintainers = models.ManyToManyField(Maintainer, blank=True, related_name="log_entries")
     maintainer_names = models.CharField(
         max_length=120,

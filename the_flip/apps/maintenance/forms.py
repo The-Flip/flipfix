@@ -6,10 +6,13 @@ from django import forms
 from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
+from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.maintenance.models import ProblemReport
 
 
 class ProblemReportForm(forms.ModelForm):
+    machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = ProblemReport
         fields = ["problem_type", "description"]
@@ -23,6 +26,22 @@ class ProblemReportForm(forms.ModelForm):
             "problem_type": "What type of problem?",
             "description": "",
         }
+
+    def clean_machine_slug(self):
+        slug = (self.cleaned_data.get("machine_slug") or "").strip()
+        if not slug:
+            return ""
+        if MachineInstance.objects.filter(slug=slug).exists():
+            return slug
+        raise forms.ValidationError("Select a machine from the list.")
+
+    def clean(self):
+        cleaned = super().clean()
+        problem_type = cleaned.get("problem_type")
+        description = (cleaned.get("description") or "").strip()
+        if problem_type == ProblemReport.PROBLEM_OTHER and not description:
+            self.add_error("description", "Please describe the problem.")
+        return cleaned
 
 
 class SearchForm(forms.Form):
@@ -38,6 +57,7 @@ class SearchForm(forms.Form):
 
 
 class LogEntryQuickForm(forms.Form):
+    machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
     work_date = forms.DateTimeField(
         label="Date of work",
         widget=forms.DateTimeInput(
@@ -60,9 +80,7 @@ class LogEntryQuickForm(forms.Form):
     )
     text = forms.CharField(
         label="Description",
-        widget=forms.Textarea(
-            attrs={"rows": 4, "placeholder": "What work was done?", "autofocus": True}
-        ),
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "What work was done?"}),
         max_length=1000,
     )
     media_file = forms.FileField(
@@ -119,3 +137,11 @@ class LogEntryQuickForm(forms.Form):
                 pass
 
         return media
+
+    def clean_machine_slug(self):
+        slug = (self.cleaned_data.get("machine_slug") or "").strip()
+        if not slug:
+            return ""
+        if MachineInstance.objects.filter(slug=slug).exists():
+            return slug
+        raise forms.ValidationError("Select a machine from the list.")

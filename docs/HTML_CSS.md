@@ -27,6 +27,8 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **Page Header** (`.page-header` with `.page-header__left`, `.page-header__right` for breadcrumbs and actions)
 - **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
 - **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
+- **Flip Card** (`.flip-card` with `.flip-card__top`, `.flip-card__main`, `.flip-card__bottom` and optional left/right sub-elements for aligning content; use `.flip-card--clickable` when the whole card should be a link, and `.flip-card-list` to reset list spacing when rendering multiple flip-cards)
+- **List Cards**: Prefer `.flip-card` (and `.flip-card-list` for grouped renders) for new card-style lists instead of `.card` or `.machine-card`, unless legacy styling is required.
 
 ### UI Components
 - **Buttons** (`.btn` with modifiers like `.btn-primary`, `.btn-secondary`)

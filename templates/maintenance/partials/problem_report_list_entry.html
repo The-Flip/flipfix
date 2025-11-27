@@ -9,14 +9,19 @@
       <span class="machine-card__name">{{ report.machine.display_name }}</span>
     </div>
     <div class="machine-card__meta-group">
-      <span class="machine-card__timestamp">{{ report.created_at|smart_date }}</span>
+      <span class="machine-card__timestamp">{{ report|problem_report_meta }}</span>
       <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
     </div>
   </div>
-  <div class="machine-card__problem">
-    {% if report.problem_type != report.PROBLEM_OTHER %}
-      <span class="machine-card__problem-label">{{ report.get_problem_type_display }}:</span>
-    {% endif %}
-    {{ report.description|default:"No description provided." }}
-  </div>
+  <div class="machine-card__problem">{{ report|problem_report_summary }}</div>
+  {% if report.prefetched_log_entries %}
+    {% with latest_log=report.prefetched_log_entries.0 %}
+      <div class="machine-card__row">
+        <div class="machine-card__row-left"></div>
+        <div class="machine-card__location machine-card__problem-report-snippet">
+          <strong>Latest log:</strong> {{ latest_log.text }}
+        </div>
+      </div>
+    {% endwith %}
+  {% endif %}
 </li>

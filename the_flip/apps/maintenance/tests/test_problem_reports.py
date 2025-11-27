@@ -7,12 +7,14 @@ from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
+from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
+    create_log_entry,
     create_problem_report,
     create_staff_user,
 )
-from the_flip.apps.maintenance.models import ProblemReport
+from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 @tag("views")
@@ -52,17 +54,14 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.assertTemplateUsed(response, "maintenance/problem_report_detail.html")
 
     def test_detail_view_displays_report_information(self):
-        """Detail page should display all report information."""
+        """Detail page should display core report information with reporter when available."""
         self.client.login(username="staffuser", password="testpass123")
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, self.machine.display_name)
         self.assertContains(response, "Stuck Ball")
         self.assertContains(response, "Ball is stuck in the upper playfield")
-        self.assertContains(response, "John Doe")
-        self.assertContains(response, "john@example.com")
-        self.assertContains(response, "iPhone 12")
-        self.assertContains(response, "192.168.1.1")
+        self.assertContains(response, "by John Doe")
         self.assertContains(response, "Open")
 
     def test_detail_view_with_reported_by_user_hides_device_information(self):
@@ -76,11 +75,24 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.client.login(username="staffuser", password="testpass123")
         response = self.client.get(self.detail_url)
 
-        self.assertContains(response, "Report Submitter")
-        self.assertNotContains(response, "John Doe")
+        self.assertContains(response, "by Report Submitter")
         self.assertNotContains(response, "john@example.com")
         self.assertNotContains(response, "iPhone 12")
         self.assertNotContains(response, "192.168.1.1")
+
+    def test_detail_view_hides_reporter_for_anonymous_submission(self):
+        """Anonymous submissions should not render reporter details."""
+        self.report.reported_by_user = None
+        self.report.reported_by_name = ""
+        self.report.reported_by_contact = ""
+        self.report.device_info = ""
+        self.report.ip_address = None
+        self.report.save()
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        self.assertNotContains(response, "by ")
 
     def test_detail_view_shows_close_button_for_open_report(self):
         """Detail page should show 'Close Problem Report' button for open reports."""
@@ -120,6 +132,12 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.STATUS_CLOSED)
+        log_entry = LogEntry.objects.latest("created_at")
+        self.assertEqual(log_entry.text, "Closed problem report")
+        self.assertEqual(log_entry.problem_report, self.report)
+        self.assertEqual(log_entry.machine, self.machine)
+        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
 
     def test_status_toggle_from_closed_to_open(self):
         """Staff users should be able to re-open a closed report."""
@@ -132,6 +150,12 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.STATUS_OPEN)
+        log_entry = LogEntry.objects.latest("created_at")
+        self.assertEqual(log_entry.text, "Re-opened problem report")
+        self.assertEqual(log_entry.problem_report, self.report)
+        self.assertEqual(log_entry.machine, self.machine)
+        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
 
     def test_status_toggle_shows_close_message(self):
         """Closing a report should show appropriate success message."""
@@ -153,6 +177,49 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         messages = list(response.context["messages"])
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Problem report re-opened.")
+
+    def test_detail_view_search_filters_log_entries_by_text(self):
+        """Search should filter log entries by text on the detail page."""
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Investigated coil stop issue",
+        )
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Adjusted flipper alignment",
+        )
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url, {"q": "coil"})
+
+        self.assertContains(response, "Investigated coil stop issue")
+        self.assertNotContains(response, "Adjusted flipper alignment")
+
+    def test_detail_view_search_filters_log_entries_by_maintainer(self):
+        """Search should match maintainer names on log entries."""
+        tech = create_staff_user(username="techuser", first_name="Tech", last_name="Person")
+        other = create_staff_user(username="otheruser", first_name="Other", last_name="Maintainer")
+
+        log_with_tech = create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Investigated coil stop issue",
+        )
+        log_with_other = create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Adjusted flipper alignment",
+        )
+        log_with_tech.maintainers.add(Maintainer.objects.get(user=tech))
+        log_with_other.maintainers.add(Maintainer.objects.get(user=other))
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url, {"q": "Tech"})
+
+        self.assertContains(response, "Investigated coil stop issue")
+        self.assertNotContains(response, "Adjusted flipper alignment")
 
 
 @tag("views")
@@ -227,6 +294,18 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
         self.assertEqual(len(response.context["reports"]), 0)
         self.assertContains(response, "No problem reports match your search")
 
+    def test_list_view_search_matches_log_entry_text(self):
+        """List search should include attached log entry text."""
+        create_log_entry(machine=self.machine, problem_report=self.report, text="Fixed coil stop")
+        other_report = create_problem_report(machine=self.machine, description="Other issue")
+        create_log_entry(machine=self.machine, problem_report=other_report, text="Different work")
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.list_url, {"q": "coil stop"})
+
+        self.assertContains(response, self.report.description)
+        self.assertNotContains(response, other_report.description)
+
 
 @tag("views", "ajax")
 class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
@@ -277,6 +356,24 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
         self.assertIn("Flipper issue", data["items"])
         self.assertNotIn("Display broken", data["items"])
 
+    def test_partial_view_search_matches_log_entry_text(self):
+        """AJAX endpoint search should include attached log entry text."""
+        self.client.login(username="staffuser", password="testpass123")
+        report_with_match = create_problem_report(machine=self.machine, description="Has match")
+        create_log_entry(
+            machine=self.machine, problem_report=report_with_match, text="Investigated coil stop"
+        )
+        report_no_match = create_problem_report(machine=self.machine, description="No match")
+        create_log_entry(
+            machine=self.machine, problem_report=report_no_match, text="Different work"
+        )
+
+        response = self.client.get(self.entries_url, {"q": "coil stop"})
+        data = response.json()
+
+        self.assertIn("Has match", data["items"])
+        self.assertNotIn("No match", data["items"])
+
     def test_partial_view_requires_staff(self):
         """AJAX endpoint should require staff permission."""
         self.client.login(username="regularuser", password="testpass123")
@@ -310,13 +407,13 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("problem-report-create", kwargs={"slug": self.machine.slug})
+        self.url = reverse("public-problem-report-create", kwargs={"slug": self.machine.slug})
 
     def test_create_view_accessible_without_login(self):
         """Problem report form should be accessible to anonymous users."""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "maintenance/problem_report_form.html")
+        self.assertTemplateUsed(response, "maintenance/problem_report_form_public.html")
 
     def test_create_view_shows_correct_machine_name(self):
         """Problem report form should show the machine's display name."""
@@ -439,3 +536,127 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         response = self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ProblemReport.objects.count(), settings.RATE_LIMIT_REPORTS_PER_IP + 1)
+
+
+@tag("views")
+class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
+    """Tests for log entries display on problem report detail page."""
+
+    def setUp(self):
+        super().setUp()
+        self.problem_report = create_problem_report(
+            machine=self.machine,
+            problem_type=ProblemReport.PROBLEM_STUCK_BALL,
+            description="Ball stuck",
+        )
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.problem_report.pk})
+
+    def test_detail_page_shows_add_log_entry_button(self):
+        """Problem report detail should have Add Log Entry button."""
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "Add Log Entry")
+        add_url = reverse("log-create-problem-report", kwargs={"pk": self.problem_report.pk})
+        self.assertContains(response, add_url)
+
+    def test_detail_page_shows_linked_log_entries(self):
+        """Problem report detail should display linked log entries."""
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.problem_report,
+            text="Investigated the issue",
+        )
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "Investigated the issue")
+
+    def test_detail_page_shows_no_log_entries_message(self):
+        """Problem report detail should show message when no log entries exist."""
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "No log entries yet")
+
+
+@tag("views", "ajax")
+class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
+    """Tests for the log entries AJAX endpoint on problem report detail."""
+
+    def setUp(self):
+        super().setUp()
+        self.problem_report = create_problem_report(
+            machine=self.machine,
+            problem_type=ProblemReport.PROBLEM_STUCK_BALL,
+            description="Ball stuck",
+        )
+        self.entries_url = reverse(
+            "problem-report-log-entries", kwargs={"pk": self.problem_report.pk}
+        )
+
+    def test_returns_json(self):
+        """AJAX endpoint should return JSON response."""
+        self.client.login(username="staffuser", password="testpass123")
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.problem_report,
+            text="Test log entry",
+        )
+
+        response = self.client.get(self.entries_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+        data = response.json()
+        self.assertIn("items", data)
+        self.assertIn("has_next", data)
+        self.assertIn("next_page", data)
+
+    def test_only_returns_linked_log_entries(self):
+        """AJAX endpoint should only return log entries linked to this problem report."""
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.problem_report,
+            text="Linked entry",
+        )
+        create_log_entry(
+            machine=self.machine,
+            text="Unlinked entry",
+        )
+
+        self.client.login(username="staffuser", password="testpass123")
+        response = self.client.get(self.entries_url)
+
+        data = response.json()
+        self.assertIn("Linked entry", data["items"])
+        self.assertNotIn("Unlinked entry", data["items"])
+
+    def test_pagination(self):
+        """AJAX endpoint should paginate results."""
+        self.client.login(username="staffuser", password="testpass123")
+        for i in range(15):
+            create_log_entry(
+                machine=self.machine,
+                problem_report=self.problem_report,
+                text=f"Log entry {i}",
+            )
+
+        # First page
+        response = self.client.get(self.entries_url, {"page": 1})
+        data = response.json()
+        self.assertTrue(data["has_next"])
+        self.assertEqual(data["next_page"], 2)
+
+        # Second page
+        response = self.client.get(self.entries_url, {"page": 2})
+        data = response.json()
+        self.assertFalse(data["has_next"])
+        self.assertIsNone(data["next_page"])
+
+    def test_requires_staff(self):
+        """AJAX endpoint should require staff permission."""
+        self.client.login(username="regularuser", password="testpass123")
+        response = self.client.get(self.entries_url)
+        self.assertEqual(response.status_code, 403)

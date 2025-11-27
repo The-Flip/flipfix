@@ -1,9 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const cards = document.querySelectorAll(".js-clickable-card");
-
-  cards.forEach((card) => {
+  function bindCard(card) {
     const targetUrl = card.dataset.url;
-    if (!targetUrl) return;
+    if (!targetUrl || card.dataset.clickableBound === "true") return;
+    card.dataset.clickableBound = "true";
 
     const navigate = () => {
       window.location.href = targetUrl;
@@ -16,5 +15,17 @@ document.addEventListener("DOMContentLoaded", () => {
         navigate();
       }
     });
+  }
+
+  document.querySelectorAll(".js-clickable-card").forEach(bindCard);
+
+  document.addEventListener("card:initialize", (event) => {
+    const node = event.detail;
+    if (node && node.classList && node.classList.contains("js-clickable-card")) {
+      bindCard(node);
+    }
+    if (node && node.querySelectorAll) {
+      node.querySelectorAll(".js-clickable-card").forEach(bindCard);
+    }
   });
 });

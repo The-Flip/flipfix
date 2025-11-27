@@ -25,8 +25,7 @@ class Command(BaseCommand):
         # Safety check: empty database only
         if MachineModel.objects.exists() or MachineInstance.objects.exists():
             raise CommandError(
-                "Database already contains machine data. "
-                "This command only runs on empty databases."
+                "Database already contains machine data. This command only runs on empty databases."
             )
 
         if not self.data_path.exists():

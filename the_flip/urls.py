@@ -87,8 +87,8 @@ urlpatterns = [
     # Problem report submission
     path(
         "p/<slug:slug>/",
-        maintenance_views.ProblemReportCreateView.as_view(),
-        name="problem-report-create",
+        maintenance_views.PublicProblemReportCreateView.as_view(),
+        name="public-problem-report-create",
     ),
     # Maintainer problem report views
     path(
@@ -102,9 +102,24 @@ urlpatterns = [
         name="problem-report-list-entries",
     ),
     path(
+        "problem-reports/new/",
+        maintenance_views.ProblemReportCreateView.as_view(),
+        name="problem-report-create",
+    ),
+    path(
+        "machines/<slug:slug>/problem-reports/new/",
+        maintenance_views.ProblemReportCreateView.as_view(),
+        name="problem-report-create-machine",
+    ),
+    path(
         "problem-reports/<int:pk>/",
         maintenance_views.ProblemReportDetailView.as_view(),
         name="problem-report-detail",
+    ),
+    path(
+        "problem-reports/<int:pk>/log-entries/",
+        maintenance_views.ProblemReportLogEntriesPartialView.as_view(),
+        name="problem-report-log-entries",
     ),
     path(
         "problem-reports/<slug:slug>/",
@@ -135,14 +150,25 @@ urlpatterns = [
         maintenance_views.MaintainerAutocompleteView.as_view(),
         name="api-maintainer-autocomplete",
     ),
+    path(
+        "api/machines/",
+        maintenance_views.MachineAutocompleteView.as_view(),
+        name="api-machine-autocomplete",
+    ),
     # Log views
     path("logs/", maintenance_views.LogListView.as_view(), name="log-list"),
     path("logs/entries/", maintenance_views.LogListPartialView.as_view(), name="log-list-entries"),
+    path("logs/new/", maintenance_views.MachineLogCreateView.as_view(), name="log-create-global"),
     path("logs/<int:pk>/", maintenance_views.LogEntryDetailView.as_view(), name="log-detail"),
     path(
         "logs/new/<slug:slug>/",
         maintenance_views.MachineLogCreateView.as_view(),
         name="log-create-machine",
+    ),
+    path(
+        "logs/new/problem-report/<int:pk>/",
+        maintenance_views.MachineLogCreateView.as_view(),
+        name="log-create-problem-report",
     ),
     path(
         "logs/<slug:slug>/entries/",

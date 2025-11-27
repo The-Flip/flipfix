@@ -6,18 +6,18 @@
       role="button"
       aria-label="View log entry">
     <div class="machine-card__row">
-      <div class="machine-card__row-left">
-        <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
-      </div>
-      <div class="log-entry-meta">
-        {% if entry.maintainers.all %}
-          <span>by {{ entry.maintainers.all|join:", " }}</span>
-        {% elif entry.maintainer_names %}
-          <span>by {{ entry.maintainer_names }}</span>
-        {% endif %}
-      </div>
+      <div class="machine-card__row-left"></div>
+      <div class="log-entry-meta machine-card__top-right">{{ entry|log_entry_meta }}</div>
     </div>
     <div class="machine-card__problem markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+    {% if entry.problem_report %}
+      <div class="machine-card__row">
+        <div class="machine-card__row-left"></div>
+        <div class="machine-card__location machine-card__problem-report-snippet">
+          <strong>Problem report:</strong> {{ entry.problem_report.description|default:entry.problem_report.get_problem_type_display }}
+        </div>
+      </div>
+    {% endif %}
     {% if entry.media.all %}
       <div class="machine-card__row">
         <div class="machine-card__row-left">
@@ -52,17 +52,21 @@
       aria-label="View problem report">
     <div class="machine-card__row">
       <div class="machine-card__row-left">
-        <strong class="log-entry-meta">{{ entry.created_at|smart_date }}</strong>
-      </div>
-      <div class="log-entry-meta">
         <span class="badge badge-status badge-{{ entry.status }}">{{ entry.get_status_display }}</span>
+        <span class="text-muted">Problem Report</span>
       </div>
+      <div class="log-entry-meta machine-card__top-right">{{ entry|problem_report_meta }}</div>
     </div>
-    <div class="machine-card__problem">
-      {% if entry.problem_type != entry.PROBLEM_OTHER %}
-        <span class="machine-card__problem-label">{{ entry.get_problem_type_display }}:</span>
-      {% endif %}
-      {{ entry.description|default:"Problem reported (no description)" }}
-    </div>
+    <div class="machine-card__problem">{{ entry|problem_report_summary }}</div>
+    {% if entry.prefetched_log_entries %}
+      {% with latest_log=entry.prefetched_log_entries.0 %}
+        <div class="machine-card__row">
+          <div class="machine-card__row-left"></div>
+          <div class="machine-card__location machine-card__problem-report-snippet">
+            <strong>Latest log:</strong> {{ latest_log.text }}
+          </div>
+        </div>
+      {% endwith %}
+    {% endif %}
   </li>
 {% endif %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}New Problem Report · {{ block.super }}{% endblock %}
+{% block content %}
+  <nav class="page-header">
+    <div class="page-header__left breadcrumb">
+      {% if machine %}
+        <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+        <span>›</span>
+        <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+        <span>›</span>
+        <a href="{% url 'machine-problem-reports' machine.slug %}">Problem Reports</a>
+        <span>›</span>
+        <strong>New Problem Report</strong>
+      {% else %}
+        <a href="{% url 'problem-report-list' %}">Problem Reports</a>
+        <span>›</span>
+        <strong>New Problem Report</strong>
+      {% endif %}
+    </div>
+  </nav>
+  <section class="card">
+    <form method="post" class="form-container">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
+      {% if not machine %}
+        <div class="form-field">
+          <div class="autocomplete"
+               data-machine-autocomplete
+               data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
+            <input type="search"
+                   id="machine-search"
+                   placeholder="Which machine?"
+                   class="search-input"
+                   autocomplete="off"
+                   data-machine-search
+                   value="{% if selected_machine %}{{ selected_machine.display_name }}{% endif %}">
+            <input type="hidden"
+                   name="{{ form.machine_slug.html_name }}"
+                   id="{{ form.machine_slug.id_for_label }}"
+                   value="{{ form.machine_slug.value|default_if_none:'' }}"
+                   data-machine-slug-input>
+            <div class="autocomplete__dropdown hidden"></div>
+          </div>
+          {% for error in form.machine_slug.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+      {% else %}
+        <input type="hidden"
+               name="{{ form.machine_slug.html_name }}"
+               value="{{ machine.slug }}">
+      {% endif %}
+      <div class="form-field">
+        {{ form.problem_type.label_tag }}
+        {{ form.problem_type }}
+        {% for error in form.problem_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.description }}
+        {% for error in form.description.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Submit Report</button>
+        <a class="btn btn-secondary" href="{% url 'problem-report-list' %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
+{% endblock %}

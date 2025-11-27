@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 if age > 600:
                     self.stdout.write(
                         self.style.ERROR(
-                            f"✗ Oldest queued task is {age/60:.1f} minutes old - worker may be stuck!"
+                            f"✗ Oldest queued task is {age / 60:.1f} minutes old - worker may be stuck!"
                         )
                     )
                 else:

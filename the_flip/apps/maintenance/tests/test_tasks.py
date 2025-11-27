@@ -13,6 +13,8 @@ from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 
 @tag("tasks", "unit")
 class TranscodeVideoJobTests(TestCase):
+    """Tests for transcode_video_job task."""
+
     def setUp(self):
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
@@ -40,6 +42,7 @@ class TranscodeVideoJobTests(TestCase):
     def test_transcode_raises_without_required_config(
         self, mock_probe, mock_run_ffmpeg, mock_upload
     ):
+        """Task raises ValueError when DJANGO_WEB_SERVICE_URL is not configured."""
         from the_flip.apps.maintenance.tasks import transcode_video_job
 
         with self.assertRaises(ValueError) as context:
@@ -53,12 +56,14 @@ class TranscodeVideoJobTests(TestCase):
         mock_upload.assert_not_called()
 
     def test_transcode_skips_nonexistent_media(self):
+        """Task silently skips non-existent media IDs."""
         from the_flip.apps.maintenance.tasks import transcode_video_job
 
         # Should not raise, just log and return
         transcode_video_job(999999)  # Non-existent ID
 
     def test_transcode_skips_non_video_media(self):
+        """Task skips non-video media types without processing."""
         from the_flip.apps.maintenance.tasks import transcode_video_job
 
         # Change media type to photo
@@ -74,6 +79,8 @@ class TranscodeVideoJobTests(TestCase):
 
 @tag("tasks", "unit")
 class TranscodeVideoErrorHandlingTests(TestCase):
+    """Tests for transcode error handling."""
+
     def setUp(self):
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
@@ -100,6 +107,7 @@ class TranscodeVideoErrorHandlingTests(TestCase):
     def test_transcode_sets_failed_status_when_ffmpeg_errors(
         self, mock_probe, mock_upload, mock_ffmpeg
     ):
+        """Task sets status to FAILED when ffmpeg exits with error."""
         from the_flip.apps.maintenance.tasks import transcode_video_job
 
         # Simulate ffmpeg failing with non-zero exit code
@@ -123,6 +131,7 @@ class TranscodeVideoErrorHandlingTests(TestCase):
     @patch("the_flip.apps.maintenance.tasks._upload_transcoded_files")
     @patch("the_flip.apps.maintenance.tasks._probe_duration_seconds", return_value=120)
     def test_transcode_fails_when_source_file_missing(self, mock_probe, mock_upload, mock_ffmpeg):
+        """Task sets status to FAILED when source file cannot be read."""
         from the_flip.apps.maintenance.tasks import transcode_video_job
 
         # Simulate ffmpeg failing when reading input (e.g., missing file)
@@ -143,8 +152,11 @@ class TranscodeVideoErrorHandlingTests(TestCase):
 
 @tag("tasks", "unit")
 class EnqueueTranscodeTests(TestCase):
+    """Tests for enqueue_transcode helper."""
+
     @patch("the_flip.apps.maintenance.tasks.async_task")
     def test_enqueue_transcode_invokes_async_task_with_media_id(self, mock_async_task):
+        """enqueue_transcode schedules async task with correct parameters."""
         from the_flip.apps.maintenance.tasks import enqueue_transcode
 
         enqueue_transcode(123)

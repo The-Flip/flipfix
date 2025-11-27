@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_extras %}
+{% load static core_extras %}
 {% block title %}Problem Report #{{ report.pk }} · {{ block.super }}{% endblock %}
 {% block content %}
   <nav class="page-header">
@@ -26,39 +26,54 @@
       {% endif %}
     </div>
   </nav>
-  <section class="card">
-    {% if report.problem_type != report.PROBLEM_OTHER %}<p>{{ report.get_problem_type_display }}</p>{% endif %}
-    {% if report.description %}<p>{{ report.description }}</p>{% endif %}
+  <section class="flip-card">
+    {% if report.reporter_display %}
+      <div class="flip-card__top log-entry-meta">
+        <strong>{{ report.created_at|smart_date }}</strong> by {{ report.reporter_display }}
+      </div>
+    {% endif %}
+    <div class="flip-card__main">
+      {% if report.problem_type != report.PROBLEM_OTHER %}<p>{{ report.get_problem_type_display }}</p>{% endif %}
+      {% if report.description %}<p>{{ report.description }}</p>{% endif %}
+    </div>
   </section>
-  {% if report.reported_by_user or report.reported_by_name or report.reported_by_contact or report.device_info or report.ip_address %}
-    <section class="card">
-      <h3>Reported By</h3>
-      {% if report.reported_by_user %}
-        <p>
-          <strong>User:</strong> {{ report.reported_by_user.get_full_name|default:report.reported_by_user.username }}
-        </p>
+  <section>
+    <h2>Logs</h2>
+    <div class="list-header">
+      <div class="list-header__left">
+        <form method="get" action="">
+          <div class="form-field">{{ search_form.q }}</div>
+        </form>
+      </div>
+      <div class="list-header__right">
+        <a href="{% url 'log-create-problem-report' report.pk %}"
+           class="btn btn-primary">Add Log Entry</a>
+      </div>
+    </div>
+    <div id="log-container"
+         data-fetch-url="{% url 'problem-report-log-entries' report.pk %}">
+      {% if log_entries %}
+        <ul class="flip-card-list" id="log-list">
+          {% for entry in log_entries %}
+            {% include "maintenance/partials/problem_report_log_entry.html" with entry=entry %}
+          {% endfor %}
+        </ul>
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
       {% else %}
-        {% if report.reported_by_name %}
-          <p>
-            <strong>Name:</strong> {{ report.reported_by_name }}
-          </p>
-        {% endif %}
-        {% if report.reported_by_contact %}
-          <p>
-            <strong>Contact:</strong> {{ report.reported_by_contact }}
-          </p>
-        {% endif %}
-        {% if report.device_info %}
-          <p>
-            <strong>Device:</strong> {{ report.device_info }}
-          </p>
-        {% endif %}
-        {% if report.ip_address %}
-          <p>
-            <strong>IP Address:</strong> {{ report.ip_address }}
-          </p>
-        {% endif %}
+        <p>
+          {% if search_form.q.value %}
+            No log entries match your search.
+          {% else %}
+            No log entries yet.
+          {% endif %}
+        </p>
       {% endif %}
-    </section>
-  {% endif %}
+    </div>
+    <div id="log-loading" class="hidden">Loading…</div>
+    <div id="log-sentinel"></div>
+  </section>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
 {% endblock %}

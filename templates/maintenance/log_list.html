@@ -4,10 +4,13 @@
 {% block content %}
   <h2>Logs</h2>
   <div class="list-header">
-    <div class="list-header__right">
+    <div class="list-header__left">
       <form method="get" action="">
         <div class="form-field">{{ search_form.q }}</div>
       </form>
+    </div>
+    <div class="list-header__right">
+      <a href="{% url 'log-create-global' %}" class="btn btn-primary">+ New Log Entry</a>
     </div>
   </div>
   <section>

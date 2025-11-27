@@ -10,8 +10,21 @@ import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    F,
+    Max,
+    Prefetch,
+    Q,
+    Value,
+    When,
+)
+from django.db.models.functions import Lower
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -70,6 +83,63 @@ class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"maintainers": results})
 
 
+class MachineAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """JSON endpoint for machine autocomplete (staff only)."""
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("q", "").strip()
+        machines = (
+            MachineInstance.objects.select_related("model", "location")
+            .annotate(
+                open_report_count=Count(
+                    "problem_reports", filter=Q(problem_reports__status=ProblemReport.STATUS_OPEN)
+                ),
+                latest_open_report_date=Max(
+                    "problem_reports__created_at",
+                    filter=Q(problem_reports__status=ProblemReport.STATUS_OPEN),
+                ),
+            )
+            .order_by(
+                Case(
+                    When(operational_status=MachineInstance.STATUS_FIXING, then=Value(1)),
+                    When(operational_status=MachineInstance.STATUS_BROKEN, then=Value(2)),
+                    When(operational_status=MachineInstance.STATUS_UNKNOWN, then=Value(3)),
+                    When(operational_status=MachineInstance.STATUS_GOOD, then=Value(4)),
+                    default=Value(5),
+                    output_field=CharField(),
+                ),
+                F("latest_open_report_date").desc(nulls_last=True),
+                Lower("model__name"),
+            )
+        )
+
+        if query:
+            machines = machines.filter(
+                Q(name_override__icontains=query)
+                | Q(model__name__icontains=query)
+                | Q(location__name__icontains=query)
+                | Q(slug__icontains=query)
+            )
+
+        machines = machines[:50]
+
+        results = []
+        for machine in machines:
+            results.append(
+                {
+                    "id": machine.id,
+                    "slug": machine.slug,
+                    "display_name": machine.display_name,
+                    "location": machine.location.name if machine.location else "",
+                }
+            )
+
+        return JsonResponse({"machines": results})
+
+
 class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
 
@@ -80,8 +150,16 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        reports = ProblemReport.objects.select_related("machine", "machine__model").order_by(
-            "-status", "-created_at"
+        # Prefetch the most recent log entry for each problem report
+        latest_log_prefetch = Prefetch(
+            "log_entries",
+            queryset=LogEntry.objects.order_by("-created_at"),
+            to_attr="prefetched_log_entries",
+        )
+        reports = (
+            ProblemReport.objects.select_related("machine", "machine__model")
+            .prefetch_related(latest_log_prefetch)
+            .order_by("-status", "-created_at")
         )
 
         search_query = self.request.GET.get("q", "").strip()
@@ -90,7 +168,9 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
                 Q(description__icontains=search_query)
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
             )
+            reports = reports.distinct()
 
         paginator = Paginator(reports, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -113,8 +193,16 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
         return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
-        reports = ProblemReport.objects.select_related("machine", "machine__model").order_by(
-            "-status", "-created_at"
+        # Prefetch the most recent log entry for each problem report
+        latest_log_prefetch = Prefetch(
+            "log_entries",
+            queryset=LogEntry.objects.order_by("-created_at"),
+            to_attr="prefetched_log_entries",
+        )
+        reports = (
+            ProblemReport.objects.select_related("machine", "machine__model")
+            .prefetch_related(latest_log_prefetch)
+            .order_by("-status", "-created_at")
         )
 
         search_query = request.GET.get("q", "").strip()
@@ -123,13 +211,55 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
                 Q(description__icontains=search_query)
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
             )
+            reports = reports.distinct()
 
         paginator = Paginator(reports, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(
             render_to_string(self.template_name, {"report": report})
             for report in page_obj.object_list
+        )
+        return JsonResponse(
+            {
+                "items": items_html,
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+            }
+        )
+
+
+class ProblemReportLogEntriesPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """AJAX endpoint for infinite scrolling log entries on a problem report detail page."""
+
+    template_name = "maintenance/partials/problem_report_log_entry.html"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, *args, **kwargs):
+        problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
+        log_entries = LogEntry.objects.filter(problem_report=problem_report).select_related(
+            "machine"
+        )
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            log_entries = log_entries.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
+            ).distinct()
+
+        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
+
+        paginator = Paginator(log_entries, 10)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        items_html = "".join(
+            render_to_string(self.template_name, {"entry": entry}) for entry in page_obj.object_list
         )
         return JsonResponse(
             {
@@ -155,16 +285,25 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        latest_log_prefetch = Prefetch(
+            "log_entries",
+            queryset=LogEntry.objects.order_by("-created_at"),
+            to_attr="prefetched_log_entries",
+        )
         queryset = (
             ProblemReport.objects.filter(machine=self.machine)
             .select_related("reported_by_user")
+            .prefetch_related(latest_log_prefetch)
             .order_by("-status", "-created_at")
         )
 
         # Search by description text if provided
         search_query = self.request.GET.get("q", "").strip()
         if search_query:
-            queryset = queryset.filter(description__icontains=search_query)
+            queryset = queryset.filter(
+                Q(description__icontains=search_query)
+                | Q(log_entries__text__icontains=search_query)
+            ).distinct()
 
         return queryset
 
@@ -176,8 +315,10 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         return context
 
 
-class ProblemReportCreateView(FormView):
-    template_name = "maintenance/problem_report_form.html"
+class PublicProblemReportCreateView(FormView):
+    """Public-facing problem report submission (minimal shell)."""
+
+    template_name = "maintenance/problem_report_form_public.html"
     form_class = ProblemReportForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -190,17 +331,14 @@ class ProblemReportCreateView(FormView):
         return context
 
     def post(self, request, *args, **kwargs):
-        """Override post to check rate limiting before processing form."""
         # Check rate limiting
         ip_address = request.META.get("REMOTE_ADDR")
         if ip_address and not self._check_rate_limit(ip_address):
             messages.error(request, "Too many reports submitted recently. Please try again later.")
             return redirect(self.machine.get_absolute_url())
-
         return super().post(request, *args, **kwargs)
 
     def _check_rate_limit(self, ip_address: str) -> bool:
-        """Check if IP address has exceeded rate limit. Returns True if OK to proceed."""
         time_window = timezone.now() - timedelta(minutes=settings.RATE_LIMIT_WINDOW_MINUTES)
         recent_reports = ProblemReport.objects.filter(
             ip_address=ip_address, created_at__gte=time_window
@@ -211,14 +349,65 @@ class ProblemReportCreateView(FormView):
         report = form.save(commit=False)
         report.machine = self.machine
         report.ip_address = self.request.META.get("REMOTE_ADDR")
-        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[
-            :200
-        ]  # Truncate to field max length
+        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         report.save()
         messages.success(self.request, "Thanks! The maintenance team has been notified.")
         return redirect(self.machine.get_absolute_url())
+
+
+class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    """Maintainer-facing problem report creation (global or machine-scoped)."""
+
+    template_name = "maintenance/problem_report_new.html"
+    form_class = ProblemReportForm
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def dispatch(self, request, *args, **kwargs):
+        self.machine = None
+        if "slug" in kwargs:
+            self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.machine:
+            initial["machine_slug"] = self.machine.slug
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["machine"] = self.machine
+        selected_slug = (
+            self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
+        )
+        if selected_slug and not self.machine:
+            context["selected_machine"] = MachineInstance.objects.filter(slug=selected_slug).first()
+        elif self.machine:
+            context["selected_machine"] = self.machine
+        return context
+
+    def form_valid(self, form):
+        machine = self.machine
+        if not machine:
+            slug = (form.cleaned_data.get("machine_slug") or "").strip()
+            machine = MachineInstance.objects.filter(slug=slug).first()
+            if not machine:
+                form.add_error("machine_slug", "Select a machine from the list.")
+                return self.form_invalid(form)
+
+        report = form.save(commit=False)
+        report.machine = machine
+        report.ip_address = self.request.META.get("REMOTE_ADDR")
+        report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
+        if self.request.user.is_authenticated:
+            report.reported_by_user = self.request.user
+        report.save()
+        messages.success(self.request, "Problem report created.")
+        return redirect("problem-report-detail", pk=report.pk)
 
 
 class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -243,20 +432,51 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
         if report.status == ProblemReport.STATUS_OPEN:
             report.status = ProblemReport.STATUS_CLOSED
             message = "Problem report closed."
+            log_text = "Closed problem report"
         else:
             report.status = ProblemReport.STATUS_OPEN
             message = "Problem report re-opened."
+            log_text = "Re-opened problem report"
 
         report.save(update_fields=["status", "updated_at"])
+        log_entry = LogEntry.objects.create(
+            machine=report.machine,
+            problem_report=report,
+            text=log_text,
+            created_by=request.user,
+        )
+        maintainer = Maintainer.objects.filter(user=request.user).first()
+        if maintainer:
+            log_entry.maintainers.add(maintainer)
         messages.success(request, message)
         return redirect("problem-report-detail", pk=report.pk)
 
     def render_response(self, request, report):
         from django.shortcuts import render
 
+        # Get log entries for this problem report with pagination
+        log_entries = LogEntry.objects.filter(problem_report=report).select_related("machine")
+
+        search_query = request.GET.get("q", "").strip()
+        if search_query:
+            log_entries = log_entries.filter(
+                Q(text__icontains=search_query)
+                | Q(maintainers__user__username__icontains=search_query)
+                | Q(maintainers__user__first_name__icontains=search_query)
+                | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
+            ).distinct()
+
+        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
+        paginator = Paginator(log_entries, 10)
+        page_obj = paginator.get_page(request.GET.get("page"))
+
         context = {
             "report": report,
             "machine": report.machine,
+            "page_obj": page_obj,
+            "log_entries": page_obj.object_list,
+            "search_form": SearchForm(initial={"q": search_query}),
         }
         return render(request, self.template_name, context)
 
@@ -275,7 +495,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         logs = (
             LogEntry.objects.filter(machine=self.machine)
-            .select_related("machine")
+            .select_related("machine", "problem_report")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
@@ -287,6 +507,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(problem_report__description__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(logs, 10)
@@ -310,7 +531,26 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
-        self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        # Two modes: either a machine slug OR a problem report pk
+        self.problem_report = None
+        self.is_global = False
+        if "pk" in kwargs:
+            # Creating log entry for a problem report - inherit machine from it
+            self.problem_report = get_object_or_404(
+                ProblemReport.objects.select_related("machine"), pk=kwargs["pk"]
+            )
+            self.machine = self.problem_report.machine
+        elif "slug" in kwargs:
+            # Creating log entry for a machine directly
+            self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        else:
+            # Global log creation - pick machine in form
+            self.machine = None
+            self.is_global = True
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            if not request.user.is_staff:
+                raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
@@ -325,17 +565,28 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 initial["submitter_name"] = (
                     self.request.user.get_full_name() or self.request.user.get_username()
                 )
+        if self.machine:
+            initial["machine_slug"] = self.machine.slug
         # work_date default is set by JavaScript to use browser's local timezone
         return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
+        context["problem_report"] = self.problem_report
+        context["is_global"] = self.is_global
         # Check if current user is a shared account (show autocomplete for maintainer selection)
         is_shared_account = False
         if hasattr(self.request.user, "maintainer"):
             is_shared_account = self.request.user.maintainer.is_shared_account
         context["is_shared_account"] = is_shared_account
+        selected_slug = (
+            self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
+        )
+        if selected_slug and not self.machine:
+            context["selected_machine"] = MachineInstance.objects.filter(slug=selected_slug).first()
+        elif self.machine:
+            context["selected_machine"] = self.machine
         return context
 
     def form_valid(self, form):
@@ -343,6 +594,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         description = form.cleaned_data["text"].strip()
         media_file = form.cleaned_data["media_file"]
         work_date = form.cleaned_data["work_date"]
+        machine = self.machine
 
         # Convert work_date to browser's timezone if offset provided
         tz_offset_str = self.request.POST.get("tz_offset", "")
@@ -358,12 +610,21 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             except (ValueError, TypeError):
                 pass  # Keep original work_date if conversion fails
 
+        if not machine:
+            slug = (form.cleaned_data.get("machine_slug") or "").strip()
+            machine = MachineInstance.objects.filter(slug=slug).first()
+            if not machine:
+                form.add_error("machine_slug", "Select a machine from the list.")
+                return self.form_invalid(form)
+
         log_entry = LogEntry.objects.create(
-            machine=self.machine,
+            machine=machine,
+            problem_report=self.problem_report,
             text=description,
             work_date=work_date,
             created_by=self.request.user,
         )
+        self.machine = machine
 
         maintainer = self.match_maintainer(submitter_name)
         if maintainer:
@@ -394,6 +655,10 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 reverse("log-detail", kwargs={"pk": log_entry.pk}),
             ),
         )
+
+        # Redirect back to problem report if created from there, otherwise to machine log
+        if self.problem_report:
+            return redirect("problem-report-detail", pk=self.problem_report.pk)
         return redirect("log-machine", slug=self.machine.slug)
 
     def match_maintainer(self, name: str):
@@ -418,7 +683,7 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
         logs = (
             LogEntry.objects.filter(machine=machine)
-            .select_related("machine")
+            .select_related("machine", "problem_report")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
@@ -459,7 +724,7 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         logs = (
             LogEntry.objects.all()
-            .select_related("machine", "machine__model")
+            .select_related("machine", "machine__model", "problem_report")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
@@ -473,6 +738,7 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(problem_report__description__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(logs, 10)
@@ -498,7 +764,7 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
     def get(self, request, *args, **kwargs):
         logs = (
             LogEntry.objects.all()
-            .select_related("machine", "machine__model")
+            .select_related("machine", "machine__model", "problem_report")
             .prefetch_related("maintainers", "media")
             .order_by("-work_date")
         )
@@ -512,6 +778,7 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(problem_report__description__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(logs, 10)
