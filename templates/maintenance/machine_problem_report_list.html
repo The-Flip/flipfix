@@ -38,13 +38,7 @@
               <div class="flip-card__top-right log-entry-meta">{{ report.created_at|smart_date }}</div>
             </div>
             <div class="flip-card__main">
-              {% if report.problem_type != report.PROBLEM_OTHER %}
-                <p>
-                  <strong>{{ report.get_problem_type_display }}:</strong> {{ report.description|default:"No description provided." }}
-                </p>
-              {% else %}
-                <p>{{ report.description|default:"No description provided." }}</p>
-              {% endif %}
+              <p>{{ report|problem_report_summary }}</p>
             </div>
             {% if report.prefetched_log_entries %}
               {% with latest_log=report.prefetched_log_entries.0 %}

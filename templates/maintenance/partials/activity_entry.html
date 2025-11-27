@@ -66,12 +66,7 @@
         <strong>{{ entry.created_at|smart_date }}</strong>
       </div>
     </div>
-    <div class="machine-card__problem">
-      {% if entry.problem_type != entry.PROBLEM_OTHER %}
-        <span class="machine-card__problem-label">{{ entry.get_problem_type_display }}:</span>
-      {% endif %}
-      {{ entry.description|default:"Problem reported (no description)" }}
-    </div>
+    <div class="machine-card__problem">{{ entry|problem_report_summary }}</div>
     {% if entry.prefetched_log_entries %}
       {% with latest_log=entry.prefetched_log_entries.0 %}
         <div class="machine-card__row">

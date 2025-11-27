@@ -35,6 +35,14 @@ class ProblemReportForm(forms.ModelForm):
             return slug
         raise forms.ValidationError("Select a machine from the list.")
 
+    def clean(self):
+        cleaned = super().clean()
+        problem_type = cleaned.get("problem_type")
+        description = (cleaned.get("description") or "").strip()
+        if problem_type == ProblemReport.PROBLEM_OTHER and not description:
+            self.add_error("description", "Please describe the problem.")
+        return cleaned
+
 
 class SearchForm(forms.Form):
     """Reusable search form for list pages."""

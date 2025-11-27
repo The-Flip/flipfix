@@ -13,12 +13,7 @@
       <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
     </div>
   </div>
-  <div class="machine-card__problem">
-    {% if report.problem_type != report.PROBLEM_OTHER %}
-      <span class="machine-card__problem-label">{{ report.get_problem_type_display }}:</span>
-    {% endif %}
-    {{ report.description|default:"No description provided." }}
-  </div>
+  <div class="machine-card__problem">{{ report|problem_report_summary }}</div>
   {% if report.prefetched_log_entries %}
     {% with latest_log=report.prefetched_log_entries.0 %}
       <div class="machine-card__row">

@@ -89,3 +89,27 @@ def month_name(month_number):
         return month_names[int(month_number) - 1]
     except (ValueError, IndexError):
         return ""
+
+
+@register.filter
+def problem_report_summary(report):
+    """
+    Build a concise problem report summary:
+    - If type is "Other" and description exists: just the description.
+    - If type is "Other" and no description: "No description provided".
+    - If type is not "Other" and description exists: "<Type>: <description>".
+    - If type is not "Other" and no description: "<Type>".
+    """
+    if not report:
+        return ""
+
+    description = (getattr(report, "description", "") or "").strip()
+    is_other = getattr(report, "problem_type", None) == getattr(report, "PROBLEM_OTHER", None)
+    type_display = getattr(report, "get_problem_type_display", lambda: "")()
+
+    if is_other:
+        return description or "No description provided."
+
+    if description:
+        return f"{type_display}: {description}"
+    return type_display

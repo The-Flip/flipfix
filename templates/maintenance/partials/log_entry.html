@@ -17,7 +17,7 @@
       <div class="machine-card__row">
         <div class="machine-card__row-left"></div>
         <div class="machine-card__location machine-card__problem-report-snippet">
-          <strong>Problem report:</strong> {{ entry.problem_report.description|default:entry.problem_report.get_problem_type_display }}
+          <strong>Problem report:</strong> {{ entry.problem_report|problem_report_summary }}
         </div>
       </div>
     {% endif %}
