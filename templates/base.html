@@ -25,46 +25,102 @@
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
-    <header>
-      <h1>
-        <a href="{% url 'home' %}">
-          <img src="{% static 'core/images/logo_white.svg' %}"
-               alt="The Flip"
-               class="header-logo">
-        </a>
-      </h1>
-      <nav>
-        <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-        <a href="{% url 'problem-report-list' %}">Problem Reports</a>
-        <a href="{% url 'log-list' %}">Logs</a>
-        {% if user.is_authenticated %}
-          <div class="user-menu">
+    <header class="app-header">
+      <a href="{% url 'home' %}">
+        <img src="{% static 'core/images/logo_blue.svg' %}"
+             alt="The Flip"
+             class="brand-logo">
+      </a>
+      <!-- Desktop nav (md+) -->
+      <nav class="nav nav--desktop">
+        <a href="{% url 'maintainer-machine-list' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-link--active{% endif %}">Machines</a>
+        <a href="{% url 'problem-report-list' %}"
+           class="nav-link {% if 'problem' in request.resolver_match.url_name %}nav-link--active{% endif %}">Problems</a>
+        <a href="{% url 'log-list' %}"
+           class="nav-link {% if 'log' in request.resolver_match.url_name %}nav-link--active{% endif %}">Logs</a>
+        {% if user.is_superuser %}
+          <div class="dropdown">
             <button type="button"
-                    class="user-menu__avatar"
+                    class="nav-link dropdown__toggle"
                     aria-haspopup="true"
-                    aria-expanded="false">
-              {% if user.first_name and user.last_name %}
-                {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
-              {% elif user.first_name %}
-                {{ user.first_name|make_list|first }}
-              {% else %}
-                {{ user.username|make_list|first }}
-              {% endif %}
+                    aria-expanded="false"
+                    onclick="toggleDropdown(this)">
+              Admin <i class="fa-solid fa-caret-down meta"></i>
             </button>
-            <div class="user-menu__dropdown">
-              <a href="{% url 'profile' %}" class="user-menu__item">Profile</a>
-              <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="user-menu__item">Logout</button>
-              </form>
+            <div class="dropdown__menu dropdown__menu--left hidden">
+              <a href="{% url 'admin:index' %}" class="dropdown__item">
+                <i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin
+              </a>
             </div>
           </div>
-        {% else %}
-          <span>・</span> <a href="{% url 'login' %}">Login</a>
         {% endif %}
       </nav>
+      <!-- Mobile nav (icon-only) -->
+      <nav class="nav nav--icons nav--mobile">
+        <a href="{% url 'maintainer-machine-list' %}"
+           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-icon--active{% endif %}">
+          <i class="fa-solid fa-list"></i>
+        </a>
+        <a href="{% url 'problem-report-list' %}"
+           class="nav-icon {% if 'problem' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </a>
+        <a href="{% url 'log-list' %}"
+           class="nav-icon {% if 'log' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+          <i class="fa-solid fa-screwdriver-wrench"></i>
+        </a>
+        {% if user.is_superuser %}
+          <div class="dropdown">
+            <button type="button"
+                    class="nav-icon"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    onclick="toggleDropdown(this)">
+              <i class="fa-solid fa-users"></i>
+            </button>
+            <div class="dropdown__menu hidden">
+              <a href="{% url 'admin:index' %}" class="dropdown__item">
+                <i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      </nav>
+      <!-- User dropdown -->
+      {% if user.is_authenticated %}
+        <div class="dropdown">
+          <button type="button"
+                  class="avatar"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  onclick="toggleDropdown(this)">
+            {% if user.first_name and user.last_name %}
+              {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
+            {% elif user.first_name %}
+              {{ user.first_name|make_list|first }}
+            {% else %}
+              {{ user.username|make_list|first|upper }}
+            {% endif %}
+          </button>
+          <div class="dropdown__menu dropdown__menu--narrow hidden">
+            <p class="body-small text-muted space-below-sm">{{ user.username }}</p>
+            <a href="{% url 'profile' %}" class="dropdown__item">
+              <i class="fa-solid fa-gear space-right-sm"></i> Account
+            </a>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="dropdown__item dropdown__item--danger">
+                <i class="fa-solid fa-right-from-bracket space-right-sm"></i> Logout
+              </button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn--secondary">Login</a>
+      {% endif %}
     </header>
-    <main>
+    <main class="main-content">
       {% if messages %}
         <div class="messages" role="alert" aria-live="polite">
           {% for message in messages %}<div class="message message--{{ message.tags }}">{{ message }}</div>{% endfor %}
@@ -72,6 +128,7 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    <script src="{% static 'core/dropdown.js' %}"></script>
     <script src="{% static 'core/clickable_cards.js' %}" defer></script>
     <script src="{% static 'core/timezone.js' %}" defer></script>
     {% block extra_scripts %}

@@ -1,88 +1,64 @@
 {% load core_extras %}
 {% if entry.entry_type == "log" %}
-  <li>
-    <article class="flip-card flip-card--clickable js-clickable-card"
-             data-url="{% url 'log-detail' entry.pk %}"
-             tabindex="0"
-             role="button"
-             aria-label="View log entry">
-      <div class="flip-card__top">
-        <div class="flip-card__top-left"></div>
-        <div class="flip-card__top-right log-entry-meta">{{ entry|log_entry_meta }}</div>
+  <div class="timeline__entry">
+    <a href="{% url 'log-detail' entry.pk %}" class="timeline__entry-inner">
+      <div class="timeline__icon timeline__icon--log">
+        <i class="fa-solid fa-screwdriver-wrench"></i>
       </div>
-      <div class="flip-card__main">
-        <div class="markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
-      </div>
-      {% if entry.problem_report %}
-        <div class="flip-card__bottom">
-          <div class="flip-card__bottom-left"></div>
-          <div class="flip-card__bottom-right text-muted flip-card__snippet">
-            <strong>Problem report:</strong> {{ entry.problem_report|problem_report_summary }}
+      <div class="timeline__content">
+        <div class="card card--log timeline__card">
+          <div class="timeline__header">
+            <span class="timeline__title timeline__title--log">Work</span>
+            <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
           </div>
-        </div>
-      {% endif %}
-      {% if entry.media.all %}
-        <div class="flip-card__bottom">
-          <div class="flip-card__bottom-left"></div>
-          <div class="flip-card__bottom-right">
-            {% for media in entry.media.all %}
-              {% if media.media_type == 'video' %}
-                {% if media.transcode_status == 'ready' and media.poster_file %}
-                  <img src="{{ media.poster_file.url }}"
-                       alt="Video poster"
-                       width="200"
-                       class="media-thumbnail">
-                {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-                  <span class="media-status">Video processing…</span>
-                {% else %}
-                  <span class="media-status error">Video failed</span>
-                {% endif %}
-              {% else %}
-                {% if media.thumbnail_file %}
-                  <img src="{{ media.thumbnail_file.url }}"
-                       alt="Photo"
-                       width="200"
-                       class="media-thumbnail">
-                {% else %}
-                  <img src="{{ media.file.url }}"
-                       alt="Photo"
-                       width="200"
-                       class="media-thumbnail">
-                {% endif %}
-              {% endif %}
-            {% endfor %}
+          <div class="timeline__body {% if entry.problem_report or entry.media.all %}space-below-sm{% endif %}">
+            {{ entry.text|truncatewords:30 }}
           </div>
-        </div>
-      {% endif %}
-    </article>
-  </li>
-{% elif entry.entry_type == "problem_report" %}
-  <li>
-    <article class="flip-card flip-card--clickable js-clickable-card"
-             data-url="{% url 'problem-report-detail' entry.pk %}"
-             tabindex="0"
-             role="button"
-             aria-label="View problem report">
-      <div class="flip-card__top">
-        <div class="flip-card__top-left">
-          <span class="badge badge-status badge-{{ entry.status }}">{{ entry.get_status_display }}</span>
-          <span class="text-muted">Problem Report</span>
-        </div>
-        <div class="flip-card__top-right log-entry-meta">{{ entry|problem_report_meta }}</div>
-      </div>
-      <div class="flip-card__main">
-        <p class="flip-card__summary">{{ entry|problem_report_summary }}</p>
-      </div>
-      {% if entry.prefetched_log_entries %}
-        {% with latest_log=entry.prefetched_log_entries.0 %}
-          <div class="flip-card__bottom">
-            <div class="flip-card__bottom-left"></div>
-            <div class="flip-card__bottom-right text-muted flip-card__snippet">
-              <strong>Latest log:</strong> {{ latest_log.text }}
+          {% if entry.problem_report %}
+            <div class="snippet-row">
+              <span class="snippet-label text-problem">
+                <i class="fa-solid fa-bug space-right-xs"></i>Problem:
+              </span>
+              <span class="snippet-text">{{ entry.problem_report|problem_report_summary }}</span>
             </div>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
+{% elif entry.entry_type == "problem_report" %}
+  <div class="timeline__entry">
+    <a href="{% url 'problem-report-detail' entry.pk %}"
+       class="timeline__entry-inner">
+      <div class="timeline__icon timeline__icon--problem">
+        <i class="fa-solid fa-bug"></i>
+      </div>
+      <div class="timeline__content">
+        <div class="card card--problem timeline__card">
+          <div class="timeline__header">
+            <div class="flex items-center stack-tight">
+              <span class="timeline__title timeline__title--problem">Problem</span>
+              <span class="badge {% if entry.status == 'open' %}badge--warning{% else %}badge--success{% endif %}">
+                {{ entry.get_status_display }}
+              </span>
+            </div>
+            <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
           </div>
-        {% endwith %}
-      {% endif %}
-    </article>
-  </li>
+          <div class="timeline__body {% if entry.prefetched_log_entries %}space-below-sm{% endif %}">
+            {{ entry|problem_report_summary }}
+          </div>
+          {% if entry.prefetched_log_entries %}
+            {% with latest_log=entry.prefetched_log_entries.0 %}
+              <div class="snippet-row">
+                <span class="snippet-label text-log">
+                  <i class="fa-solid fa-screwdriver-wrench space-right-xs"></i>Latest:
+                </span>
+                <span class="snippet-text">{{ latest_log.text|truncatewords:15 }}</span>
+              </div>
+            {% endwith %}
+          {% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
 {% endif %}

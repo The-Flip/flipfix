@@ -14,14 +14,16 @@ class NavigationTests(TestCase):
         """Navigation should show login link when not authenticated."""
         response = self.client.get(reverse("home"))
         self.assertContains(response, 'href="/login/"')
-        self.assertNotContains(response, "user-menu")
+        # When not authenticated, no avatar/dropdown should be present
+        self.assertNotContains(response, 'class="avatar"')
 
     def test_nav_shows_user_menu_when_authenticated(self):
         """Navigation should show user menu when authenticated."""
         create_user(username="testuser")
         self.client.login(username="testuser", password="testpass123")
         response = self.client.get(reverse("home"))
-        self.assertContains(response, "user-menu")
+        # User dropdown should be present with avatar and profile link
+        self.assertContains(response, 'class="avatar"')
         self.assertContains(response, 'href="/profile/"')
 
     def test_nav_shows_initials_with_full_name(self):
@@ -37,7 +39,7 @@ class NavigationTests(TestCase):
         self.client.login(username="testuser", password="testpass123")
         response = self.client.get(reverse("home"))
         content = response.content.decode()
-        self.assertIn("user-menu__avatar", content)
+        self.assertIn('class="avatar"', content)
         # Should contain J but not JD
         self.assertIn(">J<", content.replace("\n", "").replace(" ", ""))
 
@@ -47,6 +49,6 @@ class NavigationTests(TestCase):
         self.client.login(username="testuser", password="testpass123")
         response = self.client.get(reverse("home"))
         content = response.content.decode()
-        self.assertIn("user-menu__avatar", content)
-        # Should contain t (first letter of testuser)
-        self.assertIn(">t<", content.replace("\n", "").replace(" ", ""))
+        self.assertIn('class="avatar"', content)
+        # Should contain T (first letter of testuser, uppercase)
+        self.assertIn(">T<", content.replace("\n", "").replace(" ", ""))

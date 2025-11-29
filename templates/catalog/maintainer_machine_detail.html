@@ -2,162 +2,242 @@
 {% load static core_extras %}
 {% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      <span>›</span>
-      <strong>{{ object.display_name }}</strong>
-    </div>
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
+    <span>/</span>
+    <span class="breadcrumbs__current">{{ object.display_name }}</span>
   </nav>
-  <div class="section-header">
-    <h2>{{ object.display_name }}</h2>
-    <div class="section-header__actions">
-      <a class="btn btn-secondary" href="{% url 'machine-edit' object.slug %}">Edit</a>
-      <a class="btn btn-secondary" href="{% url 'machine-qr' object.slug %}">QR Code</a>
-      <a class="btn btn-primary" href="{% url 'log-machine' object.slug %}">Logs</a>
-      <a class="btn btn-primary"
-         href="{% url 'machine-problem-reports' object.slug %}">
-        Problem Reports
-        {% if open_problem_reports.count > 0 %}
-          <span class="badge badge-open badge-inline">{{ open_problem_reports.count }}</span>
-        {% endif %}
+  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
+  <div class="two-column">
+    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
+    <div class="mobile-actions">
+      <a href="{% url 'machine-edit' object.slug %}"
+         class="btn btn--secondary">
+        <i class="fa-solid fa-gear meta"></i>
+        Edit
+      </a>
+      <a href="{% url 'problem-report-create-machine' object.slug %}"
+         class="btn btn--report">
+        <i class="fa-solid fa-bug meta"></i>
+        Report
+      </a>
+      <a href="{% url 'log-create-machine' object.slug %}"
+         class="btn btn--log">
+        <i class="fa-solid fa-screwdriver-wrench meta"></i>
+        Log
       </a>
     </div>
-  </div>
-  <fieldset class="form-section">
-    <div class="inline-edit-group">
-      <div class="form-field inline-edit-field">
-        <label for="status-select">Status:</label>
-        <select id="status-select"
-                class="inline-edit-select"
-                data-field="operational_status">
-          {% for value, label in object.STATUS_CHOICES %}
-            <option value="{{ value }}"
-                    {% if object.operational_status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <span class="status-indicator" id="status-save-indicator"></span>
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- MACHINE INFO -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Machine</div>
+          <div class="sidebar__title">{{ object.display_name }}</div>
+          <div class="sidebar__subtitle">
+            {% if object.model.manufacturer %}{{ object.model.manufacturer }}{% endif %}
+            {% if object.model.manufacturer and object.model.year %}·{% endif %}
+            {% if object.model.year %}{{ object.model.year }}{% endif %}
+          </div>
+          <div class="flex flex-wrap stack-tight space-above-sm">
+            <div class="dropdown">
+              <button type="button"
+                      class="pill {% if object.operational_status == 'good' %}pill--status-good{% elif object.operational_status == 'fixing' %}pill--status-fixing{% else %}pill--neutral{% endif %}"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                {% if object.operational_status == 'fixing' %}
+                  <i class="fa-solid fa-wrench meta"></i>
+                {% elif object.operational_status == 'good' %}
+                  <i class="fa-solid fa-check meta"></i>
+                {% else %}
+                  <i class="fa-solid fa-circle-question meta"></i>
+                {% endif %}
+                {{ object.get_operational_status_display }}
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                {% for value, label in object.STATUS_CHOICES %}
+                  <button type="button"
+                          class="dropdown__item"
+                          data-field="operational_status"
+                          data-value="{{ value }}"
+                          onclick="updateMachineField(this)">{{ label }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="dropdown">
+              <button type="button"
+                      class="pill pill--neutral"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                <i class="fa-solid fa-location-dot meta"></i>
+                {% if object.location %}
+                  {{ object.location.name }}
+                {% else %}
+                  No Location
+                {% endif %}
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                <button type="button"
+                        class="dropdown__item"
+                        data-field="location"
+                        data-value=""
+                        onclick="updateMachineField(this)">No Location</button>
+                {% for loc in locations %}
+                  <button type="button"
+                          class="dropdown__item"
+                          data-field="location"
+                          data-value="{{ loc.slug }}"
+                          onclick="updateMachineField(this)">{{ loc.name }}</button>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <span class="status-indicator body-small" id="save-indicator"></span>
+        </div>
+        <!-- ACTIONS -->
+        <div class="sidebar__section">
+          <div class="flex stack-tight stack-column">
+            <a href="{% url 'machine-edit' object.slug %}"
+               class="btn btn--secondary btn--full">
+              <i class="fa-solid fa-gear meta"></i>
+              Edit Machine
+            </a>
+            <a href="{% url 'problem-report-create-machine' object.slug %}"
+               class="btn btn--report btn--full">
+              <i class="fa-solid fa-bug meta"></i>
+              Report Problem
+              {% if open_problem_reports.count > 0 %}
+                <span class="badge badge--warning">{{ open_problem_reports.count }}</span>
+              {% endif %}
+            </a>
+            <a href="{% url 'log-create-machine' object.slug %}"
+               class="btn btn--log btn--full">
+              <i class="fa-solid fa-screwdriver-wrench meta"></i>
+              Log Work
+            </a>
+          </div>
+        </div>
       </div>
-      <div class="form-field inline-edit-field">
-        <label for="location-select">Location:</label>
-        <select id="location-select" class="inline-edit-select" data-field="location">
-          <option value="" {% if not object.location %}selected{% endif %}>--</option>
-          {% for loc in locations %}
-            <option value="{{ loc.slug }}"
-                    {% if object.location == loc %}selected{% endif %}>{{ loc.name }}</option>
-          {% endfor %}
-        </select>
-        <span class="status-indicator" id="location-save-indicator"></span>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <!-- Filter Buttons -->
+        <div class="filter-bar__filters">
+          <a href="{% url 'maintainer-machine-detail' object.slug %}"
+             class="pill pill--filter {% if not filter_type or filter_type == 'all' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-list"></i> All Activity
+          </a>
+          <a href="{% url 'maintainer-machine-detail' object.slug %}?filter=logs"
+             class="pill pill--filter {% if filter_type == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Logs Only
+          </a>
+          <a href="{% url 'maintainer-machine-detail' object.slug %}?filter=problems"
+             class="pill pill--filter {% if filter_type == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-bug"></i> Problems Only
+          </a>
+        </div>
+        <!-- Search Box -->
+        <div class="filter-bar__search">
+          <form method="get" action="">
+            {% if filter_type %}<input type="hidden" name="filter" value="{{ filter_type }}">{% endif %}
+            <input type="search"
+                   name="q"
+                   placeholder="Search..."
+                   value="{{ search_form.q.value|default:'' }}"
+                   class="filter-bar__search-input">
+            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+          </form>
+        </div>
       </div>
-    </div>
-  </fieldset>
-  <h2>Activity</h2>
-  <div class="list-header">
-    <div class="list-header__left">
-      <form method="get" action="">
-        <div class="form-field">{{ search_form.q }}</div>
-      </form>
-    </div>
-    <div class="list-header__right">
-      <a class="btn btn-primary"
-         href="{% url 'log-create-machine' object.slug %}">Add Log Entry</a>
-      <a class="btn btn-secondary"
-         href="{% url 'problem-report-create-machine' object.slug %}">Add Problem Report</a>
+      <!-- ACTIVITY FEED (Timeline) -->
+      <div id="log-container"
+           data-fetch-url="{% url 'machine-activity-entries' object.slug %}">
+        {% if activity_entries %}
+          <div class="timeline">
+            <!-- Timeline Line -->
+            <div class="timeline__line"></div>
+            <div id="log-list">
+              {% for entry in activity_entries %}
+                {% include "maintenance/partials/activity_entry.html" with entry=entry %}
+              {% endfor %}
+            </div>
+          </div>
+          <div id="log-pagination"
+               data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+        {% else %}
+          <p class="text-muted">
+            {% if search_form.q.value %}
+              No activity matches your search.
+            {% else %}
+              No activity yet.
+            {% endif %}
+          </p>
+        {% endif %}
+      </div>
+      <div id="log-loading" class="hidden">Loading…</div>
+      <div id="log-sentinel"></div>
     </div>
   </div>
-  <section>
-    <div id="log-container"
-         data-fetch-url="{% url 'machine-activity-entries' object.slug %}">
-      {% if activity_entries %}
-        <ul class="flip-card-list" id="log-list">
-          {% for entry in activity_entries %}
-            {% include "maintenance/partials/activity_entry.html" with entry=entry %}
-          {% endfor %}
-        </ul>
-        <div id="log-pagination"
-             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
-      {% else %}
-        <p>
-          {% if search_form.q.value %}
-            No activity matches your search.
-          {% else %}
-            No activity yet.
-          {% endif %}
-        </p>
-      {% endif %}
-    </div>
-    <div id="log-loading" class="hidden">Loading…</div>
-    <div id="log-sentinel"></div>
-  </section>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
   <script>
-      // Inline editing for status and location
-      document.addEventListener('DOMContentLoaded', function() {
-          const statusSelect = document.getElementById('status-select');
-          const locationSelect = document.getElementById('location-select');
-          const statusIndicator = document.getElementById('status-save-indicator');
-          const locationIndicator = document.getElementById('location-save-indicator');
-          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    // Inline editing for status and location via dropdown
+    function updateMachineField(button) {
+      const field = button.dataset.field;
+      const value = button.dataset.value;
+      const indicator = document.getElementById('save-indicator');
 
-          function getCsrfToken() {
-              // Try to get CSRF token from cookie
-              const cookieValue = document.cookie
-                  .split('; ')
-                  .find(row => row.startsWith('csrftoken='))
-                  ?.split('=')[1];
-              return cookieValue || csrfToken;
-          }
+      indicator.textContent = 'Saving...';
+      indicator.className = 'status-indicator body-small saving';
 
-          function updateField(field, value, indicator) {
-              indicator.textContent = 'Saving...';
-              indicator.className = 'status-indicator saving';
+      // Close the dropdown
+      button.closest('.dropdown__menu').classList.add('hidden');
 
-              const formData = new FormData();
-              formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
-              formData.append(field, value);
-              formData.append('csrfmiddlewaretoken', getCsrfToken());
+      const formData = new FormData();
+      formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
+      formData.append(field, value);
 
-              fetch(window.location.href, {
-                      method: 'POST',
-                      body: formData,
-                      headers: {
-                          'X-CSRFToken': getCsrfToken()
-                      }
-                  })
-                  .then(response => response.json())
-                  .then(data => {
-                      if (data.status === 'success') {
-                          indicator.textContent = 'Saved';
-                          indicator.className = 'status-indicator saved';
-                          setTimeout(() => {
-                              indicator.textContent = '';
-                              indicator.className = 'status-indicator';
-                          }, 2000);
-                      } else {
-                          indicator.textContent = 'Error';
-                          indicator.className = 'status-indicator error';
-                      }
-                  })
-                  .catch(error => {
-                      console.error('Error:', error);
-                      indicator.textContent = 'Error';
-                      indicator.className = 'status-indicator error';
-                  });
-          }
-
-          if (statusSelect) {
-              statusSelect.addEventListener('change', function() {
-                  updateField('operational_status', this.value, statusIndicator);
-              });
-          }
-
-          if (locationSelect) {
-              locationSelect.addEventListener('change', function() {
-                  updateField('location', this.value, locationIndicator);
-              });
-          }
+      fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': getCsrfToken()
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          indicator.textContent = 'Saved';
+          indicator.className = 'status-indicator body-small saved';
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          indicator.textContent = 'Error';
+          indicator.className = 'status-indicator body-small error';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        indicator.textContent = 'Error';
+        indicator.className = 'status-indicator body-small error';
       });
+    }
+
+    function getCsrfToken() {
+      const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      return cookieValue || '';
+    }
   </script>
 {% endblock extra_scripts %}
