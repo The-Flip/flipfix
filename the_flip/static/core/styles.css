@@ -15,7 +15,7 @@
  *  - Layout
  *  - Components
  *  - Utilities (semantic, not numeric)
- *  - Responsive Overrides (Mobile-First)
+ *  - Responsive Overrides (mobile-first)
  */
 
 /* ========================================
@@ -1157,7 +1157,7 @@ body {
 .space-right-sm { margin-right: var(--space-2); }
 
 /* ========================================
-   RESPONSIVE OVERRIDES (Mobile-First)
+   RESPONSIVE OVERRIDES (mobile-first)
    ======================================== */
 
 /* Desktop nav hidden on mobile */
