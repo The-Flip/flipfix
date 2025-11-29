@@ -317,7 +317,7 @@
         <a href="#" class="px-3 py-1 font-bold nav-active">Machines</a>
         <a href="#" class="px-3 py-1 nav-link">Problem Reports</a>
         <a href="#" class="px-3 py-1 nav-link">Logs</a>
-        <a href="#" class="px-3 py-1 nav-link text-gray-500">Admin</a>
+        <a href="#" class="px-3 py-1 nav-link">Admin</a>
       </nav>
       <div class="flex items-center gap-4 relative">
         <div id="account-dropdown-toggle"
@@ -342,7 +342,7 @@
            class="block p-2 hover:bg-amber-50 rounded-lg text-amber-700"><i class="fa-solid fa-list mr-2"></i> Machines</a>
         <a href="#" class="block p-2 hover:bg-gray-50 rounded-lg text-gray-700"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Problems</a>
         <a href="#" class="block p-2 hover:bg-gray-50 rounded-lg text-gray-700"><i class="fa-solid fa-screwdriver-wrench mr-2"></i> Global Logs</a>
-        <a href="#" class="block p-2 hover:bg-gray-50 rounded-lg text-gray-500"><i class="fa-solid fa-users mr-2"></i> Admin Panel</a>
+        <a href="#" class="block p-2 hover:bg-gray-50 rounded-lg text-gray-700"><i class="fa-solid fa-users mr-2"></i> Admin Panel</a>
       </div>
       <div class="px-4 py-3 border-t border-gray-200">
         <div class="card-style p-3 bg-gray-50 text-sm mb-3">
@@ -433,16 +433,16 @@
             </div>
           </div>
           <!-- FORM ACTIONS (compact, right-aligned) -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3 pt-3 border-t border-gray-200">
+          <div class="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-gray-200">
             <!-- Close problem checkbox -->
-            <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <label class="flex items-center gap-2 cursor-pointer text-sm mr-auto">
               <input type="checkbox"
                      id="close_problem"
                      name="close_problem"
                      class="w-4 h-4 text-green-600 rounded border-gray-300">
               <span class="text-gray-700">Close the problem report</span>
             </label>
-            <!-- Buttons (compact) -->
+            <!-- Buttons (always inline) -->
             <a href="#"
                class="button-style bg-gray-100 text-gray-700 px-4 py-1.5 text-sm font-medium flex items-center justify-center gap-1 border border-gray-300 hover:bg-gray-200">
               Cancel
