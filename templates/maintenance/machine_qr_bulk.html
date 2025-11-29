@@ -3,6 +3,15 @@
 {% block title %}QR Codes · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="two-column">
+    <!-- Mobile actions -->
+    <div class="mobile-actions">
+      <button type="button"
+              class="btn btn--primary btn--full"
+              onclick="window.print()">
+        <i class="fa-solid fa-print meta"></i>
+        Print all
+      </button>
+    </div>
     <!-- Sidebar (screen-only) -->
     <aside class="two-column__sidebar no-print">
       <div class="card card--padded sidebar--sticky">
@@ -15,7 +24,7 @@
         </div>
         <div class="sidebar__section">
           <button type="button"
-                  class="btn btn--secondary btn--full"
+                  class="btn btn--primary btn--full"
                   onclick="window.print()">
             <i class="fa-solid fa-print meta"></i>
             Print all
