@@ -46,6 +46,44 @@
             /* === END THEME COLORS === */
         }
 
+        /* Alternate themes (switch via body[data-theme]) */
+        body[data-theme="slate"] {
+            --color-background: #f5f7fb;
+            --color-surface: #ffffff;
+            --color-text-dark: #1f2937;
+            --color-accent-amber: #0ea5e9;
+            /* Sky blue accent */
+            --color-border-soft: #e5e7eb;
+            --color-log-base: #2563eb;
+            --color-log-hover: #1d4ed8;
+            --color-log-light-bg: #eff6ff;
+            --color-log-light-border: #bfdbfe;
+            --color-problem-base: #b91c1c;
+            /* Deep red */
+            --color-problem-hover: #991b1b;
+            --color-problem-light-bg: #fef2f2;
+            --color-problem-light-border: #fecdd3;
+        }
+
+        body[data-theme="forest"] {
+            --color-background: #f3f7f2;
+            --color-surface: #ffffff;
+            --color-text-dark: #1f2a1d;
+            --color-accent-amber: #10b981;
+            /* Emerald accent */
+            --color-border-soft: #dfe7dd;
+            --color-log-base: #047857;
+            /* Deep green for logs */
+            --color-log-hover: #065f46;
+            --color-log-light-bg: #ecfdf3;
+            --color-log-light-border: #a7f3d0;
+            --color-problem-base: #d97706;
+            /* Warm amber for problems */
+            --color-problem-hover: #b45309;
+            --color-problem-light-bg: #fff7ed;
+            --color-problem-light-border: #fed7aa;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--color-background);
@@ -149,6 +187,43 @@
             min-width: 0;
             max-width: 100%;
             width: 100%;
+        }
+
+        /* Theme switcher */
+        .theme-switcher {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border-soft);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            border-radius: 9999px;
+            padding: 0.35rem 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 40;
+            font-size: 0.9rem;
+        }
+
+        .theme-switcher button {
+            border: none;
+            background: transparent;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            color: var(--color-text-dark);
+            font-weight: 600;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .theme-switcher button:hover {
+            background: var(--color-border-soft);
+        }
+
+        .theme-switcher button.is-active {
+            background: var(--color-accent-amber);
+            color: #fff;
         }
 
         .accent-button {
@@ -490,6 +565,13 @@
       </div>
     </div>
   </main>
+  <!-- Theme Switcher -->
+  <div class="theme-switcher">
+    <span class="text-sm text-gray-600">Themes:</span>
+    <button data-theme="default" class="is-active">Theme 1</button>
+    <button data-theme="slate">Theme 2</button>
+    <button data-theme="forest">Theme 3</button>
+  </div>
   <!-- Javascript for Dropdowns and Mobile Drawer (Copied logic from previous versions) --><script>
         // Desktop Account Dropdown
         function toggleAccountMenu() {
@@ -551,6 +633,26 @@
                 }
             }
         });
+
+        // Theme switching
+        (function() {
+            const buttons = document.querySelectorAll('.theme-switcher button');
+            const defaultTheme = 'default';
+
+            function setTheme(theme) {
+                document.body.setAttribute('data-theme', theme);
+                buttons.forEach(btn => {
+                    btn.classList.toggle('is-active', btn.dataset.theme === theme);
+                });
+            }
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+            });
+
+            // Initialize
+            setTheme(defaultTheme);
+        })();
   </script>
 </body>
 </html>
