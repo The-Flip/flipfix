@@ -379,8 +379,8 @@
           </div>
         </div>
       </div>
-      <!-- FORM CARD (narrower, centered) -->
-      <form class="card-style p-6 space-y-6 max-w-3xl mx-auto">
+      <!-- FORM CARD (full width to match header) -->
+      <form class="card-style p-6 space-y-6">
         <!-- WORK DESCRIPTION -->
         <div>
           <label for="description" class="form-label">
@@ -413,32 +413,34 @@
             </div>
           </div>
         </div>
-        <!-- WORK DATE (Optional - defaults to now) -->
-        <div>
-          <label for="work_date" class="form-label">When was this work?</label>
-          <input type="datetime-local"
-                 id="work_date"
-                 name="work_date"
-                 class="form-input"
-                 style="width: 14rem">
-        </div>
-        <!-- ADDITIONAL MAINTAINERS -->
-        <div>
-          <label for="maintainers" class="form-label">Who did the work?</label>
-          <div class="flex flex-wrap gap-2 mb-2">
-            <!-- Selected maintainer chips -->
-            <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-              TechSam
-              <button type="button" class="hover:text-blue-600">
-                <i class="fa-solid fa-xmark text-xs"></i>
-              </button>
-            </span>
+        <!-- WORK DATE + MAINTAINERS (side by side on desktop, stacked on mobile) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- WORK DATE (Optional - defaults to now) -->
+          <div>
+            <label for="work_date" class="form-label">When was this work?</label>
+            <input type="datetime-local"
+                   id="work_date"
+                   name="work_date"
+                   class="form-input">
           </div>
-          <input type="text"
-                 id="maintainers"
-                 name="maintainers"
-                 class="form-input"
-                 placeholder="Search for users or write a custom name...">
+          <!-- ADDITIONAL MAINTAINERS -->
+          <div>
+            <label for="maintainers" class="form-label">Who did the work?</label>
+            <div class="flex flex-wrap gap-2 mb-2">
+              <!-- Selected maintainer chips -->
+              <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                TechSam
+                <button type="button" class="hover:text-blue-600">
+                  <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+              </span>
+            </div>
+            <input type="text"
+                   id="maintainers"
+                   name="maintainers"
+                   class="form-input"
+                   placeholder="Search for users or write a custom name...">
+          </div>
         </div>
         <!-- CLOSE PROBLEM OPTION (shown when linked to a problem) -->
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
