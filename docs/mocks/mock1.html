@@ -249,6 +249,12 @@
             border-bottom-color: var(--color-border-soft);
         }
 
+        .brand-logo {
+            height: 48px;
+            width: auto;
+            display: block;
+        }
+
         .badge-warning {
             background: var(--color-warning-base);
             color: var(--color-warning-text);
@@ -366,9 +372,10 @@
   <body>
     <!-- === PERSISTENT SITE HEADER (MASTHEAD) === -->
     <header class="fixed top-0 w-full bg-white border-b border-gray-200 z-30 p-3 shadow-sm flex justify-between items-center h-16">
-      <!-- Logo/Brand Anchor --><a href="#"
-   class="text-2xl font-extrabold flex items-center gap-2 shrink-0 logo-accent">
-      <i class="fa-solid fa-gamepad"></i> The Flip
+      <!-- Logo/Brand Anchor --><a href="#" class="flex items-center gap-2 shrink-0">
+      <img src="../../the_flip/static/core/images/logo_blue.svg"
+           alt="The Flip"
+           class="brand-logo">
     </a>
     <!-- Desktop/Tablet Navigation Links (Visible md and up) -->
     <nav class="hidden md:flex gap-4 text-base font-medium">
