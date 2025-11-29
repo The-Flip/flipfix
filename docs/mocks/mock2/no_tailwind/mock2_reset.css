@@ -1,0 +1,149 @@
+/**
+ * Modern CSS Reset
+ * Based on Josh Comeau's CSS Reset with modifications
+ *
+ * Browser Support:
+ * - Chrome/Edge 100+ (2022+)
+ * - Firefox 100+ (2022+)
+ * - Safari 15.4+ (2022+)
+ * - iOS Safari 15.4+
+ * - No IE11, no legacy Edge
+ */
+
+/* ========================================
+   1. BOX SIZING
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ========================================
+   2. REMOVE DEFAULT MARGINS & PADDING
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* ========================================
+   3. TYPOGRAPHY DEFAULTS
+   ======================================== */
+
+html {
+  /* Prevent font size inflation on mobile */
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  /* Match Tailwind preflight */
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+}
+
+body {
+  /* Inherit line-height from html (matches Tailwind preflight) */
+  line-height: inherit;
+}
+
+/* Balance text wrapping on headings */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+}
+
+/* Prevent orphans in paragraphs */
+p {
+  text-wrap: pretty;
+}
+
+/* ========================================
+   4. MEDIA DEFAULTS
+   ======================================== */
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ========================================
+   5. FORM ELEMENT INHERITANCE
+   ======================================== */
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Remove default button styles */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Remove default textarea resize (allow vertical only when needed) */
+textarea {
+  resize: vertical;
+}
+
+/* ========================================
+   6. ANCHOR DEFAULTS
+   ======================================== */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ========================================
+   7. LIST DEFAULTS
+   ======================================== */
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* ========================================
+   8. TABLE DEFAULTS
+   ======================================== */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* ========================================
+   9. ROOT STACKING CONTEXT
+   ======================================== */
+
+#root,
+#__next {
+  isolation: isolate;
+}
+
+/* ========================================
+   10. REDUCED MOTION
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
