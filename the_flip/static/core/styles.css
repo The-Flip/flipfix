@@ -1560,17 +1560,12 @@ body {
    ======================================== */
 
 .header-minimal {
-  background-color: var(--color-log);
   padding: var(--space-4) var(--space-6);
 }
 
 .header-minimal__content {
   max-width: 32rem;
   margin: 0 auto;
-}
-
-.header-minimal .header-logo {
-  height: 2rem;
 }
 
 .main-minimal {
