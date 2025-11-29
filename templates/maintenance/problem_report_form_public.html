@@ -1,21 +1,38 @@
 {% extends "base_public_minimal.html" %}
-{% block title %}Report a Problem · {{ block.super }}{% endblock %}
+{% block title %}Report a Problem with {{ machine.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <h2>Report a Problem With {{ machine.display_name }}</h2>
-  <form method="post" class="form-container">
-    {% csrf_token %}
-    {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
-    <div class="form-field">
-      {{ form.problem_type.label_tag }}
-      {{ form.problem_type }}
-      {% for error in form.problem_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-    </div>
-    <div class="form-field">
-      {{ form.description }}
-      {% for error in form.description.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Submit Report</button>
-    </div>
-  </form>
+  <div class="card card--padded">
+    <h2 class="space-below-md">Report a Problem with {{ machine.display_name }}</h2>
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="field-error">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="form-field">
+        <label class="form-label">What's wrong?</label>
+        <div class="radio-group">
+          {% for value, label in form.problem_type.field.choices %}
+            <label class="radio-label">
+              <input type="radio"
+                     name="{{ form.problem_type.html_name }}"
+                     value="{{ value }}"
+                     {% if value == form.problem_type.value or forloop.first and not form.problem_type.value %}checked{% endif %}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+        {% for error in form.problem_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="{{ form.description.id_for_label }}" class="form-label">Details (optional)</label>
+        <textarea id="{{ form.description.id_for_label }}"
+                  name="{{ form.description.html_name }}"
+                  class="form-input form-textarea"
+                  placeholder="Any additional details..."
+                  rows="3">{{ form.description.value|default:'' }}</textarea>
+        {% for error in form.description.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary btn--full">Submit Report</button>
+      </div>
+    </form>
+  </div>
 {% endblock %}

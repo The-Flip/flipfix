@@ -1553,3 +1553,35 @@ body {
     display: none;
   }
 }
+
+/* ========================================
+   PUBLIC/MINIMAL LAYOUT
+   For public-facing pages (QR scan landing)
+   ======================================== */
+
+.header-minimal {
+  background-color: var(--color-log);
+  padding: var(--space-4) var(--space-6);
+}
+
+.header-minimal__content {
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.header-minimal .header-logo {
+  height: 2rem;
+}
+
+.main-minimal {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.footer-minimal {
+  text-align: center;
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}

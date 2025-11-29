@@ -429,7 +429,7 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         response = self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
 
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, self.machine.get_absolute_url())
+        self.assertRedirects(response, self.url)  # Redirects back to itself
 
         self.assertEqual(ProblemReport.objects.count(), 1)
         report = ProblemReport.objects.first()

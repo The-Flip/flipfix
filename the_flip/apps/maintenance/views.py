@@ -343,7 +343,7 @@ class PublicProblemReportCreateView(FormView):
         ip_address = request.META.get("REMOTE_ADDR")
         if ip_address and not self._check_rate_limit(ip_address):
             messages.error(request, "Too many reports submitted recently. Please try again later.")
-            return redirect(self.machine.get_absolute_url())
+            return redirect("public-problem-report-create", slug=self.machine.slug)
         return super().post(request, *args, **kwargs)
 
     def _check_rate_limit(self, ip_address: str) -> bool:
@@ -362,7 +362,7 @@ class PublicProblemReportCreateView(FormView):
             report.reported_by_user = self.request.user
         report.save()
         messages.success(self.request, "Thanks! The maintenance team has been notified.")
-        return redirect(self.machine.get_absolute_url())
+        return redirect("public-problem-report-create", slug=self.machine.slug)
 
 
 class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
@@ -989,9 +989,9 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         context = super().get_context_data(**kwargs)
         machine = self.object
 
-        # Build the absolute URL for the public machine detail page
+        # Build the absolute URL for the public problem report page
         public_url = self.request.build_absolute_uri(
-            reverse("public-machine-detail", args=[machine.slug])
+            reverse("public-problem-report-create", args=[machine.slug])
         )
 
         # Generate QR code with high error correction for logo embedding

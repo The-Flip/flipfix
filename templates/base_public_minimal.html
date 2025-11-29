@@ -16,19 +16,23 @@
           type="image/png">
     <link rel="apple-touch-icon"
           href="{% static 'core/images/logo_blue.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'core/styles.css' %}">
   </head>
   <body>
     <header class="header-minimal">
       <div class="header-minimal__content">
-        <h1>
-          <img src="{% static 'core/images/logo_white.svg' %}"
-               alt="The Flip"
-               class="header-logo">
-        </h1>
+        <img src="{% static 'core/images/logo_white.svg' %}"
+             alt="The Flip"
+             class="header-logo">
       </div>
     </header>
-    <main>
+    <main class="main-minimal">
       {% if messages %}
         <div class="messages" role="alert" aria-live="polite">
           {% for message in messages %}<div class="message message--{{ message.tags }}">{{ message }}</div>{% endfor %}
@@ -37,11 +41,8 @@
       {% block content %}{% endblock %}
     </main>
     <footer class="footer-minimal">
-      <div class="footer-minimal__content">
-        <p>&copy; The Flip</p>
-      </div>
+      <p>&copy; The Flip</p>
     </footer>
-    <script src="{% static 'core/clickable_cards.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>
