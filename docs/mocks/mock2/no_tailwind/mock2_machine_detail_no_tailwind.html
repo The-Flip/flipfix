@@ -29,13 +29,13 @@
           <button id="admin-dropdown-toggle-desktop"
                   class="nav-link dropdown__toggle"
                   onclick="toggleAdminMenu('desktop')">
-            Admin <i class="fa-solid fa-caret-down text-xs"></i>
+            Admin <i class="fa-solid fa-caret-down meta"></i>
           </button>
           <div id="admin-menu-desktop"
                class="dropdown__menu dropdown__menu--left hidden">
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-users-gear mr-2"></i> Shared Accounts</a>
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-envelope mr-2"></i> Invite User</a>
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-toolbox mr-2"></i> Django Admin</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-users-gear space-right-sm"></i> Shared Accounts</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-envelope space-right-sm"></i> Invite User</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin</a>
           </div>
         </div>
       </nav>
@@ -52,9 +52,9 @@
             <i class="fa-solid fa-users"></i>
           </button>
           <div id="admin-menu-mobile" class="dropdown__menu hidden">
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-users-gear mr-2"></i> Shared Accounts</a>
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-envelope mr-2"></i> Invite User</a>
-            <a href="#" class="dropdown__item"><i class="fa-solid fa-toolbox mr-2"></i> Django Admin</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-users-gear space-right-sm"></i> Shared Accounts</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-envelope space-right-sm"></i> Invite User</a>
+            <a href="#" class="dropdown__item"><i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin</a>
           </div>
         </div>
       </nav>
@@ -64,9 +64,9 @@
              class="avatar"
              onclick="toggleAccountMenu()">PW</div>
         <div id="account-menu" class="dropdown__menu hidden" style="width: 12rem;">
-          <p class="text-sm text-muted mb-2">PinballWizard99</p>
-          <a href="#" class="dropdown__item"><i class="fa-solid fa-gear mr-2"></i> Account</a>
-          <a href="#" class="dropdown__item dropdown__item--danger"><i class="fa-solid fa-right-from-bracket mr-2"></i> Logout</a>
+          <p class="body-small text-muted space-below-sm">PinballWizard99</p>
+          <a href="#" class="dropdown__item"><i class="fa-solid fa-gear space-right-sm"></i> Account</a>
+          <a href="#" class="dropdown__item dropdown__item--danger"><i class="fa-solid fa-right-from-bracket space-right-sm"></i> Logout</a>
         </div>
       </div>
     </header>
@@ -83,15 +83,15 @@
         <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
         <div class="mobile-actions">
           <a href="#" class="btn btn--secondary">
-            <i class="fa-solid fa-gear text-xs"></i>
+            <i class="fa-solid fa-gear meta"></i>
             Edit
           </a>
           <a href="#" class="btn btn--report">
-            <i class="fa-solid fa-bug text-xs"></i>
+            <i class="fa-solid fa-bug meta"></i>
             Report
           </a>
           <a href="#" class="btn btn--log">
-            <i class="fa-solid fa-screwdriver-wrench text-xs"></i>
+            <i class="fa-solid fa-screwdriver-wrench meta"></i>
             Log
           </a>
         </div>
@@ -103,16 +103,16 @@
               <div class="sidebar__label">Machine</div>
               <div class="sidebar__title">The Addams Family</div>
               <div class="sidebar__subtitle">Bally • 1992</div>
-              <div class="flex flex-wrap gap-2 mt-2">
+              <div class="flex flex-wrap stack-tight space-above-sm">
                 <button class="pill pill--status-fixing">
-                  <i class="fa-solid fa-wrench text-xs"></i>
+                  <i class="fa-solid fa-wrench meta"></i>
                   Fixing
-                  <i class="fa-solid fa-caret-down text-xs"></i>
+                  <i class="fa-solid fa-caret-down meta"></i>
                 </button>
                 <button class="pill pill--neutral">
-                  <i class="fa-solid fa-location-dot text-xs"></i>
+                  <i class="fa-solid fa-location-dot meta"></i>
                   Workshop
-                  <i class="fa-solid fa-caret-down text-xs"></i>
+                  <i class="fa-solid fa-caret-down meta"></i>
                 </button>
               </div>
             </div>
@@ -120,15 +120,15 @@
             <div class="sidebar__section">
               <div class="flex" style="flex-direction: column; gap: var(--space-2);">
                 <a href="#" class="btn btn--secondary btn--full">
-                  <i class="fa-solid fa-gear text-xs"></i>
+                  <i class="fa-solid fa-gear meta"></i>
                   Edit Machine
                 </a>
                 <a href="#" class="btn btn--report btn--full">
-                  <i class="fa-solid fa-bug text-xs"></i>
+                  <i class="fa-solid fa-bug meta"></i>
                   Report Problem
                 </a>
                 <a href="mock2_log_work_no_tailwind.html" class="btn btn--log btn--full">
-                  <i class="fa-solid fa-screwdriver-wrench text-xs"></i>
+                  <i class="fa-solid fa-screwdriver-wrench meta"></i>
                   Log Work
                 </a>
               </div>
@@ -175,11 +175,11 @@
                       <span class="timeline__title timeline__title--log">Work</span>
                       <span class="timeline__meta">PinballWizard99 • Just now</span>
                     </div>
-                    <p class="timeline__body mb-2">
+                    <p class="timeline__body space-below-sm">
                       Replaced the coil on the upper right flipper. It was showing resistance issues. Test played one game, feels snappy now.
                     </p>
                     <div class="snippet-row">
-                      <span class="snippet-label text-problem"><i class="fa-solid fa-bug mr-1"></i>Problem:</span>
+                      <span class="snippet-label text-problem"><i class="fa-solid fa-bug space-right-xs"></i>Problem:</span>
                       <span class="snippet-text">Top right flipper barely moves when I hit the button. Ball gets stuck.</span>
                     </div>
                   </div>
@@ -214,15 +214,15 @@
                 <div class="timeline__content">
                   <div class="card card--problem timeline__card">
                     <div class="timeline__header">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center stack-tight">
                         <span class="timeline__title timeline__title--problem">Problem #47</span>
                         <span class="badge badge--warning">Open</span>
                       </div>
                       <span class="timeline__meta">Visitor • Yesterday</span>
                     </div>
-                    <p class="timeline__body mb-2">Top right flipper barely moves when I hit the button. Ball gets stuck.</p>
+                    <p class="timeline__body space-below-sm">Top right flipper barely moves when I hit the button. Ball gets stuck.</p>
                     <div class="snippet-row">
-                      <span class="snippet-label text-log"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Latest:</span>
+                      <span class="snippet-label text-log"><i class="fa-solid fa-screwdriver-wrench space-right-xs"></i>Latest:</span>
                       <span class="snippet-text">Replaced the coil on the upper right flipper. It was showing resistance issues.</span>
                     </div>
                   </div>
@@ -238,7 +238,7 @@
                 <div class="timeline__content">
                   <div class="card card--problem timeline__card">
                     <div class="timeline__header">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center stack-tight">
                         <span class="timeline__title timeline__title--problem">Problem #46</span>
                         <span class="badge badge--success">Closed</span>
                       </div>
