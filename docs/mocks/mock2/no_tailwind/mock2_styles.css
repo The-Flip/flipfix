@@ -530,7 +530,6 @@ body {
   cursor: pointer;
   font-size: var(--text-sm);
   color: var(--color-gray-700);
-  margin-right: auto;
 }
 
 /* Smaller form input variant */
@@ -543,7 +542,7 @@ body {
 .form-textarea {
   min-height: 200px;
   resize: vertical;
-  padding: var(--space-2);
+  padding: var(--space-3); /* More padding for textarea text spacing */
 }
 
 /* Form field wrapper */
@@ -563,6 +562,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-gray-200);
@@ -633,6 +633,12 @@ body {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
+}
+
+.linked-problem-card__icon {
+  font-size: var(--text-sm);
+  margin-top: 0.125rem; /* mt-0.5 to align with text */
+  flex-shrink: 0;
 }
 
 .linked-problem-card__content {
