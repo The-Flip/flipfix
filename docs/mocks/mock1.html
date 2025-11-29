@@ -109,8 +109,61 @@
             --color-warning-text: #ffffff;
         }
 
+        /* VS Code Dark Modern inspired */
+        body[data-theme="dark2"] {
+            --color-background: #1f1f1f;
+            /* editor.background */
+            --color-surface: #252525;
+            /* button/controls background-ish */
+            --color-text-dark: #cccccc;
+            /* editor.foreground */
+            --color-accent-amber: #0078d4;
+            /* button/focusBorder */
+            --color-border-soft: #2b2b2b;
+            /* activityBar.border */
+            --color-log-base: #0078d4;
+            /* match accent */
+            --color-log-hover: #026ec1;
+            /* button.hoverBackground */
+            --color-log-light-bg: #181818;
+            /* activityBar background */
+            --color-log-light-border: #2b2b2b;
+            /* tab border */
+            --color-problem-base: #f85149;
+            /* errorForeground */
+            --color-problem-hover: #e64545;
+            /* slightly darker hover */
+            --color-problem-light-bg: #2b2b2b;
+            /* textBlockQuote background */
+            --color-problem-light-border: #616161;
+            /* textBlockQuote border */
+            --color-warning-base: #f85149;
+            --color-warning-text: #ffffff;
+        }
+
+        /* Dark 3: same palette as Dark 2 but uses default (blue) logo */
+        body[data-theme="dark3"] {
+            --color-background: #1f1f1f;
+            --color-surface: #252525;
+            --color-text-dark: #cccccc;
+            --color-accent-amber: #0078d4;
+            --color-border-soft: #2b2b2b;
+            --color-log-base: #0078d4;
+            --color-log-hover: #026ec1;
+            --color-log-light-bg: #181818;
+            --color-log-light-border: #2b2b2b;
+            --color-problem-base: #f85149;
+            --color-problem-hover: #e64545;
+            --color-problem-light-bg: #2b2b2b;
+            --color-problem-light-border: #616161;
+            --color-warning-base: #f85149;
+            --color-warning-text: #ffffff;
+        }
+
         /* Dark theme text overrides for readability */
-        body[data-theme="midnight"] {
+        body[data-theme="midnight"],
+        body[data-theme="dark2"],
+        body[data-theme="dark3"] {
             color: var(--color-text-dark);
         }
 
@@ -119,12 +172,28 @@
         body[data-theme="midnight"] h3,
         body[data-theme="midnight"] .text-gray-800,
         body[data-theme="midnight"] .text-gray-700,
-        body[data-theme="midnight"] .text-gray-600 {
+        body[data-theme="midnight"] .text-gray-600,
+        body[data-theme="dark2"] h1,
+        body[data-theme="dark2"] h2,
+        body[data-theme="dark2"] h3,
+        body[data-theme="dark2"] .text-gray-800,
+        body[data-theme="dark2"] .text-gray-700,
+        body[data-theme="dark2"] .text-gray-600,
+        body[data-theme="dark3"] h1,
+        body[data-theme="dark3"] h2,
+        body[data-theme="dark3"] h3,
+        body[data-theme="dark3"] .text-gray-800,
+        body[data-theme="dark3"] .text-gray-700,
+        body[data-theme="dark3"] .text-gray-600 {
             color: #e5e7eb !important;
         }
 
         body[data-theme="midnight"] .text-gray-500,
-        body[data-theme="midnight"] .text-gray-400 {
+        body[data-theme="midnight"] .text-gray-400,
+        body[data-theme="dark2"] .text-gray-500,
+        body[data-theme="dark2"] .text-gray-400,
+        body[data-theme="dark3"] .text-gray-500,
+        body[data-theme="dark3"] .text-gray-400 {
             color: #cbd5e1 !important;
         }
 
@@ -132,7 +201,15 @@
         body[data-theme="midnight"] .button-style.bg-gray-100,
         body[data-theme="midnight"] .button-style.bg-white,
         body[data-theme="midnight"] .pill-style.bg-gray-100,
-        body[data-theme="midnight"] .status-pill-fixing {
+        body[data-theme="midnight"] .status-pill-fixing,
+        body[data-theme="dark2"] .button-style.bg-gray-100,
+        body[data-theme="dark2"] .button-style.bg-white,
+        body[data-theme="dark2"] .pill-style.bg-gray-100,
+        body[data-theme="dark2"] .status-pill-fixing,
+        body[data-theme="dark3"] .button-style.bg-gray-100,
+        body[data-theme="dark3"] .button-style.bg-white,
+        body[data-theme="dark3"] .pill-style.bg-gray-100,
+        body[data-theme="dark3"] .status-pill-fixing {
             color: #111827 !important;
         }
 
@@ -661,6 +738,8 @@
     <button data-theme="slate">Theme 2</button>
     <button data-theme="forest">Theme 3</button>
     <button data-theme="midnight">Dark 1</button>
+    <button data-theme="dark2">Dark 2</button>
+    <button data-theme="dark3">Dark 3</button>
   </div>
   <!-- Javascript for Dropdowns and Mobile Drawer (Copied logic from previous versions) --><script>
         // Desktop Account Dropdown
@@ -736,7 +815,7 @@
                     btn.classList.toggle('is-active', btn.dataset.theme === theme);
                 });
                 if (logo) {
-                    if (theme === 'midnight') {
+                    if (theme === 'midnight' || theme === 'dark2') {
                         logo.src = logo.dataset.logoInverse || logo.src;
                     } else {
                         logo.src = logo.dataset.logoDefault || logo.src;
