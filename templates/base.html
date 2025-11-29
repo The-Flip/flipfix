@@ -34,11 +34,11 @@
       <!-- Desktop nav (md+) -->
       <nav class="nav nav--desktop">
         <a href="{% url 'maintainer-machine-list' %}"
-           class="nav-link {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-link--active{% endif %}">Machines</a>
+           class="nav-link {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' or request.resolver_match.url_name == 'log-machine' or request.resolver_match.url_name == 'machine-problem-reports' %}nav-link--active{% endif %}">Machines</a>
         <a href="{% url 'problem-report-list' %}"
-           class="nav-link {% if 'problem' in request.resolver_match.url_name %}nav-link--active{% endif %}">Problems</a>
+           class="nav-link {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-link--active{% endif %}">Problems</a>
         <a href="{% url 'log-list' %}"
-           class="nav-link {% if 'log' in request.resolver_match.url_name %}nav-link--active{% endif %}">Logs</a>
+           class="nav-link {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-link--active{% endif %}">Logs</a>
         {% if user.is_superuser %}
           <div class="dropdown">
             <button type="button"
@@ -59,15 +59,15 @@
       <!-- Mobile nav (icon-only) -->
       <nav class="nav nav--icons nav--mobile">
         <a href="{% url 'maintainer-machine-list' %}"
-           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-icon--active{% endif %}">
+           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' or request.resolver_match.url_name == 'log-machine' or request.resolver_match.url_name == 'machine-problem-reports' %}nav-icon--active{% endif %}">
           <i class="fa-solid fa-list"></i>
         </a>
         <a href="{% url 'problem-report-list' %}"
-           class="nav-icon {% if 'problem' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+           class="nav-icon {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-icon--active{% endif %}">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </a>
         <a href="{% url 'log-list' %}"
-           class="nav-icon {% if 'log' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+           class="nav-icon {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-icon--active{% endif %}">
           <i class="fa-solid fa-screwdriver-wrench"></i>
         </a>
         {% if user.is_superuser %}

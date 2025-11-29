@@ -310,6 +310,7 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
+        context["active_filter"] = "problems"
         search_query = self.request.GET.get("q", "")
         context["search_form"] = SearchForm(initial={"q": search_query})
         return context
@@ -523,6 +524,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context.update(
             {
                 "machine": self.machine,
+                "active_filter": "logs",
                 "page_obj": page_obj,
                 "log_entries": page_obj.object_list,
                 "search_form": SearchForm(initial={"q": search_query}),

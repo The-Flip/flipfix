@@ -1,94 +1,24 @@
-{% extends "base.html" %}
-{% load core_extras %}
-{% block title %}{{ machine.display_name }} Problem Reports · {{ block.super }}{% endblock %}
-{% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      <span>›</span>
-      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
-      <span>›</span>
-      <strong>Problem Reports</strong>
-    </div>
-  </nav>
-  <div class="section-header">
-    <h2>Problem Reports for {{ machine.display_name }}</h2>
-    <div class="section-header__actions">
-      <a class="btn btn-primary"
-         href="{% url 'problem-report-create-machine' machine.slug %}">Submit Problem Report</a>
-    </div>
-  </div>
-  <div class="list-header">
-    <div class="list-header__left">
-      <form method="get" action="">
-        <div class="form-field">{{ search_form.q }}</div>
-      </form>
-    </div>
-  </div>
+{% extends "catalog/machine_feed_base.html" %}
+{% load static core_extras %}
+{% block feed_title %}Problems{% endblock %}
+{% block infinite_scroll_url %}{% endblock %}
+{% block feed_content %}
   {% if reports %}
-    <ul class="flip-card-list">
-      {% for report in reports %}
-        <li>
-          <article class="flip-card flip-card--clickable js-clickable-card"
-                   data-url="{% url 'problem-report-detail' report.pk %}"
-                   tabindex="0"
-                   role="button"
-                   aria-label="View problem report">
-            <div class="flip-card__top">
-              <div class="flip-card__top-left">
-                <span class="badge badge-status badge-{{ report.status }}">{{ report.get_status_display }}</span>
-              </div>
-              <div class="flip-card__top-right log-entry-meta">{{ report|problem_report_meta }}</div>
-            </div>
-            <div class="flip-card__main">
-              {% if report.problem_type != report.PROBLEM_OTHER %}
-                <p>
-                  <strong>{{ report.get_problem_type_display }}</strong>
-                </p>
-              {% endif %}
-              {% if report.description %}
-                <div class="markdown-content markdown-content--compact">{{ report.description|render_markdown }}</div>
-              {% elif report.problem_type == report.PROBLEM_OTHER %}
-                <p class="text-muted">No description provided.</p>
-              {% endif %}
-            </div>
-            {% if report.prefetched_log_entries %}
-              {% with latest_log=report.prefetched_log_entries.0 %}
-                <div class="flip-card__bottom">
-                  <div class="flip-card__bottom-left"></div>
-                  <div class="flip-card__bottom-right text-muted flip-card__snippet">
-                    <strong>Latest log:</strong> {{ latest_log.text }}
-                  </div>
-                </div>
-              {% endwith %}
-            {% endif %}
-          </article>
-        </li>
-      {% endfor %}
-    </ul>
-    {% if page_obj.has_other_pages %}
-      <div class="pagination">
-        {% if page_obj.has_previous %}
-          <a href="?page=1{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
-             class="btn">First</a>
-          <a href="?page={{ page_obj.previous_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
-             class="btn">Previous</a>
-        {% endif %}
-        <span class="pagination-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
-             class="btn">Next</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}{% if search_form.initial.q %}&q={{ search_form.initial.q }}{% endif %}"
-             class="btn">Last</a>
-        {% endif %}
+    <div class="timeline">
+      <div class="timeline__line"></div>
+      <div id="log-list">
+        {% for entry in reports %}
+          {% include "maintenance/partials/problem_report_entry.html" with entry=entry %}
+        {% endfor %}
       </div>
-    {% endif %}
+    </div>
+    <div id="log-pagination" data-next-page="0"></div>
   {% else %}
-    <p>
-      {% if search_form.initial.q %}
+    <p class="text-muted">
+      {% if search_form.q.value %}
         No problem reports match your search.
       {% else %}
-        No problem reports found for this machine.
+        No problem reports yet.
       {% endif %}
     </p>
   {% endif %}

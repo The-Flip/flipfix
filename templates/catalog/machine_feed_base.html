@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}
+  {{ machine.display_name }}
+  {% block feed_title %}{% endblock %}
+  · {{ block.super }}
+{% endblock %}
+{% block content %}
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
+    <span>/</span>
+    <span class="breadcrumbs__current">{{ machine.display_name }}</span>
+  </nav>
+  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
+  <div class="two-column">
+    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
+    <div class="mobile-actions">
+      <a href="{% url 'machine-edit' machine.slug %}"
+         class="btn btn--secondary">
+        <i class="fa-solid fa-gear meta"></i>
+        Edit
+      </a>
+      <a href="{% url 'problem-report-create-machine' machine.slug %}"
+         class="btn btn--report">
+        <i class="fa-solid fa-bug meta"></i>
+        Report
+      </a>
+      <a href="{% url 'log-create-machine' machine.slug %}"
+         class="btn btn--log">
+        <i class="fa-solid fa-screwdriver-wrench meta"></i>
+        Log
+      </a>
+    </div>
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- MACHINE INFO -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Machine</div>
+          <div class="sidebar__title">{{ machine.display_name }}</div>
+          <div class="sidebar__subtitle">
+            {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
+            {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
+            {% if machine.model.year %}{{ machine.model.year }}{% endif %}
+          </div>
+          {% block sidebar_extras %}{% endblock %}
+        </div>
+        <!-- ACTIONS -->
+        <div class="sidebar__section">
+          <div class="flex stack-tight stack-column">
+            <a href="{% url 'machine-edit' machine.slug %}"
+               class="btn btn--secondary btn--full">
+              <i class="fa-solid fa-gear meta"></i>
+              Edit Machine
+            </a>
+            <a href="{% url 'problem-report-create-machine' machine.slug %}"
+               class="btn btn--report btn--full">
+              <i class="fa-solid fa-bug meta"></i>
+              Report Problem
+            </a>
+            <a href="{% url 'log-create-machine' machine.slug %}"
+               class="btn btn--log btn--full">
+              <i class="fa-solid fa-screwdriver-wrench meta"></i>
+              Log Work
+            </a>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <!-- Filter Buttons -->
+        <div class="filter-bar__filters">
+          <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+             class="pill pill--filter {% if active_filter == 'all' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-list"></i> All Activity
+          </a>
+          <a href="{% url 'log-machine' machine.slug %}"
+             class="pill pill--filter {% if active_filter == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Logs Only
+          </a>
+          <a href="{% url 'machine-problem-reports' machine.slug %}"
+             class="pill pill--filter {% if active_filter == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            <i class="fa-solid fa-bug"></i> Problems Only
+          </a>
+        </div>
+        <!-- Search Box -->
+        <div class="filter-bar__search">
+          <form method="get" action="">
+            <input type="search"
+                   name="q"
+                   placeholder="Search..."
+                   value="{{ search_form.q.value|default:'' }}"
+                   class="filter-bar__search-input">
+            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+          </form>
+        </div>
+      </div>
+      <!-- FEED CONTENT (Timeline) -->
+      <div id="log-container"
+           data-fetch-url="{% block infinite_scroll_url %}{% endblock %}">
+        {% block feed_content %}{% endblock %}
+      </div>
+      <div id="log-loading" class="hidden">Loading…</div>
+      <div id="log-sentinel"></div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+  {% block feed_scripts %}{% endblock %}
+{% endblock extra_scripts %}

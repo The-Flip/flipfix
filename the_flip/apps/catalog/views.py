@@ -158,6 +158,10 @@ class MachineDetailView(PublicMachineDetailView):
         context = super().get_context_data(**kwargs)
         machine = self.object
 
+        # Add machine alias for template compatibility with machine_feed_base.html
+        context["machine"] = machine
+        context["active_filter"] = "all"
+
         # Provide locations for the dropdown (ordered by sort_order)
         context["locations"] = Location.objects.all()
 

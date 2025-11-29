@@ -1,55 +1,28 @@
-{% extends "base.html" %}
+{% extends "catalog/machine_feed_base.html" %}
 {% load static core_extras %}
-{% block title %}{{ machine.display_name }} Log · {{ block.super }}{% endblock %}
-{% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      <span>›</span>
-      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
-      <span>›</span>
-      <strong>Logs</strong>
-    </div>
-  </nav>
-  <div class="section-header">
-    <h2>Logs for {{ machine.display_name }}</h2>
-    <div class="section-header__actions">
-      <a class="btn btn-primary"
-         href="{% url 'log-create-machine' machine.slug %}">+ Add Log Entry</a>
-    </div>
-  </div>
-  <div class="list-header">
-    <div class="list-header__left">
-      <form method="get" action="">
-        <div class="form-field">{{ search_form.q }}</div>
-      </form>
-    </div>
-  </div>
-  <section>
-    <div id="log-container"
-         data-fetch-url="{% url 'log-entries' machine.slug %}">
-      {% if log_entries %}
-        <ul class="flip-card-list" id="log-list">
-          {% for entry in log_entries %}
-            {% include "maintenance/partials/log_entry.html" with entry=entry %}
-          {% endfor %}
-        </ul>
-        <div id="log-pagination"
-             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
-      {% else %}
-        <p>
-          {% if search_form.q.value %}
-            No log entries match your search.
-          {% else %}
-            No log entries yet.
-          {% endif %}
-        </p>
-      {% endif %}
-    </div>
-    <div id="log-loading" class="hidden">Loading…</div>
-    <div id="log-sentinel"></div>
-  </section>
+{% block feed_title %}Logs{% endblock %}
+{% block infinite_scroll_url %}
+  {% url 'log-entries' machine.slug %}
 {% endblock %}
-{% block extra_scripts %}
-  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+{% block feed_content %}
+  {% if log_entries %}
+    <div class="timeline">
+      <div class="timeline__line"></div>
+      <div id="log-list">
+        {% for entry in log_entries %}
+          {% include "maintenance/partials/log_entry.html" with entry=entry %}
+        {% endfor %}
+      </div>
+    </div>
+    <div id="log-pagination"
+         data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+  {% else %}
+    <p class="text-muted">
+      {% if search_form.q.value %}
+        No log entries match your search.
+      {% else %}
+        No log entries yet.
+      {% endif %}
+    </p>
+  {% endif %}
 {% endblock %}

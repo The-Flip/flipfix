@@ -1,190 +1,91 @@
-{% extends "base.html" %}
+{% extends "catalog/machine_feed_base.html" %}
 {% load static core_extras %}
-{% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
-{% block content %}
-  <!-- BREADCRUMBS -->
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">{{ object.display_name }}</span>
-  </nav>
-  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
-  <div class="two-column">
-    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions">
-      <a href="{% url 'machine-edit' object.slug %}"
-         class="btn btn--secondary">
-        <i class="fa-solid fa-gear meta"></i>
-        Edit
-      </a>
-      <a href="{% url 'problem-report-create-machine' object.slug %}"
-         class="btn btn--report">
-        <i class="fa-solid fa-bug meta"></i>
-        Report
-      </a>
-      <a href="{% url 'log-create-machine' object.slug %}"
-         class="btn btn--log">
-        <i class="fa-solid fa-screwdriver-wrench meta"></i>
-        Log
-      </a>
-    </div>
-    <!-- SIDEBAR (desktop only) -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        <!-- MACHINE INFO -->
-        <div class="sidebar__section">
-          <div class="sidebar__label">Machine</div>
-          <div class="sidebar__title">{{ object.display_name }}</div>
-          <div class="sidebar__subtitle">
-            {% if object.model.manufacturer %}{{ object.model.manufacturer }}{% endif %}
-            {% if object.model.manufacturer and object.model.year %}·{% endif %}
-            {% if object.model.year %}{{ object.model.year }}{% endif %}
-          </div>
-          <div class="flex flex-wrap stack-tight space-above-sm">
-            <div class="dropdown">
-              <button type="button"
-                      class="pill {% if object.operational_status == 'good' %}pill--status-good{% elif object.operational_status == 'fixing' %}pill--status-fixing{% else %}pill--neutral{% endif %}"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      onclick="toggleDropdown(this)">
-                {% if object.operational_status == 'fixing' %}
-                  <i class="fa-solid fa-wrench meta"></i>
-                {% elif object.operational_status == 'good' %}
-                  <i class="fa-solid fa-check meta"></i>
-                {% else %}
-                  <i class="fa-solid fa-circle-question meta"></i>
-                {% endif %}
-                {{ object.get_operational_status_display }}
-                <i class="fa-solid fa-caret-down meta"></i>
-              </button>
-              <div class="dropdown__menu dropdown__menu--left hidden">
-                {% for value, label in object.STATUS_CHOICES %}
-                  <button type="button"
-                          class="dropdown__item"
-                          data-field="operational_status"
-                          data-value="{{ value }}"
-                          onclick="updateMachineField(this)">{{ label }}</button>
-                {% endfor %}
-              </div>
-            </div>
-            <div class="dropdown">
-              <button type="button"
-                      class="pill pill--neutral"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      onclick="toggleDropdown(this)">
-                <i class="fa-solid fa-location-dot meta"></i>
-                {% if object.location %}
-                  {{ object.location.name }}
-                {% else %}
-                  No Location
-                {% endif %}
-                <i class="fa-solid fa-caret-down meta"></i>
-              </button>
-              <div class="dropdown__menu dropdown__menu--left hidden">
-                <button type="button"
-                        class="dropdown__item"
-                        data-field="location"
-                        data-value=""
-                        onclick="updateMachineField(this)">No Location</button>
-                {% for loc in locations %}
-                  <button type="button"
-                          class="dropdown__item"
-                          data-field="location"
-                          data-value="{{ loc.slug }}"
-                          onclick="updateMachineField(this)">{{ loc.name }}</button>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-          <span class="status-indicator body-small" id="save-indicator"></span>
-        </div>
-        <!-- ACTIONS -->
-        <div class="sidebar__section">
-          <div class="flex stack-tight stack-column">
-            <a href="{% url 'machine-edit' object.slug %}"
-               class="btn btn--secondary btn--full">
-              <i class="fa-solid fa-gear meta"></i>
-              Edit Machine
-            </a>
-            <a href="{% url 'problem-report-create-machine' object.slug %}"
-               class="btn btn--report btn--full">
-              <i class="fa-solid fa-bug meta"></i>
-              Report Problem
-            </a>
-            <a href="{% url 'log-create-machine' object.slug %}"
-               class="btn btn--log btn--full">
-              <i class="fa-solid fa-screwdriver-wrench meta"></i>
-              Log Work
-            </a>
-          </div>
-        </div>
-      </div>
-    </aside>
-    <!-- MAIN COLUMN -->
-    <div class="two-column__main">
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <!-- Filter Buttons -->
-        <div class="filter-bar__filters">
-          <a href="{% url 'maintainer-machine-detail' object.slug %}"
-             class="pill pill--filter {% if not filter_type or filter_type == 'all' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-list"></i> All Activity
-          </a>
-          <a href="{% url 'maintainer-machine-detail' object.slug %}?filter=logs"
-             class="pill pill--filter {% if filter_type == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-screwdriver-wrench"></i> Logs Only
-          </a>
-          <a href="{% url 'maintainer-machine-detail' object.slug %}?filter=problems"
-             class="pill pill--filter {% if filter_type == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-bug"></i> Problems Only
-          </a>
-        </div>
-        <!-- Search Box -->
-        <div class="filter-bar__search">
-          <form method="get" action="">
-            {% if filter_type %}<input type="hidden" name="filter" value="{{ filter_type }}">{% endif %}
-            <input type="search"
-                   name="q"
-                   placeholder="Search..."
-                   value="{{ search_form.q.value|default:'' }}"
-                   class="filter-bar__search-input">
-            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
-          </form>
-        </div>
-      </div>
-      <!-- ACTIVITY FEED (Timeline) -->
-      <div id="log-container"
-           data-fetch-url="{% url 'machine-activity-entries' object.slug %}">
-        {% if activity_entries %}
-          <div class="timeline">
-            <!-- Timeline Line -->
-            <div class="timeline__line"></div>
-            <div id="log-list">
-              {% for entry in activity_entries %}
-                {% include "maintenance/partials/activity_entry.html" with entry=entry %}
-              {% endfor %}
-            </div>
-          </div>
-          <div id="log-pagination"
-               data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+{% block infinite_scroll_url %}
+  {% url 'machine-activity-entries' machine.slug %}
+{% endblock %}
+{% block sidebar_extras %}
+  <div class="flex flex-wrap stack-tight space-above-sm">
+    <div class="dropdown">
+      <button type="button"
+              class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% else %}pill--neutral{% endif %}"
+              aria-haspopup="true"
+              aria-expanded="false"
+              onclick="toggleDropdown(this)">
+        {% if machine.operational_status == 'fixing' %}
+          <i class="fa-solid fa-wrench meta"></i>
+        {% elif machine.operational_status == 'good' %}
+          <i class="fa-solid fa-check meta"></i>
         {% else %}
-          <p class="text-muted">
-            {% if search_form.q.value %}
-              No activity matches your search.
-            {% else %}
-              No activity yet.
-            {% endif %}
-          </p>
+          <i class="fa-solid fa-circle-question meta"></i>
         {% endif %}
+        {{ machine.get_operational_status_display }}
+        <i class="fa-solid fa-caret-down meta"></i>
+      </button>
+      <div class="dropdown__menu dropdown__menu--left hidden">
+        {% for value, label in machine.STATUS_CHOICES %}
+          <button type="button"
+                  class="dropdown__item"
+                  data-field="operational_status"
+                  data-value="{{ value }}"
+                  onclick="updateMachineField(this)">{{ label }}</button>
+        {% endfor %}
       </div>
-      <div id="log-loading" class="hidden">Loading…</div>
-      <div id="log-sentinel"></div>
+    </div>
+    <div class="dropdown">
+      <button type="button"
+              class="pill pill--neutral"
+              aria-haspopup="true"
+              aria-expanded="false"
+              onclick="toggleDropdown(this)">
+        <i class="fa-solid fa-location-dot meta"></i>
+        {% if machine.location %}
+          {{ machine.location.name }}
+        {% else %}
+          No Location
+        {% endif %}
+        <i class="fa-solid fa-caret-down meta"></i>
+      </button>
+      <div class="dropdown__menu dropdown__menu--left hidden">
+        <button type="button"
+                class="dropdown__item"
+                data-field="location"
+                data-value=""
+                onclick="updateMachineField(this)">No Location</button>
+        {% for loc in locations %}
+          <button type="button"
+                  class="dropdown__item"
+                  data-field="location"
+                  data-value="{{ loc.slug }}"
+                  onclick="updateMachineField(this)">{{ loc.name }}</button>
+        {% endfor %}
+      </div>
     </div>
   </div>
+  <span class="status-indicator body-small" id="save-indicator"></span>
 {% endblock %}
-{% block extra_scripts %}
-  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+{% block feed_content %}
+  {% if activity_entries %}
+    <div class="timeline">
+      <div class="timeline__line"></div>
+      <div id="log-list">
+        {% for entry in activity_entries %}
+          {% include "maintenance/partials/activity_entry.html" with entry=entry %}
+        {% endfor %}
+      </div>
+    </div>
+    <div id="log-pagination"
+         data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+  {% else %}
+    <p class="text-muted">
+      {% if search_form.q.value %}
+        No activity matches your search.
+      {% else %}
+        No activity yet.
+      {% endif %}
+    </p>
+  {% endif %}
+{% endblock %}
+{% block feed_scripts %}
   <script>
     // Inline editing for status and location via dropdown
     function updateMachineField(button) {
@@ -237,4 +138,4 @@
       return cookieValue || '';
     }
   </script>
-{% endblock extra_scripts %}
+{% endblock %}
