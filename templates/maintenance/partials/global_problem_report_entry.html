@@ -16,8 +16,12 @@
           </div>
           <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
         </div>
-        <div class="timeline__body {% if entry.prefetched_log_entries %}space-below-sm{% endif %}">
-          {{ entry|problem_report_summary }}
+        <div class="timeline__body {% if entry.prefetched_log_entries %}space-below-sm{% endif %} markdown-content markdown-content--compact">
+          {% if entry.description %}
+            {{ entry.description|render_markdown }}
+          {% else %}
+            {{ entry|problem_report_summary }}
+          {% endif %}
         </div>
         {% if entry.prefetched_log_entries %}
           {% with latest_log=entry.prefetched_log_entries.0 %}

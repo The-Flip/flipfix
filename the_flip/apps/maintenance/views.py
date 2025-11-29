@@ -194,7 +194,7 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
 class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
     """AJAX endpoint for infinite scrolling in the global problem report list."""
 
-    template_name = "maintenance/partials/problem_report_list_entry.html"
+    template_name = "maintenance/partials/global_problem_report_entry.html"
 
     def test_func(self):
         return self.request.user.is_staff
@@ -225,7 +225,7 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
         paginator = Paginator(reports, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(
-            render_to_string(self.template_name, {"report": report})
+            render_to_string(self.template_name, {"entry": report})
             for report in page_obj.object_list
         )
         return JsonResponse(
@@ -800,7 +800,7 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
     """AJAX endpoint for infinite scrolling in the global log list."""
 
-    template_name = "maintenance/partials/log_list_entry.html"
+    template_name = "maintenance/partials/global_log_entry.html"
 
     def test_func(self):
         return self.request.user.is_staff
@@ -828,8 +828,7 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
         items_html = "".join(
-            render_to_string(self.template_name, {"entry": entry, "machine": entry.machine})
-            for entry in page_obj.object_list
+            render_to_string(self.template_name, {"entry": entry}) for entry in page_obj.object_list
         )
         return JsonResponse(
             {

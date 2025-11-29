@@ -249,33 +249,13 @@
 
       fileInput.addEventListener('change', function() {
         previewRow.innerHTML = '';
-        Array.from(this.files).forEach((file, index) => {
-          const preview = document.createElement('div');
-          preview.className = 'file-preview';
-          const lowerName = file.name.toLowerCase();
-          const isImage =
-            (file.type && file.type.startsWith('image/')) ||
-            lowerName.endsWith('.heic') ||
-            lowerName.endsWith('.heif');
-
-          if (isImage) {
-            const thumb = document.createElement('div');
-            thumb.className = 'file-preview__thumb';
-            const img = document.createElement('img');
-            img.alt = file.name;
-            img.src = URL.createObjectURL(file);
-            img.onload = () => URL.revokeObjectURL(img.src);
-            thumb.appendChild(img);
-            preview.appendChild(thumb);
-          } else {
-            preview.innerHTML = `
-              <div class="file-preview__thumb">
-                <i class="fa-solid ${file.type.startsWith('video/') ? 'fa-video' : 'fa-image'} text-muted"></i>
-              </div>
-            `;
-          }
-
-          previewRow.appendChild(preview);
+        Array.from(this.files).forEach((file) => {
+          const isVideo = file.type && file.type.startsWith('video/');
+          const icon = isVideo ? 'fa-video' : 'fa-image';
+          const pill = document.createElement('span');
+          pill.className = 'pill pill--neutral';
+          pill.innerHTML = `<i class="fa-solid ${icon} meta"></i> ${file.name}`;
+          previewRow.appendChild(pill);
         });
       });
     })();

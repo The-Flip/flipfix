@@ -10,8 +10,8 @@
           <span class="timeline__title timeline__title--log">{{ entry.machine.display_name }}</span>
           <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
         </div>
-        <div class="timeline__body {% if entry.problem_report %}space-below-sm{% endif %}">
-          {{ entry.text|truncatewords:30 }}
+        <div class="timeline__body {% if entry.problem_report %}space-below-sm{% endif %} markdown-content markdown-content--compact">
+          {{ entry.text|render_markdown }}
         </div>
         {% if entry.problem_report %}
           <div class="snippet-row">
