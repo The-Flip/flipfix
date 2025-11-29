@@ -253,7 +253,9 @@
               const pill = document.getElementById('location-pill');
               const labelEl = pill.querySelector('.location-label');
               labelEl.textContent = label;
-              showFlashMessage('success', `Location set to ${label}`);
+              const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
+              const pillHtml = `<span class="pill pill--neutral"><i class="fa-solid fa-location-dot meta"></i> ${label}</span>`;
+              showFlashMessage('success', `Location of ${machineName} set to ${pillHtml}`);
             }
           } else {
             showFlashMessage('error', 'Error saving change');
