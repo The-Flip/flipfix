@@ -156,7 +156,7 @@ class MachineQuickCreateForm(StyledFormMixin, forms.Form):
     year = forms.IntegerField(
         required=False,
         label="Year",
-        widget=forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 8em;"}),
+        widget=forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 9em;"}),
     )
 
     # Field for naming an instance of an existing model

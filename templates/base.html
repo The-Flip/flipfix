@@ -156,10 +156,7 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
-    <script src="{% static 'core/dropdown.js' %}"></script>
-    <script src="{% static 'core/clickable_cards.js' %}" defer></script>
-    <script src="{% static 'core/timezone.js' %}" defer></script>
-    {% block extra_scripts %}
-    {% endblock %}
+    <script src="{% static 'core/core.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
   </body>
 </html>

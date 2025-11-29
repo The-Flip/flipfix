@@ -40,36 +40,14 @@
               {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
             </div>
           {% endif %}
-          <div class="form-field">
-            <label for="id_first_name" class="form-label">First name</label>
-            <input type="text"
-                   name="first_name"
-                   id="id_first_name"
-                   class="form-input"
-                   value="{{ form.first_name.value|default:'' }}"
-                   autocomplete="given-name">
-            {% for error in form.first_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
-          <div class="form-field">
-            <label for="id_last_name" class="form-label">Last name</label>
-            <input type="text"
-                   name="last_name"
-                   id="id_last_name"
-                   class="form-input"
-                   value="{{ form.last_name.value|default:'' }}"
-                   autocomplete="family-name">
-            {% for error in form.last_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
-          <div class="form-field">
-            <label for="id_email" class="form-label">Email</label>
-            <input type="email"
-                   name="email"
-                   id="id_email"
-                   class="form-input"
-                   value="{{ form.email.value|default:'' }}"
-                   autocomplete="email">
-            {% for error in form.email.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
+          {% for field in form %}
+            <div class="form-field">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
           <div class="form-actions">
             <a href="{% url 'home' %}" class="btn btn--secondary">
               <i class="fa-solid fa-circle-xmark meta"></i>

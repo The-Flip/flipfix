@@ -1,88 +1,117 @@
 {% extends "base.html" %}
 {% block title %}Add Machine · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      <span>›</span>
-      <strong>Add Machine</strong>
-    </div>
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
+    <span>/</span>
+    <span class="breadcrumbs__current">Add Machine</span>
   </nav>
-  <form method="post" class="form-container">
-    {% csrf_token %}
-    {% if form.non_field_errors %}<div class="alert alert--danger">{{ form.non_field_errors }}</div>{% endif %}
-    <fieldset class="form-section">
-      <legend>Machine Information</legend>
-      <div class="form-field">
-        {{ form.model.label_tag }}
-        {{ form.model }}
-        {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
-        {% for error in form.model.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  <div class="two-column">
+    <!-- Sidebar -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <div class="sidebar__section">
+          <div class="sidebar__title">Add Machine</div>
+          <p class="sidebar__meta">Add a new machine to the collection</p>
+        </div>
+        <a href="{% url 'maintainer-machine-list' %}"
+           class="btn btn--secondary btn--full">
+          <i class="fa-solid fa-arrow-left meta"></i>
+          Back to Machines
+        </a>
       </div>
-      <div class="form-field hidden" id="field-model-name">
-        {{ form.model_name.label_tag }}
-        {{ form.model_name }}
-        {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
-        {% for error in form.model_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+    </aside>
+    <!-- Main -->
+    <div class="two-column__main">
+      <div class="card card--padded">
+        <form method="post" class="form-main">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="text-problem body-small">
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+          <fieldset class="form-section">
+            <legend>Machine Information</legend>
+            <div class="form-field">
+              {{ form.model.label_tag }}
+              {{ form.model }}
+              {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
+              {% for error in form.model.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field hidden" id="field-model-name">
+              {{ form.model_name.label_tag }}
+              {{ form.model_name }}
+              {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
+              {% for error in form.model_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field hidden" id="field-manufacturer">
+              {{ form.manufacturer.label_tag }}
+              {{ form.manufacturer }}
+              {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
+              {% for error in form.manufacturer.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field hidden" id="field-year">
+              {{ form.year.label_tag }}
+              {{ form.year }}
+              {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
+              {% for error in form.year.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field hidden" id="field-name-override">
+              {{ form.name_override.label_tag }}
+              {{ form.name_override }}
+              {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
+              {% for error in form.name_override.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+          </fieldset>
+          <div class="form-actions">
+            <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+              <i class="fa-solid fa-circle-xmark meta"></i>
+              Cancel
+            </a>
+            <button type="submit" class="btn btn--log">
+              <i class="fa-solid fa-plus meta"></i>
+              Create Machine
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="form-field hidden" id="field-manufacturer">
-        {{ form.manufacturer.label_tag }}
-        {{ form.manufacturer }}
-        {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
-        {% for error in form.manufacturer.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="form-field hidden" id="field-year">
-        {{ form.year.label_tag }}
-        {{ form.year }}
-        {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
-        {% for error in form.year.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="form-field hidden" id="field-name-override">
-        {{ form.name_override.label_tag }}
-        {{ form.name_override }}
-        {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
-        {% for error in form.name_override.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-      </div>
-    </fieldset>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Create Machine</button>
-      <a href="{% url 'maintainer-machine-list' %}" class="btn btn-secondary">Cancel</a>
     </div>
-  </form>
+  </div>
   <script>
-      (function() {
-          const modelSelect = document.getElementById('{{ form.model.id_for_label }}');
-          const modelNameField = document.getElementById('field-model-name');
-          const manufacturerField = document.getElementById('field-manufacturer');
-          const yearField = document.getElementById('field-year');
-          const nameOverrideField = document.getElementById('field-name-override');
+    (function() {
+      const modelSelect = document.getElementById('{{ form.model.id_for_label }}');
+      const modelNameField = document.getElementById('field-model-name');
+      const manufacturerField = document.getElementById('field-manufacturer');
+      const yearField = document.getElementById('field-year');
+      const nameOverrideField = document.getElementById('field-name-override');
 
-          function updateFieldVisibility() {
-              const isCreatingNewModel = !modelSelect.value;
+      function updateFieldVisibility() {
+        const isCreatingNewModel = !modelSelect.value;
 
-              // Show/hide fields based on whether creating new model or selecting existing
-              if (isCreatingNewModel) {
-                  // Show new model fields
-                  modelNameField.classList.remove('hidden');
-                  manufacturerField.classList.remove('hidden');
-                  yearField.classList.remove('hidden');
-                  // Hide name override
-                  nameOverrideField.classList.add('hidden');
-              } else {
-                  // Hide new model fields
-                  modelNameField.classList.add('hidden');
-                  manufacturerField.classList.add('hidden');
-                  yearField.classList.add('hidden');
-                  // Show name override
-                  nameOverrideField.classList.remove('hidden');
-              }
-          }
+        // Show/hide fields based on whether creating new model or selecting existing
+        if (isCreatingNewModel) {
+          // Show new model fields
+          modelNameField.classList.remove('hidden');
+          manufacturerField.classList.remove('hidden');
+          yearField.classList.remove('hidden');
+          // Hide name override
+          nameOverrideField.classList.add('hidden');
+        } else {
+          // Hide new model fields
+          modelNameField.classList.add('hidden');
+          manufacturerField.classList.add('hidden');
+          yearField.classList.add('hidden');
+          // Show name override
+          nameOverrideField.classList.remove('hidden');
+        }
+      }
 
-          // Initialize on page load
-          updateFieldVisibility();
+      // Initialize on page load
+      updateFieldVisibility();
 
-          // Update when selection changes
-          modelSelect.addEventListener('change', updateFieldVisibility);
-      })();
+      // Update when selection changes
+      modelSelect.addEventListener('change', updateFieldVisibility);
+    })();
   </script>
 {% endblock %}

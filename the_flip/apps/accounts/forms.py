@@ -4,10 +4,12 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
+from the_flip.apps.core.forms import StyledFormMixin
+
 User = get_user_model()
 
 
-class InvitationRegistrationForm(forms.Form):
+class InvitationRegistrationForm(StyledFormMixin, forms.Form):
     """Form for invited users to complete their registration."""
 
     username = forms.CharField(
@@ -47,14 +49,19 @@ class InvitationRegistrationForm(forms.Form):
         return cleaned_data
 
 
-class ProfileForm(forms.ModelForm):
+class ProfileForm(StyledFormMixin, forms.ModelForm):
     """Form for users to update their profile information."""
 
     email = forms.EmailField(required=False)
 
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name"]
+        fields = ["first_name", "last_name", "email"]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"autocomplete": "given-name"}),
+            "last_name": forms.TextInput(attrs={"autocomplete": "family-name"}),
+            "email": forms.EmailInput(attrs={"autocomplete": "email"}),
+        }
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -63,7 +70,7 @@ class ProfileForm(forms.ModelForm):
         return email
 
 
-class SelfRegistrationForm(forms.Form):
+class SelfRegistrationForm(StyledFormMixin, forms.Form):
     """Form for self-registration during beta period."""
 
     username = forms.CharField(max_length=150)
@@ -110,7 +117,7 @@ class SelfRegistrationForm(forms.Form):
         return password
 
 
-class TerminalCreateForm(forms.Form):
+class TerminalCreateForm(StyledFormMixin, forms.Form):
     """Form for creating shared terminal accounts."""
 
     username = forms.CharField(
@@ -154,7 +161,7 @@ class TerminalCreateForm(forms.Form):
         return username
 
 
-class TerminalUpdateForm(forms.Form):
+class TerminalUpdateForm(StyledFormMixin, forms.Form):
     """Form for editing shared terminal accounts."""
 
     first_name = forms.CharField(

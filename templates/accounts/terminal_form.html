@@ -77,46 +77,14 @@
               {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
             </div>
           {% endif %}
-          {% if is_create %}
+          {% for field in form %}
             <div class="form-field">
-              <label for="id_username" class="form-label">Username</label>
-              <input type="text"
-                     name="username"
-                     id="id_username"
-                     class="form-input"
-                     value="{{ form.username.value|default:'' }}"
-                     autocomplete="off"
-                     data-1p-ignore
-                     data-lpignore="true"
-                     required>
-              {% if form.username.help_text %}<p class="text-muted body-small">{{ form.username.help_text }}</p>{% endif %}
-              {% for error in form.username.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
-          {% endif %}
-          <div class="form-field">
-            <label for="id_first_name" class="form-label">First name</label>
-            <input type="text"
-                   name="first_name"
-                   id="id_first_name"
-                   class="form-input"
-                   value="{{ form.first_name.value|default:'' }}"
-                   autocomplete="off"
-                   data-1p-ignore
-                   data-lpignore="true">
-            {% for error in form.first_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
-          <div class="form-field">
-            <label for="id_last_name" class="form-label">Last name</label>
-            <input type="text"
-                   name="last_name"
-                   id="id_last_name"
-                   class="form-input"
-                   value="{{ form.last_name.value|default:'' }}"
-                   autocomplete="off"
-                   data-1p-ignore
-                   data-lpignore="true">
-            {% for error in form.last_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
+          {% endfor %}
           <div class="form-actions">
             <a href="{% url 'terminal-list' %}" class="btn btn--secondary">
               <i class="fa-solid fa-circle-xmark meta"></i>

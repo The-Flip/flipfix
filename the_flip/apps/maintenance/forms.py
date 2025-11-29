@@ -7,6 +7,7 @@ from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
 from the_flip.apps.catalog.models import MachineInstance
+from the_flip.apps.core.forms import StyledFormMixin
 from the_flip.apps.maintenance.models import ProblemReport
 
 
@@ -45,7 +46,7 @@ class MultiFileField(forms.FileField):
             raise forms.ValidationError(errors)
 
 
-class ProblemReportForm(forms.ModelForm):
+class ProblemReportForm(StyledFormMixin, forms.ModelForm):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
@@ -91,7 +92,7 @@ class SearchForm(forms.Form):
     )
 
 
-class LogEntryQuickForm(forms.Form):
+class LogEntryQuickForm(StyledFormMixin, forms.Form):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
     work_date = forms.DateTimeField(
         label="Date of work",
