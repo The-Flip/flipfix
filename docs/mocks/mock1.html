@@ -109,6 +109,33 @@
             color: var(--color-problem-base);
         }
 
+        .snippet-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding-top: 0.5rem;
+            margin-top: 0.25rem;
+            border-top: 1px solid var(--color-border-soft);
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .snippet-label {
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            white-space: nowrap;
+        }
+
+        .snippet-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #4b5563;
+            flex: 1;
+        }
+
         .accent-button {
             background-color: var(--color-accent-amber);
         }
@@ -362,54 +389,87 @@
     <div class="relative pl-4 lg:pl-8">
       <!-- Timeline Line -->
       <div class="absolute left-6 lg:left-10 top-0 bottom-0 timeline-line w-1 z-0"></div>
-      <!-- WORK LOG ENTRY (Using .log-entry-card and log-base for icon) -->
+      <!-- WORK LOG ENTRY against problem report -->
       <div class="relative z-10 mb-10">
         <div class="flex items-start gap-4">
-          <!-- Timeline Dot/Icon -->
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white log-color-bg">
             <i class="fa-solid fa-screwdriver-wrench"></i>
           </div>
           <div class="card-style p-4 flex-1 log-entry-card">
             <div class="flex justify-between items-start mb-2">
-              <!-- MODIFIED: Renamed "Work Logged" to "Work" -->
               <div>
                 <span class="font-bold text-lg log-color-text">Work</span>
               </div>
-              <!-- MODIFIED: Added font-semibold for emphasis on timestamp -->
-              <span class="text-gray-500 text-xs mt-1">PinballWizard99 &bull; <span class="font-semibold">2 mins ago</span></span>
+              <span class="text-gray-500 text-xs mt-1">PinballWizard99 &bull; <span class="font-semibold">Just now</span></span>
             </div>
             <p class="mb-3 text-base text-gray-800">
               Replaced the coil on the upper right flipper. It was showing resistance issues. Test played one game, feels snappy now.
             </p>
+            <div class="snippet-row">
+              <span class="snippet-label problem-color-text"><i class="fa-solid fa-bug mr-1"></i>Problem report:</span>
+              <span class="snippet-text">Top right flipper barely moves when hit; ball getting stuck near slingshot.</span>
+            </div>
           </div>
         </div>
       </div>
-      <!-- PROBLEM REPORT ENTRY (Using .problem-entry-card and problem-base for icon/pill) -->
+      <!-- WORK LOG ENTRY without problem report -->
       <div class="relative z-10 mb-10">
         <div class="flex items-start gap-4">
-          <!-- Timeline Dot/Icon -->
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white log-color-bg">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+          </div>
+          <div class="card-style p-4 flex-1 log-entry-card">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <span class="font-bold text-lg log-color-text">Work</span>
+              </div>
+              <span class="text-gray-500 text-xs mt-1">TechSam &bull; <span class="font-semibold">20 mins ago</span></span>
+            </div>
+            <p class="mb-3 text-base text-gray-800">
+              Cleaned optos and reseated connectors on the trough board. No faults observed after 10 test games.
+            </p>
+          </div>
+        </div>
+      </div>
+      <!-- PROBLEM REPORT with latest log -->
+      <div class="relative z-10 mb-10">
+        <div class="flex items-start gap-4">
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white problem-color-bg">
             <i class="fa-solid fa-bug"></i>
           </div>
           <div class="card-style p-4 flex-1 problem-entry-card">
             <div class="flex justify-between items-start mb-2">
               <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                <!-- MODIFIED: Removed #402 -->
                 <span class="font-bold text-lg problem-color-text">Problem Report</span>
-                <!-- MODIFIED: Moved "Open" badge back to the right of the title -->
                 <span class="text-white px-2 py-0.5 text-xs font-bold rounded-md inline-block problem-color-bg">Open</span>
               </div>
-              <!-- MODIFIED: Updated timestamp to "Yesterday 10:15am" and added font-semibold -->
               <span class="text-gray-500 text-xs mt-1">Visitor &bull; <span class="font-semibold">Yesterday 10:15am</span></span>
             </div>
-            <!-- Problem description text -->
-            <p class="mb-3 text-base text-gray-800">The top right flipper barely moves when I hit the button. Ball gets stuck.</p>
-            <div class="flex gap-2 mt-4 border-t pt-3">
-              <!-- Close Report button - styled as a Log/Success Action -->
-              <button class="button-style accent-button text-white px-3 py-1 text-sm font-semibold">
-                <i class="fa-solid fa-check mr-1"></i> Close Report
-              </button>
+            <p class="mb-3 text-base text-gray-800">Top right flipper barely moves when I hit the button. Ball gets stuck.</p>
+            <div class="snippet-row">
+              <span class="snippet-label log-color-text"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Latest log:</span>
+              <span class="snippet-text">Replaced the coil on the upper right flipper. It was showing resistance issues.</span>
             </div>
+          </div>
+        </div>
+      </div>
+      <!-- PROBLEM REPORT without logs -->
+      <div class="relative z-10 mb-10">
+        <div class="flex items-start gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white problem-color-bg">
+            <i class="fa-solid fa-bug"></i>
+          </div>
+          <div class="card-style p-4 flex-1 problem-entry-card">
+            <div class="flex justify-between items-start mb-2">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span class="font-bold text-lg problem-color-text">Problem Report</span>
+                <span class="text-white px-2 py-0.5 text-xs font-bold rounded-md inline-block problem-color-bg">Open</span>
+              </div>
+              <span class="text-gray-500 text-xs mt-1">LeaguePlayer &bull; <span class="font-semibold">2 days ago</span></span>
+            </div>
+            <p class="mb-3 text-base text-gray-800">
+              Left sling occasionally rapid-fires when the game is idle. Seems intermittent.
+            </p>
           </div>
         </div>
       </div>
