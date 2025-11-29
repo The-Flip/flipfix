@@ -14,8 +14,14 @@
     <aside class="two-column__sidebar">
       <div class="card card--padded sidebar--sticky">
         <div class="sidebar__section">
-          <div class="sidebar__label">Username</div>
-          <div class="card__title">{{ user.username }}</div>
+          <div class="sidebar__label">Profile</div>
+          <div class="sidebar__title">
+            {% if user.first_name or user.last_name %}
+              {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+            {% else %}
+              {{ user.username }}
+            {% endif %}
+          </div>
         </div>
         <a href="{% url 'password_change' %}"
            class="btn btn--secondary btn--full">
