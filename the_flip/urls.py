@@ -137,6 +137,7 @@ urlpatterns = [
     ),
     path("machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"),
     path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
+    path("qr_codes/", maintenance_views.MachineBulkQRCodeView.as_view(), name="machine-qr-bulk"),
     # Machine model editing
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
     # API endpoints

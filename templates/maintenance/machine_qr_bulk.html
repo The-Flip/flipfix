@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}QR Codes · {{ block.super }}{% endblock %}
+{% block content %}
+  <div class="two-column">
+    <!-- Sidebar (screen-only) -->
+    <aside class="two-column__sidebar no-print">
+      <div class="card card--padded sidebar--sticky">
+        <div class="sidebar__section">
+          <div class="sidebar__label">QR Codes</div>
+          <div class="sidebar__title">Bulk print</div>
+          <p class="text-muted text-sm space-above-sm">
+            A QR code for every machine, linking to the public problem-report page.
+          </p>
+        </div>
+        <div class="sidebar__section">
+          <button type="button"
+                  class="btn btn--secondary btn--full"
+                  onclick="window.print()">
+            <i class="fa-solid fa-print meta"></i>
+            Print all
+          </button>
+        </div>
+      </div>
+    </aside>
+    <!-- Main grid -->
+    <div class="two-column__main">
+      <div class="qr-grid">
+        {% for item in qr_entries %}
+          <div class="qr-card">
+            <img src="data:image/png;base64,{{ item.qr_data }}"
+                 alt="QR for {{ item.machine.display_name }}"
+                 class="qr-card__image">
+            <div class="qr-card__name">{{ item.machine.display_name }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <style>
+      .qr-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: var(--space-4);
+      }
+
+      .qr-card {
+          background: var(--color-surface);
+          border: 1px solid var(--color-border-soft);
+          border-radius: var(--radius-lg);
+          padding: var(--space-4);
+          box-shadow: var(--shadow-sm);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-2);
+          page-break-inside: avoid;
+      }
+
+      .qr-card__image {
+          width: 180px;
+          height: 180px;
+          object-fit: contain;
+      }
+
+      .qr-card__name {
+          font-weight: var(--font-semibold);
+          text-align: center;
+          color: var(--color-text-primary);
+      }
+
+      @media print {
+
+          header,
+          .no-print,
+          .mobile-actions,
+          #log-loading,
+          #log-sentinel {
+              display: none !important;
+          }
+
+          body {
+              margin: 0;
+              padding: 0;
+              background: white;
+          }
+
+          main {
+              padding: 1rem;
+              max-width: 100%;
+          }
+
+          .qr-grid {
+              gap: 1rem;
+          }
+
+          .qr-card {
+              border: 1px solid #ddd;
+              box-shadow: none;
+              page-break-inside: avoid;
+          }
+      }
+  </style>
+{% endblock %}
