@@ -92,6 +92,23 @@
             background-color: var(--color-problem-hover);
         }
 
+        /* Brand color helpers for consistent reuse */
+        .log-color-bg {
+            background-color: var(--color-log-base);
+        }
+
+        .log-color-text {
+            color: var(--color-log-base);
+        }
+
+        .problem-color-bg {
+            background-color: var(--color-problem-base);
+        }
+
+        .problem-color-text {
+            color: var(--color-problem-base);
+        }
+
         .accent-button {
             background-color: var(--color-accent-amber);
         }
@@ -349,15 +366,14 @@
       <div class="relative z-10 mb-10">
         <div class="flex items-start gap-4">
           <!-- Timeline Dot/Icon -->
-          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white"
-               style="background-color: var(--color-log-base)">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white log-color-bg">
             <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <div class="card-style p-4 flex-1 log-entry-card">
             <div class="flex justify-between items-start mb-2">
               <!-- MODIFIED: Renamed "Work Logged" to "Work" -->
               <div>
-                <span class="font-bold text-lg" style="color: var(--color-log-base);">Work</span>
+                <span class="font-bold text-lg log-color-text">Work</span>
               </div>
               <!-- MODIFIED: Added font-semibold for emphasis on timestamp -->
               <span class="text-gray-500 text-xs mt-1">PinballWizard99 &bull; <span class="font-semibold">2 mins ago</span></span>
@@ -372,18 +388,16 @@
       <div class="relative z-10 mb-10">
         <div class="flex items-start gap-4">
           <!-- Timeline Dot/Icon -->
-          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white"
-               style="background-color: var(--color-problem-base)">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white problem-color-bg">
             <i class="fa-solid fa-bug"></i>
           </div>
           <div class="card-style p-4 flex-1 problem-entry-card">
             <div class="flex justify-between items-start mb-2">
               <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                 <!-- MODIFIED: Removed #402 -->
-                <span class="font-bold text-lg" style="color: var(--color-problem-base);">Problem Report</span>
+                <span class="font-bold text-lg problem-color-text">Problem Report</span>
                 <!-- MODIFIED: Moved "Open" badge back to the right of the title -->
-                <span class="text-white px-2 py-0.5 text-xs font-bold rounded-md inline-block"
-                      style="background-color: var(--color-problem-base)">Open</span>
+                <span class="text-white px-2 py-0.5 text-xs font-bold rounded-md inline-block problem-color-bg">Open</span>
               </div>
               <!-- MODIFIED: Updated timestamp to "Yesterday 10:15am" and added font-semibold -->
               <span class="text-gray-500 text-xs mt-1">Visitor &bull; <span class="font-semibold">Yesterday 10:15am</span></span>
