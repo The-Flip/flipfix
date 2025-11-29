@@ -143,6 +143,7 @@ def create_machine(
     model: MachineModel | None = None,
     slug: str | None = None,
     operational_status: str = MachineInstance.STATUS_GOOD,
+    skip_auto_log: bool = True,
     **kwargs,
 ) -> MachineInstance:
     """Create a test MachineInstance.
@@ -151,6 +152,7 @@ def create_machine(
         model: MachineModel (created if not provided)
         slug: URL slug (auto-generated from model name if not provided)
         operational_status: Machine status (defaults to 'good')
+        skip_auto_log: Skip auto log entry creation (defaults to True for tests)
         **kwargs: Additional fields
 
     Returns:
@@ -160,12 +162,17 @@ def create_machine(
         model = create_machine_model()
     if slug is None:
         slug = f"test-machine-{_next_id('machine')}"
-    return MachineInstance.objects.create(
+
+    instance = MachineInstance(
         model=model,
         slug=slug,
         operational_status=operational_status,
         **kwargs,
     )
+    if skip_auto_log:
+        instance._skip_auto_log = True  # type: ignore[attr-defined]
+    instance.save()
+    return instance
 
 
 def create_problem_report(
