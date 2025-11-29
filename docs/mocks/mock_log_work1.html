@@ -190,6 +190,23 @@
             background-color: var(--color-log-light-bg);
         }
 
+        /* Pill Styles */
+        .pill-style {
+            border-radius: 9999px;
+            padding: 0.4rem 1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            line-height: 1;
+        }
+
+        .status-pill-fixing {
+            background-color: #FEF3C7;
+            color: #B45309;
+            border: 1px solid #FCD34D;
+        }
+
         /* Theme switcher */
         .theme-switcher {
             position: fixed;
@@ -308,7 +325,7 @@
          class="fixed inset-0 hidden md:hidden bg-black opacity-30 z-40"
          onclick="toggleMobileMenu()"></div>
     <!-- === MAIN CONTENT === -->
-    <main id="main-content" class="p-4 lg:p-8 max-w-3xl mx-auto relative">
+    <main id="main-content" class="p-4 lg:p-8 max-w-5xl mx-auto relative">
       <!-- BREADCRUMBS -->
       <div class="text-gray-500 mb-4 flex items-center gap-2 text-sm lg:text-base">
         <a href="#" class="text-gray-500 hover:text-amber-600 transition">Machines</a>
@@ -317,18 +334,24 @@
         <span>/</span>
         <span class="font-semibold text-gray-700">Log Work</span>
       </div>
-      <!-- PAGE HEADER -->
-      <div class="mb-6">
-        <h1 class="text-3xl lg:text-4xl font-extrabold text-gray-800 flex items-center gap-3">
-          <i class="fa-solid fa-screwdriver-wrench log-color-text"></i>
-          Log Work
-        </h1>
-        <p class="text-gray-500 mt-2">
-          Recording maintenance for <span class="font-semibold text-gray-700">The Addams Family</span>
-        </p>
+      <!-- MACHINE CONTEXT HEADER -->
+      <div class="card-style p-6 mb-6">
+        <h1 class="text-4xl lg:text-5xl font-extrabold text-gray-800">Log Work on The Addams Family</h1>
+        <div class="flex flex-wrap items-center gap-3 mt-4">
+          <!-- Status Pill -->
+          <span class="pill-style status-pill-fixing">
+            <i class="fa-solid fa-wrench"></i>
+            <span class="font-semibold">Fixing</span>
+          </span>
+          <!-- Location Pill -->
+          <span class="pill-style bg-gray-100 text-gray-700 border border-gray-300">
+            <i class="fa-solid fa-location-dot"></i>
+            <span class="font-semibold">Workshop</span>
+          </span>
+        </div>
       </div>
-      <!-- FORM CARD -->
-      <form class="card-style p-6 space-y-6">
+      <!-- FORM CARD (narrower, centered) -->
+      <form class="card-style p-6 space-y-6 max-w-3xl mx-auto">
         <!-- LINKED PROBLEM REPORT (Optional - shown when logging against a problem) -->
         <div class="linked-problem-card">
           <div class="flex items-start gap-3">
