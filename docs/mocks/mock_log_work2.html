@@ -414,6 +414,24 @@
               </div>
             </div>
           </div>
+          <!-- WHEN/WHO (visible on mobile, hidden on desktop - shown in sidebar instead) -->
+          <div class="lg:hidden grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
+            <div>
+              <label class="sidebar-label">When</label>
+              <input type="datetime-local"
+                     id="work_date_mobile"
+                     name="work_date"
+                     class="form-input text-sm py-2">
+            </div>
+            <div>
+              <label class="sidebar-label">Maintainers</label>
+              <input type="text"
+                     id="maintainers_mobile"
+                     name="maintainers"
+                     class="form-input text-sm py-2"
+                     placeholder="Add maintainer...">
+            </div>
+          </div>
           <!-- FORM ACTIONS (compact, right-aligned) -->
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3 pt-3 border-t border-gray-200">
             <!-- Close problem checkbox -->
@@ -436,8 +454,8 @@
             </button>
           </div>
         </div>
-        <!-- SIDEBAR: Context & Metadata -->
-        <div class="lg:w-72 shrink-0">
+        <!-- SIDEBAR: Context & Metadata (desktop only) -->
+        <div class="hidden lg:block lg:w-72 shrink-0">
           <div class="card-style p-4 space-y-0 lg:sticky lg:top-20">
             <!-- MACHINE -->
             <div class="sidebar-section">
