@@ -350,18 +350,44 @@
              class="brand-logo">
       </a>
       <!-- Desktop nav (md+) -->
-      <nav class="hidden md:flex gap-4 text-base font-medium">
+      <nav class="hidden md:flex gap-4 text-base font-medium items-center">
         <a href="#" class="px-3 py-1 font-bold nav-active">Machines</a>
         <a href="#" class="px-3 py-1 nav-link">Problem Reports</a>
         <a href="#" class="px-3 py-1 nav-link">Logs</a>
-        <a href="#" class="px-3 py-1 nav-link">Admin</a>
+        <!-- Admin Dropdown (superadmin only) -->
+        <div class="relative">
+          <button id="admin-dropdown-toggle-desktop"
+                  class="px-3 py-1 nav-link flex items-center gap-1"
+                  onclick="toggleAdminMenu('desktop')">
+            Admin <i class="fa-solid fa-caret-down text-xs"></i>
+          </button>
+          <div id="admin-menu-desktop"
+               class="hidden absolute left-0 top-8 w-56 card-style p-3 shadow-xl text-base z-50 dropdown-menu">
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-users-gear mr-2"></i> Shared Accounts</a>
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-envelope mr-2"></i> Invite User</a>
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-toolbox mr-2"></i> Django Admin</a>
+          </div>
+        </div>
       </nav>
       <!-- Mobile nav (icon-only) -->
-      <nav class="flex md:hidden gap-3 text-xl">
+      <nav class="flex md:hidden gap-3 text-xl items-center">
         <a href="#" class="p-2 nav-icon-active"><i class="fa-solid fa-list"></i></a>
         <a href="#" class="p-2 nav-icon"><i class="fa-solid fa-triangle-exclamation"></i></a>
         <a href="#" class="p-2 nav-icon"><i class="fa-solid fa-screwdriver-wrench"></i></a>
-        <a href="#" class="p-2 nav-icon"><i class="fa-solid fa-users"></i></a>
+        <!-- Admin Dropdown (superadmin only) -->
+        <div class="relative">
+          <button id="admin-dropdown-toggle-mobile"
+                  class="p-2 nav-icon"
+                  onclick="toggleAdminMenu('mobile')">
+            <i class="fa-solid fa-users"></i>
+          </button>
+          <div id="admin-menu-mobile"
+               class="hidden absolute right-0 top-10 w-56 card-style p-3 shadow-xl text-base z-50 dropdown-menu">
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-users-gear mr-2"></i> Shared Accounts</a>
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-envelope mr-2"></i> Invite User</a>
+            <a href="#" class="block p-2 dropdown-item rounded-lg"><i class="fa-solid fa-toolbox mr-2"></i> Django Admin</a>
+          </div>
+        </div>
       </nav>
       <div class="flex items-center gap-2 md:gap-4 relative">
         <div id="account-dropdown-toggle"
@@ -566,14 +592,43 @@
       function toggleAccountMenu() {
         const menu = document.getElementById('account-menu');
         menu.classList.toggle('hidden');
+        // Close admin menus when opening account menu
+        document.getElementById('admin-menu-desktop').classList.add('hidden');
+        document.getElementById('admin-menu-mobile').classList.add('hidden');
       }
 
-      // Close menu on outside click
+      // Admin Dropdown
+      function toggleAdminMenu(variant) {
+        const menu = document.getElementById('admin-menu-' + variant);
+        menu.classList.toggle('hidden');
+        // Close the other admin menu and account menu
+        const otherVariant = variant === 'desktop' ? 'mobile' : 'desktop';
+        document.getElementById('admin-menu-' + otherVariant).classList.add('hidden');
+        document.getElementById('account-menu').classList.add('hidden');
+      }
+
+      // Close menus on outside click
       document.addEventListener('click', function(event) {
-        const menu = document.getElementById('account-menu');
-        const toggle = document.getElementById('account-dropdown-toggle');
-        if (menu && toggle && !menu.contains(event.target) && !toggle.contains(event.target)) {
-          menu.classList.add('hidden');
+        const accountMenu = document.getElementById('account-menu');
+        const accountToggle = document.getElementById('account-dropdown-toggle');
+        const adminMenuDesktop = document.getElementById('admin-menu-desktop');
+        const adminToggleDesktop = document.getElementById('admin-dropdown-toggle-desktop');
+        const adminMenuMobile = document.getElementById('admin-menu-mobile');
+        const adminToggleMobile = document.getElementById('admin-dropdown-toggle-mobile');
+
+        // Close account menu if clicking outside
+        if (accountMenu && accountToggle && !accountMenu.contains(event.target) && !accountToggle.contains(event.target)) {
+          accountMenu.classList.add('hidden');
+        }
+
+        // Close admin desktop menu if clicking outside
+        if (adminMenuDesktop && adminToggleDesktop && !adminMenuDesktop.contains(event.target) && !adminToggleDesktop.contains(event.target)) {
+          adminMenuDesktop.classList.add('hidden');
+        }
+
+        // Close admin mobile menu if clicking outside
+        if (adminMenuMobile && adminToggleMobile && !adminMenuMobile.contains(event.target) && !adminToggleMobile.contains(event.target)) {
+          adminMenuMobile.classList.add('hidden');
         }
       });
 
