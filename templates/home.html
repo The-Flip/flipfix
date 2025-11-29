@@ -29,7 +29,7 @@
       <div class="card card--padded space-below-lg">
         <div class="sidebar__label">Beta access</div>
         <div class="sidebar__title">Need an account?</div>
-        <p class="text-muted space-above-sm">During beta you can register yourself to get started.</p>
+        <p class="text-muted space-above-sm">During beta you can register yourself.</p>
         <div class="flex stack-tight space-above-sm">
           <a href="{% url 'self-register' %}" class="btn btn--log">
             <i class="fa-solid fa-user-plus meta"></i>
@@ -41,8 +41,8 @@
     <div class="card card--padded space-below-lg">
       <div class="sidebar__label">Support</div>
       <div class="sidebar__title">Bugs &amp; ideas</div>
-      <p class="text-muted space-above-sm">Found a bug or have an idea? Reach out and let us know.</p>
-      <div class="flex flex-wrap stack-tight space-above-sm">
+      <p class="text-muted space-above-sm">Found a 🪲 or have an 💡?</p>
+      <div class="flex flex-wrap items-center stack-tight space-above-sm">
         <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
            class="btn btn--secondary"
            target="_blank"
@@ -50,6 +50,7 @@
           <i class="fa-brands fa-discord meta"></i>
           Post to Discord
         </a>
+        or
         <a href="https://github.com/deanmoses/the_flip/issues"
            class="btn btn--secondary"
            target="_blank"
@@ -57,35 +58,8 @@
           <i class="fa-brands fa-github meta"></i>
           Open a GitHub Issue
         </a>
+        <em>GitHub requires an account</em>
       </div>
-      <p class="body-small text-muted space-above-sm">GitHub requires an account.</p>
     </div>
-    {% if user.is_superuser %}
-      <div class="card card--padded">
-        <div class="sidebar__label">Admin</div>
-        <div class="sidebar__title">Tools</div>
-        <div class="flex stack-column stack-tight space-above-sm">
-          <a href="{% url 'admin:accounts_invitation_add' %}"
-             class="btn btn--secondary btn--full">
-            <i class="fa-solid fa-user-plus meta"></i>
-            Invite new user
-          </a>
-          <a href="{% url 'terminal-list' %}" class="btn btn--secondary btn--full">
-            <i class="fa-solid fa-display meta"></i>
-            Manage shared terminals
-          </a>
-          <a href="{% url 'admin:catalog_location_changelist' %}"
-             class="btn btn--secondary btn--full">
-            <i class="fa-solid fa-location-dot meta"></i>
-            Manage locations
-          </a>
-          <a href="{% url 'admin:index' %}" class="btn btn--secondary btn--full">
-            <i class="fa-solid fa-toolbox meta"></i>
-            Admin home
-          </a>
-        </div>
-        <p class="body-small text-muted space-above-sm">Visible only to admins.</p>
-      </div>
-    {% endif %}
   </div>
 {% endblock %}

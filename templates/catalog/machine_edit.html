@@ -2,44 +2,144 @@
 {% load core_extras %}
 {% block title %}Edit {{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      <span>›</span>
-      <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.display_name }}</a>
-      <span>›</span>
-      <strong>Edit</strong>
-    </div>
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
+    <span>/</span>
+    <a href="{% url 'maintainer-machine-detail' object.slug %}"
+       class="breadcrumbs__link">{{ object.display_name }}</a>
+    <span>/</span>
+    <span class="breadcrumbs__current">Edit</span>
   </nav>
-  <div class="section-header">
-    <h2>Edit {{ object.display_name }}</h2>
-    <div class="section-header__actions">
-      <a class="btn btn-secondary"
-         href="{% url 'machine-model-edit' object.model.slug %}">Edit Model Info</a>
+  <div class="two-column">
+    <!-- Mobile actions -->
+    <div class="mobile-actions">
+      <a href="{% url 'machine-model-edit' object.model.slug %}"
+         class="btn btn--secondary btn--full">
+        <i class="fa-solid fa-pencil meta"></i>
+        Edit Model
+      </a>
+    </div>
+    <!-- Sidebar -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- Machine info -->
+        <div class="sidebar__section">
+          <div class="sidebar__title">{{ object.display_name }}</div>
+          <div class="sidebar__subtitle">
+            {% if object.model.manufacturer %}{{ object.model.manufacturer }}{% endif %}
+            {% if object.model.manufacturer and object.model.year %}·{% endif %}
+            {% if object.model.year %}{{ object.model.year }}{% endif %}
+          </div>
+          <div class="flex flex-wrap stack-tight space-above-sm"
+               data-update-url="{% url 'machine-inline-update' object.slug %}">
+            <div class="dropdown">
+              <button type="button"
+                      id="status-pill"
+                      class="pill {% if object.operational_status == 'good' %}pill--status-good{% elif object.operational_status == 'fixing' %}pill--status-fixing{% elif object.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                <i class="fa-solid {% if object.operational_status == 'fixing' %}fa-wrench{% elif object.operational_status == 'good' %}fa-check{% elif object.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} meta status-icon"></i>
+                <span class="status-label">{{ object.get_operational_status_display }}</span>
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                {% for value, label in object.STATUS_CHOICES %}
+                  <button type="button"
+                          class="dropdown__item"
+                          data-field="operational_status"
+                          data-value="{{ value }}"
+                          data-label="{{ label }}"
+                          onclick="updateMachineField(this)">{{ label }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="dropdown">
+              <button type="button"
+                      id="location-pill"
+                      class="pill pill--neutral"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                <i class="fa-solid fa-location-dot meta"></i>
+                <span class="location-label">
+                  {% if object.location %}
+                    {{ object.location.name }}
+                  {% else %}
+                    No Location
+                  {% endif %}
+                </span>
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                <button type="button"
+                        class="dropdown__item"
+                        data-field="location"
+                        data-value=""
+                        data-label="No Location"
+                        onclick="updateMachineField(this)">No Location</button>
+                {% for loc in locations %}
+                  <button type="button"
+                          class="dropdown__item"
+                          data-field="location"
+                          data-value="{{ loc.slug }}"
+                          data-label="{{ loc.name }}"
+                          onclick="updateMachineField(this)">{{ loc.name }}</button>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Model section -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Model</div>
+          <div class="sidebar__title">{{ object.model.name }}</div>
+          <a href="{% url 'machine-model-edit' object.model.slug %}"
+             class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-pencil meta"></i>
+            Edit Model
+          </a>
+        </div>
+      </div>
+    </aside>
+    <!-- Main -->
+    <div class="two-column__main">
+      <div class="card card--padded">
+        <form method="post" class="form-main">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="text-problem body-small">
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+          {% for fieldset_title, field_names in form.fieldsets %}
+            <fieldset class="form-section">
+              <legend>{{ fieldset_title }}</legend>
+              {% for field_name in field_names %}
+                {% with field=form|getfield:field_name %}
+                  <div class="form-field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            </fieldset>
+          {% endfor %}
+          <div class="form-actions">
+            <a href="{% url 'maintainer-machine-detail' object.slug %}"
+               class="btn btn--secondary">
+              <i class="fa-solid fa-circle-xmark meta"></i>
+              Cancel
+            </a>
+            <button type="submit" class="btn btn--log">
+              <i class="fa-solid fa-floppy-disk meta"></i>
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-  <section class="card">
-    <form method="post" class="form-container">
-      {% csrf_token %}
-      {{ form.non_field_errors }}
-      {% for fieldset_title, field_names in form.fieldsets %}
-        <fieldset class="form-section">
-          <legend>{{ fieldset_title }}</legend>
-          {% for field_name in field_names %}
-            {% with field=form|getfield:field_name %}
-              <div class="form-field">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-              </div>
-            {% endwith %}
-          {% endfor %}
-        </fieldset>
-      {% endfor %}
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-      </div>
-    </form>
-  </section>
 {% endblock %}

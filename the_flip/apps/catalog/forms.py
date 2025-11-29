@@ -4,13 +4,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
+from the_flip.apps.core.forms import StyledFormMixin
 
 
-class MachineInstanceForm(forms.ModelForm):
+class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
     """Form for editing machine instance details."""
 
     fieldsets = [
-        ("Current State", ["operational_status", "location"]),
         ("Identification", ["name_override", "serial_number"]),
         ("Provenance", ["ownership_credit", "acquisition_notes"]),
     ]
@@ -18,8 +18,6 @@ class MachineInstanceForm(forms.ModelForm):
     class Meta:
         model = MachineInstance
         fields = [
-            "operational_status",
-            "location",
             "name_override",
             "serial_number",
             "ownership_credit",
@@ -42,7 +40,7 @@ class MachineInstanceForm(forms.ModelForm):
         }
 
 
-class MachineModelForm(forms.ModelForm):
+class MachineModelForm(StyledFormMixin, forms.ModelForm):
     """Form for editing a pinball machine model details."""
 
     fieldsets = [
@@ -88,8 +86,8 @@ class MachineModelForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "e.g., Star Trek"}),
             "manufacturer": forms.TextInput(attrs={"placeholder": "e.g., Bally, Williams, Stern"}),
-            "month": forms.NumberInput(attrs={"placeholder": "1-12", "style": "width: 4em;"}),
-            "year": forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 6em;"}),
+            "month": forms.NumberInput(attrs={"placeholder": "1-12", "style": "width: 6em;"}),
+            "year": forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 8em;"}),
             "system": forms.TextInput(attrs={"placeholder": "e.g., WPC-95, System 11"}),
             "scoring": forms.TextInput(attrs={"placeholder": "e.g., Reel, 5 Digit, 7 Digit"}),
             "flipper_count": forms.NumberInput(
@@ -125,7 +123,7 @@ class MachineModelForm(forms.ModelForm):
         }
 
 
-class MachineQuickCreateForm(forms.Form):
+class MachineQuickCreateForm(StyledFormMixin, forms.Form):
     """Quick create form for adding a new machine instance and optionally a new model.
 
     This form allows maintainers to quickly add a machine by either:
@@ -158,7 +156,7 @@ class MachineQuickCreateForm(forms.Form):
     year = forms.IntegerField(
         required=False,
         label="Year",
-        widget=forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 8em;"}),
+        widget=forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 9em;"}),
     )
 
     # Field for naming an instance of an existing model

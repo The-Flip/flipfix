@@ -35,7 +35,7 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView, V
 from PIL import Image, ImageOps
 
 from the_flip.apps.accounts.models import Maintainer
-from the_flip.apps.catalog.models import MachineInstance
+from the_flip.apps.catalog.models import Location, MachineInstance
 from the_flip.apps.maintenance.forms import (
     LogEntryQuickForm,
     ProblemReportForm,
@@ -320,6 +320,7 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         context["active_filter"] = "problems"
         search_query = self.request.GET.get("q", "")
         context["search_form"] = SearchForm(initial={"q": search_query})
+        context["locations"] = Location.objects.all()
         return context
 
 
@@ -535,6 +536,7 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
                 "page_obj": page_obj,
                 "log_entries": page_obj.object_list,
                 "search_form": SearchForm(initial={"q": search_query}),
+                "locations": Location.objects.all(),
             }
         )
         return context

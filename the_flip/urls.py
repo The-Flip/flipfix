@@ -26,6 +26,7 @@ from the_flip.apps.catalog.views import (
     PublicMachineDetailView,
     PublicMachineListView,
 )
+from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
 from the_flip.apps.core.views import HomeView
 from the_flip.apps.maintenance import views as maintenance_views
 from the_flip.views import serve_media
@@ -138,6 +139,11 @@ urlpatterns = [
     path("machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"),
     path("machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"),
     path("qr_codes/", maintenance_views.MachineBulkQRCodeView.as_view(), name="machine-qr-bulk"),
+    path(
+        "machines/<slug:slug>/update/",
+        MachineInlineUpdateView.as_view(),
+        name="machine-inline-update",
+    ),
     # Machine model editing
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
     # API endpoints

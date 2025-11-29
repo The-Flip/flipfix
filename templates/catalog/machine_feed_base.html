@@ -43,6 +43,67 @@
             {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
             {% if machine.model.year %}{{ machine.model.year }}{% endif %}
           </div>
+          <div class="flex flex-wrap stack-tight space-above-sm"
+               data-update-url="{% url 'machine-inline-update' machine.slug %}">
+            <div class="dropdown">
+              <button type="button"
+                      id="status-pill"
+                      class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                <i class="fa-solid {% if machine.operational_status == 'fixing' %}fa-wrench{% elif machine.operational_status == 'good' %}fa-check{% elif machine.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} meta status-icon"></i>
+                <span class="status-label">{{ machine.get_operational_status_display }}</span>
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                {% for value, label in machine.STATUS_CHOICES %}
+                  <button type="button"
+                          class="dropdown__item"
+                          data-field="operational_status"
+                          data-value="{{ value }}"
+                          data-label="{{ label }}"
+                          onclick="updateMachineField(this)">{{ label }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="dropdown">
+              <button type="button"
+                      id="location-pill"
+                      class="pill pill--neutral"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      onclick="toggleDropdown(this)">
+                <i class="fa-solid fa-location-dot meta"></i>
+                <span class="location-label">
+                  {% if machine.location %}
+                    {{ machine.location.name }}
+                  {% else %}
+                    No Location
+                  {% endif %}
+                </span>
+                <i class="fa-solid fa-caret-down meta"></i>
+              </button>
+              <div class="dropdown__menu dropdown__menu--left hidden">
+                <button type="button"
+                        class="dropdown__item"
+                        data-field="location"
+                        data-value=""
+                        data-label="No Location"
+                        onclick="updateMachineField(this)">No Location</button>
+                {% if locations %}
+                  {% for loc in locations %}
+                    <button type="button"
+                            class="dropdown__item"
+                            data-field="location"
+                            data-value="{{ loc.slug }}"
+                            data-label="{{ loc.name }}"
+                            onclick="updateMachineField(this)">{{ loc.name }}</button>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
           {% block sidebar_extras %}{% endblock %}
         </div>
         <!-- ACTIONS -->
@@ -115,6 +176,5 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
-  {% block feed_scripts %}
-  {% endblock %}
+  {% block feed_scripts %}{% endblock %}
 {% endblock extra_scripts %}

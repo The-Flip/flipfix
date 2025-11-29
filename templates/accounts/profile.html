@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Profile · {{ block.super }}{% endblock %}
 {% block content %}
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <span class="breadcrumbs__current">Profile</span>
+  </nav>
   <div class="two-column">
     <!-- Mobile actions -->
     <div class="mobile-actions">
@@ -14,8 +17,14 @@
     <aside class="two-column__sidebar">
       <div class="card card--padded sidebar--sticky">
         <div class="sidebar__section">
-          <div class="sidebar__label">Username</div>
-          <div class="card__title">{{ user.username }}</div>
+          <div class="sidebar__label">Profile</div>
+          <div class="sidebar__title">
+            {% if user.first_name or user.last_name %}
+              {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
+            {% else %}
+              {{ user.username }}
+            {% endif %}
+          </div>
         </div>
         <a href="{% url 'password_change' %}"
            class="btn btn--secondary btn--full">
@@ -34,36 +43,14 @@
               {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
             </div>
           {% endif %}
-          <div class="form-field">
-            <label for="id_first_name" class="form-label">First name</label>
-            <input type="text"
-                   name="first_name"
-                   id="id_first_name"
-                   class="form-input"
-                   value="{{ form.first_name.value|default:'' }}"
-                   autocomplete="given-name">
-            {% for error in form.first_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
-          <div class="form-field">
-            <label for="id_last_name" class="form-label">Last name</label>
-            <input type="text"
-                   name="last_name"
-                   id="id_last_name"
-                   class="form-input"
-                   value="{{ form.last_name.value|default:'' }}"
-                   autocomplete="family-name">
-            {% for error in form.last_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
-          <div class="form-field">
-            <label for="id_email" class="form-label">Email</label>
-            <input type="email"
-                   name="email"
-                   id="id_email"
-                   class="form-input"
-                   value="{{ form.email.value|default:'' }}"
-                   autocomplete="email">
-            {% for error in form.email.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-          </div>
+          {% for field in form %}
+            <div class="form-field">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
           <div class="form-actions">
             <a href="{% url 'home' %}" class="btn btn--secondary">
               <i class="fa-solid fa-circle-xmark meta"></i>

@@ -305,6 +305,11 @@ class MachineUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.request.user.is_staff
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["locations"] = Location.objects.all()
+        return context
+
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
         return super().form_valid(form)
@@ -327,8 +332,11 @@ class MachineModelUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get first instance of this model for breadcrumb navigation
-        context["machine_instance"] = self.object.instances.first()
+        # Get all instances of this model for sidebar
+        instances = self.object.instances.all()
+        context["instances"] = instances
+        # Get first instance for breadcrumb navigation
+        context["machine_instance"] = instances.first() if instances else None
         return context
 
     def form_valid(self, form):
