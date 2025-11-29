@@ -629,27 +629,16 @@ body {
   padding: var(--space-3);
 }
 
-.linked-problem-card__inner {
+.linked-problem-card__header {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-
-.linked-problem-card__icon {
+  align-items: baseline; /* Aligns icon with text baseline */
+  gap: var(--space-1);
   font-size: var(--text-sm);
-  margin-top: 0.125rem; /* mt-0.5 to align with text */
-  flex-shrink: 0;
-}
-
-.linked-problem-card__content {
-  flex: 1;
-  min-width: 0;
 }
 
 .linked-problem-card__number {
   font-weight: var(--font-semibold);
   color: var(--color-problem);
-  font-size: var(--text-sm);
 }
 
 .linked-problem-card__text {
