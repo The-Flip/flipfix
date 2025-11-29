@@ -118,6 +118,11 @@
             border-top: 1px solid var(--color-border-soft);
             font-size: 0.95rem;
             line-height: 1.3;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            min-width: 0;
         }
 
         .snippet-label {
@@ -126,14 +131,24 @@
             align-items: center;
             gap: 0.25rem;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .snippet-text {
+            display: block;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             color: #4b5563;
-            flex: 1;
+            min-width: 0;
+            max-width: 100%;
+            flex: 1 1 auto;
+        }
+
+        .activity-card {
+            min-width: 0;
+            max-width: 100%;
+            width: 100%;
         }
 
         .accent-button {
@@ -395,7 +410,7 @@
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white log-color-bg">
             <i class="fa-solid fa-screwdriver-wrench"></i>
           </div>
-          <div class="card-style p-4 flex-1 log-entry-card">
+          <div class="card-style p-4 flex-1 log-entry-card activity-card">
             <div class="flex justify-between items-start mb-2">
               <div>
                 <span class="font-bold text-lg log-color-text">Work</span>
@@ -418,7 +433,7 @@
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white log-color-bg">
             <i class="fa-solid fa-screwdriver-wrench"></i>
           </div>
-          <div class="card-style p-4 flex-1 log-entry-card">
+          <div class="card-style p-4 flex-1 log-entry-card activity-card">
             <div class="flex justify-between items-start mb-2">
               <div>
                 <span class="font-bold text-lg log-color-text">Work</span>
@@ -437,7 +452,7 @@
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white problem-color-bg">
             <i class="fa-solid fa-bug"></i>
           </div>
-          <div class="card-style p-4 flex-1 problem-entry-card">
+          <div class="card-style p-4 flex-1 problem-entry-card activity-card">
             <div class="flex justify-between items-start mb-2">
               <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span class="font-bold text-lg problem-color-text">Problem Report</span>
@@ -448,7 +463,7 @@
             <p class="mb-3 text-base text-gray-800">Top right flipper barely moves when I hit the button. Ball gets stuck.</p>
             <div class="snippet-row">
               <span class="snippet-label log-color-text"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Latest log:</span>
-              <span class="snippet-text">Replaced the coil on the upper right flipper. It was showing resistance issues.</span>
+              <span class="snippet-text">Replaced the coil on the upper right flipper. It was showing resistance issues. Test played one game, feels snappy now.</span>
             </div>
           </div>
         </div>
@@ -459,7 +474,7 @@
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm shrink-0 mt-1 shadow-md border-2 border-white problem-color-bg">
             <i class="fa-solid fa-bug"></i>
           </div>
-          <div class="card-style p-4 flex-1 problem-entry-card">
+          <div class="card-style p-4 flex-1 problem-entry-card activity-card">
             <div class="flex justify-between items-start mb-2">
               <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span class="font-bold text-lg problem-color-text">Problem Report</span>
