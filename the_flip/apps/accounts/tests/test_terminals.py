@@ -58,13 +58,13 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
         self.assertContains(response, "Workshop Terminal")
 
     def test_shows_deactivated_label(self):
-        """Deactivated terminals should show (deactivated) label."""
+        """Deactivated terminals should show Deactivated pill."""
         self.terminal.user.is_active = False
         self.terminal.user.save()
 
         self.client.login(username="admin", password="testpass123")
         response = self.client.get(self.list_url)
-        self.assertContains(response, "(deactivated)")
+        self.assertContains(response, "Deactivated")
 
     def test_empty_state(self):
         """Should show message when no terminals exist."""
@@ -72,7 +72,7 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
 
         self.client.login(username="admin", password="testpass123")
         response = self.client.get(self.list_url)
-        self.assertContains(response, "No shared terminal accounts have been created yet")
+        self.assertContains(response, "No shared terminal accounts yet")
 
 
 @tag("views", "terminals")
@@ -241,7 +241,7 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
 
         self.client.login(username="admin", password="testpass123")
         response = self.client.get(self.edit_url)
-        self.assertContains(response, "Re-activate")
+        self.assertContains(response, "Reactivate")
 
 
 @tag("views", "terminals")

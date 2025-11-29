@@ -1,90 +1,107 @@
-{% extends "base_public_minimal.html" %}
-{% block title %}Register - The Flip{% endblock %}
+{% extends "base.html" %}
+{% block title %}Register · {{ block.super }}{% endblock %}
 {% block content %}
-  <h2>Register</h2>
-  <p>Create a new account or claim an existing one that was imported with the legacy maintenance records.</p>
-  <form method="post" id="registration-form">
+  <!-- TWO COLUMN LAYOUT: Main Form + Sidebar -->
+  <form method="post" id="registration-form" class="two-column">
     {% csrf_token %}
-    {% if form.non_field_errors %}
-      <div class="form-errors">
-        {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <div class="sidebar__section">
+          <div class="sidebar__label">Register</div>
+          <p class="text-muted text-sm">
+            Create a new account or claim an existing one that was imported with the legacy maintenance records.
+          </p>
+        </div>
       </div>
-    {% endif %}
-    <!-- Username section -->
-    <div class="form-field">
-      <label for="id_username">Username</label>
-      <div class="input-with-button">
-        <input type="text"
-               name="username"
-               id="id_username"
-               value="{{ form.username.value|default:'' }}"
-               required
-               autocomplete="off"
-               list="username-suggestions"
-               placeholder="New or existing username"
-               data-1p-ignore="true"
-               data-lpignore="true">
-        <button type="button" id="check-username-btn" class="btn btn-secondary">Check</button>
-      </div>
-      <datalist id="username-suggestions"></datalist>
-      <small id="username-status"></small>
-      {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
-      <a href="{% url 'home' %}"
-         class="btn btn-secondary"
-         id="cancel-username">Cancel</a>
-    </div>
-    <!-- Profile section (revealed after username check) -->
-    <div id="profile-section" class="profile-section" hidden>
-      <p id="registering-as" class="registering-as"></p>
-      <!-- Hidden username field for password managers -->
-      <input type="hidden"
-             name="username_hidden"
-             autocomplete="username"
-             id="id_username_hidden">
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main form-main">
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      <!-- Username section -->
       <div class="form-field">
-        <label for="id_first_name">First name</label>
-        <input type="text"
-               name="first_name"
-               id="id_first_name"
-               value="{{ form.first_name.value|default:'' }}"
-               autocomplete="given-name">
-        {% for error in form.first_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+        <label for="id_username" class="form-label">Username</label>
+        <div class="input-with-button">
+          <input type="text"
+                 name="username"
+                 id="id_username"
+                 class="form-input"
+                 value="{{ form.username.value|default:'' }}"
+                 required
+                 autocomplete="off"
+                 list="username-suggestions"
+                 placeholder="New or existing username"
+                 data-1p-ignore="true"
+                 data-lpignore="true">
+          <button type="button" id="check-username-btn" class="btn btn--secondary">Check</button>
+        </div>
+        <datalist id="username-suggestions"></datalist>
+        <small id="username-status"></small>
+        {% for error in form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
       </div>
-      <div class="form-field">
-        <label for="id_last_name">Last name</label>
-        <input type="text"
-               name="last_name"
-               id="id_last_name"
-               value="{{ form.last_name.value|default:'' }}"
-               autocomplete="family-name">
-        {% for error in form.last_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      <!-- Profile section (revealed after username check) -->
+      <div id="profile-section" class="profile-section" hidden>
+        <p id="registering-as" class="registering-as"></p>
+        <!-- Hidden username field for password managers -->
+        <input type="hidden"
+               name="username_hidden"
+               autocomplete="username"
+               id="id_username_hidden">
+        <div class="form-field">
+          <label for="id_first_name" class="form-label">First name</label>
+          <input type="text"
+                 name="first_name"
+                 id="id_first_name"
+                 class="form-input"
+                 value="{{ form.first_name.value|default:'' }}"
+                 autocomplete="given-name">
+          {% for error in form.first_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label for="id_last_name" class="form-label">Last name</label>
+          <input type="text"
+                 name="last_name"
+                 id="id_last_name"
+                 class="form-input"
+                 value="{{ form.last_name.value|default:'' }}"
+                 autocomplete="family-name">
+          {% for error in form.last_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label for="id_email" class="form-label">
+            Email <span class="text-muted">(optional)</span>
+          </label>
+          <input type="email"
+                 name="email"
+                 id="id_email"
+                 class="form-input"
+                 value="{{ form.email.value|default:'' }}"
+                 autocomplete="email">
+          {% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label for="id_password" class="form-label">Password</label>
+          <input type="text"
+                 name="password"
+                 id="id_password"
+                 class="form-input"
+                 required
+                 autocomplete="new-password">
+          <label class="checkbox-label space-above-sm">
+            <input type="checkbox" id="hide-password" class="checkbox">
+            <span>Hide password</span>
+          </label>
+          {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-actions">
+          <a href="{% url 'home' %}" class="btn btn--secondary">Cancel</a>
+          <button type="submit" class="btn btn--primary">Register</button>
+        </div>
       </div>
-      <div class="form-field">
-        <label for="id_email">
-          Email <span class="optional">(optional)</span>
-        </label>
-        <input type="email"
-               name="email"
-               id="id_email"
-               value="{{ form.email.value|default:'' }}"
-               autocomplete="email">
-        {% for error in form.email.errors %}<p class="error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="form-field">
-        <label for="id_password">Password</label>
-        <input type="text"
-               name="password"
-               id="id_password"
-               required
-               autocomplete="new-password">
-        <label class="checkbox-label">
-          <input type="checkbox" id="hide-password">
-          Hide password
-        </label>
-        {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
-      </div>
-      <button type="submit" class="btn btn-primary">Register</button>
-      <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
   <script>
@@ -98,7 +115,6 @@
       const datalist = document.getElementById('username-suggestions');
       const passwordInput = document.getElementById('id_password');
       const hidePasswordCheckbox = document.getElementById('hide-password');
-      const cancelUsername = document.getElementById('cancel-username');
 
       let debounceTimer;
 
@@ -146,14 +162,12 @@
               statusEl.textContent = data.exists ? 'Available to claim' : 'Available';
               statusEl.className = 'available';
               profileSection.hidden = false;
-              cancelUsername.style.display = 'none';
               usernameHidden.value = username;
               registeringAs.innerHTML = (data.exists ? 'Claiming existing account: ' : 'Registering as: ') + '<code>' + username + '</code>';
               // Focus the first name field
               document.getElementById('id_first_name').focus();
             } else {
               statusEl.textContent = 'Not available';
-              cancelUsername.style.display = '';
               statusEl.className = 'unavailable';
               profileSection.hidden = true;
             }
@@ -178,7 +192,6 @@
       // If form has errors, show profile section
       {% if form.errors %}
         profileSection.hidden = false;
-        cancelUsername.style.display = 'none';
         usernameHidden.value = usernameInput.value;
         registeringAs.innerHTML = 'Registering as: ' + '<code>' + usernameInput.value + '</code>';
       {% endif %}

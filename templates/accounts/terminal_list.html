@@ -1,34 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Shared Terminal Accounts · {{ block.super }}{% endblock %}
+{% load static %}
+{% block title %}Shared Terminals · {{ block.super }}{% endblock %}
 {% block content %}
-  <div class="section-header">
-    <h2>Shared Terminal Accounts</h2>
-    <div class="section-header__actions">
-      <a href="{% url 'terminal-add' %}" class="btn btn-primary">Add Terminal</a>
+  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
+  <div class="two-column">
+    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
+    <div class="mobile-actions">
+      <a href="{% url 'terminal-add' %}" class="btn btn--secondary">
+        <i class="fa-solid fa-plus meta"></i>
+        Add Terminal
+      </a>
+    </div>
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- HEADING -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Shared Terminal Accounts</div>
+          <p class="text-muted text-sm">Terminal accounts are shared logins for museum kiosks and workstations.</p>
+        </div>
+        <!-- ACTIONS -->
+        <div class="sidebar__section">
+          <a href="{% url 'terminal-add' %}" class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-plus meta"></i>
+            Add Terminal
+          </a>
+        </div>
+      </div>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      {% if terminals %}
+        <div class="terminal-list">
+          {% for terminal in terminals %}
+            <div class="terminal-card">
+              <div class="terminal-card__info">
+                <div class="terminal-card__name">{{ terminal.display_name }}</div>
+                {% if not terminal.user.is_active %}<span class="pill pill--neutral">Deactivated</span>{% endif %}
+              </div>
+              <div class="terminal-card__actions">
+                <a href="{% url 'terminal-edit' terminal.pk %}"
+                   class="btn btn--secondary btn--sm">Edit</a>
+                {% if terminal.user.is_active %}
+                  <form method="post" action="{% url 'terminal-login' terminal.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn--primary btn--sm">Login</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted">No shared terminal accounts yet.</p>
+      {% endif %}
     </div>
   </div>
-  {% if terminals %}
-    <ul class="list">
-      {% for terminal in terminals %}
-        <li class="card terminal-card">
-          <div class="terminal-card__info">
-            <span class="terminal-card__name">{{ terminal.display_name }}</span>
-            {% if not terminal.user.is_active %}<span class="text-muted">(deactivated)</span>{% endif %}
-          </div>
-          <div class="terminal-card__actions">
-            {% if terminal.user.is_active %}
-              <form method="post" action="{% url 'terminal-login' terminal.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">Login</button>
-              </form>
-            {% endif %}
-            <a href="{% url 'terminal-edit' terminal.pk %}"
-               class="btn btn-secondary">Edit</a>
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No shared terminal accounts have been created yet.</p>
-  {% endif %}
 {% endblock %}

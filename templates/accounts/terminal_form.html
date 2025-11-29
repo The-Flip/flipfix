@@ -8,92 +8,131 @@
   · {{ block.super }}
 {% endblock %}
 {% block content %}
-  <nav class="page-header">
-    <div class="page-header__left breadcrumb">
-      <a href="{% url 'terminal-list' %}">Shared Terminal Accounts</a>
-      <span>›</span>
-      {% if is_create %}
-        <strong>Add Terminal</strong>
-      {% else %}
-        <strong><code>{{ terminal.user.username }}</code></strong>
-      {% endif %}
-    </div>
-  </nav>
-  {% if not is_create %}
-    <div class="section-header">
-      <h2>
-        Edit Terminal <code>{{ terminal.user.username }}</code>
-      </h2>
-      <div class="section-header__actions">
+  <div class="two-column">
+    <!-- Mobile actions -->
+    {% if not is_create %}
+      <div class="mobile-actions">
         {% if terminal.user.is_active %}
           <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-secondary">Deactivate</button>
+            <button type="submit" class="btn btn--report btn--full">
+              <i class="fa-solid fa-ban meta"></i>
+              Deactivate
+            </button>
           </form>
         {% else %}
           <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Re-activate</button>
+            <button type="submit" class="btn btn--log btn--full">
+              <i class="fa-solid fa-rotate-left meta"></i>
+              Reactivate
+            </button>
           </form>
         {% endif %}
       </div>
-    </div>
-  {% else %}
-    <h2>Add Terminal</h2>
-  {% endif %}
-  <form method="post" autocomplete="off">
-    {% csrf_token %}
-    {% if form.non_field_errors %}
-      <div class="form-errors">
-        {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
-      </div>
     {% endif %}
-    {% if is_create %}
-      <div class="form-field">
-        <label for="id_username">Username</label>
-        <input type="text"
-               name="username"
-               id="id_username"
-               value="{{ form.username.value|default:'' }}"
-               autocomplete="off"
-               data-1p-ignore
-               data-lpignore="true"
-               required>
-        {% if form.username.help_text %}<p class="text-muted">{{ form.username.help_text }}</p>{% endif %}
-        {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
-      </div>
-    {% endif %}
-    <div class="form-field">
-      <label for="id_first_name">First name</label>
-      <input type="text"
-             name="first_name"
-             id="id_first_name"
-             value="{{ form.first_name.value|default:'' }}"
-             autocomplete="off"
-             data-1p-ignore
-             data-lpignore="true">
-      {% for error in form.first_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_last_name">Last name</label>
-      <input type="text"
-             name="last_name"
-             id="id_last_name"
-             value="{{ form.last_name.value|default:'' }}"
-             autocomplete="off"
-             data-1p-ignore
-             data-lpignore="true">
-      {% for error in form.last_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">
-        {% if is_create %}
-          Create Terminal
-        {% else %}
-          Save Changes
+    <!-- Sidebar -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <div class="sidebar__section">
+          <div class="sidebar__label">Shared Terminal</div>
+          {% if not is_create %}
+            <div class="sidebar__title">
+              <code>{{ terminal.user.username }}</code>
+            </div>
+          {% else %}
+            <div class="sidebar__title text-muted">New terminal</div>
+          {% endif %}
+        </div>
+        {% if not is_create %}
+          <div class="sidebar__section">
+            {% if terminal.user.is_active %}
+              <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--report btn--full">
+                  <i class="fa-solid fa-ban meta"></i>
+                  Deactivate
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--log btn--full">
+                  <i class="fa-solid fa-rotate-left meta"></i>
+                  Reactivate
+                </button>
+              </form>
+            {% endif %}
+          </div>
         {% endif %}
-      </button>
-      <a href="{% url 'terminal-list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </aside>
+    <!-- Main -->
+    <div class="two-column__main">
+      <div class="card card--padded">
+        <form method="post" autocomplete="off" class="form-main">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="text-problem body-small">
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+          {% if is_create %}
+            <div class="form-field">
+              <label for="id_username" class="form-label">Username</label>
+              <input type="text"
+                     name="username"
+                     id="id_username"
+                     class="form-input"
+                     value="{{ form.username.value|default:'' }}"
+                     autocomplete="off"
+                     data-1p-ignore
+                     data-lpignore="true"
+                     required>
+              {% if form.username.help_text %}<p class="text-muted body-small">{{ form.username.help_text }}</p>{% endif %}
+              {% for error in form.username.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+            </div>
+          {% endif %}
+          <div class="form-field">
+            <label for="id_first_name" class="form-label">First name</label>
+            <input type="text"
+                   name="first_name"
+                   id="id_first_name"
+                   class="form-input"
+                   value="{{ form.first_name.value|default:'' }}"
+                   autocomplete="off"
+                   data-1p-ignore
+                   data-lpignore="true">
+            {% for error in form.first_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label for="id_last_name" class="form-label">Last name</label>
+            <input type="text"
+                   name="last_name"
+                   id="id_last_name"
+                   class="form-input"
+                   value="{{ form.last_name.value|default:'' }}"
+                   autocomplete="off"
+                   data-1p-ignore
+                   data-lpignore="true">
+            {% for error in form.last_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-actions">
+            <a href="{% url 'terminal-list' %}" class="btn btn--secondary">
+              <i class="fa-solid fa-circle-xmark meta"></i>
+              Cancel
+            </a>
+            <button type="submit" class="btn btn--log">
+              <i class="fa-solid fa-floppy-disk meta"></i>
+              {% if is_create %}
+                Create Terminal
+              {% else %}
+                Save Changes
+              {% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  </form>
+  </div>
 {% endblock %}

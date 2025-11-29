@@ -1,48 +1,91 @@
 {% extends "base.html" %}
 {% block title %}Home · {{ block.super }}{% endblock %}
 {% block content %}
-  {% if is_shared_account %}
-    <div class="card">
-      <h3>{{ user.maintainer.display_name }} (Shared)</h3>
-      <p>This is a shared account. You'll need to select your username when logging work.</p>
+  <div class="flex stack-column stack-tight">
+    {% if is_shared_account %}
+      <div class="card card--padded space-below-lg">
+        <div class="sidebar__label">Shared account</div>
+        <div class="sidebar__title">{{ user.maintainer.display_name }} (Shared)</div>
+        <p class="text-muted space-above-sm">This account is shared. Be sure to pick your username whenever you log work.</p>
+        <div class="flex flex-wrap stack-tight space-above-sm">
+          <a href="{% url 'log-list' %}" class="btn btn--log">
+            <i class="fa-solid fa-screwdriver-wrench meta"></i>
+            View Logs
+          </a>
+          <a href="{% url 'problem-report-list' %}" class="btn btn--report">
+            <i class="fa-solid fa-bug meta"></i>
+            View Problems
+          </a>
+          <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+            <i class="fa-solid fa-list meta"></i>
+            Machines
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div class="card card--padded space-below-lg">
+        <div class="sidebar__title">Welcome to The Flip's pinball machine maintenance system.</div>
+      </div>
+      <div class="card card--padded space-below-lg">
+        <div class="sidebar__label">Beta access</div>
+        <div class="sidebar__title">Need an account?</div>
+        <p class="text-muted space-above-sm">During beta you can register yourself to get started.</p>
+        <div class="flex stack-tight space-above-sm">
+          <a href="{% url 'self-register' %}" class="btn btn--log">
+            <i class="fa-solid fa-user-plus meta"></i>
+            Register
+          </a>
+        </div>
+      </div>
+    {% endif %}
+    <div class="card card--padded space-below-lg">
+      <div class="sidebar__label">Support</div>
+      <div class="sidebar__title">Bugs &amp; ideas</div>
+      <p class="text-muted space-above-sm">Found a bug or have an idea? Reach out and let us know.</p>
+      <div class="flex flex-wrap stack-tight space-above-sm">
+        <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
+           class="btn btn--secondary"
+           target="_blank"
+           rel="noopener">
+          <i class="fa-brands fa-discord meta"></i>
+          Post to Discord
+        </a>
+        <a href="https://github.com/deanmoses/the_flip/issues"
+           class="btn btn--secondary"
+           target="_blank"
+           rel="noopener">
+          <i class="fa-brands fa-github meta"></i>
+          Open a GitHub Issue
+        </a>
+      </div>
+      <p class="body-small text-muted space-above-sm">GitHub requires an account.</p>
     </div>
-  {% else %}
-    <div class="card">
-      <p>Welcome to The Flip's pinball machine maintenance system.</p>
-    </div>
-    <div class="card">
-      <h3>👤  Register</h3>
-      <p>During beta, you can register yourself.</p>
-      <a href="{% url 'self-register' %}" class="btn btn-primary">Register</a>
-    </div>
-  {% endif %}
-  <div class="card">
-    <h3>🪲 Bugs &amp; 💡 Feature Requests</h3>
-    <p>Found a bug?  Have an idea?</p>
-    <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
-       class="btn btn-primary">Post to The Flip Discord</a>
-    or
-    <a href="https://github.com/deanmoses/the_flip/issues"
-       class="btn btn-primary">Create a GitHub Issue</a> <em>(requires GitHub account)</em>
+    {% if user.is_superuser %}
+      <div class="card card--padded">
+        <div class="sidebar__label">Admin</div>
+        <div class="sidebar__title">Tools</div>
+        <div class="flex stack-column stack-tight space-above-sm">
+          <a href="{% url 'admin:accounts_invitation_add' %}"
+             class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-user-plus meta"></i>
+            Invite new user
+          </a>
+          <a href="{% url 'terminal-list' %}" class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-display meta"></i>
+            Manage shared terminals
+          </a>
+          <a href="{% url 'admin:catalog_location_changelist' %}"
+             class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-location-dot meta"></i>
+            Manage locations
+          </a>
+          <a href="{% url 'admin:index' %}" class="btn btn--secondary btn--full">
+            <i class="fa-solid fa-toolbox meta"></i>
+            Admin home
+          </a>
+        </div>
+        <p class="body-small text-muted space-above-sm">Visible only to admins.</p>
+      </div>
+    {% endif %}
   </div>
-  {% if user.is_superuser %}
-    <div class="card">
-      <h3>Admin</h3>
-      <ul>
-        <li>
-          <a href="{% url 'admin:accounts_invitation_add' %}">Invite new user</a>
-        </li>
-        <li>
-          <a href="{% url 'terminal-list' %}">Manage shared terminals</a>
-        </li>
-        <li>
-          <a href="{% url 'admin:catalog_location_changelist' %}">Manage locations</a>
-        </li>
-        <li>
-          <a href="{% url 'admin:index' %}">Admin home</a>
-        </li>
-      </ul>
-      <em>This only appears for admins</em>
-    </div>
-  {% endif %}
 {% endblock %}
