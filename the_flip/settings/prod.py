@@ -4,6 +4,9 @@ import os
 import sys
 
 DEBUG = False
+
+# Base URL for webhook links
+SITE_URL = "https://the-flip-production.up.railway.app"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = True
