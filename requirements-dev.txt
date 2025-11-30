@@ -14,3 +14,6 @@ coverage==7.6.9
 
 # Pre-commit hooks
 pre-commit==4.0.1
+
+# Security auditing
+pip-audit==2.7.3

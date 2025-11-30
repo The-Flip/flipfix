@@ -1,5 +1,9 @@
 name: CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main ]
@@ -51,6 +55,9 @@ jobs:
       with:
         python-version: '3.13'
         cache: 'pip'
+        cache-dependency-path: |
+          requirements.txt
+          requirements-dev.txt
 
     - name: Install system dependencies
       run: |
@@ -68,12 +75,9 @@ jobs:
         mkdir -p static_collected
         mkdir -p media
 
-    - name: Run tests
-      env:
-        DJANGO_SETTINGS_MODULE: the_flip.settings.test
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-      run: |
-        python manage.py test
+    # Fast checks first (fail fast)
+    - name: Check formatting
+      run: ruff format . --check
 
     - name: Run linting
       run: |
@@ -81,5 +85,20 @@ jobs:
         python -m djlint templates/ --check
 
     - name: Run type checking
-      run: |
-        mypy the_flip
+      run: mypy the_flip
+
+    - name: Check for missing migrations
+      env:
+        DJANGO_SETTINGS_MODULE: the_flip.settings.test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: python manage.py makemigrations --check --dry-run
+
+    - name: Audit dependencies for vulnerabilities
+      run: pip-audit
+
+    # Slower checks last
+    - name: Run tests
+      env:
+        DJANGO_SETTINGS_MODULE: the_flip.settings.test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: python manage.py test
