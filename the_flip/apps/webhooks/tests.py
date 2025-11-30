@@ -118,8 +118,12 @@ class DiscordFormatterTests(TestCase):
         self.assertIn("embeds", message)
         self.assertEqual(len(message["embeds"]), 1)
         embed = message["embeds"][0]
-        self.assertEqual(embed["title"], "New Problem Report")
-        self.assertIn(self.machine.display_name, embed["description"])
+        # Title includes emoji and machine name
+        self.assertIn("⚠️", embed["title"])
+        self.assertIn("Problem Report:", embed["title"])
+        self.assertIn(self.machine.display_name, embed["title"])
+        # Should have Visitor attribution since no reporter
+        self.assertIn("— Visitor", embed["description"])
 
     def test_format_log_entry_created(self):
         """Format a new log entry message."""
@@ -127,8 +131,43 @@ class DiscordFormatterTests(TestCase):
         message = format_discord_message("log_entry_created", log_entry)
 
         embed = message["embeds"][0]
-        self.assertEqual(embed["title"], "Work Logged")
-        self.assertIn(self.machine.display_name, embed["description"])
+        # Title includes emoji and machine name
+        self.assertIn("🗒️", embed["title"])
+        self.assertIn("Log:", embed["title"])
+        self.assertIn(self.machine.display_name, embed["title"])
+        # Log text is the description
+        self.assertIn(log_entry.text, embed["description"])
+
+    def test_format_log_entry_with_photos(self):
+        """Format a log entry with photos creates multiple embeds for gallery."""
+        from django.core.files.base import ContentFile
+
+        from the_flip.apps.maintenance.models import LogEntryMedia
+
+        log_entry = create_log_entry(machine=self.machine, created_by=self.staff_user)
+
+        # Create mock photos (just need file field to have a value)
+        for i in range(3):
+            media = LogEntryMedia(
+                log_entry=log_entry,
+                media_type=LogEntryMedia.TYPE_PHOTO,
+                display_order=i,
+            )
+            media.file.save(f"test{i}.jpg", ContentFile(b"fake image data"), save=True)
+
+        message = format_discord_message("log_entry_created", log_entry)
+
+        # Should have 3 embeds (main + 2 additional for gallery effect)
+        self.assertEqual(len(message["embeds"]), 3)
+
+        # First embed has title and description
+        self.assertIn("🗒️", message["embeds"][0]["title"])
+        self.assertIn("image", message["embeds"][0])
+
+        # Additional embeds only have image and url (same url for gallery linking)
+        for embed in message["embeds"][1:]:
+            self.assertIn("image", embed)
+            self.assertEqual(embed["url"], message["embeds"][0]["url"])
 
     def test_format_test_message(self):
         """Format a test message."""

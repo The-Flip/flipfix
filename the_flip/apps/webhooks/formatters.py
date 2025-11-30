@@ -32,26 +32,27 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     base_url = get_base_url()
     url = base_url + reverse("problem-report-detail", kwargs={"pk": report.pk})
 
-    # Build description
-    lines = []
-    lines.append(f"**Machine:** {report.machine.display_name}")
-    if report.machine.location:
-        lines.append(f"**Location:** {report.machine.location}")
-    lines.append(f"**Problem:** {report.get_problem_type_display()}")
+    # Build description: [problem type]: [description] (omit type if "Other")
+    parts = []
+    if report.problem_type != "other":
+        parts.append(report.get_problem_type_display())
     if report.description:
-        # Truncate long descriptions
         desc = report.description[:200]
         if len(report.description) > 200:
             desc += "..."
-        lines.append(f"**Details:** {desc}")
-    if report.reporter_display:
-        lines.append(f"**Reported by:** {report.reporter_display}")
+        parts.append(desc)
+
+    description = ": ".join(parts) if len(parts) > 1 else (parts[0] if parts else "")
+
+    # Add reporter with em dash (default to "Visitor" if no reporter info)
+    reporter = report.reporter_display or "Visitor"
+    description += f"\n\n— {reporter}"
 
     return {
         "embeds": [
             {
-                "title": "New Problem Report",
-                "description": "\n".join(lines),
+                "title": f"⚠️ Problem Report: {report.machine.display_name}",
+                "description": description,
                 "url": url,
                 "color": 15158332,  # Red color for problems
             }
@@ -61,44 +62,64 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
 
 def _format_log_entry_created(log_entry: LogEntry) -> dict:
     """Format a new log entry notification."""
+    from the_flip.apps.maintenance.models import LogEntryMedia
+
     base_url = get_base_url()
     url = base_url + reverse("log-detail", kwargs={"pk": log_entry.pk})
 
-    lines = []
-    lines.append(f"**Machine:** {log_entry.machine.display_name}")
+    # Main description is the log entry text (truncate if needed)
+    description = log_entry.text[:500]
+    if len(log_entry.text) > 500:
+        description += "..."
 
-    # Get maintainers
+    # Get maintainer names
     maintainer_names = []
     for m in log_entry.maintainers.all():
         maintainer_names.append(m.user.get_full_name() or m.user.username)
     if log_entry.maintainer_names:
         maintainer_names.append(log_entry.maintainer_names)
+
+    # Add maintainer names with a visual prefix
     if maintainer_names:
-        lines.append(f"**By:** {', '.join(maintainer_names)}")
+        description += f"\n\n— {', '.join(maintainer_names)}"
 
-    # Work date
-    lines.append(f"**Date:** {log_entry.work_date.strftime('%b %d, %Y')}")
-
-    # Work description (truncate if needed)
-    text = log_entry.text[:300]
-    if len(log_entry.text) > 300:
-        text += "..."
-    lines.append(f"**Work:** {text}")
-
-    # If linked to a problem report
-    if log_entry.problem_report:
-        lines.append(f"**Related Problem:** {log_entry.problem_report.get_problem_type_display()}")
-
-    return {
-        "embeds": [
-            {
-                "title": "Work Logged",
-                "description": "\n".join(lines),
-                "url": url,
-                "color": 3447003,  # Blue color for work logs
-            }
-        ]
+    # Build the main embed
+    main_embed: dict[str, Any] = {
+        "title": f"🗒️ Log: {log_entry.machine.display_name}",
+        "description": description,
+        "url": url,
+        "color": 3447003,  # Blue color for work logs
     }
+
+    # Get photo URLs (up to 4 for Discord gallery effect)
+    photos = list(
+        log_entry.media.filter(media_type=LogEntryMedia.TYPE_PHOTO)  # type: ignore[attr-defined]
+        .exclude(file="")
+        .order_by("display_order", "created_at")[:4]
+    )
+
+    embeds = []
+    if photos:
+        # First photo goes in the main embed
+        first_photo = photos[0]
+        image_url = base_url + first_photo.file.url
+        main_embed["image"] = {"url": image_url}
+        embeds.append(main_embed)
+
+        # Additional photos get their own embeds with same url (creates gallery)
+        for photo in photos[1:]:
+            image_url = base_url + photo.file.url
+            embeds.append(
+                {
+                    "url": url,  # Same URL links them visually in Discord
+                    "image": {"url": image_url},
+                    "color": 3447003,
+                }
+            )
+    else:
+        embeds.append(main_embed)
+
+    return {"embeds": embeds}
 
 
 def format_test_message(event_type: str) -> dict:
