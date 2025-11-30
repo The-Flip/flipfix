@@ -15,19 +15,73 @@
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">
     <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions">
+    <div class="mobile-actions"
+         data-update-url="{% url 'machine-inline-update' machine.slug %}">
+      <div class="dropdown">
+        <button type="button"
+                class="btn btn--icon-only status-btn {% if machine.operational_status == 'good' %}btn--status-good{% elif machine.operational_status == 'fixing' %}btn--status-fixing{% elif machine.operational_status == 'broken' %}btn--status-broken{% else %}btn--secondary{% endif %}"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Change status"
+                title="Status: {{ machine.get_operational_status_display }}"
+                onclick="toggleDropdown(this)">
+          <i class="fa-solid {% if machine.operational_status == 'fixing' %}fa-wrench{% elif machine.operational_status == 'good' %}fa-check{% elif machine.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} status-icon"></i>
+        </button>
+        <div class="dropdown__menu dropdown__menu--left hidden">
+          {% for value, label in machine.STATUS_CHOICES %}
+            <button type="button"
+                    class="dropdown__item{% if value == machine.operational_status %} dropdown__item--selected{% endif %}"
+                    data-field="operational_status"
+                    data-value="{{ value }}"
+                    data-label="{{ label }}"
+                    onclick="updateMachineField(this)">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="dropdown">
+        <button type="button"
+                class="btn btn--icon-only btn--secondary location-btn"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="Change location"
+                title="Location: {% if machine.location %}{{ machine.location.name }}{% else %}None{% endif %}"
+                onclick="toggleDropdown(this)">
+          <i class="fa-solid fa-location-dot"></i>
+        </button>
+        <div class="dropdown__menu dropdown__menu--left hidden">
+          {% if locations %}
+            {% for loc in locations %}
+              <button type="button"
+                      class="dropdown__item{% if machine.location.slug == loc.slug %} dropdown__item--selected{% endif %}"
+                      data-field="location"
+                      data-value="{{ loc.slug }}"
+                      data-label="{{ loc.name }}"
+                      onclick="updateMachineField(this)">{{ loc.name }}</button>
+            {% endfor %}
+          {% endif %}
+          <button type="button"
+                  class="dropdown__item{% if not machine.location %} dropdown__item--selected{% endif %}"
+                  data-field="location"
+                  data-value=""
+                  data-label="No Location"
+                  onclick="updateMachineField(this)">No Location</button>
+        </div>
+      </div>
       <a href="{% url 'machine-edit' machine.slug %}"
-         class="btn btn--secondary">
-        <i class="fa-solid fa-gear meta"></i>
-        Edit
+         class="btn btn--icon-only btn--secondary"
+         aria-label="Edit machine"
+         title="Edit machine">
+        <i class="fa-solid fa-gear"></i>
       </a>
       <a href="{% url 'problem-report-create-machine' machine.slug %}"
-         class="btn btn--report">
+         class="btn btn--report"
+         title="Report a problem">
         <i class="fa-solid fa-bug meta"></i>
         Report
       </a>
       <a href="{% url 'log-create-machine' machine.slug %}"
-         class="btn btn--log">
+         class="btn btn--log"
+         title="Log maintenance work">
         <i class="fa-solid fa-screwdriver-wrench meta"></i>
         Log
       </a>
@@ -59,7 +113,7 @@
               <div class="dropdown__menu dropdown__menu--left hidden">
                 {% for value, label in machine.STATUS_CHOICES %}
                   <button type="button"
-                          class="dropdown__item"
+                          class="dropdown__item{% if value == machine.operational_status %} dropdown__item--selected{% endif %}"
                           data-field="operational_status"
                           data-value="{{ value }}"
                           data-label="{{ label }}"
@@ -85,22 +139,22 @@
                 <i class="fa-solid fa-caret-down meta"></i>
               </button>
               <div class="dropdown__menu dropdown__menu--left hidden">
-                <button type="button"
-                        class="dropdown__item"
-                        data-field="location"
-                        data-value=""
-                        data-label="No Location"
-                        onclick="updateMachineField(this)">No Location</button>
                 {% if locations %}
                   {% for loc in locations %}
                     <button type="button"
-                            class="dropdown__item"
+                            class="dropdown__item{% if machine.location.slug == loc.slug %} dropdown__item--selected{% endif %}"
                             data-field="location"
                             data-value="{{ loc.slug }}"
                             data-label="{{ loc.name }}"
                             onclick="updateMachineField(this)">{{ loc.name }}</button>
                   {% endfor %}
                 {% endif %}
+                <button type="button"
+                        class="dropdown__item{% if not machine.location %} dropdown__item--selected{% endif %}"
+                        data-field="location"
+                        data-value=""
+                        data-label="No Location"
+                        onclick="updateMachineField(this)">No Location</button>
               </div>
             </div>
           </div>

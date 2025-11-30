@@ -232,32 +232,44 @@ function updateMachineField(button) {
     if (data.status === 'noop') {
       return;
     } else if (data.status === 'success') {
+      const statusClassMap = {
+        good: { pill: 'pill--status-good', btn: 'btn--status-good' },
+        fixing: { pill: 'pill--status-fixing', btn: 'btn--status-fixing' },
+        broken: { pill: 'pill--status-broken', btn: 'btn--status-broken' },
+        unknown: { pill: 'pill--neutral', btn: 'btn--secondary' }
+      };
+      const iconClassMap = {
+        good: 'fa-check',
+        fixing: 'fa-wrench',
+        broken: 'fa-circle-xmark',
+        unknown: 'fa-circle-question'
+      };
       if (field === 'operational_status') {
+        // Update sidebar pill
         const pill = document.getElementById('status-pill');
-        const labelEl = pill.querySelector('.status-label');
-        const iconEl = pill.querySelector('.status-icon');
-        labelEl.textContent = label;
-        const statusClassMap = {
-          good: 'pill--status-good',
-          fixing: 'pill--status-fixing',
-          broken: 'pill--status-broken',
-          unknown: 'pill--neutral'
-        };
-        const iconClassMap = {
-          good: 'fa-check',
-          fixing: 'fa-wrench',
-          broken: 'fa-circle-xmark',
-          unknown: 'fa-circle-question'
-        };
-        pill.className = 'pill ' + (statusClassMap[value] || 'pill--neutral');
-        iconEl.className = 'fa-solid meta status-icon ' + (iconClassMap[value] || 'fa-circle-question');
+        if (pill) {
+          const labelEl = pill.querySelector('.status-label');
+          const iconEl = pill.querySelector('.status-icon');
+          labelEl.textContent = label;
+          pill.className = 'pill ' + (statusClassMap[value]?.pill || 'pill--neutral');
+          iconEl.className = 'fa-solid meta status-icon ' + (iconClassMap[value] || 'fa-circle-question');
+        }
+        // Update mobile icon button
+        const mobileBtn = document.querySelector('.status-btn');
+        if (mobileBtn) {
+          const iconEl = mobileBtn.querySelector('.status-icon');
+          mobileBtn.className = 'btn btn--icon-only status-btn ' + (statusClassMap[value]?.btn || 'btn--secondary');
+          iconEl.className = 'fa-solid status-icon ' + (iconClassMap[value] || 'fa-circle-question');
+        }
         const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
-        const pillHtml = `<span class="pill ${statusClassMap[value] || 'pill--neutral'}"><i class="fa-solid ${iconClassMap[value] || 'fa-circle-question'} meta"></i> ${label}</span>`;
+        const pillHtml = `<span class="pill ${statusClassMap[value]?.pill || 'pill--neutral'}"><i class="fa-solid ${iconClassMap[value] || 'fa-circle-question'} meta"></i> ${label}</span>`;
         showMessage('success', `Status of ${machineName} set to ${pillHtml}`);
       } else {
         const pill = document.getElementById('location-pill');
-        const labelEl = pill.querySelector('.location-label');
-        labelEl.textContent = label;
+        if (pill) {
+          const labelEl = pill.querySelector('.location-label');
+          labelEl.textContent = label;
+        }
         const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
         const pillHtml = `<span class="pill pill--neutral"><i class="fa-solid fa-location-dot meta"></i> ${label}</span>`;
         showMessage('success', `Location of ${machineName} set to ${pillHtml}`);

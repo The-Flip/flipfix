@@ -163,9 +163,9 @@ class MachineInstance(TimeStampedModel):
     STATUS_BROKEN = "broken"
     STATUS_CHOICES = [
         (STATUS_GOOD, "Good"),
-        (STATUS_UNKNOWN, "Unknown"),
         (STATUS_FIXING, "Fixing"),
         (STATUS_BROKEN, "Broken"),
+        (STATUS_UNKNOWN, "Unknown"),
     ]
 
     model = models.ForeignKey(

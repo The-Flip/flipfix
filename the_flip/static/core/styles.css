@@ -466,6 +466,40 @@ body {
   font-size: var(--text-sm);
 }
 
+.btn--icon-only {
+  flex: 0 0 auto !important;
+}
+
+.btn--status-good {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  border: 1px solid var(--color-success-border);
+}
+
+.btn--status-good:hover {
+  background-color: var(--color-success-border);
+}
+
+.btn--status-fixing {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
+}
+
+.btn--status-fixing:hover {
+  background-color: var(--color-warning-border);
+}
+
+.btn--status-broken {
+  background-color: var(--color-problem-light-bg);
+  color: var(--color-problem);
+  border: 1px solid var(--color-problem-light-border);
+}
+
+.btn--status-broken:hover {
+  background-color: var(--color-problem-light-border);
+}
+
 /* --- Pills & Badges --- */
 .pill {
   display: inline-flex;
@@ -632,6 +666,11 @@ body {
 
 .dropdown__item--danger {
   color: #dc2626;
+}
+
+.dropdown__item--selected {
+  font-weight: var(--font-semibold);
+  background-color: var(--color-gray-100);
 }
 
 /* Avatar */
@@ -1355,12 +1394,17 @@ body {
 /* --- Mobile Action Buttons --- */
 .mobile-actions {
   display: flex;
+  align-items: stretch;
   gap: var(--space-2);
 }
 
-.mobile-actions .btn {
+.mobile-actions > .btn {
   flex: 1;
   padding: var(--space-1-5) var(--space-3);
+}
+
+.mobile-actions > .dropdown {
+  display: flex;
 }
 
 /* ========================================
