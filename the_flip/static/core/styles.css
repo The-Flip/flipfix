@@ -192,6 +192,7 @@ table {
   --color-problem-light-border: #FCA5A5;
   --color-problem-dark: #991B1B;
   --color-success: #16a34a;
+  --color-success-hover: #15803d;
   --color-success-bg: #D1FAE5;
   --color-success-text: #065F46;
   --color-success-border: #6EE7B7;
@@ -239,6 +240,12 @@ table {
     --color-problem-light-bg: #2d1f1f;
     --color-problem-light-border: #4a2d2d;
     --color-problem-dark: #ffa198;
+
+    --color-success: #2ea043;
+    --color-success-hover: #3fb950;
+    --color-success-bg: #1f2d1f;
+    --color-success-text: #3fb950;
+    --color-success-border: #2d4a2d;
 
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
@@ -454,6 +461,24 @@ body {
 
 .btn--report:hover {
   background-color: var(--color-problem-hover);
+}
+
+.btn--danger {
+  background-color: var(--color-problem);
+  color: white;
+}
+
+.btn--danger:hover {
+  background-color: var(--color-problem-hover);
+}
+
+.btn--success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn--success:hover {
+  background-color: var(--color-success-hover);
 }
 
 .btn--primary {
