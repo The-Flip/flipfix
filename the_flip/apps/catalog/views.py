@@ -138,15 +138,26 @@ class MachineListView(MachineListViewForPublic):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Stats for sidebar - machines needing attention (not good status or have open reports)
-        needs_attention_count = (
-            MachineInstance.objects.visible()
-            .exclude(operational_status=MachineInstance.STATUS_GOOD)
-            .count()
-        )
-        total_count = MachineInstance.objects.visible().count()
-        context["needs_attention_count"] = needs_attention_count
-        context["total_count"] = total_count
+        visible_machines = MachineInstance.objects.visible()
+
+        # Total count
+        context["total_count"] = visible_machines.count()
+
+        # Location-based counts (only show locations with machines, max 3 to fit grid)
+        location_counts = []
+        for slug, label in [
+            ("floor", "Floor"),
+            ("workshop", "Workshop"),
+            ("storage", "Storage"),
+            ("hall", "Hall"),
+        ]:
+            count = visible_machines.filter(location__slug=slug).count()
+            if count > 0:
+                location_counts.append({"name": label, "count": count})
+            if len(location_counts) >= 3:
+                break
+        context["location_counts"] = location_counts
+
         return context
 
 
