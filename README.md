@@ -93,13 +93,13 @@ After basic setup, install these development tools:
    - Ubuntu/Debian: `apt-get install ffmpeg`
    - Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
 
-4. **Run background worker** (when testing video features)
+4. **Run background worker** (for video transcoding and webhooks)
    ```bash
    # In a separate terminal
    make runq
    ```
 
-   The background worker processes video uploads. Without it, videos will queue but not transcode.
+   The background worker handles async tasks like video transcoding and webhook delivery.
 
 ## Developer Documentation
 

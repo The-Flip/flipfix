@@ -1,13 +1,25 @@
 # Data Model
 
+## Accounts app
+
 ### Maintainer ([`Maintainer`](../the_flip/apps/accounts/models.py))
 Person who performs work on the pinball machines. Linked to Django User account.
+
+### Invitation ([`Invitation`](../the_flip/apps/accounts/models.py))
+Token-based invitation for new maintainers to register.
+
+## Catalog app
+
+### Machine Instance ([`MachineInstance`](../the_flip/apps/catalog/models.py))
+A specific physical machine in the museum (e.g., "Star Trek #12345").
 
 ### Machine Model ([`MachineModel`](../the_flip/apps/catalog/models.py))
 A model of pinball machine (e.g., "Star Trek", "Godzilla").
 
-### Machine Instance ([`MachineInstance`](../the_flip/apps/catalog/models.py))
-A specific physical machine in the museum (e.g., "Star Trek #12345").
+### Location ([`Location`](../the_flip/apps/catalog/models.py))
+Physical location where machines can be placed (e.g., "Main Floor", "Workshop").
+
+## Maintenance app
 
 ### Problem Report ([`ProblemReport`](../the_flip/apps/maintenance/models.py))
 Issue reported by museum visitor.
@@ -17,3 +29,11 @@ Journal-type entry created by maintainers to document work on a machine.
 
 ### Log Entry Media ([`LogEntryMedia`](../the_flip/apps/maintenance/models.py))
 Photos/videos attached to log entries.
+
+## Webhooks app
+
+### Webhook Endpoint ([`WebhookEndpoint`](../the_flip/apps/webhooks/models.py))
+External URL that receives notifications (e.g., Discord, Slack).
+
+### Webhook Event Subscription ([`WebhookEventSubscription`](../the_flip/apps/webhooks/models.py))
+Links an endpoint to specific event types it should receive.

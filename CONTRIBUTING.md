@@ -17,7 +17,7 @@ This guide covers how to contribute to the project and submit a PR.
 make quality     # Format, lint, check Python types
 make test        # Run test suite
 ```
-- **Commit changes**
+- **Commit changes** (pre-commit hooks automatically run formatting, linting, and security checks)
 - **Push branch to GitHub**
 - **Create a Pull Request** against `main`
 - **Wait for CI checks**. GitHub Actions will automatically run tests, linting, type checking, etc
