@@ -11,7 +11,7 @@ This is a Django web app for managing pinball machine maintenance at The Flip pi
 ```bash
 # Development
 make runserver      # Start dev web server
-make runq           # Start background worker (required for video transcoding)
+make runq           # Start background worker (required for video transcoding and web hooks)
 make shell          # Django shell
 
 # Testing
