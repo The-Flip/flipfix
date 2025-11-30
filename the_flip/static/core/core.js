@@ -272,11 +272,43 @@ function updateMachineField(button) {
         }
         const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
         const pillHtml = `<span class="pill pill--neutral"><i class="fa-solid fa-location-dot meta"></i> ${label}</span>`;
-        showMessage('success', `Location of ${machineName} set to ${pillHtml}`);
+        if (data.celebration) {
+          showMessage('success', `🎉🎊 ${machineName} moved to ${pillHtml}! 🎊🎉`);
+          launchConfetti();
+        } else {
+          showMessage('success', `Location of ${machineName} set to ${pillHtml}`);
+        }
       }
     } else {
       showMessage('error', 'Error saving change');
     }
   })
   .catch(() => showMessage('error', 'Error saving change'));
+}
+
+/* ==========================================================================
+   Confetti Celebration
+   ========================================================================== */
+
+/**
+ * Dynamically load and launch confetti animation.
+ * Only loads the library on first use to avoid impacting page load.
+ */
+function launchConfetti() {
+  if (window.confetti) {
+    fireConfetti();
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js';
+  script.onload = fireConfetti;
+  document.head.appendChild(script);
+}
+
+/**
+ * Fire confetti bursts from both sides of the screen.
+ */
+function fireConfetti() {
+  confetti({ particleCount: 100, spread: 70, origin: { x: 0.1, y: 0.6 } });
+  confetti({ particleCount: 100, spread: 70, origin: { x: 0.9, y: 0.6 } });
 }

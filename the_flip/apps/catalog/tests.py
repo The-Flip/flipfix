@@ -3,12 +3,14 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.catalog.models import MachineInstance, MachineModel
+from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.core.test_utils import (
+    create_machine,
     create_machine_model,
     create_staff_user,
     create_user,
 )
+from the_flip.apps.maintenance.models import LogEntry
 
 
 @tag("views")
@@ -247,3 +249,112 @@ class MachineQuickCreateViewTests(TestCase):
 
         # Should redirect to the instance detail page
         self.assertRedirects(response, expected_url)
+
+
+@tag("views")
+class MachineInlineUpdateViewTests(TestCase):
+    """Tests for inline machine field updates (status/location)."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.staff_user = create_staff_user(username="staffuser")
+        self.regular_user = create_user(username="regularuser")
+        self.machine = create_machine(slug="test-machine")
+
+        # Get or create locations
+        self.floor, _ = Location.objects.get_or_create(
+            slug="floor", defaults={"name": "Floor", "sort_order": 1}
+        )
+        self.workshop, _ = Location.objects.get_or_create(
+            slug="workshop", defaults={"name": "Workshop", "sort_order": 2}
+        )
+        self.storage, _ = Location.objects.get_or_create(
+            slug="storage", defaults={"name": "Storage", "sort_order": 3}
+        )
+
+        self.update_url = reverse("machine-inline-update", kwargs={"slug": self.machine.slug})
+
+    def test_location_change_to_floor_creates_celebratory_log(self):
+        """Moving to floor should create log entry with celebration emoji."""
+        self.client.login(username="staffuser", password="testpass123")
+        self.machine.location = self.workshop
+        self.machine.save()
+
+        response = self.client.post(
+            self.update_url, {"action": "update_location", "location": "floor"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # Check celebration flag in response
+        self.assertTrue(data.get("celebration"))
+
+        # Check log entry exists with celebration emoji
+        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        self.assertIn("🎉", log.text)
+
+    def test_location_change_to_workshop_creates_standard_log(self):
+        """Moving to non-floor location should create standard log entry."""
+        self.client.login(username="staffuser", password="testpass123")
+        self.machine.location = self.floor
+        self.machine.save()
+
+        response = self.client.post(
+            self.update_url, {"action": "update_location", "location": "workshop"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # No celebration flag
+        self.assertFalse(data.get("celebration", False))
+
+        # Log exists with location name, no celebration emoji
+        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        self.assertIn("Workshop", log.text)
+        self.assertNotIn("🎉", log.text)
+
+    def test_clearing_location_creates_log(self):
+        """Clearing location should create a log entry."""
+        self.client.login(username="staffuser", password="testpass123")
+        self.machine.location = self.floor
+        self.machine.save()
+        initial_log_count = LogEntry.objects.filter(machine=self.machine).count()
+
+        response = self.client.post(self.update_url, {"action": "update_location", "location": ""})
+
+        self.assertEqual(response.status_code, 200)
+
+        # A new log entry should be created (not celebratory)
+        self.assertEqual(
+            LogEntry.objects.filter(machine=self.machine).count(), initial_log_count + 1
+        )
+        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        self.assertNotIn("🎉", log.text)
+
+    def test_location_noop_does_not_create_log(self):
+        """Setting same location should not create a log entry."""
+        self.client.login(username="staffuser", password="testpass123")
+        self.machine.location = self.floor
+        self.machine.save()
+        initial_log_count = LogEntry.objects.filter(machine=self.machine).count()
+
+        response = self.client.post(
+            self.update_url, {"action": "update_location", "location": "floor"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "noop")
+
+        # No new log entry
+        self.assertEqual(LogEntry.objects.filter(machine=self.machine).count(), initial_log_count)
+
+    def test_location_change_log_linked_to_user(self):
+        """Log entry should be created by the current user."""
+        self.client.login(username="staffuser", password="testpass123")
+
+        self.client.post(self.update_url, {"action": "update_location", "location": "floor"})
+
+        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        self.assertEqual(log.created_by, self.staff_user)

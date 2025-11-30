@@ -51,11 +51,13 @@ class MachineInlineUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
                 machine.location = location
                 machine.updated_by = request.user
                 machine.save(update_fields=["location", "updated_by", "updated_at"])
+                celebration = location.slug == "floor"
                 return JsonResponse(
                     {
                         "status": "success",
                         "location": location.slug,
                         "location_display": location.name,
+                        "celebration": celebration,
                     }
                 )
             except Location.DoesNotExist:

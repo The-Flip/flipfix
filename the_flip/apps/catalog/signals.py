@@ -70,8 +70,14 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
         new_name = instance.location.name if instance.location else "No Location"
 
         if old_name != new_name:
+            # Celebrate moving to the floor!
+            if instance.location and instance.location.slug == "floor":
+                text = "🎉🎊 Moved to the floor!"
+            else:
+                text = f"Location changed: {old_name} → {new_name}"
+
             LogEntry.objects.create(
                 machine=instance,
-                text=f"Location changed: {old_name} \u2192 {new_name}",
+                text=text,
                 created_by=instance.updated_by,
             )
