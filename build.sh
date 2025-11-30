@@ -11,10 +11,7 @@ pip install -r requirements.txt
 mkdir -p media
 mkdir -p static_collected
 
-# Run tests
-echo "Running tests..."
-DJANGO_SETTINGS_MODULE=the_flip.settings.test python manage.py test
-echo "✓ All tests passed"
+# Tests are run in CI before merge - no need to run again here
 
 # Run migrations
 echo "Running migrations..."

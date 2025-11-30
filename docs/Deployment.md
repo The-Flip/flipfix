@@ -35,9 +35,9 @@ When you create a pull request, an ephemeral test environment is automatically c
 2. GitHub Actions runs CI checks (lint, typecheck, tests etc)
 3. You merge PR
 4. Merge triggers Railway deployment
-5. Railway runs `build.sh` (install deps, run tests & migrations etc)
-6. Follow along in the Railway dashboard to see build logs
-7. Deployment completes (~2-5 minutes)
+5. Railway builds (`build.sh`) and deploys
+6. Follow along in the Railway dashboard to see logs
+7. Deploy completes in ~2-5 minutes
 8. New version is live
 
 **Live system:** https://the-flip-production.up.railway.app/
