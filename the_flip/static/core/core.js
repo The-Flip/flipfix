@@ -254,11 +254,11 @@ function updateMachineField(button) {
           pill.className = 'pill ' + (statusClassMap[value]?.pill || 'pill--neutral');
           iconEl.className = 'fa-solid meta status-icon ' + (iconClassMap[value] || 'fa-circle-question');
         }
-        // Update mobile icon button
+        // Update mobile dropdown button
         const mobileBtn = document.querySelector('.status-btn');
         if (mobileBtn) {
           const iconEl = mobileBtn.querySelector('.status-icon');
-          mobileBtn.className = 'btn btn--icon-only status-btn ' + (statusClassMap[value]?.btn || 'btn--secondary');
+          mobileBtn.className = 'btn btn--dropdown status-btn ' + (statusClassMap[value]?.btn || 'btn--secondary');
           iconEl.className = 'fa-solid status-icon ' + (iconClassMap[value] || 'fa-circle-question');
         }
         const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';

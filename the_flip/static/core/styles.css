@@ -470,6 +470,15 @@ body {
   flex: 0 0 auto !important;
 }
 
+.btn--dropdown {
+  flex: 0 0 auto !important;
+}
+
+.btn__caret {
+  font-size: 0.65em;
+  opacity: 0.7;
+}
+
 .btn--status-good {
   background-color: var(--color-success-bg);
   color: var(--color-success-text);

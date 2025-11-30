@@ -19,13 +19,14 @@
          data-update-url="{% url 'machine-inline-update' machine.slug %}">
       <div class="dropdown">
         <button type="button"
-                class="btn btn--icon-only status-btn {% if machine.operational_status == 'good' %}btn--status-good{% elif machine.operational_status == 'fixing' %}btn--status-fixing{% elif machine.operational_status == 'broken' %}btn--status-broken{% else %}btn--secondary{% endif %}"
+                class="btn btn--dropdown status-btn {% if machine.operational_status == 'good' %}btn--status-good{% elif machine.operational_status == 'fixing' %}btn--status-fixing{% elif machine.operational_status == 'broken' %}btn--status-broken{% else %}btn--secondary{% endif %}"
                 aria-haspopup="true"
                 aria-expanded="false"
                 aria-label="Change status"
                 title="Status: {{ machine.get_operational_status_display }}"
                 onclick="toggleDropdown(this)">
           <i class="fa-solid {% if machine.operational_status == 'fixing' %}fa-wrench{% elif machine.operational_status == 'good' %}fa-check{% elif machine.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} status-icon"></i>
+          <i class="fa-solid fa-caret-down btn__caret"></i>
         </button>
         <div class="dropdown__menu dropdown__menu--left hidden">
           {% for value, label in machine.STATUS_CHOICES %}
@@ -40,13 +41,14 @@
       </div>
       <div class="dropdown">
         <button type="button"
-                class="btn btn--icon-only btn--secondary location-btn"
+                class="btn btn--dropdown btn--secondary location-btn"
                 aria-haspopup="true"
                 aria-expanded="false"
                 aria-label="Change location"
                 title="Location: {% if machine.location %}{{ machine.location.name }}{% else %}None{% endif %}"
                 onclick="toggleDropdown(this)">
           <i class="fa-solid fa-location-dot"></i>
+          <i class="fa-solid fa-caret-down btn__caret"></i>
         </button>
         <div class="dropdown__menu dropdown__menu--left hidden">
           {% if locations %}
