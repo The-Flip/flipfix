@@ -51,7 +51,7 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     return {
         "embeds": [
             {
-                "title": f"⚠️ Problem Report: {report.machine.display_name}",
+                "title": f"⚠️ Problem Report on {report.machine.display_name}",
                 "description": description,
                 "url": url,
                 "color": 15158332,  # Red color for problems
@@ -72,6 +72,26 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     if len(log_entry.text) > 500:
         description += "..."
 
+    # If attached to a problem report, add a link
+    if log_entry.problem_report:
+        pr = log_entry.problem_report
+        pr_url = base_url + reverse("problem-report-detail", kwargs={"pk": pr.pk})
+        # Build PR text: [problem type]: [truncated description]
+        pr_text_parts = []
+        if pr.problem_type != "other":
+            pr_text_parts.append(pr.get_problem_type_display())
+        if pr.description:
+            pr_desc = pr.description[:50]
+            if len(pr.description) > 50:
+                pr_desc += "..."
+            pr_text_parts.append(pr_desc)
+        pr_text = ": ".join(pr_text_parts) if pr_text_parts else ""
+        # Format: 📎 Problem Report #N: [text] (hyperlink the #N)
+        if pr_text:
+            description += f"\n\n📎 [Problem Report #{pr.pk}]({pr_url}): {pr_text}"
+        else:
+            description += f"\n\n📎 [Problem Report #{pr.pk}]({pr_url})"
+
     # Get maintainer names
     maintainer_names = []
     for m in log_entry.maintainers.all():
@@ -85,7 +105,7 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
 
     # Build the main embed
     main_embed: dict[str, Any] = {
-        "title": f"🗒️ Log: {log_entry.machine.display_name}",
+        "title": f"🗒️ Log on {log_entry.machine.display_name}",
         "description": description,
         "url": url,
         "color": 3447003,  # Blue color for work logs

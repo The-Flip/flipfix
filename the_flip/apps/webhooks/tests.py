@@ -120,7 +120,7 @@ class DiscordFormatterTests(TestCase):
         embed = message["embeds"][0]
         # Title includes emoji and machine name
         self.assertIn("⚠️", embed["title"])
-        self.assertIn("Problem Report:", embed["title"])
+        self.assertIn("Problem Report on", embed["title"])
         self.assertIn(self.machine.display_name, embed["title"])
         # Should have Visitor attribution since no reporter
         self.assertIn("— Visitor", embed["description"])
@@ -133,10 +133,26 @@ class DiscordFormatterTests(TestCase):
         embed = message["embeds"][0]
         # Title includes emoji and machine name
         self.assertIn("🗒️", embed["title"])
-        self.assertIn("Log:", embed["title"])
+        self.assertIn("Log on", embed["title"])
         self.assertIn(self.machine.display_name, embed["title"])
         # Log text is the description
         self.assertIn(log_entry.text, embed["description"])
+
+    def test_format_log_entry_with_problem_report(self):
+        """Format a log entry attached to a problem report."""
+        report = create_problem_report(machine=self.machine)
+        log_entry = create_log_entry(
+            machine=self.machine,
+            created_by=self.staff_user,
+            problem_report=report,
+        )
+        message = format_discord_message("log_entry_created", log_entry)
+
+        embed = message["embeds"][0]
+        # Should have paperclip and Problem Report #N format with link
+        self.assertIn("📎", embed["description"])
+        self.assertIn(f"Problem Report [#{report.pk}]", embed["description"])
+        self.assertIn(f"/problem-reports/{report.pk}/", embed["description"])
 
     def test_format_log_entry_with_photos(self):
         """Format a log entry with photos creates multiple embeds for gallery."""
