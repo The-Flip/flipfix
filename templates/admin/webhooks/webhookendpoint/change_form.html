@@ -1,0 +1,19 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+{% block after_field_sets %}
+  {{ block.super }}
+  {% if original %}
+    <fieldset class="module aligned">
+      <h2>Send Test Message</h2>
+      <div class="description">Send a test message to this webhook endpoint to verify it's working correctly.</div>
+      <div style="padding: 10px;">
+        {% for event_code, event_name in event_choices %}
+          <a href="{% url 'admin:webhooks_webhookendpoint_test' original.pk event_code %}"
+             class="button"
+             style="margin-right: 10px;
+                    margin-bottom: 5px">Test: {{ event_name }}</a>
+        {% endfor %}
+      </div>
+    </fieldset>
+  {% endif %}
+{% endblock %}

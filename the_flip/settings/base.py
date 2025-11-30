@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "the_flip.apps.accounts",
     "the_flip.apps.catalog",
     "the_flip.apps.maintenance",
+    "the_flip.apps.webhooks",
 ]
 
 MIDDLEWARE = [
