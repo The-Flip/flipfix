@@ -22,6 +22,8 @@ class Location(models.Model):
     )
 
     class Meta:
+        verbose_name = "Machine location"
+        verbose_name_plural = "Machine locations"
         ordering = ["sort_order", "name"]
 
     def __str__(self) -> str:

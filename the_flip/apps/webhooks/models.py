@@ -83,8 +83,8 @@ class WebhookSettings(models.Model):
     )
 
     class Meta:
-        verbose_name = "Webhook Settings"
-        verbose_name_plural = "Webhook Settings"
+        verbose_name = "Webhook settings"
+        verbose_name_plural = "Webhook settings"
 
     def __str__(self) -> str:
         status = "enabled" if self.webhooks_enabled else "disabled"
