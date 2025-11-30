@@ -104,7 +104,11 @@ class WebhookSettingsTests(TestCase):
 
 
 class DiscordFormatterTests(TestCase):
-    """Tests for Discord message formatting."""
+    """Tests for Discord message formatting.
+
+    These tests verify the structure of webhook messages, not exact wording.
+    This makes them resilient to copy changes.
+    """
 
     def setUp(self):
         self.machine = create_machine()
@@ -115,15 +119,22 @@ class DiscordFormatterTests(TestCase):
         report = create_problem_report(machine=self.machine)
         message = format_discord_message("problem_report_created", report)
 
+        # Verify structure
         self.assertIn("embeds", message)
         self.assertEqual(len(message["embeds"]), 1)
         embed = message["embeds"][0]
-        # Title includes emoji and machine name
-        self.assertIn("⚠️", embed["title"])
-        self.assertIn("Problem Report on", embed["title"])
+
+        # Required fields exist
+        self.assertIn("title", embed)
+        self.assertIn("description", embed)
+        self.assertIn("url", embed)
+        self.assertIn("color", embed)
+
+        # Title includes machine name
         self.assertIn(self.machine.display_name, embed["title"])
-        # Should have Visitor attribution since no reporter
-        self.assertIn("— Visitor", embed["description"])
+
+        # URL points to the problem report
+        self.assertIn(f"/problem-reports/{report.pk}/", embed["url"])
 
     def test_format_log_entry_created(self):
         """Format a new log entry message."""
@@ -131,15 +142,24 @@ class DiscordFormatterTests(TestCase):
         message = format_discord_message("log_entry_created", log_entry)
 
         embed = message["embeds"][0]
-        # Title includes emoji and machine name
-        self.assertIn("🗒️", embed["title"])
-        self.assertIn("Log on", embed["title"])
+
+        # Required fields exist
+        self.assertIn("title", embed)
+        self.assertIn("description", embed)
+        self.assertIn("url", embed)
+        self.assertIn("color", embed)
+
+        # Title includes machine name
         self.assertIn(self.machine.display_name, embed["title"])
-        # Log text is the description
+
+        # Description includes log text
         self.assertIn(log_entry.text, embed["description"])
 
+        # URL points to the log entry
+        self.assertIn(f"/logs/{log_entry.pk}/", embed["url"])
+
     def test_format_log_entry_with_problem_report(self):
-        """Format a log entry attached to a problem report."""
+        """Format a log entry attached to a problem report includes PR link."""
         report = create_problem_report(machine=self.machine)
         log_entry = create_log_entry(
             machine=self.machine,
@@ -149,9 +169,8 @@ class DiscordFormatterTests(TestCase):
         message = format_discord_message("log_entry_created", log_entry)
 
         embed = message["embeds"][0]
-        # Should have paperclip and Problem Report #N format with link
-        self.assertIn("📎", embed["description"])
-        self.assertIn(f"Problem Report [#{report.pk}]", embed["description"])
+
+        # Description includes link to the problem report
         self.assertIn(f"/problem-reports/{report.pk}/", embed["description"])
 
     def test_format_log_entry_with_photos(self):
@@ -162,7 +181,7 @@ class DiscordFormatterTests(TestCase):
 
         log_entry = create_log_entry(machine=self.machine, created_by=self.staff_user)
 
-        # Create mock photos (just need file field to have a value)
+        # Create mock photos
         for i in range(3):
             media = LogEntryMedia(
                 log_entry=log_entry,
@@ -176,22 +195,24 @@ class DiscordFormatterTests(TestCase):
         # Should have 3 embeds (main + 2 additional for gallery effect)
         self.assertEqual(len(message["embeds"]), 3)
 
-        # First embed has title and description
-        self.assertIn("🗒️", message["embeds"][0]["title"])
+        # First embed has title, description, and image
+        self.assertIn("title", message["embeds"][0])
         self.assertIn("image", message["embeds"][0])
 
-        # Additional embeds only have image and url (same url for gallery linking)
+        # All embeds share the same URL (required for Discord gallery)
+        main_url = message["embeds"][0]["url"]
         for embed in message["embeds"][1:]:
             self.assertIn("image", embed)
-            self.assertEqual(embed["url"], message["embeds"][0]["url"])
+            self.assertEqual(embed["url"], main_url)
 
     def test_format_test_message(self):
-        """Format a test message."""
+        """Format a test message has required structure."""
         message = format_test_message("problem_report_created")
 
+        self.assertIn("embeds", message)
         embed = message["embeds"][0]
-        self.assertIn("Test", embed["title"])
-        self.assertIn("test message", embed["description"].lower())
+        self.assertIn("title", embed)
+        self.assertIn("description", embed)
 
 
 class WebhookDeliveryTests(TestCase):
