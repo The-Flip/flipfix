@@ -21,7 +21,7 @@ pillow-heif==0.18.0
 django-q2==1.8.0
 
 # HTTP Requests (for worker → web service transfer)
-requests==2.32.3
+requests==2.32.4
 
 # Markdown Rendering
 Markdown==3.7
