@@ -5,8 +5,10 @@
      class="timeline__card-link">
     <div class="timeline__header">
       <div class="flex items-center stack-tight">
-        <span class="timeline__title timeline__title--log">Update</span>
-        {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
+        <span class="timeline__title timeline__title--log">Update
+          {% if update.new_status %}: status changed to{% endif %}
+        </span>
+        {% if update.new_status %}<span class="pill pill--neutral">{{ update.get_new_status_display }}</span>{% endif %}
       </div>
       <span class="timeline__meta">{{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong></span>
     </div>
