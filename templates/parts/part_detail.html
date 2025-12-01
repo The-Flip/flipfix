@@ -229,7 +229,7 @@
 
           // Inject the new update into the updates list
           if (data.update_html) {
-            const logList = document.getElementById('log-list');
+            let logList = document.getElementById('log-list');
             const noUpdatesMsg = document.querySelector('#log-container > p.text-muted');
             if (noUpdatesMsg) {
               noUpdatesMsg.remove();
@@ -240,14 +240,22 @@
               // Create the log list if it doesn't exist
               const logContainer = document.getElementById('log-container');
               if (logContainer) {
-                const newList = document.createElement('div');
-                newList.className = 'log-entry-list';
-                newList.id = 'log-list';
-                newList.innerHTML = data.update_html;
-                logContainer.prepend(newList);
+                logList = document.createElement('div');
+                logList.className = 'log-entry-list';
+                logList.id = 'log-list';
+                logList.innerHTML = data.update_html;
+                logContainer.prepend(logList);
               }
             }
+            // Apply smart date formatting to the new entry
+            if (logList) {
+              applySmartDates(logList.firstElementChild);
+            }
           }
+
+          // Show success message
+          const pillHtml = `<span class="pill pill--neutral">${data.new_status_display}</span>`;
+          showMessage('success', `Part request #{{ part_request.pk }} updated to ${pillHtml}`);
 
           // Close the dropdown
           dropdown.querySelector('.dropdown__menu').classList.add('hidden');
