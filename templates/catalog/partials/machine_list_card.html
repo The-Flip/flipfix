@@ -31,13 +31,15 @@
          class="btn btn--secondary btn--sm"
          title="Report a problem">
         <i class="fa-solid fa-bug"></i>
-        <span class="machine-card__btn-text">Report</span>
+        <span class="machine-card__btn-text--short">Report</span>
+        <span class="machine-card__btn-text--long">Report Problem</span>
       </a>
       <a href="{% url 'log-create-machine' machine.slug %}"
          class="btn btn--secondary btn--sm"
          title="Log maintenance work">
         <i class="fa-solid fa-screwdriver-wrench"></i>
-        <span class="machine-card__btn-text">Log</span>
+        <span class="machine-card__btn-text--short">Log</span>
+        <span class="machine-card__btn-text--long">Log Work</span>
       </a>
     </div>
   </div>
