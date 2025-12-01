@@ -6,21 +6,9 @@
       <div class="card card--padded space-below-lg">
         <div class="sidebar__label">Shared account</div>
         <div class="sidebar__title">{{ user.maintainer.display_name }} (Shared)</div>
-        <p class="text-muted space-above-sm">This account is shared. Be sure to pick your username whenever you log work.</p>
-        <div class="flex flex-wrap stack-tight space-above-sm">
-          <a href="{% url 'log-list' %}" class="btn btn--log">
-            <i class="fa-solid fa-screwdriver-wrench meta"></i>
-            View Logs
-          </a>
-          <a href="{% url 'problem-report-list' %}" class="btn btn--report">
-            <i class="fa-solid fa-bug meta"></i>
-            View Problems
-          </a>
-          <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-            <i class="fa-solid fa-list meta"></i>
-            Machines
-          </a>
-        </div>
+        <p class="text-muted space-above-sm">
+          This is a shared machine. You will be asked to put in your username whenever you log work.
+        </p>
       </div>
     {% else %}
       <div class="card card--padded space-below-lg">
