@@ -1,9 +1,12 @@
 """Admin interface for webhook configuration."""
 
+import json
+
 from django.contrib import admin, messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import path, reverse
 
+from .formatters import format_test_message
 from .models import WebhookEndpoint, WebhookEventSubscription, WebhookSettings
 from .tasks import send_test_webhook
 
@@ -49,6 +52,11 @@ class WebhookEndpointAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.test_webhook_view),
                 name="webhooks_webhookendpoint_test",
             ),
+            path(
+                "<int:pk>/preview/<str:event_type>/",
+                self.admin_site.admin_view(self.preview_webhook_view),
+                name="webhooks_webhookendpoint_preview",
+            ),
         ]
         return custom_urls + urls
 
@@ -61,6 +69,21 @@ class WebhookEndpointAdmin(admin.ModelAdmin):
             messages.error(request, f"Test failed: {result.get('error', 'Unknown error')}")
 
         return HttpResponseRedirect(reverse("admin:webhooks_webhookendpoint_change", args=[pk]))
+
+    def preview_webhook_view(self, request, pk, event_type):
+        """Return the test payload JSON for the given endpoint/event."""
+        if not WebhookEndpoint.objects.filter(pk=pk).exists():
+            return HttpResponse(
+                json.dumps({"error": "Endpoint not found"}, indent=2),
+                status=404,
+                content_type="application/json",
+            )
+
+        payload = format_test_message(event_type)
+        return HttpResponse(
+            json.dumps(payload, indent=2),
+            content_type="application/json",
+        )
 
 
 @admin.register(WebhookSettings)

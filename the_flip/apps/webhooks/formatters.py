@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import urllib.parse
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -156,17 +157,28 @@ def format_test_message(event_type: str) -> dict:
     }
     label = event_labels.get(event_type, event_type)
 
+    base_url = get_base_url()
+    static_url = getattr(settings, "STATIC_URL", "/static/")
+    media_url = getattr(settings, "MEDIA_URL", "/media/")
+    image_path = static_url.rstrip("/") + "/core/images/test/test_discord_post.jpg"
+    image_url = urllib.parse.urljoin(base_url, image_path)
+    media_prefix = urllib.parse.urljoin(base_url, media_url)
+
     return {
         "embeds": [
             {
                 "title": f"Test: {label}",
                 "description": (
                     "This is a test message from The Flip maintenance system.\n\n"
+                    "If your server URLs are configured correctly, this post should show a preview of this image: "
+                    f"{image_url}\n\n"
                     "**Machine:** Test Machine\n"
                     "**Location:** Test Location\n"
-                    "**Details:** This confirms your webhook is working correctly."
+                    "**Image Prefix:** "
+                    f"{media_prefix} (will not be the same path as the test image above)"
                 ),
                 "color": 7506394,  # Purple color for test
+                "image": {"url": image_url},
             }
         ]
     }
