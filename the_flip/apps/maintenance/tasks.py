@@ -54,13 +54,13 @@ def enqueue_transcode(media_id: int, model_name: str = "LogEntryMedia"):
 def transcode_video_job(media_id: int, model_name: str = "LogEntryMedia"):
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     try:
-        MediaModel = _get_media_model(model_name)
-        media = MediaModel.objects.get(id=media_id)
+        media_model = _get_media_model(model_name)
+        media = media_model.objects.get(id=media_id)
     except Exception:
         logger.error("Transcode job %s (%s) aborted: media not found", media_id, model_name)
         return
 
-    if media.media_type != MediaModel.TYPE_VIDEO:
+    if media.media_type != media_model.TYPE_VIDEO:
         logger.info("Transcode skipped for non-video media %s", media_id)
         return
 
@@ -74,14 +74,14 @@ def transcode_video_job(media_id: int, model_name: str = "LogEntryMedia"):
     if missing:
         msg = f"Required environment variables not configured: {', '.join(missing)}"
         logger.error("Transcode job %s aborted: %s", media_id, msg)
-        media.transcode_status = MediaModel.STATUS_FAILED
+        media.transcode_status = media_model.STATUS_FAILED
         media.save(update_fields=["transcode_status", "updated_at"])
         raise ValueError(msg)
 
     logger.info("Transcoding video %s (%s) for HTTP transfer to web service", media_id, model_name)
 
     input_path = Path(media.file.path)
-    media.transcode_status = MediaModel.STATUS_PROCESSING
+    media.transcode_status = media_model.STATUS_PROCESSING
     media.save(update_fields=["transcode_status", "updated_at"])
 
     tmp_video = None
@@ -145,7 +145,7 @@ def transcode_video_job(media_id: int, model_name: str = "LogEntryMedia"):
         logger.error(
             "Failed to transcode video %s (%s): %s", media_id, model_name, exc, exc_info=True
         )
-        media.transcode_status = MediaModel.STATUS_FAILED
+        media.transcode_status = media_model.STATUS_FAILED
         media.save(update_fields=["transcode_status", "updated_at"])
         raise
     finally:

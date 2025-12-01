@@ -48,11 +48,10 @@ class PartRequestAdmin(admin.ModelAdmin):
     inlines = [PartRequestMediaInline, PartRequestUpdateInline]
     ordering = ["-created_at"]
 
+    @admin.display(description="Description")
     def text_preview(self, obj):
         """Return truncated text preview."""
         return obj.text[:50] + "..." if len(obj.text) > 50 else obj.text
-
-    text_preview.short_description = "Description"
 
 
 @admin.register(PartRequestMedia)
@@ -94,11 +93,10 @@ class PartRequestUpdateAdmin(admin.ModelAdmin):
     inlines = [PartRequestUpdateMediaInline]
     ordering = ["-created_at"]
 
+    @admin.display(description="Comment")
     def text_preview(self, obj):
         """Return truncated text preview."""
         return obj.text[:50] + "..." if len(obj.text) > 50 else obj.text
-
-    text_preview.short_description = "Comment"
 
 
 @admin.register(PartRequestUpdateMedia)

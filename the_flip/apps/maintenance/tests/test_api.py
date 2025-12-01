@@ -131,13 +131,13 @@ class ReceiveTranscodedMediaViewTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn("Invalid authentication token", response.json()["error"])
 
-    def test_requires_log_entry_media_id(self):
-        """Request without log_entry_media_id should be rejected."""
+    def test_requires_media_id(self):
+        """Request without media_id should be rejected."""
         response = self.client.post(
             self.upload_url, {}, HTTP_AUTHORIZATION=f"Bearer {self.test_token}"
         )
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing log_entry_media_id", response.json()["error"])
+        self.assertIn("Missing media_id", response.json()["error"])
 
     def test_requires_video_file(self):
         """Request without video_file should be rejected."""

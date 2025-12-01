@@ -1216,8 +1216,8 @@ class ReceiveTranscodedMediaView(View):
 
         # Get media record using appropriate model
         try:
-            MediaModel = self._get_media_model(model_name)
-            media = MediaModel.objects.get(id=media_id)
+            media_model = self._get_media_model(model_name)
+            media = media_model.objects.get(id=media_id)
         except ValueError as e:
             return JsonResponse(
                 {"success": False, "error": str(e)},
@@ -1246,7 +1246,7 @@ class ReceiveTranscodedMediaView(View):
                     media.poster_file = poster_file
 
                 # Update status
-                media.transcode_status = MediaModel.STATUS_READY
+                media.transcode_status = media_model.STATUS_READY
 
                 media.save()
 

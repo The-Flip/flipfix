@@ -7,10 +7,10 @@
   <div class="flex items-center justify-between stack-tight">
     <div class="flex items-center stack-tight">
       <i class="fa-solid fa-comment text-log"></i>
+      {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
     </div>
     <div class="log-entry-meta">
       {{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong>
-      {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
     </div>
   </div>
   <div class="space-above-sm">
