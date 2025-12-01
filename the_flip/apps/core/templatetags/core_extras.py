@@ -134,7 +134,7 @@ def problem_report_summary(report):
 def problem_report_meta(report):
     """
     Render reporter name (if present) followed by timestamp (emphasized).
-    Example: "Alice on <strong><time ...>…</time></strong>"
+    Example: "Alice · <strong><time ...>…</time></strong>"
     If no reporter, only render the timestamp emphasized.
     """
     if not report:
@@ -144,7 +144,7 @@ def problem_report_meta(report):
     name = (getattr(report, "reporter_display", "") or "").strip()
 
     if name:
-        return format_html("{} on <strong>{}</strong>", name, ts)
+        return format_html("{} · <strong>{}</strong>", name, ts)
     return format_html("<strong>{}</strong>", ts)
 
 
@@ -152,7 +152,7 @@ def problem_report_meta(report):
 def log_entry_meta(entry):
     """
     Render maintainer name(s) (if present) followed by timestamp (emphasized).
-    Example: "Alice on <strong><time ...>…</time></strong>"
+    Example: "Alice · <strong><time ...>…</time></strong>"
     If no maintainer name, only render the timestamp emphasized.
     """
     if not entry:
@@ -170,5 +170,5 @@ def log_entry_meta(entry):
 
     names = (names or "").strip()
     if names:
-        return format_html("{} on <strong>{}</strong>", names, ts)
+        return format_html("{} · <strong>{}</strong>", names, ts)
     return format_html("<strong>{}</strong>", ts)
