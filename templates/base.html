@@ -77,20 +77,28 @@
       <!-- Mobile nav (icon-only) -->
       <nav class="nav nav--icons nav--mobile">
         <a href="{% url 'maintainer-machine-list' %}"
-           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' or request.resolver_match.url_name == 'log-machine' or request.resolver_match.url_name == 'machine-problem-reports' %}nav-icon--active{% endif %}">
+           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' or request.resolver_match.url_name == 'log-machine' or request.resolver_match.url_name == 'machine-problem-reports' %}nav-icon--active{% endif %}"
+           aria-label="Machines"
+           title="Machines">
           <i class="fa-solid fa-list"></i>
         </a>
         <a href="{% url 'problem-report-list' %}"
-           class="nav-icon {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-icon--active{% endif %}">
+           class="nav-icon {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-icon--active{% endif %}"
+           aria-label="Problems"
+           title="Problems">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </a>
         <a href="{% url 'log-list' %}"
-           class="nav-icon {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-icon--active{% endif %}">
+           class="nav-icon {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-icon--active{% endif %}"
+           aria-label="Logs"
+           title="Logs">
           <i class="fa-solid fa-screwdriver-wrench"></i>
         </a>
         {% if config.PARTS_ENABLED %}
           <a href="{% url 'part-request-list' %}"
-             class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+             class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
+             aria-label="Parts"
+             title="Parts">
             <i class="fa-solid fa-box-open"></i>
           </a>
         {% endif %}
@@ -100,6 +108,8 @@
                     class="nav-icon"
                     aria-haspopup="true"
                     aria-expanded="false"
+                    aria-label="Admin"
+                    title="Admin"
                     onclick="toggleDropdown(this)">
               <i class="fa-solid fa-users"></i>
             </button>
