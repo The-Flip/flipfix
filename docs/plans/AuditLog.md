@@ -92,22 +92,28 @@ Both packages are maintained by [Jazzband](https://jazzband.co/), a collaborativ
 
 ### Contenders
 
+- **[django-auditlog](https://github.com/jazzband/django-auditlog)**: Lightweight audit trail that stores only changed fields as JSON diffs in a single table.
+- **[django-simple-history](https://github.com/jazzband/django-simple-history)**: Full version control that stores complete snapshots of each record, enabling rollback and time-travel queries.
 
 ### Comparison
 
 |  | **django-auditlog** | **django-simple-history** |
 |---|---|---|
-| [Supports PostgreSQL & SQLite](#storage-impact) | ✅ | ✅ |
+| [Supports PostgreSQL & SQLite](#works-on-dev-db) | ✅ | ✅ |
 | [No Increase in Hosting Cost](#storage-impact) | ✅ (~7MB over 3 years) | ✅ (~20MB over 3 years) |
-| Write Performance | ✅ 1 INSERT + diff calculation | ✅ 1 INSERT (row copy) |
-| Supports Rollback | ❌ | ✅ Built-in revert to any previous version |
-| [Built-in Admin Diff View](#display) | ✅ Field/From/To table | ✅ Select two versions to compare |
-| Model Changes Required | ❌ None (settings-based) | ✅ Add `history = HistoricalRecords()` to each model |
-| Number of Migrations | 1 (single `auditlog_logentry` table) | 1 per tracked model (5 migrations for 5 models) |
-| Settings Configuration | List models in `AUDITLOG_INCLUDE_TRACKING_MODELS` | Add to `INSTALLED_APPS` only |
-| Admin Changes | Add `AuditlogHistoryAdminMixin` | Change base class to `SimpleHistoryAdmin` |
-| [Template Code for Display](#display) | ~10 lines (iterate `changes_dict`) | ~12 lines (use `diff_against()`) |
-| Ongoing Maintenance | Add model name to settings when adding new audited models | Add `history` field to new audited models |
+| [Write Performance](#performance) | ✅ 1 INSERT + diff calculation | ✅ 1 INSERT (row copy) |
+| [Supports Rollback](#revert--restore) | ❌ | ✅ Built-in revert to any previous version |
+| Built-in Admin Diff View | ✅ Field/From/To table | ✅ Select two versions to compare |
+| [Model Changes Required](#integration--maintenance-costs) | ❌ None (settings-based) | ✅ Add `history = HistoricalRecords()` to each model |
+| [Number of Migrations](#integration--maintenance-costs) | 1 (single `auditlog_logentry` table) | 1 per tracked model (5 migrations for 5 models) |
+| [Settings Configuration](#integration--maintenance-costs) | List models in `AUDITLOG_INCLUDE_TRACKING_MODELS` | Add to `INSTALLED_APPS` only |
+| [Admin Changes](#integration--maintenance-costs) | Add `AuditlogHistoryAdminMixin` | Change base class to `SimpleHistoryAdmin` |
+| [Template Code for Display](#integration--maintenance-costs) | ~10 lines (iterate `changes_dict`) | ~12 lines (use `diff_against()`) |
+| [Ongoing Maintenance](#integration--maintenance-costs) | Add model name to settings when adding new audited models | Add `history` field to new audited models |
+| [Actively Maintained](#viability) | ✅ v3.3.0 released Oct 2025 | ✅ v3.10.1 released Jun 2025 |
+| [Popularity](#viability) (PyPI downloads/month) | 712K | 2.2M |
+| [GitHub Stars](#viability) | 1.3K | 2.4K |
+| [Project Age](#viability) | since 2013 |  since 2011 |
 
 ### Storage Model
 
@@ -116,17 +122,13 @@ Both packages are maintained by [Jazzband](https://jazzband.co/), a collaborativ
 | **Table structure** | Single `auditlog_logentry` table for ALL models | Separate `_history` table per model |
 | **What's stored** | JSON diff of changed fields only | Full snapshot of entire record |
 | **Per-change size** | ~100-500 bytes | Full row size (varies by model) |
+| [**Affect on Hosting Cost**](#storage-impact) | None | None |
 | **Query efficiency** | Generic foreign key (content_type + object_pk) | Direct foreign key to original model |
 
 ### Example: What Gets Stored
 
 When a ProblemReport status changes from "open" to "closed":
 
-**django-auditlog stores:**
-```json
-{"status": ["open", "closed"]}
-```
-Plus: actor, timestamp, action type
-
-**django-simple-history stores:**
-Full copy of the ProblemReport row (all fields), plus: `history_user`, `history_date`, `history_type`
+| django-auditlog | django-simple-history |
+|-----------------|----------------------|
+| `{"status": ["open", "closed"]}` + actor, timestamp, action type | Full copy of the ProblemReport row (all fields) + `history_user`, `history_date`, `history_type` |
