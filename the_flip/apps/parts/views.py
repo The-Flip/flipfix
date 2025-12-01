@@ -410,6 +410,57 @@ class PartRequestUpdatesPartialView(LoginRequiredMixin, UserPassesTestMixin, Vie
         )
 
 
+class PartRequestStatusUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """AJAX-only endpoint to update part request status."""
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def post(self, request, *args, **kwargs):
+        part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
+        action = request.POST.get("action")
+
+        if action == "update_status":
+            new_status = request.POST.get("status")
+            if new_status not in dict(PartRequest.STATUS_CHOICES):
+                return JsonResponse({"error": "Invalid status"}, status=400)
+
+            if part_request.status == new_status:
+                return JsonResponse({"status": "noop"})
+
+            # Get old status display before change
+            old_display = part_request.get_status_display()
+            new_display = dict(PartRequest.STATUS_CHOICES).get(new_status, new_status)
+
+            # Get the maintainer for the current user
+            maintainer = get_object_or_404(Maintainer, user=request.user)
+
+            # Create an update that will cascade the status change
+            update = PartRequestUpdate.objects.create(
+                part_request=part_request,
+                posted_by=maintainer,
+                text=f"Status changed: {old_display} → {new_display}",
+                new_status=new_status,
+            )
+
+            # Render the new update entry for injection into the page
+            update_html = render_to_string(
+                "parts/partials/part_update_entry.html",
+                {"update": update},
+            )
+
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "new_status": new_status,
+                    "new_status_display": new_display,
+                    "update_html": update_html,
+                }
+            )
+
+        return JsonResponse({"error": "Unknown action"}, status=400)
+
+
 class PartRequestUpdateDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, View):
     """Detail view for a part request update. Maintainer-only access."""
 
