@@ -1621,6 +1621,15 @@ body {
   margin-bottom: 0;
 }
 
+.markdown-content a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
 /* --- Stats Grid --- */
 .stat-grid {
   display: grid;

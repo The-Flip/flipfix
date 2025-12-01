@@ -1,19 +1,22 @@
 {% load core_extras %}
 <div class="timeline__entry">
-  <a href="{% url 'log-detail' entry.pk %}" class="timeline__entry-inner">
+  <div class="timeline__entry-inner">
     <div class="timeline__icon timeline__icon--log">
       <i class="fa-solid fa-screwdriver-wrench"></i>
     </div>
     <div class="timeline__content">
       <div class="card card--log timeline__card">
-        <div class="timeline__header">
-          <span class="timeline__title timeline__title--log">{{ entry.machine.display_name }}</span>
-          <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
-        </div>
+        <a href="{% url 'log-detail' entry.pk %}" class="timeline__card-link">
+          <div class="timeline__header">
+            <span class="timeline__title timeline__title--log">{{ entry.machine.display_name }}</span>
+            <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
+          </div>
+        </a>
         <div class="timeline__body {% if entry.problem_report or entry.media.all %}space-below-sm{% endif %} markdown-content markdown-content--compact">
           {{ entry.text|render_markdown }}
         </div>
-        {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all %}
+        {% url 'log-detail' entry.pk as entry_url %}
+        {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
         {% if entry.problem_report %}
           <div class="snippet-row">
             <span class="snippet-label text-problem">
@@ -24,5 +27,5 @@
         {% endif %}
       </div>
     </div>
-  </a>
+  </div>
 </div>

@@ -11,11 +11,12 @@
             <span class="timeline__title timeline__title--log">Work</span>
             <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
           </div>
-          <div class="timeline__body {% if entry.problem_report or entry.media.all %}space-below-sm{% endif %} markdown-content markdown-content--compact">
-            {{ entry.text|render_markdown }}
-          </div>
-          {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all %}
         </a>
+        <div class="timeline__body {% if entry.problem_report or entry.media.all %}space-below-sm{% endif %} markdown-content markdown-content--compact">
+          {{ entry.text|render_markdown }}
+        </div>
+        {% url 'log-detail' entry.pk as entry_url %}
+        {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
         {% if entry.problem_report %}
           <a href="{% url 'problem-report-detail' entry.problem_report.pk %}"
              class="timeline__snippet-link">

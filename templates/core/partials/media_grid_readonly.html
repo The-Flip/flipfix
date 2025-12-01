@@ -1,9 +1,9 @@
 {# Read-only media thumbnails for list views #}
-{# Usage: {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all %} #}
+{# Usage: {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=url %} #}
 {% if media_items %}
   <div class="media-grid">
     {% for media in media_items %}
-      <div class="media-grid__item">
+      <a href="{{ detail_url }}" class="media-grid__item">
         {% if media.media_type == 'video' %}
           {% if media.transcode_status == 'ready' and media.poster_file %}
             <img src="{{ media.poster_file.url }}" alt="Video poster">
@@ -19,7 +19,7 @@
             <img src="{{ media.file.url }}" alt="Photo">
           {% endif %}
         {% endif %}
-      </div>
+      </a>
     {% endfor %}
   </div>
 {% endif %}

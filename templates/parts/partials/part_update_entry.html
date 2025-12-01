@@ -1,20 +1,26 @@
 {% load core_extras %}
-<article class="card card--padded card--log js-clickable-card"
-         data-url="{% url 'part-request-update-detail' update.pk %}"
-         tabindex="0"
-         role="button"
-         aria-label="View update">
-  <div class="flex items-center justify-between stack-tight">
-    <div class="flex items-center stack-tight">
-      <i class="fa-solid fa-comment text-log"></i>
-      {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
+<article class="card card--log card--padded">
+  <a href="{% url 'part-request-update-detail' update.pk %}"
+     style="display: block;
+            text-decoration: none;
+            color: inherit">
+    <div class="flex items-center justify-between stack-tight">
+      <div class="flex items-center stack-tight">
+        <i class="fa-solid fa-comment text-log"></i>
+        {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
+      </div>
+      <div class="log-entry-meta">
+        {{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong>
+      </div>
     </div>
-    <div class="log-entry-meta">
-      {{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong>
-    </div>
-  </div>
+  </a>
   <div class="space-above-sm">
     <div class="markdown-content markdown-content--compact">{{ update.text|render_markdown }}</div>
-    {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all %}
   </div>
+  {% if update.media.all %}
+    {% url 'part-request-update-detail' update.pk as update_url %}
+    <div class="space-above-sm">
+      {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all detail_url=update_url %}
+    </div>
+  {% endif %}
 </article>
