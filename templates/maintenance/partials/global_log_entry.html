@@ -13,27 +13,7 @@
         <div class="timeline__body {% if entry.problem_report or entry.media.all %}space-below-sm{% endif %} markdown-content markdown-content--compact">
           {{ entry.text|render_markdown }}
         </div>
-        {% if entry.media.all %}
-          <div class="flex flex-wrap stack-tight space-above-sm">
-            {% for media in entry.media.all %}
-              {% if media.media_type == 'video' %}
-                {% if media.transcode_status == 'ready' and media.poster_file %}
-                  <img src="{{ media.poster_file.url }}" alt="Video poster" width="120">
-                {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-                  <span class="text-muted body-small">Video processing…</span>
-                {% else %}
-                  <span class="text-problem body-small">Video failed</span>
-                {% endif %}
-              {% else %}
-                {% if media.thumbnail_file %}
-                  <img src="{{ media.thumbnail_file.url }}" alt="Photo" width="120">
-                {% else %}
-                  <img src="{{ media.file.url }}" alt="Photo" width="120">
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-          </div>
-        {% endif %}
+        {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all %}
         {% if entry.problem_report %}
           <div class="snippet-row">
             <span class="snippet-label text-problem">

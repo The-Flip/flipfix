@@ -1,23 +1,25 @@
 {# Read-only media thumbnails for list views #}
 {# Usage: {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all %} #}
 {% if media_items %}
-  <div class="flex flex-wrap stack-tight space-above-sm">
+  <div class="media-grid">
     {% for media in media_items %}
-      {% if media.media_type == 'video' %}
-        {% if media.transcode_status == 'ready' and media.poster_file %}
-          <img src="{{ media.poster_file.url }}" alt="Video poster" width="120">
-        {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-          <span class="text-muted body-small">Video processing...</span>
+      <div class="media-grid__item">
+        {% if media.media_type == 'video' %}
+          {% if media.transcode_status == 'ready' and media.poster_file %}
+            <img src="{{ media.poster_file.url }}" alt="Video poster">
+          {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
+            <div class="media-grid__status">Processing video…</div>
+          {% else %}
+            <div class="media-grid__status media-grid__status--error">Video failed</div>
+          {% endif %}
         {% else %}
-          <span class="text-problem body-small">Video failed</span>
+          {% if media.thumbnail_file %}
+            <img src="{{ media.thumbnail_file.url }}" alt="Photo">
+          {% else %}
+            <img src="{{ media.file.url }}" alt="Photo">
+          {% endif %}
         {% endif %}
-      {% else %}
-        {% if media.thumbnail_file %}
-          <img src="{{ media.thumbnail_file.url }}" alt="Photo" width="120">
-        {% else %}
-          <img src="{{ media.file.url }}" alt="Photo" width="120">
-        {% endif %}
-      {% endif %}
+      </div>
     {% endfor %}
   </div>
 {% endif %}

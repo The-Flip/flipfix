@@ -15,26 +15,6 @@
   </div>
   <div class="space-above-sm">
     <div class="markdown-content markdown-content--compact">{{ update.text|render_markdown }}</div>
-    {% if update.media.all %}
-      <div class="flex flex-wrap stack-tight space-above-sm">
-        {% for media in update.media.all %}
-          {% if media.media_type == 'video' %}
-            {% if media.transcode_status == 'ready' and media.poster_file %}
-              <img src="{{ media.poster_file.url }}" alt="Video poster" width="160">
-            {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-              <span class="text-muted body-small">Video processing...</span>
-            {% else %}
-              <span class="text-problem body-small">Video failed</span>
-            {% endif %}
-          {% else %}
-            {% if media.thumbnail_file %}
-              <img src="{{ media.thumbnail_file.url }}" alt="Photo" width="160">
-            {% else %}
-              <img src="{{ media.file.url }}" alt="Photo" width="160">
-            {% endif %}
-          {% endif %}
-        {% endfor %}
-      </div>
-    {% endif %}
+    {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all %}
   </div>
 </article>
