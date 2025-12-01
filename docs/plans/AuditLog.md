@@ -74,6 +74,12 @@ Do not audit models that are admin-only or cannot be changed by maintainers.  Th
 | User | Admin-only; Django auth |
 | Invitation | Admin-only; invitation management |
 
+### Front-End Display
+
+The audit trail should be displayed at the bottom of detail pages in the maintainer-facing app (not just in Django admin). Considerations:
+- Out-of-the-box UI components for displaying history
+- Customizable templates (HTML/CSS) to match the app's look and feel
+
 ### Non-Requirements
 
 - **SQL queries against historical data**: Not needed. We don't need to run aggregate queries like "how many status changes happened last month" against the audit tables.
@@ -104,11 +110,12 @@ Both packages are maintained by [Jazzband](https://jazzband.co/), a collaborativ
 | [Write Performance](#performance) | ✅ 1 INSERT + diff calculation | ✅ 1 INSERT (row copy) |
 | [Supports Rollback](#revert--restore) | ❌ | ✅ Built-in revert to any previous version |
 | Built-in Admin Diff View | ✅ Field/From/To table | ✅ Select two versions to compare |
-| [Model Changes Required](#integration--maintenance-costs) | ❌ None (settings-based) | ✅ Add `history = HistoricalRecords()` to each model |
+| [Model Changes Required](#integration--maintenance-costs) | None (settings-based) | Add `history = HistoricalRecords()` to each model |
 | [Number of Migrations](#integration--maintenance-costs) | 1 (single `auditlog_logentry` table) | 1 per tracked model (5 migrations for 5 models) |
 | [Settings Configuration](#integration--maintenance-costs) | List models in `AUDITLOG_INCLUDE_TRACKING_MODELS` | Add to `INSTALLED_APPS` only |
 | [Admin Changes](#integration--maintenance-costs) | Add `AuditlogHistoryAdminMixin` | Change base class to `SimpleHistoryAdmin` |
 | [Template Code for Display](#integration--maintenance-costs) | ~10 lines (iterate `changes_dict`) | ~12 lines (use `diff_against()`) |
+| [Front-End Display](#front-end-display) | Custom templates (fully customizable) | Custom templates (fully customizable) |
 | [Ongoing Maintenance](#integration--maintenance-costs) | Add model name to settings when adding new audited models | Add `history` field to new audited models |
 | [Actively Maintained](#viability) | ✅ v3.3.0 released Oct 2025 | ✅ v3.10.1 released Jun 2025 |
 | [Popularity](#viability) (PyPI downloads/month) | 712K | 2.2M |
