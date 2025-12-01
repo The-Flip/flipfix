@@ -151,3 +151,32 @@ When a ProblemReport status changes from "open" to "closed":
 | django-auditlog | django-simple-history | django-reversion |
 |-----------------|----------------------|------------------|
 | `{"status": ["open", "closed"]}` + actor, timestamp, action type | Full copy of the ProblemReport row (all fields) + `history_user`, `history_date`, `history_type` | Serialized JSON of full ProblemReport + revision metadata (user, comment, date) |
+
+---
+
+## Analysis
+
+### Why Not django-reversion?
+
+Despite having the most GitHub stars and longest history, **django-reversion is not recommended** for this project:
+
+- **Admin-focused**: Designed primarily for admin-based versioning (recovering deleted objects, comparing versions in Django admin), not for programmatic history access or front-end display.
+- **Serialized storage**: Stores data as serialized/pickled objects rather than structured history tables. This makes the data less queryable and harder to work with in custom front-end templates.
+- **Extra dependency for diffs**: Requires the separate [django-reversion-compare](https://pypi.org/project/django-reversion-compare/) add-on to show what changed between versions.
+
+### Recommendation: Choose Between the Two Jazzband Packages
+
+Both **django-auditlog** and **django-simple-history** are well-suited for this project:
+- Modern, clean APIs designed for programmatic access
+- Easy to display in custom front-end templates
+- Well-documented with active communities
+
+**Choose django-auditlog if:**
+- Rollback capability is not needed
+- You prefer zero model changes (settings-only configuration)
+- Smaller storage footprint is appealing
+
+**Choose django-simple-history if:**
+- Rollback capability is important
+- You want the most popular/widely-used option
+- You don't mind adding one line per model
