@@ -52,7 +52,7 @@ class PartRequestModelTests(TestCase):
         )
         result = str(part_request)
         self.assertIn(f"#{part_request.pk}", result)
-        self.assertIn("Part Request", result)
+        self.assertIn("Parts Request", result)
         self.assertIn("flipper rubbers", result)
 
     def test_str_with_long_text(self):

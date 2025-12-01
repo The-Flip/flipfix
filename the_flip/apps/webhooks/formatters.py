@@ -177,7 +177,7 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     return {
         "embeds": [
             {
-                "title": f"📦 Part Requested: #{part_request.pk}",
+                "title": f"📦 Parts Requested: #{part_request.pk}",
                 "description": description,
                 "url": url,
                 "color": 3447003,  # Blue color (same as logs)
@@ -216,7 +216,7 @@ def _format_part_request_status_changed(part_request: PartRequest) -> dict:
     return {
         "embeds": [
             {
-                "title": f"{emoji} Part Request #{part_request.pk}: {status_display}",
+                "title": f"{emoji} Parts Request #{part_request.pk}: {status_display}",
                 "description": description,
                 "url": url,
                 "color": 3447003,  # Blue color (same as logs)
@@ -251,7 +251,7 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     return {
         "embeds": [
             {
-                "title": f"💬 Update on Part Request #{update.part_request.pk}",
+                "title": f"💬 Update on Parts Request #{update.part_request.pk}",
                 "description": description,
                 "url": url,
                 "color": 3447003,  # Blue color (same as logs)
@@ -265,9 +265,9 @@ def format_test_message(event_type: str) -> dict:
     event_labels = {
         "problem_report_created": "Problem Report Created",
         "log_entry_created": "Log Entry Created",
-        "part_request_created": "Part Request Created",
-        "part_request_status_changed": "Part Request Status Changed",
-        "part_request_update_created": "Part Request Update Created",
+        "part_request_created": "Parts Request Created",
+        "part_request_status_changed": "Parts Request Status Changed",
+        "part_request_update_created": "Parts Request Update Created",
     }
     label = event_labels.get(event_type, event_type)
 

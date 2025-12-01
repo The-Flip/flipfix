@@ -6,7 +6,7 @@
   {% else %}
     New
   {% endif %}
-  Part Request · {{ block.super }}
+  Parts Request · {{ block.super }}
 {% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->
@@ -34,11 +34,11 @@
             {% else %}
               New
             {% endif %}
-            Part Request
+            Parts Request
           </div>
           <p class="text-muted text-sm">
             {% if is_edit %}
-              Update the part request details.
+              Update the parts request details.
             {% else %}
               Request a part needed for maintenance. Optionally link it to a machine.
             {% endif %}

@@ -18,9 +18,9 @@ class WebhookEndpoint(TimeStampedModel):
     EVENT_CHOICES = [
         (EVENT_PROBLEM_REPORT_CREATED, "Problem Report Created"),
         (EVENT_LOG_ENTRY_CREATED, "Log Entry Created"),
-        (EVENT_PART_REQUEST_CREATED, "Part Request Created"),
-        (EVENT_PART_REQUEST_STATUS_CHANGED, "Part Request Status Changed"),
-        (EVENT_PART_REQUEST_UPDATE_CREATED, "Part Request Update Created"),
+        (EVENT_PART_REQUEST_CREATED, "Parts Request Created"),
+        (EVENT_PART_REQUEST_STATUS_CHANGED, "Parts Request Status Changed"),
+        (EVENT_PART_REQUEST_UPDATE_CREATED, "Parts Request Update Created"),
     ]
 
     name = models.CharField(

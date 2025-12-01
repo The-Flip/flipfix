@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static core_extras %}
-{% block title %}Part Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
+{% block title %}Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
@@ -23,7 +23,7 @@
       <div class="card card--padded sidebar--sticky">
         <!-- PART REQUEST -->
         <div class="sidebar__section">
-          <div class="sidebar__label">Part Request</div>
+          <div class="sidebar__label">Parts Request</div>
           <div class="sidebar__title">
             <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}
           </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static core_extras %}
-{% block title %}Update · Part Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
+{% block title %}Update · Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
@@ -18,7 +18,7 @@
       <div class="card card--padded sidebar--sticky">
         <!-- PART REQUEST -->
         <div class="sidebar__section">
-          <div class="sidebar__label">Part Request</div>
+          <div class="sidebar__label">Parts Request</div>
           <a href="{% url 'part-request-detail' part_request.pk %}"
              class="sidebar__title sidebar__link">
             <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}

@@ -11,9 +11,9 @@
           <div class="flex items-center stack-tight">
             <span class="timeline__title">
               {% if entry.machine %}
-                {{ entry.machine.display_name }} – Part Request #{{ entry.pk }}
+                {{ entry.machine.display_name }} – Parts Request #{{ entry.pk }}
               {% else %}
-                Part Request #{{ entry.pk }}
+                Parts Request #{{ entry.pk }}
               {% endif %}
             </span>
             <span class="pill pill--neutral">{{ entry.get_status_display }}</span>

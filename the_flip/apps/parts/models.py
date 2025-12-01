@@ -73,7 +73,7 @@ class PartRequest(TimeStampedModel):
 
     def __str__(self) -> str:
         preview = self.text[:50] + "..." if len(self.text) > 50 else self.text
-        return f"Part Request #{self.pk}: {preview}"
+        return f"Parts Request #{self.pk}: {preview}"
 
     @property
     def status_display_class(self) -> str:
