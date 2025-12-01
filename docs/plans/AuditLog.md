@@ -88,7 +88,11 @@ The audit trail should be displayed at the bottom of detail pages in the maintai
 
 ## Package Comparison
 
-Both packages are maintained by [Jazzband](https://jazzband.co/), a collaborative community for Django packages.
+### Contenders
+
+- **[django-auditlog](https://github.com/jazzband/django-auditlog)**: Lightweight audit trail that stores only changed fields as JSON diffs in a single table. Maintained by [Jazzband](https://jazzband.co/).
+- **[django-simple-history](https://github.com/jazzband/django-simple-history)**: Full version control that stores complete snapshots of each record, enabling rollback and time-travel queries. Maintained by [Jazzband](https://jazzband.co/).
+- **[django-reversion](https://github.com/etianen/django-reversion)**: Version control system that stores serialized model snapshots, with strong admin integration for recovering deleted objects.
 
 ### Philosophy
 
@@ -96,46 +100,44 @@ Both packages are maintained by [Jazzband](https://jazzband.co/), a collaborativ
 
 **django-simple-history**: "What was the state?" — Full version control. Stores complete snapshots of each record in per-model history tables. Enables rollback and time-travel queries.
 
-### Contenders
-
-- **[django-auditlog](https://github.com/jazzband/django-auditlog)**: Lightweight audit trail that stores only changed fields as JSON diffs in a single table.
-- **[django-simple-history](https://github.com/jazzband/django-simple-history)**: Full version control that stores complete snapshots of each record, enabling rollback and time-travel queries.
+**django-reversion**: "Version control for models" — Stores serialized snapshots with focus on admin-based recovery of deleted objects and rollback. Requires wrapping views/code in revision blocks.
 
 ### Comparison
 
-|  | **django-auditlog** | **django-simple-history** |
-|---|---|---|
-| [Supports PostgreSQL & SQLite](#works-on-dev-db) | ✅ | ✅ |
-| [No Increase in Hosting Cost](#storage-impact) | ✅ (~7MB over 3 years) | ✅ (~20MB over 3 years) |
-| [Write Performance](#performance) | ✅ 1 INSERT + diff calculation | ✅ 1 INSERT (row copy) |
-| [Supports Rollback](#revert--restore) | ❌ | ✅ Built-in revert to any previous version |
-| Built-in Admin Diff View | ✅ Field/From/To table | ✅ Select two versions to compare |
-| [Model Changes Required](#integration--maintenance-costs) | None (settings-based) | Add `history = HistoricalRecords()` to each model |
-| [Number of Migrations](#integration--maintenance-costs) | 1 (single `auditlog_logentry` table) | 1 per tracked model (5 migrations for 5 models) |
-| [Settings Configuration](#integration--maintenance-costs) | List models in `AUDITLOG_INCLUDE_TRACKING_MODELS` | Add to `INSTALLED_APPS` only |
-| [Admin Changes](#integration--maintenance-costs) | Add `AuditlogHistoryAdminMixin` | Change base class to `SimpleHistoryAdmin` |
-| [Template Code for Display](#integration--maintenance-costs) | ~10 lines (iterate `changes_dict`) | ~12 lines (use `diff_against()`) |
-| [Front-End Display](#front-end-display) | Custom templates (fully customizable) | Custom templates (fully customizable) |
-| [Ongoing Maintenance](#integration--maintenance-costs) | Add model name to settings when adding new audited models | Add `history` field to new audited models |
-| [Actively Maintained](#viability) | ✅ v3.3.0 released Oct 2025 | ✅ v3.10.1 released Jun 2025 |
-| [Popularity](#viability) (PyPI downloads/month) | 712K | 2.2M |
-| [GitHub Stars](#viability) | 1.3K | 2.4K |
-| [Project Age](#viability) | since 2013 |  since 2011 |
+|  | **django-auditlog** | **django-simple-history** | **django-reversion** |
+|---|---|---|---|
+| [Supports PostgreSQL & SQLite](#works-on-dev-db) | ✅ | ✅ | ✅ |
+| [No Increase in Hosting Cost](#storage-impact) | ✅ (~7MB over 3 years) | ✅ (~20MB over 3 years) | ✅ (~20MB over 3 years) |
+| [Write Performance](#performance) | ✅ 1 INSERT + diff calculation | ✅ 1 INSERT (row copy) | ✅ 1 INSERT (serialized snapshot) |
+| [Supports Rollback](#revert--restore) | ❌ | ✅ Built-in revert | ✅ Built-in revert + recover deleted |
+| Built-in Admin Diff View | ✅ Field/From/To table | ✅ Select two versions to compare | ⚠️ Requires [django-reversion-compare](https://pypi.org/project/django-reversion-compare/) add-on |
+| [Model Changes Required](#integration--maintenance-costs) | None (settings-based) | Add `history = HistoricalRecords()` to each model | None (register via admin or decorator) |
+| [Number of Migrations](#integration--maintenance-costs) | 1 (single table) | 1 per tracked model (5 migrations) | 1 (single `reversion_*` tables) |
+| [Settings Configuration](#integration--maintenance-costs) | List models in settings | Add to `INSTALLED_APPS` only | Add to `INSTALLED_APPS` only |
+| [Admin Changes](#integration--maintenance-costs) | Add `AuditlogHistoryAdminMixin` | Change base class to `SimpleHistoryAdmin` | Change base class to `VersionAdmin` |
+| [Template Code for Display](#integration--maintenance-costs) | ~10 lines (iterate `changes_dict`) | ~12 lines (use `diff_against()`) | ~20+ lines (deserialize versions manually) |
+| [Front-End Display](#front-end-display) | Custom templates (easy) | Custom templates (easy) | Custom templates (harder - serialized data) |
+| [Ongoing Maintenance](#integration--maintenance-costs) | Add model name to settings | Add `history` field to new models | Register new models in admin |
+| [Actively Maintained](#viability) | ✅ v3.3.0 (Oct 2025) | ✅ v3.10.1 (Jun 2025) | ✅ v6.0.0 (Sep 2025) |
+| [Popularity](#viability) (PyPI downloads/month) | 712K | 2.2M | 1.0M |
+| [GitHub Stars](#viability) | 1.3K | 2.4K | 3.1K |
+| [Project Age](#viability) | since 2013 | since 2011 | since 2010 |
 
 ### Storage Model
 
-| Aspect | django-auditlog | django-simple-history |
-|--------|-----------------|----------------------|
-| **Table structure** | Single `auditlog_logentry` table for ALL models | Separate `_history` table per model |
-| **What's stored** | JSON diff of changed fields only | Full snapshot of entire record |
-| **Per-change size** | ~100-500 bytes | Full row size (varies by model) |
-| [**Affect on Hosting Cost**](#storage-impact) | None | None |
-| **Query efficiency** | Generic foreign key (content_type + object_pk) | Direct foreign key to original model |
+| Aspect | django-auditlog | django-simple-history | django-reversion |
+|--------|-----------------|----------------------|------------------|
+| **Table structure** | Single `auditlog_logentry` table for ALL models | Separate `_history` table per model | Single `reversion_version` table for ALL models |
+| **What's stored** | JSON diff of changed fields only | Full snapshot of entire record | Serialized (JSON) snapshot of entire record |
+| **Per-change size** | ~100-500 bytes | Full row size (varies by model) | Full row size (serialized) |
+| [**Affect on Hosting Cost**](#storage-impact) | None | None | None |
+| **Query efficiency** | Generic foreign key | Direct foreign key to original model | Generic foreign key |
+| **Data format** | Human-readable JSON | Native Django fields | Serialized JSON (less queryable) |
 
 ### Example: What Gets Stored
 
 When a ProblemReport status changes from "open" to "closed":
 
-| django-auditlog | django-simple-history |
-|-----------------|----------------------|
-| `{"status": ["open", "closed"]}` + actor, timestamp, action type | Full copy of the ProblemReport row (all fields) + `history_user`, `history_date`, `history_type` |
+| django-auditlog | django-simple-history | django-reversion |
+|-----------------|----------------------|------------------|
+| `{"status": ["open", "closed"]}` + actor, timestamp, action type | Full copy of the ProblemReport row (all fields) + `history_user`, `history_date`, `history_type` | Serialized JSON of full ProblemReport + revision metadata (user, comment, date) |
