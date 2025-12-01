@@ -1096,32 +1096,23 @@ body {
 }
 
 .machine-card {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
-.machine-card__header {
-  position: relative;
-}
-
-.machine-card__header-link {
+.machine-card__link {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  padding: var(--space-3);
   text-decoration: none;
   color: inherit;
-  padding: var(--space-3);
-  padding-right: calc(var(--space-3) * 4 + 6rem); /* Space for buttons */
 }
 
-/* Round top corners; round bottom only when header is the last child (no problem row) */
-.machine-card__header:last-child .machine-card__header-link {
-  border-radius: var(--radius-lg);
-}
-
-.machine-card__header-link:hover {
+.machine-card__link:hover {
   background-color: var(--color-gray-100);
 }
 
@@ -1166,16 +1157,15 @@ body {
   }
 }
 
-/* Clickable snippet row (for linked items in machine cards) */
-.snippet-row--clickable {
+.machine-card__problem {
   display: flex;
-  text-decoration: none;
-  color: inherit;
   padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--color-border-soft);
+  text-decoration: none;
+  color: inherit;
 }
 
-.snippet-row--clickable:hover {
+.machine-card__problem:hover {
   background-color: var(--color-gray-100);
 }
 

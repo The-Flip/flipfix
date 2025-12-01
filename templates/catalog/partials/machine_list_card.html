@@ -1,51 +1,49 @@
 {% load core_extras %}
 <article class="machine-card"
          data-search-text="{{ machine.display_name }} {{ machine.model.year }} {{ machine.model.manufacturer }} {{ machine.get_operational_status_display }}{% if machine.location %} {{ machine.location.name }}{% endif %}{% if machine.latest_open_report %} {{ machine.latest_open_report.0.description }}{% endif %}">
-  <div class="machine-card__header">
-    <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-       class="machine-card__header-link">
-      <span class="machine-card__title">{{ machine.display_name }}</span>
-      <div class="machine-card__pills">
-        <span class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}">
-          {% if machine.operational_status == 'fixing' %}
-            <i class="fa-solid fa-wrench meta"></i>
-          {% elif machine.operational_status == 'good' %}
-            <i class="fa-solid fa-check meta"></i>
-          {% elif machine.operational_status == 'broken' %}
-            <i class="fa-solid fa-circle-xmark meta"></i>
-          {% else %}
-            <i class="fa-solid fa-circle-question meta"></i>
-          {% endif %}
-          {{ machine.get_operational_status_display }}
-        </span>
-        {% if machine.location %}
-          <span class="pill pill--neutral">
-            <i class="fa-solid fa-location-dot meta"></i>
-            {{ machine.location.name }}
-          </span>
+  <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+     class="machine-card__link">
+    <span class="machine-card__title">{{ machine.display_name }}</span>
+    <div class="machine-card__pills">
+      <span class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}">
+        {% if machine.operational_status == 'fixing' %}
+          <i class="fa-solid fa-wrench meta"></i>
+        {% elif machine.operational_status == 'good' %}
+          <i class="fa-solid fa-check meta"></i>
+        {% elif machine.operational_status == 'broken' %}
+          <i class="fa-solid fa-circle-xmark meta"></i>
+        {% else %}
+          <i class="fa-solid fa-circle-question meta"></i>
         {% endif %}
-      </div>
-    </a>
-    <div class="machine-card__actions">
-      <a href="{% url 'problem-report-create-machine' machine.slug %}"
-         class="btn btn--secondary btn--sm"
-         title="Report a problem">
-        <i class="fa-solid fa-bug"></i>
-        <span class="machine-card__btn-text--short">Report</span>
-        <span class="machine-card__btn-text--long">Report Problem</span>
-      </a>
-      <a href="{% url 'log-create-machine' machine.slug %}"
-         class="btn btn--secondary btn--sm"
-         title="Log maintenance work">
-        <i class="fa-solid fa-screwdriver-wrench"></i>
-        <span class="machine-card__btn-text--short">Log</span>
-        <span class="machine-card__btn-text--long">Log Work</span>
-      </a>
+        {{ machine.get_operational_status_display }}
+      </span>
+      {% if machine.location %}
+        <span class="pill pill--neutral">
+          <i class="fa-solid fa-location-dot meta"></i>
+          {{ machine.location.name }}
+        </span>
+      {% endif %}
     </div>
+  </a>
+  <div class="machine-card__actions">
+    <a href="{% url 'problem-report-create-machine' machine.slug %}"
+       class="btn btn--secondary btn--sm"
+       title="Report a problem">
+      <i class="fa-solid fa-bug"></i>
+      <span class="machine-card__btn-text--short">Report</span>
+      <span class="machine-card__btn-text--long">Report Problem</span>
+    </a>
+    <a href="{% url 'log-create-machine' machine.slug %}"
+       class="btn btn--secondary btn--sm"
+       title="Log maintenance work">
+      <i class="fa-solid fa-screwdriver-wrench"></i>
+      <span class="machine-card__btn-text--short">Log</span>
+      <span class="machine-card__btn-text--long">Log Work</span>
+    </a>
   </div>
   {% if machine.latest_open_report %}
     <a href="{% url 'problem-report-detail' machine.latest_open_report.0.pk %}"
-       class="snippet-row snippet-row--clickable">
+       class="machine-card__problem">
       <span class="snippet-label text-problem">
         <i class="fa-solid fa-bug space-right-xs"></i>Problem:
       </span>
