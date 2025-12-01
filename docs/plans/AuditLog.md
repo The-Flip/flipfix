@@ -180,3 +180,29 @@ Both **django-auditlog** and **django-simple-history** are well-suited for this 
 - Rollback capability is important
 - You want the most popular/widely-used option
 - You don't mind adding one line per model
+
+---
+
+## Decision
+
+**Package: django-simple-history**
+
+Selected for:
+- Built-in rollback capability
+- Most popular option (2.2M downloads/month)
+- Excellent admin integration with diff view
+- Direct foreign keys for efficient queries
+
+### UX Design
+
+**Phase 1: Link to Admin**
+- History icon in sidebar top-right corner (absolutely positioned)
+- Desktop only (hidden on mobile)
+- Tooltip on hover: "History"
+- Links directly to Django admin history view for that object
+- Zero custom front-end code required
+
+**Phase 2: Quick Preview (Future)**
+- On hover/click, show 3 most recent changes inline
+- Link to full admin history view
+- Provides "smell test" without leaving the page
