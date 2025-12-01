@@ -1,39 +1,42 @@
 {% load core_extras %}
 <div class="timeline__entry">
-  <a href="{% url 'part-request-detail' entry.pk %}"
-     class="timeline__entry-inner">
+  <div class="timeline__entry-inner">
     <div class="timeline__icon timeline__icon--log">
       <i class="fa-solid fa-box-open"></i>
     </div>
     <div class="timeline__content">
       <div class="card card--log timeline__card">
-        <div class="timeline__header">
-          <div class="flex items-center stack-tight">
-            <span class="timeline__title">
-              {% if entry.machine %}
-                {{ entry.machine.display_name }} – Parts Request #{{ entry.pk }}
-              {% else %}
-                Parts Request #{{ entry.pk }}
-              {% endif %}
-            </span>
-            <span class="pill pill--neutral">{{ entry.get_status_display }}</span>
+        <a href="{% url 'part-request-detail' entry.pk %}"
+           class="timeline__card-link">
+          <div class="timeline__header">
+            <div class="flex items-center stack-tight">
+              <span class="timeline__title">
+                {% if entry.machine %}
+                  {{ entry.machine.display_name }} – Parts Request #{{ entry.pk }}
+                {% else %}
+                  Parts Request #{{ entry.pk }}
+                {% endif %}
+              </span>
+              <span class="pill pill--neutral">{{ entry.get_status_display }}</span>
+            </div>
+            <span class="timeline__meta">{{ entry.requested_by.display_name }} · <strong>{{ entry.created_at|smart_date }}</strong></span>
           </div>
-          <span class="timeline__meta">{{ entry.requested_by.display_name }} · <strong>{{ entry.created_at|smart_date }}</strong></span>
-        </div>
+        </a>
         <div class="timeline__body {% if entry.prefetched_updates %}space-below-sm{% endif %} markdown-content markdown-content--compact">
           {{ entry.text|truncatechars:200|render_markdown }}
         </div>
         {% if entry.prefetched_updates %}
           {% with latest_update=entry.prefetched_updates.0 %}
-            <div class="snippet-row">
+            <a href="{% url 'part-request-update-detail' latest_update.pk %}"
+               class="timeline__snippet-link">
               <span class="snippet-label text-log">
                 <i class="fa-solid fa-comment space-right-xs"></i>Latest:
               </span>
               <span class="snippet-text">{{ latest_update.text|truncatewords:15 }}</span>
-            </div>
+            </a>
           {% endwith %}
         {% endif %}
       </div>
     </div>
-  </a>
+  </div>
 </div>

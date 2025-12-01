@@ -1478,15 +1478,47 @@ body {
   list-style: circle;
 }
 
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 0;
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child,
+.markdown-content h4:first-child,
+.markdown-content h5:first-child,
+.markdown-content h6:first-child {
+  margin-top: 0;
+}
+
 .markdown-content--compact p,
 .markdown-content--compact ul,
-.markdown-content--compact ol {
+.markdown-content--compact ol,
+.markdown-content--compact h1,
+.markdown-content--compact h2,
+.markdown-content--compact h3,
+.markdown-content--compact h4,
+.markdown-content--compact h5,
+.markdown-content--compact h6 {
   margin-bottom: var(--space-1-5);
 }
 
 .markdown-content:last-child p:last-child,
 .markdown-content:last-child ul:last-child,
-.markdown-content:last-child ol:last-child {
+.markdown-content:last-child ol:last-child,
+.markdown-content:last-child h1:last-child,
+.markdown-content:last-child h2:last-child,
+.markdown-content:last-child h3:last-child,
+.markdown-content:last-child h4:last-child,
+.markdown-content:last-child h5:last-child,
+.markdown-content:last-child h6:last-child {
   margin-bottom: 0;
 }
 

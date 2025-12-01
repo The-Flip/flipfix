@@ -27,6 +27,7 @@ requests==2.32.4
 # Markdown Rendering
 Markdown==3.7
 nh3==0.2.18
+linkify-it-py==2.0.3
 
 # Audit Logging
 django-simple-history==3.10.1

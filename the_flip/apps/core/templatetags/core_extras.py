@@ -4,8 +4,12 @@ from django import template
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from linkify_it import LinkifyIt
 
 register = template.Library()
+
+# Linkifier instance for URL detection (handles URLs, emails, www links)
+_linkify = LinkifyIt()
 
 # Allowed HTML tags for markdown rendering
 ALLOWED_TAGS = {
@@ -49,6 +53,35 @@ ALLOWED_ATTRIBUTES = {
 }
 
 
+def _linkify_urls(html: str) -> str:
+    """Convert bare URLs to anchor tags using linkify-it-py.
+
+    Handles URLs, www links, and email addresses. Properly handles edge cases
+    like parentheses in URLs (e.g., Wikipedia links) and avoids double-linking
+    URLs already in anchor tags.
+    """
+    matches = _linkify.match(html)
+    if not matches:
+        return html
+
+    # Process matches in reverse order to preserve string indices
+    result = html
+    for match in reversed(matches):
+        start = match.index
+        end = match.last_index
+
+        # Skip if this URL is already inside an href attribute
+        prefix = html[:start]
+        if prefix.endswith('href="') or prefix.endswith("href='"):
+            continue
+
+        # Replace with anchor tag
+        anchor = f'<a href="{match.url}">{match.text}</a>'
+        result = result[:start] + anchor + result[end:]
+
+    return result
+
+
 @register.filter
 def render_markdown(text):
     """Convert markdown text to sanitized HTML."""
@@ -56,6 +89,8 @@ def render_markdown(text):
         return ""
     # Convert markdown to HTML
     html = markdown.markdown(text, extensions=["fenced_code", "nl2br"])
+    # Convert bare URLs to links
+    html = _linkify_urls(html)
     # Sanitize to prevent XSS
     safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
     return mark_safe(safe_html)  # noqa: S308 - HTML sanitized by nh3
