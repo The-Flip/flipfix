@@ -24,10 +24,8 @@
         <!-- PART REQUEST -->
         <div class="sidebar__section">
           <div class="sidebar__label">Parts Request</div>
-          <div class="sidebar__title">
+          <div class="sidebar__title flex items-center stack-tight">
             <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}
-          </div>
-          <div class="flex flex-wrap stack-tight space-above-sm">
             <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
           </div>
           <p class="text-muted text-sm space-above-sm">
