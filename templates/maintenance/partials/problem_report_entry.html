@@ -1,39 +1,42 @@
 {% load core_extras %}
 <div class="timeline__entry">
-  <a href="{% url 'problem-report-detail' entry.pk %}"
-     class="timeline__entry-inner">
+  <div class="timeline__entry-inner">
     <div class="timeline__icon timeline__icon--problem">
       <i class="fa-solid fa-bug"></i>
     </div>
     <div class="timeline__content">
       <div class="card card--problem timeline__card">
-        <div class="timeline__header">
-          <div class="flex items-center stack-tight">
-            <span class="timeline__title timeline__title--problem">Problem</span>
-            <span class="badge {% if entry.status == 'open' %}badge--warning{% else %}badge--success{% endif %}">
-              {{ entry.get_status_display }}
-            </span>
+        <a href="{% url 'problem-report-detail' entry.pk %}"
+           class="timeline__card-link">
+          <div class="timeline__header">
+            <div class="flex items-center stack-tight">
+              <span class="timeline__title timeline__title--problem">Problem</span>
+              <span class="badge {% if entry.status == 'open' %}badge--warning{% else %}badge--success{% endif %}">
+                {{ entry.get_status_display }}
+              </span>
+            </div>
+            <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
           </div>
-          <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
-        </div>
-        <div class="timeline__body {% if entry.prefetched_log_entries %}space-below-sm{% endif %} markdown-content markdown-content--compact">
-          {% if entry.description %}
-            {{ entry.description|render_markdown }}
-          {% else %}
-            {{ entry|problem_report_summary }}
-          {% endif %}
-        </div>
+          <div class="timeline__body {% if entry.prefetched_log_entries %}space-below-sm{% endif %} markdown-content markdown-content--compact">
+            {% if entry.description %}
+              {{ entry.description|render_markdown }}
+            {% else %}
+              {{ entry|problem_report_summary }}
+            {% endif %}
+          </div>
+        </a>
         {% if entry.prefetched_log_entries %}
           {% with latest_log=entry.prefetched_log_entries.0 %}
-            <div class="snippet-row">
+            <a href="{% url 'log-detail' latest_log.pk %}"
+               class="timeline__snippet-link">
               <span class="snippet-label text-log">
                 <i class="fa-solid fa-screwdriver-wrench space-right-xs"></i>Latest:
               </span>
               <span class="snippet-text">{{ latest_log.text|truncatewords:15 }}</span>
-            </div>
+            </a>
           {% endwith %}
         {% endif %}
       </div>
     </div>
-  </a>
+  </div>
 </div>
