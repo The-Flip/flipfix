@@ -96,11 +96,11 @@ The audit trail should be displayed at the bottom of detail pages in the maintai
 
 ### Philosophy
 
-**django-auditlog**: "What changed?" — Lightweight audit trail. Stores only the diff (changed fields as JSON) in a single table. Created explicitly as a lightweight alternative when full version control was "excessive and expensive."
-
-**django-simple-history**: "What was the state?" — Full version control. Stores complete snapshots of each record in per-model history tables. Enables rollback and time-travel queries.
-
-**django-reversion**: "Version control for models" — Stores serialized snapshots with focus on admin-based recovery of deleted objects and rollback. Requires wrapping views/code in revision blocks.
+| Package | Philosophy |
+|---------|------------|
+| **django-auditlog** | "What changed?" — Lightweight audit trail. Stores only the diff (changed fields as JSON) in a single table. Created explicitly as a lightweight alternative when full version control was "excessive and expensive." |
+| **django-simple-history** | "What was the state?" — Full version control. Stores complete snapshots of each record in per-model history tables. Enables rollback and time-travel queries. |
+| **django-reversion** | "Version control for models" — Stores serialized snapshots with focus on admin-based recovery of deleted objects and rollback. Requires wrapping views/code in revision blocks. |
 
 ### Features
 
