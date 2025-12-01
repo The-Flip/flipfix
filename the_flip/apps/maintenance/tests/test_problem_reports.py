@@ -42,20 +42,20 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
     def test_detail_view_requires_staff_permission(self):
         """Non-staff users should be denied access (403)."""
-        self.client.login(username="regularuser", password="testpass123")
+        self.client.force_login(self.regular_user)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 403)
 
     def test_detail_view_accessible_to_staff(self):
         """Staff users should be able to access the detail page."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "maintenance/problem_report_detail.html")
 
     def test_detail_view_displays_report_information(self):
         """Detail page should display core report information with reporter when available."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, self.machine.display_name)
@@ -72,7 +72,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.report.reported_by_user = submitter
         self.report.save()
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "by Report Submitter")
@@ -89,14 +89,14 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.report.ip_address = None
         self.report.save()
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertNotContains(response, "by ")
 
     def test_detail_view_shows_close_button_for_open_report(self):
         """Detail page should show 'Close Problem' button for open reports."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Close Problem")
@@ -107,7 +107,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.report.status = ProblemReport.STATUS_CLOSED
         self.report.save()
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Re-Open Problem")
@@ -115,7 +115,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
     def test_status_toggle_requires_staff(self):
         """Non-staff users should not be able to toggle status."""
-        self.client.login(username="regularuser", password="testpass123")
+        self.client.force_login(self.regular_user)
         response = self.client.post(self.detail_url)
         self.assertEqual(response.status_code, 403)
 
@@ -124,7 +124,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
     def test_status_toggle_from_open_to_closed(self):
         """Staff users should be able to close an open report."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.post(self.detail_url)
 
         self.assertEqual(response.status_code, 302)
@@ -144,7 +144,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.report.status = ProblemReport.STATUS_CLOSED
         self.report.save()
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.post(self.detail_url)
 
         self.assertEqual(response.status_code, 302)
@@ -159,7 +159,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
     def test_status_toggle_shows_close_message(self):
         """Closing a report should show appropriate success message."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.post(self.detail_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -171,7 +171,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         self.report.status = ProblemReport.STATUS_CLOSED
         self.report.save()
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.post(self.detail_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -191,7 +191,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
             text="Adjusted flipper alignment",
         )
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url, {"q": "coil"})
 
         self.assertContains(response, "Investigated coil stop issue")
@@ -215,7 +215,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
         log_with_tech.maintainers.add(Maintainer.objects.get(user=tech))
         log_with_other.maintainers.add(Maintainer.objects.get(user=other))
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url, {"q": "Tech"})
 
         self.assertContains(response, "Investigated coil stop issue")
@@ -239,20 +239,20 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_list_view_requires_staff_permission(self):
         """Non-staff users should be denied access (403)."""
-        self.client.login(username="regularuser", password="testpass123")
+        self.client.force_login(self.regular_user)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 403)
 
     def test_list_view_accessible_to_staff(self):
         """Staff users should be able to access the list page."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "maintenance/problem_report_list.html")
 
     def test_list_view_contains_link_to_detail(self):
         """List view should contain links to detail pages."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.list_url)
 
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
@@ -260,7 +260,7 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_list_view_pagination(self):
         """List view should paginate results."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         for i in range(15):
             create_problem_report(machine=self.machine, description=f"Problem {i}")
 
@@ -271,7 +271,7 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_list_view_search_by_description(self):
         """List view should filter by description text."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         create_problem_report(machine=self.machine, description="Unique flippers broken")
 
         response = self.client.get(self.list_url, {"q": "flippers"})
@@ -281,14 +281,14 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_list_view_search_by_machine_name(self):
         """List view should filter by machine model name."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.list_url, {"q": "Test Machine"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["reports"]), 1)
 
     def test_list_view_search_no_results(self):
         """List view should show empty message when search has no results."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.list_url, {"q": "nonexistent"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["reports"]), 0)
@@ -300,7 +300,7 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
         other_report = create_problem_report(machine=self.machine, description="Other issue")
         create_log_entry(machine=self.machine, problem_report=other_report, text="Different work")
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.list_url, {"q": "coil stop"})
 
         self.assertContains(response, self.report.description)
@@ -317,7 +317,7 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
 
     def test_partial_view_returns_json(self):
         """AJAX endpoint should return JSON response."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         create_problem_report(machine=self.machine, description="Test problem")
 
         response = self.client.get(self.entries_url)
@@ -331,7 +331,7 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
 
     def test_partial_view_pagination(self):
         """AJAX endpoint should paginate and return correct metadata."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         for i in range(15):
             create_problem_report(machine=self.machine, description=f"Problem {i}")
 
@@ -347,7 +347,7 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
 
     def test_partial_view_search(self):
         """AJAX endpoint should respect search query."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         create_problem_report(machine=self.machine, description="Flipper issue")
         create_problem_report(machine=self.machine, description="Display broken")
 
@@ -358,7 +358,7 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
 
     def test_partial_view_search_matches_log_entry_text(self):
         """AJAX endpoint search should include attached log entry text."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         report_with_match = create_problem_report(machine=self.machine, description="Has match")
         create_log_entry(
             machine=self.machine, problem_report=report_with_match, text="Investigated coil stop"
@@ -376,7 +376,7 @@ class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
 
     def test_partial_view_requires_staff(self):
         """AJAX endpoint should require staff permission."""
-        self.client.login(username="regularuser", password="testpass123")
+        self.client.force_login(self.regular_user)
         response = self.client.get(self.entries_url)
         self.assertEqual(response.status_code, 403)
 
@@ -394,7 +394,7 @@ class MachineProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_machine_list_view_contains_link_to_detail(self):
         """Machine-specific list view should contain links to detail pages."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.machine_list_url)
 
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
@@ -471,7 +471,7 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
     def test_create_problem_report_records_logged_in_user(self):
         """Submitting while authenticated should set reported_by_user."""
         maintainer = create_staff_user(username="maintainer")
-        self.client.login(username="maintainer", password="testpass123")
+        self.client.force_login(maintainer)
         data = {
             "problem_type": ProblemReport.PROBLEM_STUCK_BALL,
             "description": "Ball locked up",
@@ -553,7 +553,7 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
 
     def test_detail_page_shows_add_log_entry_button(self):
         """Problem report detail should have Add Log button."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Add Log")
@@ -568,14 +568,14 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
             text="Investigated the issue",
         )
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Investigated the issue")
 
     def test_detail_page_shows_no_log_entries_message(self):
         """Problem report detail should show message when no log entries exist."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "No log entries yet")
@@ -598,7 +598,7 @@ class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
 
     def test_returns_json(self):
         """AJAX endpoint should return JSON response."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         create_log_entry(
             machine=self.machine,
             problem_report=self.problem_report,
@@ -626,7 +626,7 @@ class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
             text="Unlinked entry",
         )
 
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.entries_url)
 
         data = response.json()
@@ -635,7 +635,7 @@ class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
 
     def test_pagination(self):
         """AJAX endpoint should paginate results."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         for i in range(15):
             create_log_entry(
                 machine=self.machine,
@@ -657,6 +657,6 @@ class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
 
     def test_requires_staff(self):
         """AJAX endpoint should require staff permission."""
-        self.client.login(username="regularuser", password="testpass123")
+        self.client.force_login(self.regular_user)
         response = self.client.get(self.entries_url)
         self.assertEqual(response.status_code, 403)

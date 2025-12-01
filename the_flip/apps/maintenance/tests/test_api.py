@@ -34,14 +34,14 @@ class MaintainerAutocompleteViewTests(TestCase):
 
     def test_requires_staff_permission(self):
         """Non-staff users should be denied access."""
-        create_user(username="regular")
-        self.client.login(username="regular", password="testpass123")
+        regular = create_user(username="regular")
+        self.client.force_login(regular)
         response = self.client.get(self.autocomplete_url)
         self.assertEqual(response.status_code, 403)
 
     def test_returns_maintainers_list(self):
         """Should return a list of maintainers."""
-        self.client.login(username="alice", password="testpass123")
+        self.client.force_login(self.user1)
         response = self.client.get(self.autocomplete_url)
 
         self.assertEqual(response.status_code, 200)
@@ -51,7 +51,7 @@ class MaintainerAutocompleteViewTests(TestCase):
 
     def test_excludes_shared_accounts(self):
         """Shared accounts should not appear in the autocomplete list."""
-        self.client.login(username="alice", password="testpass123")
+        self.client.force_login(self.user1)
         response = self.client.get(self.autocomplete_url)
 
         data = response.json()
@@ -64,7 +64,7 @@ class MaintainerAutocompleteViewTests(TestCase):
 
     def test_filters_by_query(self):
         """Should filter results by query parameter."""
-        self.client.login(username="alice", password="testpass123")
+        self.client.force_login(self.user1)
         response = self.client.get(self.autocomplete_url + "?q=alice")
 
         data = response.json()
@@ -75,7 +75,7 @@ class MaintainerAutocompleteViewTests(TestCase):
 
     def test_case_insensitive_filter(self):
         """Query filtering should be case-insensitive."""
-        self.client.login(username="alice", password="testpass123")
+        self.client.force_login(self.user1)
         response = self.client.get(self.autocomplete_url + "?q=ALICE")
 
         data = response.json()
@@ -85,7 +85,7 @@ class MaintainerAutocompleteViewTests(TestCase):
 
     def test_returns_sorted_results(self):
         """Results should be sorted alphabetically by display name."""
-        self.client.login(username="alice", password="testpass123")
+        self.client.force_login(self.user1)
         response = self.client.get(self.autocomplete_url)
 
         data = response.json()
@@ -254,7 +254,7 @@ class DeleteMediaTests(TestDataMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.login(username=self.staff_user.username, password="testpass123")
+        self.client.force_login(self.staff_user)
         self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
         # Minimal valid PNG (1x1 transparent)
         png_data = (

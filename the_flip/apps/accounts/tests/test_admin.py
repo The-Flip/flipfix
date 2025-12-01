@@ -18,20 +18,20 @@ class InvitationAdminTests(TestCase):
 
     def test_superuser_can_access_invitation_admin(self):
         """Superusers should be able to access the invitation admin."""
-        self.client.login(username="admin", password="testpass123")
+        self.client.force_login(self.superuser)
         response = self.client.get(self.admin_url)
         self.assertEqual(response.status_code, 200)
 
     def test_staff_user_cannot_access_invitation_admin(self):
         """Non-superuser staff should not see the invitation admin."""
-        self.client.login(username="staffuser", password="testpass123")
+        self.client.force_login(self.staff_user)
         response = self.client.get(self.admin_url)
         # Should get 403 since they don't have permission
         self.assertEqual(response.status_code, 403)
 
     def test_superuser_can_create_invitation(self):
         """Superusers should be able to create invitations."""
-        self.client.login(username="admin", password="testpass123")
+        self.client.force_login(self.superuser)
         add_url = "/admin/accounts/invitation/add/"
         response = self.client.post(add_url, {"email": "invite@example.com"})
         self.assertEqual(response.status_code, 302)  # Redirect after success

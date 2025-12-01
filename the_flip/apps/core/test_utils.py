@@ -27,6 +27,9 @@ if TYPE_CHECKING:
 
 UserModel = cast("type[User]", get_user_model())
 
+# Default password for all test users - centralized to avoid secret detection warnings
+TEST_PASSWORD = "testpass123"  # noqa: S105
+
 
 # Counter for unique names
 _counter = {"user": 0, "machine": 0, "report": 0, "log": 0}
@@ -45,7 +48,7 @@ def _next_id(key: str) -> int:
 
 def create_user(
     username: str | None = None,
-    password: str = "testpass123",  # noqa: S107
+    password: str = TEST_PASSWORD,
     is_staff: bool = False,
     is_superuser: bool = False,
     first_name: str = "",

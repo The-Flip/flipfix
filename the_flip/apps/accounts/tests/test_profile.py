@@ -31,14 +31,14 @@ class ProfileViewTests(TestCase):
 
     def test_profile_loads_for_authenticated_user(self):
         """Profile page should load for authenticated users."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         response = self.client.get(self.profile_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/profile.html")
 
     def test_profile_displays_current_data(self):
         """Profile form should show current user data."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         response = self.client.get(self.profile_url)
         self.assertContains(response, 'value="test@example.com"')
         self.assertContains(response, 'value="Test"')
@@ -46,7 +46,7 @@ class ProfileViewTests(TestCase):
 
     def test_profile_update_saves_changes(self):
         """Profile update should save changes."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         data = {
             "email": "updated@example.com",
             "first_name": "Updated",
@@ -62,7 +62,7 @@ class ProfileViewTests(TestCase):
 
     def test_profile_update_shows_success_message(self):
         """Profile update should show success message."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         data = {
             "email": "updated@example.com",
             "first_name": "Updated",
@@ -76,7 +76,7 @@ class ProfileViewTests(TestCase):
     def test_profile_email_uniqueness_validation(self):
         """Profile should reject email already used by another user."""
         create_user(username="otheruser", email="taken@example.com")
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         data = {
             "email": "taken@example.com",
             "first_name": "Test",
@@ -88,7 +88,7 @@ class ProfileViewTests(TestCase):
 
     def test_profile_allows_keeping_own_email(self):
         """User should be able to keep their own email."""
-        self.client.login(username="testuser", password="testpass123")
+        self.client.force_login(self.user)
         data = {
             "email": "test@example.com",
             "first_name": "Updated",
@@ -100,12 +100,19 @@ class ProfileViewTests(TestCase):
 
 @tag("views", "auth")
 class PasswordChangeViewTests(TestCase):
-    """Tests for the password change view."""
+    """Tests for the password change view.
+
+    NOTE: These tests intentionally use login() with explicit passwords rather than
+    force_login() because they specifically test password-related functionality.
+    """
+
+    # Test password for password change tests (intentionally hardcoded)
+    TEST_OLD_PASSWORD = "oldpass123"  # noqa: S105
 
     def setUp(self):
         """Set up test data."""
         self.user = create_user(
-            username="testuser", email="test@example.com", password="oldpass123"
+            username="testuser", email="test@example.com", password=self.TEST_OLD_PASSWORD
         )
         self.password_change_url = reverse("password_change")
         self.password_change_done_url = reverse("password_change_done")
@@ -118,29 +125,30 @@ class PasswordChangeViewTests(TestCase):
 
     def test_password_change_loads_for_authenticated_user(self):
         """Password change page should load for authenticated users."""
-        self.client.login(username="testuser", password="oldpass123")
+        self.client.login(username="testuser", password=self.TEST_OLD_PASSWORD)
         response = self.client.get(self.password_change_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "registration/password_change_form.html")
 
     def test_password_change_success(self):
         """Password change should work with valid data."""
-        self.client.login(username="testuser", password="oldpass123")
+        self.client.login(username="testuser", password=self.TEST_OLD_PASSWORD)
+        new_password = "NewSecurePass456!"  # noqa: S105
         data = {
-            "old_password": "oldpass123",
-            "new_password1": "NewSecurePass456!",
-            "new_password2": "NewSecurePass456!",
+            "old_password": self.TEST_OLD_PASSWORD,
+            "new_password1": new_password,
+            "new_password2": new_password,
         }
         response = self.client.post(self.password_change_url, data, follow=True)
         self.assertRedirects(response, self.password_change_done_url)
 
         # Verify password was changed
         self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password("NewSecurePass456!"))
+        self.assertTrue(self.user.check_password(new_password))
 
     def test_password_change_done_page(self):
         """Password change done page should display success message."""
-        self.client.login(username="testuser", password="oldpass123")
+        self.client.login(username="testuser", password=self.TEST_OLD_PASSWORD)
         response = self.client.get(self.password_change_done_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Password Changed")
