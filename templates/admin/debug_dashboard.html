@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Debug Dashboard{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1>Debug Dashboard</h1>
+    <p>Superuser-only diagnostic snapshot. Values marked as secret are masked.</p>
+    <h2>Runtime</h2>
+    <table class="admin-debug-table">
+      <tbody>
+        {% for label, value in runtime_info %}
+          <tr>
+            <th scope="row">{{ label }}</th>
+            <td>{{ value }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h2>Database (default)</h2>
+    <table class="admin-debug-table">
+      <tbody>
+        {% for key, value in db_info.items %}
+          <tr>
+            <th scope="row">{{ key }}</th>
+            <td>{{ value }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h2>Environment</h2>
+    <table class="admin-debug-table">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+          <th>Set?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for env in env_vars %}
+          <tr>
+            <td>{{ env.key }}</td>
+            <td>
+              {% if env.is_secret and env.value %}
+                <code>{{ env.value }}</code> <span aria-label="secret">(masked)</span>
+              {% else %}
+                <code>{{ env.value|default:"" }}</code>
+              {% endif %}
+            </td>
+            <td>{{ env.is_set }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <style>
+      .card {
+          background: #fff;
+          padding: 16px 20px;
+          border: 1px solid #dcdcdc;
+          border-radius: 6px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      }
+
+      .card h1 {
+          margin-top: 0;
+      }
+
+      .card h2 {
+          margin-top: 24px;
+          margin-bottom: 8px;
+      }
+
+      .admin-debug-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 12px;
+      }
+
+      .admin-debug-table th,
+      .admin-debug-table td {
+          border: 1px solid #e5e5e5;
+          padding: 8px;
+          vertical-align: top;
+      }
+
+      .admin-debug-table th {
+          width: 30%;
+          text-align: left;
+          background: #f8f8f8;
+      }
+  </style>
+{% endblock %}

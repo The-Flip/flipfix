@@ -27,6 +27,7 @@ from the_flip.apps.catalog.views import (
     MachineUpdateView,
 )
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
+from the_flip.apps.core.admin_views import admin_debug_view
 from the_flip.apps.core.views import HomeView
 from the_flip.apps.maintenance import views as maintenance_views
 from the_flip.views import serve_media
@@ -35,6 +36,7 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     # Django admin app
     path("admin/", admin.site.urls),
+    path("admin/tools/debug/", admin_debug_view, name="admin-debug-dashboard"),
     # Authentication
     path(
         "login/",
