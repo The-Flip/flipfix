@@ -28,7 +28,7 @@
         {% if terminal.user.is_active %}
           <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn--report btn--full">
+            <button type="submit" class="btn btn--danger btn--full">
               <i class="fa-solid fa-ban meta"></i>
               Deactivate
             </button>
@@ -36,7 +36,7 @@
         {% else %}
           <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn--log btn--full">
+            <button type="submit" class="btn btn--success btn--full">
               <i class="fa-solid fa-rotate-left meta"></i>
               Reactivate
             </button>
@@ -66,7 +66,7 @@
             {% if terminal.user.is_active %}
               <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn--report btn--full">
+                <button type="submit" class="btn btn--danger btn--full">
                   <i class="fa-solid fa-ban meta"></i>
                   Deactivate
                 </button>
@@ -74,7 +74,7 @@
             {% else %}
               <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn--log btn--full">
+                <button type="submit" class="btn btn--success btn--full">
                   <i class="fa-solid fa-rotate-left meta"></i>
                   Reactivate
                 </button>

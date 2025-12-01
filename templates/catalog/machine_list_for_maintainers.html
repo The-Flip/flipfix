@@ -21,13 +21,15 @@
           <div class="sidebar__label">Machines</div>
           <div class="stat-grid">
             <div class="stat">
-              <span class="stat__value">{{ needs_attention_count }}</span>
-              <span class="stat__label">Need Attention</span>
-            </div>
-            <div class="stat">
               <span class="stat__value">{{ total_count }}</span>
               <span class="stat__label">Total</span>
             </div>
+            {% for loc in location_counts %}
+              <div class="stat">
+                <span class="stat__value">{{ loc.count }}</span>
+                <span class="stat__label">{{ loc.name }}</span>
+              </div>
+            {% endfor %}
           </div>
         </div>
         <!-- ACTIONS -->

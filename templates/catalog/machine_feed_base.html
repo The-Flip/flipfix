@@ -73,7 +73,7 @@
          class="btn btn--icon-only btn--secondary"
          aria-label="Edit machine"
          title="Edit machine">
-        <i class="fa-solid fa-gear"></i>
+        <i class="fa-solid fa-pencil"></i>
       </a>
       <a href="{% url 'problem-report-create-machine' machine.slug %}"
          class="btn btn--report"
@@ -167,13 +167,8 @@
           <div class="flex stack-tight stack-column">
             <a href="{% url 'machine-edit' machine.slug %}"
                class="btn btn--secondary btn--full">
-              <i class="fa-solid fa-gear meta"></i>
+              <i class="fa-solid fa-pencil meta"></i>
               Edit Machine
-            </a>
-            <a href="{% url 'machine-qr' machine.slug %}"
-               class="btn btn--secondary btn--full">
-              <i class="fa-solid fa-qrcode meta"></i>
-              QR Code
             </a>
             <a href="{% url 'problem-report-create-machine' machine.slug %}"
                class="btn btn--report btn--full">

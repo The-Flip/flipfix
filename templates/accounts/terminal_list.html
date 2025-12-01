@@ -41,7 +41,8 @@
           {% for terminal in terminals %}
             <div class="terminal-card">
               <div class="terminal-card__info">
-                <div class="terminal-card__name">{{ terminal.display_name }}</div>
+                <a href="{% url 'terminal-edit' terminal.pk %}"
+                   class="terminal-card__name">{{ terminal.display_name }}</a>
                 {% if not terminal.user.is_active %}<span class="pill pill--neutral">Deactivated</span>{% endif %}
               </div>
               <div class="terminal-card__actions">
