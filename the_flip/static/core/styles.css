@@ -1153,12 +1153,22 @@ body {
   color: var(--color-gray-500);
 }
 
+/*
+ * Timeline card has multiple clickable sections:
+ *   - timeline__card-link: header (title, meta)
+ *   - timeline__media-link: media grid thumbnails
+ *   - timeline__snippet-link: optional snippet at bottom
+ *
+ * The body (timeline__body) is NOT clickable because it contains markdown
+ * which may include URLs, and nesting anchors is invalid HTML.
+ */
 .timeline__body {
   font-size: var(--text-sm);
   color: var(--color-gray-800);
 }
 
-.timeline__card-link {
+.timeline__card-link,
+.timeline__media-link {
   display: block;
   text-decoration: none;
   color: inherit;
@@ -1168,11 +1178,13 @@ body {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.card--log .timeline__card-link:hover {
+.card--log .timeline__card-link:hover,
+.card--log .timeline__media-link:hover {
   background-color: var(--color-log-light-bg-hover);
 }
 
-.card--problem .timeline__card-link:hover {
+.card--problem .timeline__card-link:hover,
+.card--problem .timeline__media-link:hover {
   background-color: var(--color-problem-light-bg-hover);
 }
 
@@ -1180,6 +1192,18 @@ body {
 .timeline__card-link:last-child {
   margin-bottom: calc(-1 * var(--space-3));
   border-radius: var(--radius-lg);
+}
+
+/* Media link sits in middle of card, different positioning than card-link */
+.timeline__media-link {
+  padding: var(--space-2) var(--space-3);
+  margin: 0 calc(-1 * var(--space-3));
+  border-radius: 0;
+}
+
+.timeline__media-link:last-child {
+  margin-bottom: calc(-1 * var(--space-3));
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .timeline__snippet-link {

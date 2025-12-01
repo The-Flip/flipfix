@@ -1,26 +1,27 @@
 {% load core_extras %}
-<article class="card card--log card--padded">
-  <a href="{% url 'part-request-update-detail' update.pk %}"
-     style="display: block;
-            text-decoration: none;
-            color: inherit">
-    <div class="flex items-center justify-between stack-tight">
-      <div class="flex items-center stack-tight">
-        <i class="fa-solid fa-comment text-log"></i>
-        {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
-      </div>
-      <div class="log-entry-meta">
-        {{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong>
-      </div>
+<div class="timeline__entry">
+  <div class="timeline__entry-inner">
+    <div class="timeline__icon timeline__icon--log">
+      <i class="fa-solid fa-comment"></i>
     </div>
-  </a>
-  <div class="space-above-sm">
-    <div class="markdown-content markdown-content--compact">{{ update.text|render_markdown }}</div>
+    <div class="timeline__content">
+      <article class="card card--log timeline__card">
+        <a href="{% url 'part-request-update-detail' update.pk %}"
+           class="timeline__card-link">
+          <div class="timeline__header">
+            <div class="flex items-center stack-tight">
+              <span class="timeline__title timeline__title--log">Update</span>
+              {% if update.new_status %}<span class="pill pill--neutral">-> {{ update.get_new_status_display }}</span>{% endif %}
+            </div>
+            <span class="timeline__meta">{{ update.posted_by.display_name }} · <strong>{{ update.created_at|smart_date }}</strong></span>
+          </div>
+        </a>
+        <div class="timeline__body markdown-content markdown-content--compact">{{ update.text|render_markdown }}</div>
+        {% if update.media.all %}
+          {% url 'part-request-update-detail' update.pk as update_url %}
+          {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all detail_url=update_url %}
+        {% endif %}
+      </article>
+    </div>
   </div>
-  {% if update.media.all %}
-    {% url 'part-request-update-detail' update.pk as update_url %}
-    <div class="space-above-sm">
-      {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all detail_url=update_url %}
-    </div>
-  {% endif %}
-</article>
+</div>

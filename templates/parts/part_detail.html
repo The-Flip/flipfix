@@ -167,7 +167,8 @@
              class="space-above-sm"
              data-fetch-url="{% url 'part-request-updates' part_request.pk %}">
           {% if updates %}
-            <div class="log-entry-list" id="log-list">
+            <div class="timeline" id="log-list">
+              <div class="timeline__line"></div>
               {% for update in updates %}
                 {% include "parts/partials/part_update_entry.html" with update=update %}
               {% endfor %}
@@ -229,28 +230,30 @@
 
           // Inject the new update into the updates list
           if (data.update_html) {
-            let logList = document.getElementById('log-list');
             const noUpdatesMsg = document.querySelector('#log-container > p.text-muted');
             if (noUpdatesMsg) {
               noUpdatesMsg.remove();
             }
-            if (logList) {
-              logList.insertAdjacentHTML('afterbegin', data.update_html);
-            } else {
-              // Create the log list if it doesn't exist
-              const logContainer = document.getElementById('log-container');
-              if (logContainer) {
-                logList = document.createElement('div');
-                logList.className = 'log-entry-list';
-                logList.id = 'log-list';
-                logList.innerHTML = data.update_html;
-                logContainer.prepend(logList);
-              }
+
+            // Parse the HTML into an element
+            const template = document.createElement('template');
+            template.innerHTML = data.update_html.trim();
+            const newEntry = template.content.firstChild;
+
+            // Get or create the timeline container
+            let logList = document.getElementById('log-list');
+            if (!logList) {
+              logList = document.createElement('div');
+              logList.className = 'timeline';
+              logList.id = 'log-list';
+              logList.innerHTML = '<div class="timeline__line"></div>';
+              document.getElementById('log-container').prepend(logList);
             }
-            // Apply smart date formatting to the new entry
-            if (logList) {
-              applySmartDates(logList.firstElementChild);
-            }
+
+            // Insert after the timeline line (second child position)
+            const timelineLine = logList.firstElementChild;
+            timelineLine.after(newEntry);
+            applySmartDates(newEntry);
           }
 
           // Show success message
