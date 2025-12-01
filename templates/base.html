@@ -39,6 +39,8 @@
            class="nav-link {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-link--active{% endif %}">Problems</a>
         <a href="{% url 'log-list' %}"
            class="nav-link {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-link--active{% endif %}">Logs</a>
+        <a href="{% url 'part-request-list' %}"
+           class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}">Parts</a>
         {% if user.is_superuser %}
           <div class="dropdown">
             <button type="button"
@@ -83,6 +85,10 @@
         <a href="{% url 'log-list' %}"
            class="nav-icon {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-icon--active{% endif %}">
           <i class="fa-solid fa-screwdriver-wrench"></i>
+        </a>
+        <a href="{% url 'part-request-list' %}"
+           class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}">
+          <i class="fa-solid fa-box-open"></i>
         </a>
         {% if user.is_superuser %}
           <div class="dropdown">

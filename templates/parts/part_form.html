@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}{% if is_edit %}Edit{% else %}New{% endif %} Part Request · {{ block.super }}{% endblock %}
+{% block content %}
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'part-request-list' %}" class="breadcrumbs__link">Parts</a>
+    <span>/</span>
+    {% if is_edit %}
+      <a href="{% url 'part-request-detail' part_request.pk %}" class="breadcrumbs__link">#{{ part_request.pk }}</a>
+      <span>/</span>
+      <span class="breadcrumbs__current">Edit</span>
+    {% else %}
+      <span class="breadcrumbs__current">New Request</span>
+    {% endif %}
+  </nav>
+  <!-- TWO COLUMN LAYOUT -->
+  <div class="two-column">
+    <!-- SIDEBAR -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <div class="sidebar__section">
+          <div class="sidebar__label">{% if is_edit %}Edit{% else %}New{% endif %} Part Request</div>
+          <p class="text-muted text-sm">
+            {% if is_edit %}
+              Update the part request details.
+            {% else %}
+              Request a part needed for maintenance. Optionally link it to a machine.
+            {% endif %}
+          </p>
+        </div>
+        {% if machine %}
+          <div class="sidebar__section">
+            <div class="sidebar__label">Machine</div>
+            <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+               class="sidebar__title sidebar__link">{{ machine.display_name }}</a>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      <div class="card card--padded">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.machine_slug }}
+          <!-- Machine selector (if not pre-selected) -->
+          {% if not machine %}
+            <div class="form-field">
+              <label class="form-label">Machine (optional)</label>
+              <div class="machine-autocomplete">
+                <input type="text"
+                       id="machine-search"
+                       class="form-input"
+                       placeholder="Search machines..."
+                       autocomplete="off"
+                       data-1p-ignore="true"
+                       data-lpignore="true"
+                       {% if selected_machine %}value="{{ selected_machine.display_name }}"{% endif %}>
+                <div id="machine-results" class="autocomplete-dropdown hidden"></div>
+              </div>
+              {% if form.machine_slug.errors %}
+                <div class="form-error">{{ form.machine_slug.errors.0 }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+          <!-- Description -->
+          <div class="form-field">
+            <label for="id_text" class="form-label">Description</label>
+            {{ form.text }}
+            {% if form.text.errors %}
+              <div class="form-error">{{ form.text.errors.0 }}</div>
+            {% endif %}
+            <p class="form-help text-muted text-sm">Describe what part is needed and why. Supports Markdown.</p>
+          </div>
+          <!-- Media -->
+          <div class="form-field">
+            <label for="id_media_file" class="form-label">Photos/Videos (optional)</label>
+            {{ form.media_file }}
+            {% if form.media_file.errors %}
+              <div class="form-error">{{ form.media_file.errors.0 }}</div>
+            {% endif %}
+            <p class="form-help text-muted text-sm">Attach photos or videos to help identify the part.</p>
+          </div>
+          <!-- Submit -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn--log">
+              <i class="fa-solid fa-box-open meta"></i>
+              {% if is_edit %}Save Changes{% else %}Create Request{% endif %}
+            </button>
+            <a href="{% if is_edit %}{% url 'part-request-detail' part_request.pk %}{% else %}{% url 'part-request-list' %}{% endif %}"
+               class="btn btn--secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script>
+    const machineSlugInput = document.querySelector('input[name="machine_slug"]');
+    const machineSearch = document.getElementById('machine-search');
+    const machineResults = document.getElementById('machine-results');
+
+    if (machineSearch && machineResults) {
+      let debounceTimer;
+
+      machineSearch.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length < 1) {
+          machineResults.classList.add('hidden');
+          machineSlugInput.value = '';
+          return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+          try {
+            const response = await fetch(`{% url 'api-machine-autocomplete' %}?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            if (data.machines && data.machines.length > 0) {
+              machineResults.innerHTML = data.machines.map(m => `
+                <div class="autocomplete-item" data-slug="${m.slug}" data-name="${m.display_name}">
+                  <span class="autocomplete-item__name">${m.display_name}</span>
+                  ${m.location ? `<span class="autocomplete-item__meta">${m.location}</span>` : ''}
+                </div>
+              `).join('');
+              machineResults.classList.remove('hidden');
+            } else {
+              machineResults.innerHTML = '<div class="autocomplete-empty">No machines found</div>';
+              machineResults.classList.remove('hidden');
+            }
+          } catch (error) {
+            console.error('Search error:', error);
+          }
+        }, 200);
+      });
+
+      machineResults.addEventListener('click', function(e) {
+        const item = e.target.closest('.autocomplete-item');
+        if (item) {
+          machineSearch.value = item.dataset.name;
+          machineSlugInput.value = item.dataset.slug;
+          machineResults.classList.add('hidden');
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!machineSearch.contains(e.target) && !machineResults.contains(e.target)) {
+          machineResults.classList.add('hidden');
+        }
+      });
+
+      // Clear slug if search is cleared
+      machineSearch.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+          machineSlugInput.value = '';
+        }
+      });
+    }
+  </script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}Parts · {{ block.super }}{% endblock %}
+{% block content %}
+  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
+  <div class="two-column">
+    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
+    <div class="mobile-actions">
+      <a href="{% url 'part-request-create' %}" class="btn btn--log">
+        <i class="fa-solid fa-plus meta"></i>
+        New Request
+      </a>
+    </div>
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- STATS -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Part Requests</div>
+          <div class="stat-grid">
+            <div class="stat">
+              <span class="stat__value">{{ requested_count }}</span>
+              <span class="stat__label">Requested</span>
+            </div>
+            <div class="stat">
+              <span class="stat__value">{{ ordered_count }}</span>
+              <span class="stat__label">Ordered</span>
+            </div>
+            <div class="stat">
+              <span class="stat__value">{{ received_count }}</span>
+              <span class="stat__label">Received</span>
+            </div>
+          </div>
+        </div>
+        <!-- FILTERS -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Filter by Status</div>
+          <div class="filter-pills">
+            <a href="{% url 'part-request-list' %}"
+               class="pill {% if not status_filter %}pill--active{% endif %}">All</a>
+            <a href="{% url 'part-request-list' %}?status=requested"
+               class="pill {% if status_filter == 'requested' %}pill--active{% endif %}">Requested</a>
+            <a href="{% url 'part-request-list' %}?status=ordered"
+               class="pill {% if status_filter == 'ordered' %}pill--active{% endif %}">Ordered</a>
+            <a href="{% url 'part-request-list' %}?status=received"
+               class="pill {% if status_filter == 'received' %}pill--active{% endif %}">Received</a>
+            <a href="{% url 'part-request-list' %}?status=cancelled"
+               class="pill {% if status_filter == 'cancelled' %}pill--active{% endif %}">Cancelled</a>
+          </div>
+        </div>
+        <!-- ACTIONS -->
+        <div class="sidebar__section">
+          <a href="{% url 'part-request-create' %}" class="btn btn--log btn--full">
+            <i class="fa-solid fa-plus meta"></i>
+            New Part Request
+          </a>
+        </div>
+      </div>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      <!-- SEARCH BAR -->
+      <div class="filter-bar">
+        <div class="filter-bar__search filter-bar__search--full">
+          <form method="get" action="">
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            <input type="search"
+                   name="q"
+                   placeholder="Search..."
+                   value="{{ search_form.q.value|default:'' }}"
+                   class="filter-bar__search-input">
+            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+          </form>
+        </div>
+      </div>
+      <!-- LIST CONTENT -->
+      <div id="log-container"
+           data-fetch-url="{% url 'part-request-list-entries' %}{% if status_filter %}?status={{ status_filter }}{% endif %}">
+        {% if part_requests %}
+          <div class="timeline">
+            <div class="timeline__line"></div>
+            <div id="log-list">
+              {% for entry in part_requests %}
+                {% include "parts/partials/part_list_entry.html" with entry=entry %}
+              {% endfor %}
+            </div>
+          </div>
+          <div id="log-pagination"
+               data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+        {% else %}
+          <p class="text-muted">
+            {% if search_form.q.value %}
+              No part requests match your search.
+            {% elif status_filter %}
+              No {{ status_filter }} part requests.
+            {% else %}
+              No part requests yet.
+            {% endif %}
+          </p>
+        {% endif %}
+      </div>
+      <div id="log-loading" class="hidden">Loading…</div>
+      <div id="log-sentinel"></div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+{% endblock extra_scripts %}

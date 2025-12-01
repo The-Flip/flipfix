@@ -1,0 +1,31 @@
+{% load core_extras %}
+<div class="timeline__item">
+  <div class="timeline__icon timeline__icon--log">
+    <i class="fa-solid fa-box-open"></i>
+  </div>
+  <a href="{% url 'part-request-detail' entry.pk %}" class="flip-card flip-card--clickable">
+    <div class="flip-card__top">
+      <div class="flip-card__top-left">
+        <span class="pill pill--status-{{ entry.status_display_class }}">
+          {{ entry.get_status_display }}
+        </span>
+      </div>
+      <div class="flip-card__top-right text-muted text-sm">
+        {{ entry.created_at|smart_date }}
+      </div>
+    </div>
+    <div class="flip-card__main">
+      <div class="flip-card__text markdown-content">{{ entry.text|truncatechars:200|render_markdown }}</div>
+    </div>
+    <div class="flip-card__bottom">
+      <div class="flip-card__bottom-left text-muted text-sm">
+        {% if entry.machine %}
+          <i class="fa-solid fa-gamepad meta"></i> {{ entry.machine.display_name }}
+        {% endif %}
+      </div>
+      <div class="flip-card__bottom-right text-muted text-sm">
+        <i class="fa-solid fa-user meta"></i> {{ entry.requested_by.display_name }}
+      </div>
+    </div>
+  </a>
+</div>

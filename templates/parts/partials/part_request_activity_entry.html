@@ -1,0 +1,25 @@
+{% load core_extras %}
+<div class="timeline__entry">
+  <div class="timeline__entry-inner">
+    <div class="timeline__icon timeline__icon--log">
+      <i class="fa-solid fa-box-open"></i>
+    </div>
+    <div class="timeline__content">
+      <div class="card card--log timeline__card">
+        <a href="{% url 'part-request-detail' entry.pk %}" class="timeline__card-link">
+          <div class="timeline__header">
+            <div class="flex items-center stack-tight">
+              <span class="timeline__title timeline__title--log">
+                Part Request <i class="fa-solid fa-box-open"></i> #{{ entry.pk }} created
+              </span>
+            </div>
+            <span class="timeline__meta">{{ entry.created_at|smart_date }} · {{ entry.requested_by.display_name }}</span>
+          </div>
+          <div class="timeline__body markdown-content markdown-content--compact">
+            {{ entry.text|truncatechars:200|render_markdown }}
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

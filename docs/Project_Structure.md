@@ -16,6 +16,7 @@ the_flip/
     │   ├── accounts/         # Maintainer profiles & auth glue
     │   ├── catalog/          # Catalog of pinball machines and models
     │   ├── maintenance/      # Problem reports, log entries
+    │   ├── parts/            # Part request tracking and management
     │   ├── webhooks/         # Webhook notifications to external services
     │   └── core/             # Shared utilities & decorators
     └── static/               # Project-level static files
@@ -25,6 +26,7 @@ the_flip/
 - **accounts**: wraps Django’s `AUTH_USER_MODEL` with the Maintainer profile. Handles admin customization (list filters, field ordering) and any future features like maintainer onboarding or role management.
 - **catalog**: owns Machine Models and Machine Instances, including public-facing metadata (educational content, credits, operational status). This app publishes read APIs/pages that the museum floor uses.
 - **maintenance**: owns Problem Reports (visitor submissions), maintainer-created tasks, and Log Entries. Encapsulates workflows such as auto-closing tasks when machines are marked "good", rate-limiting submissions, and the "select-or-type" maintainer attribution control.
+- **parts**: manages part requests with full lifecycle tracking (requested → ordered → received). Supports media attachments and threaded updates. Maintainer-only access with webhook notifications for Discord integration.
 - **webhooks**: sends notifications to external services (Discord, Slack, etc.) when events occur. Configurable endpoints and per-event subscriptions via admin.
 - **core**: shared helpers that don't belong to a single domain app—decorators, custom admin mixins, base templates, date utilities, etc.
 

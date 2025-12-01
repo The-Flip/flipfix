@@ -21,6 +21,7 @@ from django.contrib.auth import get_user_model
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -29,7 +30,7 @@ UserModel = cast("type[User]", get_user_model())
 
 
 # Counter for unique names
-_counter = {"user": 0, "machine": 0, "report": 0, "log": 0}
+_counter = {"user": 0, "machine": 0, "report": 0, "log": 0, "part": 0}
 
 
 def _next_id(key: str) -> int:
@@ -262,6 +263,74 @@ def create_shared_terminal(
     maintainer.is_shared_account = True
     maintainer.save()
     return maintainer
+
+
+def create_part_request(
+    text: str | None = None,
+    requested_by: Maintainer | None = None,
+    machine: MachineInstance | None = None,
+    status: str = PartRequest.STATUS_REQUESTED,
+    **kwargs,
+) -> PartRequest:
+    """Create a test PartRequest.
+
+    Args:
+        text: Part request description (auto-generated if not provided)
+        requested_by: Maintainer who requested (created if not provided)
+        machine: MachineInstance (optional)
+        status: Request status (defaults to 'requested')
+        **kwargs: Additional fields
+
+    Returns:
+        Created PartRequest instance
+    """
+    if text is None:
+        text = f"Test part request {_next_id('part')}"
+    if requested_by is None:
+        user = create_staff_user()
+        requested_by = Maintainer.objects.get(user=user)
+    return PartRequest.objects.create(
+        text=text,
+        requested_by=requested_by,
+        machine=machine,
+        status=status,
+        **kwargs,
+    )
+
+
+def create_part_request_update(
+    part_request: PartRequest | None = None,
+    posted_by: Maintainer | None = None,
+    text: str | None = None,
+    new_status: str = "",
+    **kwargs,
+) -> PartRequestUpdate:
+    """Create a test PartRequestUpdate.
+
+    Args:
+        part_request: Parent PartRequest (created if not provided)
+        posted_by: Maintainer who posted (created if not provided)
+        text: Update text (auto-generated if not provided)
+        new_status: Status change (empty if no change)
+        **kwargs: Additional fields
+
+    Returns:
+        Created PartRequestUpdate instance
+    """
+    if part_request is None:
+        part_request = create_part_request()
+    if posted_by is None:
+        user = create_staff_user()
+        posted_by = Maintainer.objects.get(user=user)
+    if text is None:
+        text = f"Test part update {_next_id('part')}"
+    return PartRequestUpdate.objects.create(
+        part_request=part_request,
+        posted_by=posted_by,
+        text=text,
+        new_status=new_status,
+        **kwargs,
+    )
 
 
 # =============================================================================

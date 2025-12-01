@@ -1150,9 +1150,21 @@ class ReceiveTranscodedMediaView(View):
     Expects multipart/form-data with:
     - video_file: transcoded video file
     - poster_file: generated poster image
-    - log_entry_media_id: ID of LogEntryMedia record to update
+    - media_id: ID of media record to update
+    - model_name: Name of the media model (LogEntryMedia, PartRequestMedia, etc.)
+    - log_entry_media_id: (legacy) ID of LogEntryMedia record to update
     - Authorization header: Bearer <token>
     """
+
+    def _get_media_model(self, model_name: str):
+        """Get the media model class by name."""
+        if model_name == "LogEntryMedia":
+            return LogEntryMedia
+        if model_name in ("PartRequestMedia", "PartRequestUpdateMedia"):
+            from the_flip.apps.parts.models import PartRequestMedia, PartRequestUpdateMedia
+
+            return PartRequestMedia if model_name == "PartRequestMedia" else PartRequestUpdateMedia
+        raise ValueError(f"Unknown media model: {model_name}")
 
     def post(self, request, *args, **kwargs):
         # Validate authentication token
@@ -1174,12 +1186,11 @@ class ReceiveTranscodedMediaView(View):
                 {"success": False, "error": "Invalid authentication token"}, status=403
             )
 
-        # Validate required fields
-        media_id = request.POST.get("log_entry_media_id")
+        # Validate required fields - support both new and legacy field names
+        media_id = request.POST.get("media_id") or request.POST.get("log_entry_media_id")
+        model_name = request.POST.get("model_name", "LogEntryMedia")
         if not media_id:
-            return JsonResponse(
-                {"success": False, "error": "Missing log_entry_media_id"}, status=400
-            )
+            return JsonResponse({"success": False, "error": "Missing media_id"}, status=400)
 
         video_file = request.FILES.get("video_file")
         poster_file = request.FILES.get("poster_file")
@@ -1203,12 +1214,18 @@ class ReceiveTranscodedMediaView(View):
                     status=400,
                 )
 
-        # Get LogEntryMedia record
+        # Get media record using appropriate model
         try:
-            media = LogEntryMedia.objects.get(id=media_id)
-        except LogEntryMedia.DoesNotExist:
+            MediaModel = self._get_media_model(model_name)
+            media = MediaModel.objects.get(id=media_id)
+        except ValueError as e:
             return JsonResponse(
-                {"success": False, "error": f"LogEntryMedia with id {media_id} not found"},
+                {"success": False, "error": str(e)},
+                status=400,
+            )
+        except Exception:
+            return JsonResponse(
+                {"success": False, "error": f"{model_name} with id {media_id} not found"},
                 status=404,
             )
 
@@ -1229,7 +1246,7 @@ class ReceiveTranscodedMediaView(View):
                     media.poster_file = poster_file
 
                 # Update status
-                media.transcode_status = LogEntryMedia.STATUS_READY
+                media.transcode_status = MediaModel.STATUS_READY
 
                 media.save()
 

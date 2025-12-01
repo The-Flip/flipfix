@@ -1,0 +1,55 @@
+{% load core_extras %}
+<div class="log-entry-card">
+  <div class="log-entry-card__header">
+    <div class="log-entry-card__meta">
+      <span class="text-muted">{{ update.created_at|smart_date }}</span>
+      <span class="text-muted">·</span>
+      <span>{{ update.posted_by.display_name }}</span>
+      {% if update.new_status %}
+        <span class="text-muted">·</span>
+        <span class="pill pill--status-{{ update.new_status }}">
+          → {{ update.get_new_status_display }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="log-entry-card__body markdown-content">
+    {{ update.text|render_markdown }}
+  </div>
+  {% if update.media.all %}
+    <div class="log-entry-card__media">
+      <div class="media-grid">
+        {% for media in update.media.all %}
+          <div class="media-item">
+            {% if media.media_type == 'video' %}
+              {% if media.transcode_status == 'ready' and media.transcoded_file %}
+                <video class="media-video"
+                       poster="{{ media.poster_file.url }}"
+                       controls
+                       preload="none">
+                  <source src="{{ media.transcoded_file.url }}" type="video/mp4">
+                </video>
+              {% elif media.transcode_status == 'pending' or media.transcode_status == 'processing' %}
+                <div class="media-placeholder">
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                  <span>Processing...</span>
+                </div>
+              {% else %}
+                <div class="media-placeholder">
+                  <i class="fa-solid fa-exclamation-triangle"></i>
+                  <span>Unavailable</span>
+                </div>
+              {% endif %}
+            {% else %}
+              <a href="{{ media.file.url }}" target="_blank" class="media-link">
+                <img src="{{ media.thumbnail_file.url|default:media.file.url }}"
+                     alt="Update photo"
+                     class="media-thumbnail">
+              </a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>

@@ -30,6 +30,20 @@ Journal-type entry created by maintainers to document work on a machine.
 ### Log Entry Media ([`LogEntryMedia`](../the_flip/apps/maintenance/models.py))
 Photos/videos attached to log entries.
 
+## Parts app
+
+### Part Request ([`PartRequest`](../the_flip/apps/parts/models.py))
+Request for a part needed for maintenance. Tracks status through requested → ordered → received lifecycle. Can optionally be linked to a specific machine.
+
+### Part Request Media ([`PartRequestMedia`](../the_flip/apps/parts/models.py))
+Photos/videos attached to part requests.
+
+### Part Request Update ([`PartRequestUpdate`](../the_flip/apps/parts/models.py))
+Comment or status update on a part request. Can optionally change the part request's status.
+
+### Part Request Update Media ([`PartRequestUpdateMedia`](../the_flip/apps/parts/models.py))
+Photos/videos attached to part request updates.
+
 ## Webhooks app
 
 ### Webhook Endpoint ([`WebhookEndpoint`](../the_flip/apps/webhooks/models.py))

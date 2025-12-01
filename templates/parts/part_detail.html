@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block title %}Part Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
+{% block content %}
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'part-request-list' %}" class="breadcrumbs__link">Parts</a>
+    <span>/</span>
+    <span class="breadcrumbs__current"><i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}</span>
+  </nav>
+  <!-- TWO COLUMN LAYOUT -->
+  <div class="two-column">
+    <!-- MOBILE ACTIONS -->
+    <div class="mobile-actions">
+      <a href="#add-update" class="btn btn--log btn--full">
+        <i class="fa-solid fa-plus meta"></i>
+        Add Update
+      </a>
+    </div>
+    <!-- SIDEBAR -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        <!-- PART REQUEST -->
+        <div class="sidebar__section">
+          <div class="sidebar__label">Part Request</div>
+          <div class="sidebar__title">
+            <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}
+          </div>
+          <div class="flex flex-wrap stack-tight space-above-sm">
+            <span class="pill pill--status-{{ part_request.status_display_class }}">
+              {{ part_request.get_status_display }}
+            </span>
+          </div>
+          <p class="text-muted text-sm space-above-sm">
+            {{ part_request.created_at|smart_date }} by {{ part_request.requested_by.display_name }}
+          </p>
+        </div>
+        <!-- MACHINE (if linked) -->
+        {% if part_request.machine %}
+          <div class="sidebar__section">
+            <div class="sidebar__label">Machine</div>
+            <a href="{% url 'maintainer-machine-detail' part_request.machine.slug %}"
+               class="sidebar__title sidebar__link">{{ part_request.machine.display_name }}</a>
+            <div class="sidebar__subtitle">
+              {% if part_request.machine.model.manufacturer %}{{ part_request.machine.model.manufacturer }}{% endif %}
+              {% if part_request.machine.model.manufacturer and part_request.machine.model.year %}·{% endif %}
+              {% if part_request.machine.model.year %}{{ part_request.machine.model.year }}{% endif %}
+            </div>
+          </div>
+        {% endif %}
+        <!-- ACTIONS -->
+        <div class="sidebar__section">
+          <a href="#add-update" class="btn btn--log btn--full">
+            <i class="fa-solid fa-plus meta"></i>
+            Add Update
+          </a>
+        </div>
+      </div>
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      <!-- DESCRIPTION CARD -->
+      <div class="card card--padded">
+        <div class="card__header">
+          <div class="card__title">Description</div>
+          <div class="card__actions">
+            <button type="button" id="edit-button" class="btn btn--secondary btn--sm">Edit</button>
+            <div id="edit-actions-header" class="hidden">
+              <button type="button" id="save-button" class="btn btn--primary btn--sm">Save</button>
+              <button type="button" id="cancel-button" class="btn btn--secondary btn--sm">Cancel</button>
+            </div>
+            <span id="save-status" class="status-indicator"></span>
+          </div>
+        </div>
+        <div id="text-view-mode">
+          <div id="description-display" class="markdown-content">
+            {{ part_request.text|render_markdown }}
+          </div>
+        </div>
+        <div id="text-edit-mode" class="hidden">
+          <textarea id="description-text"
+                    class="form-input form-textarea"
+                    data-request-id="{{ part_request.pk }}">{{ part_request.text }}</textarea>
+        </div>
+        <!-- MEDIA -->
+        {% if part_request.media.all %}
+          <div class="space-above-md">
+            <div class="media-grid">
+              {% for media in part_request.media.all %}
+                <div class="media-item" data-media-id="{{ media.id }}">
+                  {% if media.media_type == 'video' %}
+                    {% if media.transcode_status == 'ready' and media.transcoded_file %}
+                      <video class="media-video"
+                             poster="{{ media.poster_file.url }}"
+                             controls
+                             preload="none">
+                        <source src="{{ media.transcoded_file.url }}" type="video/mp4">
+                      </video>
+                    {% elif media.transcode_status == 'pending' or media.transcode_status == 'processing' %}
+                      <div class="media-placeholder">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Processing video...</span>
+                      </div>
+                    {% else %}
+                      <div class="media-placeholder">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <span>Video unavailable</span>
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <a href="{{ media.file.url }}" target="_blank" class="media-link">
+                      <img src="{{ media.thumbnail_file.url|default:media.file.url }}"
+                           alt="Part request photo"
+                           class="media-thumbnail">
+                    </a>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      <!-- ADD UPDATE FORM -->
+      <div class="space-above-lg" id="add-update">
+        <div class="card card--padded">
+          <div class="card__header">
+            <div class="card__title">Add Update</div>
+          </div>
+          <form method="post" action="{% url 'part-request-update-create' part_request.pk %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-field">
+              <label for="id_text" class="form-label">Comment</label>
+              {{ update_form.text }}
+            </div>
+            <div class="form-field">
+              <label for="id_new_status" class="form-label">Change status to</label>
+              {{ update_form.new_status }}
+            </div>
+            <div class="form-field">
+              <label for="id_media_file" class="form-label">Photos/Videos (optional)</label>
+              {{ update_form.media_file }}
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn--log">
+                <i class="fa-solid fa-plus meta"></i>
+                Post Update
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <!-- UPDATES SECTION -->
+      <div class="space-above-lg">
+        <div class="section-header">
+          <h3 class="section-header__title">Updates</h3>
+        </div>
+        <div class="space-above-sm">
+          <form method="get" action="">
+            <input type="search"
+                   name="q"
+                   value="{{ search_form.q.value|default:'' }}"
+                   placeholder="Search updates..."
+                   class="form-input form-input--sm">
+          </form>
+        </div>
+        <div id="log-container"
+             class="space-above-sm"
+             data-fetch-url="{% url 'part-request-updates' part_request.pk %}">
+          {% if updates %}
+            <div class="log-entry-list" id="log-list">
+              {% for update in updates %}
+                {% include "parts/partials/part_update_entry.html" with update=update %}
+              {% endfor %}
+            </div>
+            <div id="log-pagination"
+                 data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}">
+            </div>
+          {% else %}
+            <p class="text-muted">
+              {% if search_form.q.value %}
+                No updates match your search.
+              {% else %}
+                No updates yet.
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+        <div id="log-loading" class="hidden">Loading…</div>
+        <div id="log-sentinel"></div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+  <script>
+    const CSRF_TOKEN = '{{ csrf_token }}';
+
+    // Text edit mode switching
+    const textarea = document.getElementById('description-text');
+    const saveStatus = document.getElementById('save-status');
+    const textViewMode = document.getElementById('text-view-mode');
+    const textEditMode = document.getElementById('text-edit-mode');
+    const editButton = document.getElementById('edit-button');
+    const headerActions = document.getElementById('edit-actions-header');
+    const saveButton = document.getElementById('save-button');
+    const cancelButton = document.getElementById('cancel-button');
+
+    let originalText = textarea.value;
+
+    function setTextareaHeight() {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+      textarea.style.overflowY = 'hidden';
+    }
+
+    editButton.addEventListener('click', () => {
+      originalText = textarea.value;
+      textViewMode.classList.add('hidden');
+      textEditMode.classList.remove('hidden');
+      textarea.focus();
+      editButton.classList.add('hidden');
+      headerActions.classList.remove('hidden');
+      setTextareaHeight();
+      requestAnimationFrame(setTextareaHeight);
+    });
+
+    textarea.addEventListener('input', setTextareaHeight);
+
+    cancelButton.addEventListener('click', () => {
+      textarea.value = originalText;
+      saveStatus.textContent = '';
+      saveStatus.className = 'status-indicator';
+      textEditMode.classList.add('hidden');
+      textViewMode.classList.remove('hidden');
+      headerActions.classList.add('hidden');
+      editButton.classList.remove('hidden');
+    });
+
+    saveButton.addEventListener('click', async () => {
+      saveStatus.textContent = 'Saving...';
+      saveStatus.className = 'status-indicator saving';
+
+      try {
+        const formData = new FormData();
+        formData.append('action', 'update_text');
+        formData.append('text', textarea.value);
+        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+
+        const response = await fetch(window.location.href, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          saveStatus.textContent = 'Error saving';
+          saveStatus.className = 'status-indicator error';
+        }
+      } catch (error) {
+        console.error('Save error:', error);
+        saveStatus.textContent = 'Error saving';
+        saveStatus.className = 'status-indicator error';
+      }
+    });
+  </script>
+{% endblock %}

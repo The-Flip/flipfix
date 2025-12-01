@@ -22,21 +22,45 @@ logger = logging.getLogger(__name__)
 DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
+# Mapping of model names to their classes (for generic media handling)
+MEDIA_MODEL_MAP = {
+    "LogEntryMedia": "the_flip.apps.maintenance.models.LogEntryMedia",
+    "PartRequestMedia": "the_flip.apps.parts.models.PartRequestMedia",
+    "PartRequestUpdateMedia": "the_flip.apps.parts.models.PartRequestUpdateMedia",
+}
 
-def enqueue_transcode(media_id: int):
-    """Enqueue transcode job."""
-    async_task(transcode_video_job, media_id, timeout=600)
+
+def _get_media_model(model_name: str):
+    """Get the media model class by name."""
+    if model_name == "LogEntryMedia":
+        return LogEntryMedia
+    if model_name in ("PartRequestMedia", "PartRequestUpdateMedia"):
+        from the_flip.apps.parts.models import PartRequestMedia, PartRequestUpdateMedia
+
+        return PartRequestMedia if model_name == "PartRequestMedia" else PartRequestUpdateMedia
+    raise ValueError(f"Unknown media model: {model_name}")
 
 
-def transcode_video_job(media_id: int):
+def enqueue_transcode(media_id: int, model_name: str = "LogEntryMedia"):
+    """Enqueue transcode job.
+
+    Args:
+        media_id: ID of the media record
+        model_name: Name of the media model class (default: LogEntryMedia)
+    """
+    async_task(transcode_video_job, media_id, model_name, timeout=600)
+
+
+def transcode_video_job(media_id: int, model_name: str = "LogEntryMedia"):
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     try:
-        media = LogEntryMedia.objects.get(id=media_id)
-    except LogEntryMedia.DoesNotExist:
-        logger.error("Transcode job %s aborted: media not found", media_id)
+        MediaModel = _get_media_model(model_name)
+        media = MediaModel.objects.get(id=media_id)
+    except Exception:
+        logger.error("Transcode job %s (%s) aborted: media not found", media_id, model_name)
         return
 
-    if media.media_type != LogEntryMedia.TYPE_VIDEO:
+    if media.media_type != MediaModel.TYPE_VIDEO:
         logger.info("Transcode skipped for non-video media %s", media_id)
         return
 
@@ -50,14 +74,14 @@ def transcode_video_job(media_id: int):
     if missing:
         msg = f"Required environment variables not configured: {', '.join(missing)}"
         logger.error("Transcode job %s aborted: %s", media_id, msg)
-        media.transcode_status = LogEntryMedia.STATUS_FAILED
+        media.transcode_status = MediaModel.STATUS_FAILED
         media.save(update_fields=["transcode_status", "updated_at"])
         raise ValueError(msg)
 
-    logger.info("Transcoding video %s for HTTP transfer to web service", media_id)
+    logger.info("Transcoding video %s (%s) for HTTP transfer to web service", media_id, model_name)
 
     input_path = Path(media.file.path)
-    media.transcode_status = LogEntryMedia.STATUS_PROCESSING
+    media.transcode_status = MediaModel.STATUS_PROCESSING
     media.save(update_fields=["transcode_status", "updated_at"])
 
     tmp_video = None
@@ -114,12 +138,14 @@ def transcode_video_job(media_id: int):
         )
 
         # Upload transcoded files to web service via HTTP
-        _upload_transcoded_files(media_id, tmp_video.name, tmp_poster.name)
-        logger.info("Successfully uploaded transcoded video %s", media_id)
+        _upload_transcoded_files(media_id, tmp_video.name, tmp_poster.name, model_name=model_name)
+        logger.info("Successfully uploaded transcoded video %s (%s)", media_id, model_name)
 
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to transcode video %s: %s", media_id, exc, exc_info=True)
-        media.transcode_status = LogEntryMedia.STATUS_FAILED
+        logger.error(
+            "Failed to transcode video %s (%s): %s", media_id, model_name, exc, exc_info=True
+        )
+        media.transcode_status = MediaModel.STATUS_FAILED
         media.save(update_fields=["transcode_status", "updated_at"])
         raise
     finally:
@@ -132,7 +158,11 @@ def transcode_video_job(media_id: int):
 
 
 def _upload_transcoded_files(
-    media_id: int, video_path: str, poster_path: str, max_retries: int = 3
+    media_id: int,
+    video_path: str,
+    poster_path: str,
+    max_retries: int = 3,
+    model_name: str = "LogEntryMedia",
 ):
     """
     Upload transcoded video and poster to Django web service via HTTP.
@@ -140,10 +170,11 @@ def _upload_transcoded_files(
     Implements retry logic with exponential backoff.
 
     Args:
-        media_id: ID of LogEntryMedia record
+        media_id: ID of media record
         video_path: Path to transcoded video file
         poster_path: Path to poster image file
         max_retries: Maximum number of upload attempts (default: 3)
+        model_name: Name of the media model class (default: LogEntryMedia)
 
     Raises:
         Exception: If upload fails after all retries
@@ -176,7 +207,12 @@ def _upload_transcoded_files(
                     "video_file": ("video.mp4", video_file, "video/mp4"),
                     "poster_file": ("poster.jpg", poster_file, "image/jpeg"),
                 }
-                data = {"log_entry_media_id": str(media_id)}
+                data = {
+                    "media_id": str(media_id),
+                    "model_name": model_name,
+                    # Keep legacy field for backward compatibility
+                    "log_entry_media_id": str(media_id),
+                }
 
                 response = requests.post(
                     upload_url, files=files, data=data, headers=headers, timeout=300

@@ -10,6 +10,7 @@ from django.urls import reverse
 
 if TYPE_CHECKING:
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+    from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 
 def get_base_url() -> str:
@@ -24,6 +25,12 @@ def format_discord_message(event_type: str, obj: Any) -> dict:
         return _format_problem_report_created(obj)
     elif event_type == "log_entry_created":
         return _format_log_entry_created(obj)
+    elif event_type == "part_request_created":
+        return _format_part_request_created(obj)
+    elif event_type == "part_request_status_changed":
+        return _format_part_request_status_changed(obj)
+    elif event_type == "part_request_update_created":
+        return _format_part_request_update_created(obj)
     else:
         return {"content": f"Unknown event: {event_type}"}
 
@@ -149,11 +156,118 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     return {"embeds": embeds}
 
 
+def _format_part_request_created(part_request: PartRequest) -> dict:
+    """Format a new part request notification."""
+    base_url = get_base_url()
+    url = base_url + reverse("part-request-detail", kwargs={"pk": part_request.pk})
+
+    # Main description is the part request text (truncate if needed)
+    description = part_request.text[:500]
+    if len(part_request.text) > 500:
+        description += "..."
+
+    # Add machine info if linked
+    if part_request.machine:
+        description += f"\n\n📍 Machine: {part_request.machine.display_name}"
+
+    # Add requester
+    requester = part_request.requested_by.display_name
+    description += f"\n\n— {requester}"
+
+    return {
+        "embeds": [
+            {
+                "title": f"📦 Part Requested: #{part_request.pk}",
+                "description": description,
+                "url": url,
+                "color": 3447003,  # Blue color (same as logs)
+            }
+        ]
+    }
+
+
+def _format_part_request_status_changed(part_request: PartRequest) -> dict:
+    """Format a part request status change notification."""
+    base_url = get_base_url()
+    url = base_url + reverse("part-request-detail", kwargs={"pk": part_request.pk})
+
+    status_emojis = {
+        "requested": "📦",
+        "ordered": "🛒",
+        "received": "✅",
+        "cancelled": "❌",
+    }
+    emoji = status_emojis.get(part_request.status, "📦")
+    status_display = part_request.get_status_display()
+
+    # Main description
+    description = f"**Status:** {status_display}"
+
+    # Add truncated text
+    text_preview = part_request.text[:200]
+    if len(part_request.text) > 200:
+        text_preview += "..."
+    description += f"\n\n{text_preview}"
+
+    # Add machine info if linked
+    if part_request.machine:
+        description += f"\n\n📍 Machine: {part_request.machine.display_name}"
+
+    return {
+        "embeds": [
+            {
+                "title": f"{emoji} Part Request #{part_request.pk}: {status_display}",
+                "description": description,
+                "url": url,
+                "color": 3447003,  # Blue color (same as logs)
+            }
+        ]
+    }
+
+
+def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
+    """Format a new part request update notification."""
+    base_url = get_base_url()
+    url = base_url + reverse("part-request-detail", kwargs={"pk": update.part_request.pk})
+
+    # Main description is the update text (truncate if needed)
+    description = update.text[:500]
+    if len(update.text) > 500:
+        description += "..."
+
+    # Add status change if applicable
+    if update.new_status:
+        status_display = update.get_new_status_display()
+        description += f"\n\n**Status changed to:** {status_display}"
+
+    # Add machine info if linked
+    if update.part_request.machine:
+        description += f"\n\n📍 Machine: {update.part_request.machine.display_name}"
+
+    # Add who posted
+    poster = update.posted_by.display_name
+    description += f"\n\n— {poster}"
+
+    return {
+        "embeds": [
+            {
+                "title": f"💬 Update on Part Request #{update.part_request.pk}",
+                "description": description,
+                "url": url,
+                "color": 3447003,  # Blue color (same as logs)
+            }
+        ]
+    }
+
+
 def format_test_message(event_type: str) -> dict:
     """Format a test message for a given event type."""
     event_labels = {
         "problem_report_created": "Problem Report Created",
         "log_entry_created": "Log Entry Created",
+        "part_request_created": "Part Request Created",
+        "part_request_status_changed": "Part Request Status Changed",
+        "part_request_update_created": "Part Request Update Created",
     }
     label = event_labels.get(event_type, event_type)
 

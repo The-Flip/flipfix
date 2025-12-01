@@ -19,10 +19,11 @@ from the_flip.apps.catalog.forms import (
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.maintenance.forms import ProblemReportForm, SearchForm
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 
 def get_activity_entries(machine, search_query=None):
-    """Get combined log entries and problem reports for a machine.
+    """Get combined log entries, problem reports, and parts events for a machine.
 
     Returns all entries (unsliced) for pagination by the caller.
     """
@@ -37,17 +38,27 @@ def get_activity_entries(machine, search_query=None):
         .select_related("reported_by_user")
         .prefetch_related(latest_log_prefetch)
     )
+    # Get part requests linked to this machine
+    part_requests = PartRequest.objects.filter(machine=machine).select_related("requested_by__user")
+    # Get updates for part requests linked to this machine
+    part_updates = PartRequestUpdate.objects.filter(part_request__machine=machine).select_related(
+        "posted_by__user", "part_request"
+    )
 
     if search_query:
         logs = logs.filter(
             Q(text__icontains=search_query) | Q(problem_report__description__icontains=search_query)
         ).distinct()
         reports = reports.filter(description__icontains=search_query)
+        part_requests = part_requests.filter(text__icontains=search_query)
+        part_updates = part_updates.filter(text__icontains=search_query)
 
     logs = logs.order_by("-created_at")
     reports = reports.order_by("-created_at")
+    part_requests = part_requests.order_by("-created_at")
+    part_updates = part_updates.order_by("-created_at")
 
-    return logs, reports
+    return logs, reports, part_requests, part_updates
 
 
 def get_activity_page(machine, page_num, page_size=10, search_query=None):
@@ -59,20 +70,30 @@ def get_activity_page(machine, page_num, page_size=10, search_query=None):
     offset = (page_num - 1) * page_size
     fetch_limit = offset + page_size  # Worst case: all items from one table
 
-    logs, reports = get_activity_entries(machine, search_query)
+    logs, reports, part_requests, part_updates = get_activity_entries(machine, search_query)
 
     # Fetch only what we need for this page
     logs_list = list(logs[:fetch_limit])
     reports_list = list(reports[:fetch_limit])
+    part_requests_list = list(part_requests[:fetch_limit])
+    part_updates_list = list(part_updates[:fetch_limit])
 
     # Tag entries for template differentiation
     for log in logs_list:
         log.entry_type = "log"
     for report in reports_list:
         report.entry_type = "problem_report"
+    for pr in part_requests_list:
+        pr.entry_type = "part_request"
+    for pu in part_updates_list:
+        pu.entry_type = "part_request_update"
 
     # Combine, sort, slice to page
-    combined = sorted(logs_list + reports_list, key=lambda x: x.created_at, reverse=True)
+    combined = sorted(
+        logs_list + reports_list + part_requests_list + part_updates_list,
+        key=lambda x: x.created_at,
+        reverse=True,
+    )
     page_items = combined[offset : offset + page_size]
     has_next = len(combined) > offset + page_size
 

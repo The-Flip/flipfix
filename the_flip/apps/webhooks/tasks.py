@@ -52,6 +52,9 @@ def deliver_webhooks(event_type: str, object_id: int, model_name: str) -> dict:
     elif event_type == "log_entry_created":
         if not webhook_settings.log_entries_enabled:
             return {"status": "skipped", "reason": "log entry webhooks disabled"}
+    elif event_type.startswith("part_request"):
+        if not webhook_settings.parts_enabled:
+            return {"status": "skipped", "reason": "parts webhooks disabled"}
 
     # Get all enabled subscriptions for this event type
     subscriptions = WebhookEventSubscription.objects.filter(
@@ -89,6 +92,22 @@ def _get_object(model_name: str, object_id: int):
         return (
             LogEntry.objects.select_related("machine", "problem_report")
             .prefetch_related("maintainers")
+            .filter(pk=object_id)
+            .first()
+        )
+    elif model_name == "PartRequest":
+        from the_flip.apps.parts.models import PartRequest
+
+        return (
+            PartRequest.objects.select_related("machine", "requested_by__user")
+            .filter(pk=object_id)
+            .first()
+        )
+    elif model_name == "PartRequestUpdate":
+        from the_flip.apps.parts.models import PartRequestUpdate
+
+        return (
+            PartRequestUpdate.objects.select_related("part_request__machine", "posted_by__user")
             .filter(pk=object_id)
             .first()
         )

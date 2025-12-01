@@ -11,10 +11,16 @@ class WebhookEndpoint(TimeStampedModel):
     # Event types that can trigger webhooks
     EVENT_PROBLEM_REPORT_CREATED = "problem_report_created"
     EVENT_LOG_ENTRY_CREATED = "log_entry_created"
+    EVENT_PART_REQUEST_CREATED = "part_request_created"
+    EVENT_PART_REQUEST_STATUS_CHANGED = "part_request_status_changed"
+    EVENT_PART_REQUEST_UPDATE_CREATED = "part_request_update_created"
 
     EVENT_CHOICES = [
         (EVENT_PROBLEM_REPORT_CREATED, "Problem Report Created"),
         (EVENT_LOG_ENTRY_CREATED, "Log Entry Created"),
+        (EVENT_PART_REQUEST_CREATED, "Part Request Created"),
+        (EVENT_PART_REQUEST_STATUS_CHANGED, "Part Request Status Changed"),
+        (EVENT_PART_REQUEST_UPDATE_CREATED, "Part Request Update Created"),
     ]
 
     name = models.CharField(
@@ -80,6 +86,10 @@ class WebhookSettings(models.Model):
     log_entries_enabled = models.BooleanField(
         default=True,
         help_text="Enable webhooks for log entry events.",
+    )
+    parts_enabled = models.BooleanField(
+        default=True,
+        help_text="Enable webhooks for part request events.",
     )
 
     class Meta:

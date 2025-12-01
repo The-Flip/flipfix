@@ -29,6 +29,7 @@ from the_flip.apps.catalog.views import (
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
 from the_flip.apps.core.views import HomeView
 from the_flip.apps.maintenance import views as maintenance_views
+from the_flip.apps.parts import views as parts_views
 from the_flip.views import serve_media
 
 urlpatterns = [
@@ -187,6 +188,34 @@ urlpatterns = [
         name="log-entries",
     ),
     path("logs/<slug:slug>/", maintenance_views.MachineLogView.as_view(), name="log-machine"),
+    # Parts views
+    path("parts/", parts_views.PartRequestListView.as_view(), name="part-request-list"),
+    path(
+        "parts/entries/",
+        parts_views.PartRequestListPartialView.as_view(),
+        name="part-request-list-entries",
+    ),
+    path("parts/new/", parts_views.PartRequestCreateView.as_view(), name="part-request-create"),
+    path(
+        "parts/new/<slug:slug>/",
+        parts_views.PartRequestCreateView.as_view(),
+        name="part-request-create-machine",
+    ),
+    path(
+        "parts/<int:pk>/",
+        parts_views.PartRequestDetailView.as_view(),
+        name="part-request-detail",
+    ),
+    path(
+        "parts/<int:pk>/update/",
+        parts_views.PartRequestUpdateCreateView.as_view(),
+        name="part-request-update-create",
+    ),
+    path(
+        "parts/<int:pk>/updates/",
+        parts_views.PartRequestUpdatesPartialView.as_view(),
+        name="part-request-updates",
+    ),
 ]
 
 media_url = settings.MEDIA_URL.lstrip("/")
