@@ -261,6 +261,25 @@ def stat_grid(stats: list):
     return {"stats": stats}
 
 
+@register.inclusion_tag("components/empty_state.html")
+def empty_state(empty_message: str, search_message: str, is_search: bool = False):
+    """Render an empty state message, with search-aware variant.
+
+    Usage:
+        {% empty_state empty_message="No log entries yet." search_message="No log entries match your search." is_search=search_form.q.value %}
+
+    Args:
+        empty_message: Message shown when there are no items
+        search_message: Message shown when search returns no results
+        is_search: Whether a search is active (typically search_form.q.value)
+    """
+    return {
+        "empty_message": empty_message,
+        "search_message": search_message,
+        "is_search": bool(is_search),
+    }
+
+
 @register.inclusion_tag("components/pill.html")
 def pill(label: str, variant: str = "neutral", icon: str = ""):
     """Render a pill/badge component.

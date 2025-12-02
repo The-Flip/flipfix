@@ -14,12 +14,6 @@
   <div id="log-pagination"
        data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
 {% else %}
-  <p class="text-muted">
-    {% if search_form.q.value %}
-      No log entries match your search.
-    {% else %}
-      No log entries yet.
-    {% endif %}
-  </p>
+{% empty_state empty_message="No log entries yet." search_message="No log entries match your search." is_search=search_form.q.value %}
 {% endif %}
 {% endblock %}
