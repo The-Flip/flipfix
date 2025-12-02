@@ -210,6 +210,98 @@ def log_entry_meta(entry):
 
 
 # -----------------------------------------------------------------------------
+# UI Component template tags
+# -----------------------------------------------------------------------------
+
+
+@register.inclusion_tag("components/button.html")
+def button(
+    url: str,
+    label: str,
+    icon: str = "",
+    variant: str = "secondary",
+    full_width: bool = False,
+    icon_only: bool = False,
+):
+    """Render a button/link component.
+
+    Usage:
+        {% button url="/logs/new/" label="New Log" icon="plus" variant="log" %}
+        {% button url="/edit/" label="Edit" icon="pencil" icon_only=True %}
+
+    Args:
+        url: Link href
+        icon: FontAwesome icon name (without fa- prefix)
+        label: Button text (becomes aria-label if icon_only)
+        variant: 'primary', 'secondary', 'report', 'log'
+        full_width: Add btn--full class
+        icon_only: Render icon-only button with aria-label
+    """
+    return {
+        "url": url,
+        "label": label,
+        "icon": icon,
+        "variant": variant,
+        "full_width": full_width,
+        "icon_only": icon_only,
+    }
+
+
+@register.inclusion_tag("components/stat_grid.html")
+def stat_grid(stats: list):
+    """Render a grid of statistics.
+
+    Usage:
+        {% stat_grid stats=stats_list %}
+
+    Args:
+        stats: List of dicts with 'value', 'label', and optional 'variant' keys
+               variant can be 'problem', 'log', or None for default styling
+    """
+    return {"stats": stats}
+
+
+# -----------------------------------------------------------------------------
+# Sidebar template tags
+# -----------------------------------------------------------------------------
+
+
+@register.simple_block_tag
+def sidebar(content):
+    """Wrap content in a sticky sidebar card.
+
+    Usage:
+        {% sidebar %}
+          {% sidebar_section title="Stats" %}...{% endsidebar_section %}
+          {% sidebar_section title="Actions" %}...{% endsidebar_section %}
+        {% endsidebar %}
+    """
+    return format_html(
+        '<div class="card card--padded sidebar--sticky">\n{}</div>',
+        content,
+    )
+
+
+@register.simple_block_tag
+def sidebar_section(content, title=""):
+    """Wrap content in a sidebar section with optional title.
+
+    Usage:
+        {% sidebar_section title="Actions" %}
+          <a href="#" class="btn">Do something</a>
+        {% endsidebar_section %}
+    """
+    title_html = ""
+    if title:
+        title_html = f'<div class="sidebar__label">{title}</div>\n'
+    return format_html(
+        '<div class="sidebar__section">\n{}{}</div>',
+        mark_safe(title_html),  # noqa: S308 - title is from template, not user input
+        content,
+    )
+
+
+# -----------------------------------------------------------------------------
 # Timeline template tags
 # -----------------------------------------------------------------------------
 

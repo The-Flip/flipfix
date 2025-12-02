@@ -68,18 +68,27 @@ class PartRequestListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         page_obj = paginator.get_page(self.request.GET.get("page"))
 
         # Stats for sidebar
-        requested_count = PartRequest.objects.filter(status=PartRequest.STATUS_REQUESTED).count()
-        ordered_count = PartRequest.objects.filter(status=PartRequest.STATUS_ORDERED).count()
-        received_count = PartRequest.objects.filter(status=PartRequest.STATUS_RECEIVED).count()
+        stats = [
+            {
+                "value": PartRequest.objects.filter(status=PartRequest.STATUS_REQUESTED).count(),
+                "label": "Requested",
+            },
+            {
+                "value": PartRequest.objects.filter(status=PartRequest.STATUS_ORDERED).count(),
+                "label": "Ordered",
+            },
+            {
+                "value": PartRequest.objects.filter(status=PartRequest.STATUS_RECEIVED).count(),
+                "label": "Received",
+            },
+        ]
 
         context.update(
             {
                 "page_obj": page_obj,
                 "part_requests": page_obj.object_list,
                 "search_form": SearchForm(initial={"q": search_query}),
-                "requested_count": requested_count,
-                "ordered_count": ordered_count,
-                "received_count": received_count,
+                "stats": stats,
             }
         )
         return context

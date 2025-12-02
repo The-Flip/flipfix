@@ -89,6 +89,37 @@ the_flip/
 - Shared helpers go in `core` app, never in `__init__.py`
 - Tests live in app-level `tests.py` files; use Django's `TestCase`
 
+## Template Components
+
+This project uses Django's `@register.inclusion_tag` and `@register.simple_block_tag` for reusable UI components. Components are defined in `the_flip/apps/core/templatetags/core_extras.py` and templates live in `templates/components/`.
+
+### Available Components
+
+Load with `{% load core_extras %}`, then use:
+
+| Component | Type | Usage |
+|-----------|------|-------|
+| `two_column_layout` | Template | `{% extends "layouts/two_column.html" %}` with blocks: `mobile_actions`, `sidebar`, `main` |
+| `sidebar` | Block tag | `{% sidebar %}...{% endsidebar %}` - Sticky sidebar card wrapper |
+| `sidebar_section` | Block tag | `{% sidebar_section title="Stats" %}...{% endsidebar_section %}` - Section within sidebar |
+| `button` | Inclusion tag | `{% button url="/path" label="Click" icon="plus" variant="log" full_width=True %}` |
+| `stat_grid` | Inclusion tag | `{% stat_grid stats=stats_list %}` where stats is list of `{value, label, variant}` dicts |
+| `timeline` | Block tag | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line |
+| `timeline_entry` | Block tag | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}` |
+
+### Button Variants
+- `secondary` (default), `primary`, `report`, `log`
+- Add `full_width=True` for full-width buttons
+- Add `icon_only=True` for icon-only buttons (label becomes aria-label)
+
+### Creating New Components
+
+1. Add function to `the_flip/apps/core/templatetags/core_extras.py`:
+   - Use `@register.inclusion_tag("components/name.html")` for components that render a template
+   - Use `@register.simple_block_tag` for components that wrap content
+2. Create template in `templates/components/` (for inclusion tags)
+3. Document in this table
+
 ## Tool Usage
 
 Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-library-docs`) to look up current documentation when:

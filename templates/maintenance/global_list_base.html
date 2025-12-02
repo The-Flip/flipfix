@@ -1,53 +1,40 @@
-{% extends "base.html" %}
+{% extends "layouts/two_column.html" %}
 {% load static core_extras %}
 {% block title %}
   {% block list_title %}{% endblock %}
   · {{ block.super }}
 {% endblock %}
-{% block content %}
-  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
-  <div class="two-column">
-    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions">
-      {% block mobile_actions %}{% endblock %}
-    </div>
-    <!-- SIDEBAR (desktop only) -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        <!-- STATS -->
-        <div class="sidebar__section">
-          {% block sidebar_stats %}{% endblock %}
-        </div>
-        <!-- ACTIONS -->
-        <div class="sidebar__section">
-          {% block sidebar_actions %}{% endblock %}
-        </div>
-      </div>
-    </aside>
-    <!-- MAIN COLUMN -->
-    <div class="two-column__main">
-      <!-- SEARCH BAR -->
-      <div class="filter-bar">
-        <div class="filter-bar__search filter-bar__search--full">
-          <form method="get" action="">
-            <input type="search"
-                   name="q"
-                   placeholder="Search..."
-                   value="{{ search_form.q.value|default:'' }}"
-                   class="filter-bar__search-input">
-            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
-          </form>
-        </div>
-      </div>
-      <!-- LIST CONTENT -->
-      <div id="log-container"
-           data-fetch-url="{% block infinite_scroll_url %}{% endblock %}">
-        {% block list_content %}{% endblock %}
-      </div>
-      <div id="log-loading" class="hidden">Loading…</div>
-      <div id="log-sentinel"></div>
+{% block sidebar %}
+  {% sidebar %}
+  {% sidebar_section %}
+  {% block sidebar_stats %}{% endblock %}
+{% endsidebar_section %}
+{% sidebar_section %}
+{% block sidebar_actions %}{% endblock %}
+{% endsidebar_section %}
+{% endsidebar %}
+{% endblock %}
+{% block main %}
+  <!-- SEARCH BAR -->
+  <div class="filter-bar">
+    <div class="filter-bar__search filter-bar__search--full">
+      <form method="get" action="">
+        <input type="search"
+               name="q"
+               placeholder="Search..."
+               value="{{ search_form.q.value|default:'' }}"
+               class="filter-bar__search-input">
+        <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+      </form>
     </div>
   </div>
+  <!-- LIST CONTENT -->
+  <div id="log-container"
+       data-fetch-url="{% block infinite_scroll_url %}{% endblock %}">
+    {% block list_content %}{% endblock %}
+  </div>
+  <div id="log-loading" class="hidden">Loading…</div>
+  <div id="log-sentinel"></div>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>

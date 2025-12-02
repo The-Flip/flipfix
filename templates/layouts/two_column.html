@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static core_extras %}
+{% block content %}
+  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
+  <div class="two-column">
+    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
+    <div class="mobile-actions">
+      {% block mobile_actions %}{% endblock %}
+    </div>
+    <!-- SIDEBAR (desktop only) -->
+    <aside class="two-column__sidebar">
+      {% block sidebar %}{% endblock %}
+    </aside>
+    <!-- MAIN COLUMN -->
+    <div class="two-column__main">
+      {% block main %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}

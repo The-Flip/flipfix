@@ -1,0 +1,14 @@
+{% if icon_only %}
+  <a href="{{ url }}"
+     class="btn btn--icon-only btn--{{ variant }}"
+     aria-label="{{ label }}"
+     title="{{ label }}">
+    <i class="fa-solid fa-{{ icon }}"></i>
+  </a>
+{% else %}
+  <a href="{{ url }}"
+     class="btn btn--{{ variant }}{% if full_width %} btn--full{% endif %}">
+    {% if icon %}<i class="fa-solid fa-{{ icon }} meta"></i>{% endif %}
+    {{ label }}
+  </a>
+{% endif %}

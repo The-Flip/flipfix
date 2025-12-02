@@ -1,84 +1,35 @@
-{% extends "base.html" %}
+{% extends "maintenance/global_list_base.html" %}
 {% load static core_extras %}
-{% block title %}Parts · {{ block.super }}{% endblock %}
-{% block content %}
-  <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
-  <div class="two-column">
-    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions">
-      <a href="{% url 'part-request-create' %}" class="btn btn--log">Request a Part</a>
-    </div>
-    <!-- SIDEBAR (desktop only) -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        <!-- STATS -->
-        <div class="sidebar__section">
-          <div class="sidebar__label">Parts Requests</div>
-          <div class="stat-grid">
-            <div class="stat">
-              <span class="stat__value">{{ requested_count }}</span>
-              <span class="stat__label">Requested</span>
-            </div>
-            <div class="stat">
-              <span class="stat__value">{{ ordered_count }}</span>
-              <span class="stat__label">Ordered</span>
-            </div>
-            <div class="stat">
-              <span class="stat__value">{{ received_count }}</span>
-              <span class="stat__label">Received</span>
-            </div>
-          </div>
-        </div>
-        <!-- ACTIONS -->
-        <div class="sidebar__section">
-          <a href="{% url 'part-request-create' %}" class="btn btn--log btn--full">Request a Part</a>
-        </div>
-      </div>
-    </aside>
-    <!-- MAIN COLUMN -->
-    <div class="two-column__main">
-      <!-- SEARCH BAR -->
-      <div class="filter-bar">
-        <div class="filter-bar__search filter-bar__search--full">
-          <form method="get" action="">
-            <input type="search"
-                   name="q"
-                   placeholder="Search..."
-                   value="{{ search_form.q.value|default:'' }}"
-                   class="filter-bar__search-input">
-            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
-          </form>
-        </div>
-      </div>
-      <!-- LIST CONTENT -->
-      <div id="log-container"
-           data-fetch-url="{% url 'part-request-list-entries' %}">
-        {% if part_requests %}
-          <div class="timeline">
-            <div class="timeline__line"></div>
-            <div id="log-list">
-              {% for entry in part_requests %}
-                {% include "parts/partials/part_list_entry.html" with entry=entry %}
-              {% endfor %}
-            </div>
-          </div>
-          <div id="log-pagination"
-               data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
-        {% else %}
-          <p class="text-muted">
-            {% if search_form.q.value %}
-              No part requests match your search.
-            {% else %}
-              No part requests yet.
-            {% endif %}
-          </p>
-        {% endif %}
-      </div>
-      <div id="log-loading" class="hidden">Loading…</div>
-      <div id="log-sentinel"></div>
-    </div>
-  </div>
+{% block list_title %}Parts{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'part-request-create' %}" class="btn btn--log">Request a Part</a>
 {% endblock %}
-{% block extra_scripts %}
-  <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
-{% endblock extra_scripts %}
+{% block sidebar_stats %}
+  <div class="sidebar__label">Parts Requests</div>
+  {% stat_grid stats=stats %}
+{% endblock %}
+{% block sidebar_actions %}
+  <a href="{% url 'part-request-create' %}" class="btn btn--log btn--full">Request a Part</a>
+{% endblock %}
+{% block infinite_scroll_url %}
+  {% url 'part-request-list-entries' %}
+{% endblock %}
+{% block list_content %}
+  {% if part_requests %}
+    {% timeline id="log-list" %}
+    {% for entry in part_requests %}
+      {% include "parts/partials/part_list_entry.html" with entry=entry %}
+    {% endfor %}
+  {% endtimeline %}
+  <div id="log-pagination"
+       data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+{% else %}
+  <p class="text-muted">
+    {% if search_form.q.value %}
+      No part requests match your search.
+    {% else %}
+      No part requests yet.
+    {% endif %}
+  </p>
+{% endif %}
+{% endblock %}

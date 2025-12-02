@@ -1,0 +1,8 @@
+<div class="stat-grid">
+  {% for stat in stats %}
+    <div class="stat{% if stat.variant %} stat--{{ stat.variant }}{% endif %}">
+      <span class="stat__value">{{ stat.value }}</span>
+      <span class="stat__label">{{ stat.label }}</span>
+    </div>
+  {% endfor %}
+</div>
