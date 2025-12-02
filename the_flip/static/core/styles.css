@@ -1623,8 +1623,15 @@ body {
 .markdown-content h6 {
   margin-top: 0;
   margin-bottom: var(--space-2);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-semibold);
 }
+
+.markdown-content h1 { font-size: var(--text-xl); }
+.markdown-content h2 { font-size: var(--text-lg); }
+.markdown-content h3 { font-size: var(--text-base); }
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 { font-size: var(--text-sm); }
 
 .markdown-content h1:first-child,
 .markdown-content h2:first-child,
