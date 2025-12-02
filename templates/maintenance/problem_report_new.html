@@ -2,3 +2,50 @@
 {% block form_title %}New Problem Report{% endblock %}
 {% block breadcrumb_current %}New Report{% endblock %}
 {% block submit_label %}Report Problem{% endblock %}
+{% block form_enctype %}enctype="multipart/form-data"{% endblock %}
+{% block problem_type_field %}{% endblock %}
+{% block media_upload %}
+  <!-- File upload link (GitHub-style) -->
+  <div class="form-hint space-above-sm">
+    <input type="file"
+           id="file-input"
+           name="{{ form.media_file.html_name }}"
+           class="hidden"
+           multiple
+           accept="image/*,video/*,.heic,.heif">
+    <a href="#" id="file-upload-link" class="file-upload-link">
+      <i class="fa-solid fa-paperclip space-right-xs"></i>Paste, drop, or click to add photos
+    </a>
+  </div>
+  {% for error in form.media_file.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+  <!-- Uploaded files preview -->
+  <div class="file-preview-row" id="file-preview-row"></div>
+{% endblock %}
+{% block extra_scripts_child %}
+  <script>
+    // File upload click handler
+    document.getElementById('file-upload-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('file-input').click();
+    });
+
+    // File preview functionality
+    (function() {
+      const fileInput = document.getElementById('file-input');
+      const previewRow = document.getElementById('file-preview-row');
+      if (!fileInput || !previewRow) return;
+
+      fileInput.addEventListener('change', function() {
+        previewRow.innerHTML = '';
+        Array.from(this.files).forEach((file) => {
+          const isVideo = file.type && file.type.startsWith('video/');
+          const icon = isVideo ? 'fa-video' : 'fa-image';
+          const pill = document.createElement('span');
+          pill.className = 'pill pill--neutral';
+          pill.innerHTML = `<i class="fa-solid ${icon} meta"></i> ${file.name}`;
+          previewRow.appendChild(pill);
+        });
+      });
+    })();
+  </script>
+{% endblock %}

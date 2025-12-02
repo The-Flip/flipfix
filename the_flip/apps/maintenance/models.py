@@ -193,3 +193,38 @@ class LogEntryMedia(AbstractMedia):
 
     def get_admin_history_url(self) -> str:
         return reverse("admin:maintenance_logentrymedia_history", args=[self.pk])
+
+
+def problem_report_media_upload_to(instance: ProblemReportMedia, filename: str) -> str:
+    return f"problem_reports/{instance.problem_report_id}/{uuid4()}-{filename}"
+
+
+class ProblemReportMedia(AbstractMedia):
+    """Media files attached to a problem report."""
+
+    parent_field_name = "problem_report"
+
+    problem_report = models.ForeignKey(
+        ProblemReport,
+        on_delete=models.CASCADE,
+        related_name="media",
+    )
+    file = models.FileField(upload_to=problem_report_media_upload_to)
+    thumbnail_file = models.FileField(upload_to=problem_report_media_upload_to, blank=True)
+    transcoded_file = models.FileField(
+        upload_to=problem_report_media_upload_to, blank=True, null=True
+    )
+    poster_file = models.ImageField(upload_to=problem_report_media_upload_to, blank=True, null=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["display_order", "created_at"]
+        verbose_name = "Problem report media"
+        verbose_name_plural = "Problem report media"
+
+    def __str__(self) -> str:
+        return f"{self.get_media_type_display()} for problem report {self.problem_report_id}"
+
+    def get_admin_history_url(self) -> str:
+        return reverse("admin:maintenance_problemreportmedia_history", args=[self.pk])

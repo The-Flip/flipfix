@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import LogEntry, LogEntryMedia, ProblemReport
+from .models import LogEntry, LogEntryMedia, ProblemReport, ProblemReportMedia
 
 
 class LogEntryAdminForm(forms.ModelForm):
@@ -39,6 +39,20 @@ class LogEntryMediaInline(admin.TabularInline):
     )
 
 
+class ProblemReportMediaInline(admin.TabularInline):
+    model = ProblemReportMedia
+    extra = 0
+    fields = (
+        "media_type",
+        "file",
+        "thumbnail_file",
+        "transcoded_file",
+        "poster_file",
+        "transcode_status",
+        "display_order",
+    )
+
+
 @admin.register(ProblemReport)
 class ProblemReportAdmin(SimpleHistoryAdmin):
     list_display = ("machine", "problem_type", "status", "reporter_display", "created_at")
@@ -52,6 +66,7 @@ class ProblemReportAdmin(SimpleHistoryAdmin):
     )
     autocomplete_fields = ("machine", "reported_by_user")
     readonly_fields = ("created_at", "updated_at")
+    inlines = (ProblemReportMediaInline,)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -101,4 +116,17 @@ class LogEntryMediaAdmin(SimpleHistoryAdmin):
         "log_entry__text",
     )
     autocomplete_fields = ("log_entry",)
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ProblemReportMedia)
+class ProblemReportMediaAdmin(SimpleHistoryAdmin):
+    list_display = ("problem_report", "media_type", "transcode_status", "created_at")
+    list_filter = ("media_type", "transcode_status")
+    search_fields = (
+        "problem_report__machine__name_override",
+        "problem_report__machine__model__name",
+        "problem_report__description",
+    )
+    autocomplete_fields = ("problem_report",)
     readonly_fields = ("created_at", "updated_at")

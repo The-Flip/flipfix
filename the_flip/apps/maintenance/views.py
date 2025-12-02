@@ -40,10 +40,16 @@ from the_flip.apps.core.mixins import MediaUploadMixin
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     LogEntryQuickForm,
+    MaintainerProblemReportForm,
     ProblemReportForm,
     SearchForm,
 )
-from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia, ProblemReport
+from the_flip.apps.maintenance.models import (
+    LogEntry,
+    LogEntryMedia,
+    ProblemReport,
+    ProblemReportMedia,
+)
 
 
 class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -159,7 +165,7 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         )
         reports = (
             ProblemReport.objects.select_related("machine", "machine__model")
-            .prefetch_related(latest_log_prefetch)
+            .prefetch_related(latest_log_prefetch, "media")
             .order_by("-status", "-created_at")
         )
 
@@ -209,7 +215,7 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
         )
         reports = (
             ProblemReport.objects.select_related("machine", "machine__model")
-            .prefetch_related(latest_log_prefetch)
+            .prefetch_related(latest_log_prefetch, "media")
             .order_by("-status", "-created_at")
         )
 
@@ -301,7 +307,7 @@ class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, List
         queryset = (
             ProblemReport.objects.filter(machine=self.machine)
             .select_related("reported_by_user")
-            .prefetch_related(latest_log_prefetch)
+            .prefetch_related(latest_log_prefetch, "media")
             .order_by("-status", "-created_at")
         )
 
@@ -371,7 +377,7 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
     """Maintainer-facing problem report creation (global or machine-scoped)."""
 
     template_name = "maintenance/problem_report_new.html"
-    form_class = ProblemReportForm
+    form_class = MaintainerProblemReportForm
 
     def test_func(self):
         return self.request.user.is_staff
@@ -416,6 +422,32 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         report.save()
+
+        # Handle media uploads
+        media_files = form.cleaned_data.get("media_file", [])
+        if media_files:
+            for media_file in media_files:
+                content_type = (getattr(media_file, "content_type", "") or "").lower()
+                ext = Path(getattr(media_file, "name", "")).suffix.lower()
+                is_video = content_type.startswith("video/") or ext in {
+                    ".mp4",
+                    ".mov",
+                    ".m4v",
+                    ".hevc",
+                }
+
+                media = ProblemReportMedia.objects.create(
+                    problem_report=report,
+                    media_type=ProblemReportMedia.TYPE_VIDEO
+                    if is_video
+                    else ProblemReportMedia.TYPE_PHOTO,
+                    file=media_file,
+                    transcode_status=ProblemReportMedia.STATUS_PENDING if is_video else "",
+                )
+
+                if is_video:
+                    enqueue_transcode(media.id, model_name="ProblemReportMedia")
+
         messages.success(
             self.request,
             format_html(
@@ -427,13 +459,19 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
         return redirect("problem-report-detail", pk=report.pk)
 
 
-class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ProblemReportDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, View):
     """Detail view for a problem report with status toggle capability. Maintainer-only access."""
 
     template_name = "maintenance/problem_report_detail.html"
 
     def test_func(self):
         return self.request.user.is_staff
+
+    def get_media_model(self):
+        return ProblemReportMedia
+
+    def get_media_parent(self):
+        return self.report
 
     def get(self, request, *args, **kwargs):
         report = get_object_or_404(
@@ -442,31 +480,39 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.render_response(request, report)
 
     def post(self, request, *args, **kwargs):
-        report = get_object_or_404(
+        self.report = get_object_or_404(
             ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
         )
         action = request.POST.get("action")
 
         # Handle AJAX description update
         if action == "update_description":
-            report.description = request.POST.get("description", "")
-            report.save(update_fields=["description", "updated_at"])
+            self.report.description = request.POST.get("description", "")
+            self.report.save(update_fields=["description", "updated_at"])
             return JsonResponse({"success": True})
 
+        # Handle AJAX media upload
+        if action == "upload_media":
+            return self.handle_upload_media(request)
+
+        # Handle AJAX media delete
+        if action == "delete_media":
+            return self.handle_delete_media(request)
+
         # Toggle status
-        if report.status == ProblemReport.STATUS_OPEN:
-            report.status = ProblemReport.STATUS_CLOSED
+        if self.report.status == ProblemReport.STATUS_OPEN:
+            self.report.status = ProblemReport.STATUS_CLOSED
             action_text = "closed"
             log_text = "Closed problem report"
         else:
-            report.status = ProblemReport.STATUS_OPEN
+            self.report.status = ProblemReport.STATUS_OPEN
             action_text = "re-opened"
             log_text = "Re-opened problem report"
 
-        report.save(update_fields=["status", "updated_at"])
+        self.report.save(update_fields=["status", "updated_at"])
         log_entry = LogEntry.objects.create(
-            machine=report.machine,
-            problem_report=report,
+            machine=self.report.machine,
+            problem_report=self.report,
             text=log_text,
             created_by=request.user,
         )
@@ -477,12 +523,12 @@ class ProblemReportDetailView(LoginRequiredMixin, UserPassesTestMixin, View):
             request,
             format_html(
                 'Problem report <a href="{}">#{}</a> {}.',
-                reverse("problem-report-detail", kwargs={"pk": report.pk}),
-                report.pk,
+                reverse("problem-report-detail", kwargs={"pk": self.report.pk}),
+                self.report.pk,
                 action_text,
             ),
         )
-        return redirect("problem-report-detail", pk=report.pk)
+        return redirect("problem-report-detail", pk=self.report.pk)
 
     def render_response(self, request, report):
         from django.shortcuts import render
