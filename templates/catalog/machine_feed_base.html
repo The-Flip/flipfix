@@ -227,6 +227,8 @@
       <div id="log-container"
            data-fetch-url="{% block infinite_scroll_url %}{% endblock %}">
         {% block feed_content %}{% endblock %}
+        <div id="log-pagination"
+             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
       </div>
       <div id="log-loading" class="hidden">Loading…</div>
       <div id="log-sentinel"></div>

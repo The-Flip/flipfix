@@ -9,7 +9,6 @@
       {% include "maintenance/partials/problem_report_entry.html" with entry=entry %}
     {% endfor %}
   {% endtimeline %}
-  <div id="log-pagination" data-next-page="0"></div>
 {% else %}
 {% empty_state empty_message="No problem reports yet." search_message="No problem reports match your search." is_search=search_form.q.value %}
 {% endif %}

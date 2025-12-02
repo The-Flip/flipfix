@@ -10,8 +10,6 @@
       {% include "maintenance/partials/activity_entry.html" with entry=entry %}
     {% endfor %}
   {% endtimeline %}
-  <div id="log-pagination"
-       data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
 {% else %}
 {% empty_state empty_message="No activity yet." search_message="No activity matches your search." is_search=search_form.q.value %}
 {% endif %}
