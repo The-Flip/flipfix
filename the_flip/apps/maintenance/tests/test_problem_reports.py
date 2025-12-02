@@ -688,7 +688,6 @@ class ProblemReportMediaCreateTests(TestDataMixin, TestCase):
         img_io.name = "test.png"
 
         data = {
-            "problem_type": ProblemReport.PROBLEM_OTHER,
             "description": "Problem with media",
             "media_file": img_io,
         }
@@ -697,6 +696,8 @@ class ProblemReportMediaCreateTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ProblemReport.objects.count(), 1)
         report = ProblemReport.objects.first()
+        # Maintainer form defaults to "Other" problem type
+        self.assertEqual(report.problem_type, ProblemReport.PROBLEM_OTHER)
         self.assertEqual(report.media.count(), 1)
         media = report.media.first()
         self.assertEqual(media.media_type, ProblemReportMedia.TYPE_PHOTO)
@@ -706,7 +707,6 @@ class ProblemReportMediaCreateTests(TestDataMixin, TestCase):
         self.client.force_login(self.staff_user)
 
         data = {
-            "problem_type": ProblemReport.PROBLEM_STUCK_BALL,
             "description": "No media attached",
         }
         response = self.client.post(self.create_url, data)
@@ -714,6 +714,8 @@ class ProblemReportMediaCreateTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ProblemReport.objects.count(), 1)
         report = ProblemReport.objects.first()
+        # Maintainer form defaults to "Other" problem type
+        self.assertEqual(report.problem_type, ProblemReport.PROBLEM_OTHER)
         self.assertEqual(report.media.count(), 0)
 
     def test_public_form_has_no_media_field(self):

@@ -81,7 +81,14 @@ class ProblemReportForm(StyledFormMixin, forms.ModelForm):
 
 
 class MaintainerProblemReportForm(ProblemReportForm):
-    """Extended problem report form for maintainers with media upload support."""
+    """Extended problem report form for maintainers with media upload support.
+
+    Unlike the public form, maintainers don't select a problem type - it defaults to "Other".
+    Description is still required.
+    """
+
+    class Meta(ProblemReportForm.Meta):
+        fields = ["description"]  # Exclude problem_type; model defaults to "Other"
 
     media_file = MultiFileField(
         label="Photo",

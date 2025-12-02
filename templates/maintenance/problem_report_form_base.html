@@ -34,21 +34,23 @@
     {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
     <!-- MAIN COLUMN: Primary form fields -->
     <div class="two-column__main form-main">
-      <!-- PROBLEM TYPE -->
-      <div class="form-field">
-        <label class="form-label">
-          What type of problem? <span class="text-problem">*</span>
-        </label>
-        <div class="radio-group">
-          {% for radio in form.problem_type %}
-            <label class="radio-label">
-              {{ radio.tag }}
-              <span>{{ radio.choice_label }}</span>
-            </label>
-          {% endfor %}
+      {% block problem_type_field %}
+        <!-- PROBLEM TYPE -->
+        <div class="form-field">
+          <label class="form-label">
+            What type of problem? <span class="text-problem">*</span>
+          </label>
+          <div class="radio-group">
+            {% for radio in form.problem_type %}
+              <label class="radio-label">
+                {{ radio.tag }}
+                <span>{{ radio.choice_label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for error in form.problem_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
         </div>
-        {% for error in form.problem_type.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-      </div>
+      {% endblock %}
       <!-- DESCRIPTION -->
       <div class="form-field">
         <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
