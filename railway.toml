@@ -2,7 +2,9 @@
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "./build.sh"
+# buildCommand configured per service in Railway dashboard:
+#   - Web service: ./build.web.sh
+#   - Worker service: ./build.worker.sh
 # When updating this, also update what's ignored in .github/workflows/ci.yml
 watchPatterns = [
   "**",

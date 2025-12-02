@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-# Build script for deployment on Railway
+# Build script for web service deployment on Railway
 
 # exit on error
 set -o errexit
 
-# Install dependencies (web + worker for full production deployment)
-pip install -r requirements.web.txt -r requirements.worker.txt
+# Install web service dependencies
+pip install -r requirements.web.txt
 
 # Create directories if they don't exist
 mkdir -p media
 mkdir -p static_collected
-
-# Tests are run in CI before merge - no need to run again here
 
 # Run migrations
 echo "Running migrations..."
