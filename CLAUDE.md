@@ -113,4 +113,4 @@ Before generating code or explanations, read the docs at `docs/README.md` and li
 - `docs/Datamodel.md` - Domain models and relationships
 - `docs/Testing.md` - Testing strategy
 
-Do not introduce new conventions. Update docs when changing behavior.
+Do not introduce new conventions without consulting user. Update docs when changing behavior.

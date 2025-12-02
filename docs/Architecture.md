@@ -6,7 +6,7 @@
 - Serves the website and handles user requests
 
 ### Background Worker
-- Handles async tasks: video transcoding and webhook delivery
+- Handles async tasks, like video transcoding and webhook delivery
 
 ### Persistent File Storage
 - Store uploaded photos and videos
