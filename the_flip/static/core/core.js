@@ -264,6 +264,14 @@ function updateMachineField(button) {
         const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
         const pillHtml = `<span class="pill ${statusClassMap[value]?.pill || 'pill--neutral'}"><i class="fa-solid ${iconClassMap[value] || 'fa-circle-question'} meta"></i> ${label}</span>`;
         showMessage('success', `Status of ${machineName} set to ${pillHtml}`);
+        // Inject the new log entry into the feed
+        if (data.log_entry_html) {
+          const timelineLine = document.querySelector('.timeline__line');
+          if (timelineLine) {
+            timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
+            applySmartDates(timelineLine.nextElementSibling);
+          }
+        }
       } else {
         const pill = document.getElementById('location-pill');
         if (pill) {
@@ -280,11 +288,11 @@ function updateMachineField(button) {
         }
         // Inject the new log entry into the feed
         if (data.log_entry_html) {
-          const feed = document.querySelector('.timeline');
-          if (feed) {
-            feed.insertAdjacentHTML('afterbegin', data.log_entry_html);
+          const timelineLine = document.querySelector('.timeline__line');
+          if (timelineLine) {
+            timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
             // Apply smart date formatting to the new entry
-            applySmartDates(feed.firstElementChild);
+            applySmartDates(timelineLine.nextElementSibling);
           }
         }
       }

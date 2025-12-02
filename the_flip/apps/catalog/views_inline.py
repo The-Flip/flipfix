@@ -28,11 +28,13 @@ class MachineInlineUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
                 machine.operational_status = status
                 machine.updated_by = request.user
                 machine.save(update_fields=["operational_status", "updated_by", "updated_at"])
+                log_entry_html = self._render_latest_log_entry(machine)
                 return JsonResponse(
                     {
                         "status": "success",
                         "operational_status": status,
                         "operational_status_display": machine.get_operational_status_display(),
+                        "log_entry_html": log_entry_html,
                     }
                 )
             return JsonResponse({"error": "Invalid status"}, status=400)
