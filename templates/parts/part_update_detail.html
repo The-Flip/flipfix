@@ -57,7 +57,7 @@
         <!-- WHEN -->
         <div class="sidebar__section">
           <div class="sidebar__label">Posted</div>
-          <p class="text-muted text-sm">{{ update.created_at|smart_date }} by {{ update.posted_by.display_name }}</p>
+          <div class="sidebar__subtitle">{{ update.posted_by.display_name }} · {{ update.created_at|smart_date }}</div>
         </div>
         <!-- STATUS CHANGE -->
         {% if update.new_status %}
