@@ -1043,6 +1043,16 @@ body {
 
 .sidebar-card--neutral {
   border: 1px solid var(--color-gray-300);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-card--neutral:hover {
+  background-color: var(--color-gray-100);
+  border-color: var(--color-gray-400);
+}
+
+.sidebar-card--problem:hover {
+  background-color: var(--color-problem-light-bg-hover);
 }
 
 .sidebar-card__header {
