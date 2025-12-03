@@ -9,10 +9,10 @@
       <div style="padding: 10px;">
         {% for event_code, event_name in event_choices %}
           <div style="margin-bottom: 8px;">
-            <a href="{% url 'admin:webhooks_webhookendpoint_test' original.pk event_code %}"
+            <a href="{% url 'admin:discord_webhookendpoint_test' original.pk event_code %}"
                class="button"
                style="margin-right: 10px">Test: {{ event_name }}</a>
-            <a href="{% url 'admin:webhooks_webhookendpoint_preview' original.pk event_code %}"
+            <a href="{% url 'admin:discord_webhookendpoint_preview' original.pk event_code %}"
                class="button"
                target="_blank"
                rel="noopener noreferrer"

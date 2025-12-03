@@ -1,4 +1,4 @@
-"""Admin interface for webhook configuration."""
+"""Admin interface for Discord integration."""
 
 import json
 
@@ -7,8 +7,18 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import path, reverse
 
 from .formatters import format_test_message
-from .models import WebhookEndpoint, WebhookEventSubscription, WebhookSettings
+from .models import (
+    DiscordChannel,
+    DiscordUserLink,
+    WebhookEndpoint,
+    WebhookEventSubscription,
+    WebhookSettings,
+)
 from .tasks import send_test_webhook
+
+# =============================================================================
+# Webhook Admin (outbound notifications)
+# =============================================================================
 
 
 class WebhookEventSubscriptionInline(admin.TabularInline):
@@ -28,7 +38,7 @@ class WebhookEndpointAdmin(admin.ModelAdmin):
         (None, {"fields": ("name", "url", "is_enabled")}),
         ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
-    change_form_template = "admin/webhooks/webhookendpoint/change_form.html"
+    change_form_template = "admin/discord/webhookendpoint/change_form.html"
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         extra_context = extra_context or {}
@@ -50,12 +60,12 @@ class WebhookEndpointAdmin(admin.ModelAdmin):
             path(
                 "<int:pk>/test/<str:event_type>/",
                 self.admin_site.admin_view(self.test_webhook_view),
-                name="webhooks_webhookendpoint_test",
+                name="discord_webhookendpoint_test",
             ),
             path(
                 "<int:pk>/preview/<str:event_type>/",
                 self.admin_site.admin_view(self.preview_webhook_view),
-                name="webhooks_webhookendpoint_preview",
+                name="discord_webhookendpoint_preview",
             ),
         ]
         return custom_urls + urls
@@ -68,7 +78,7 @@ class WebhookEndpointAdmin(admin.ModelAdmin):
         else:
             messages.error(request, f"Test failed: {result.get('error', 'Unknown error')}")
 
-        return HttpResponseRedirect(reverse("admin:webhooks_webhookendpoint_change", args=[pk]))
+        return HttpResponseRedirect(reverse("admin:discord_webhookendpoint_change", args=[pk]))
 
     def preview_webhook_view(self, request, pk, event_type):
         """Return the test payload JSON for the given endpoint/event."""
@@ -94,6 +104,7 @@ class WebhookSettingsAdmin(admin.ModelAdmin):
         "webhooks_enabled",
         "problem_reports_enabled",
         "log_entries_enabled",
+        "parts_enabled",
     )
     fieldsets = (
         (
@@ -106,7 +117,7 @@ class WebhookSettingsAdmin(admin.ModelAdmin):
         (
             "Event Type Settings",
             {
-                "fields": ("problem_reports_enabled", "log_entries_enabled"),
+                "fields": ("problem_reports_enabled", "log_entries_enabled", "parts_enabled"),
                 "description": "Choose which event categories can send webhooks. These take effect only if the global switch is on.",
             },
         ),
@@ -123,4 +134,56 @@ class WebhookSettingsAdmin(admin.ModelAdmin):
     def changelist_view(self, request, extra_context=None):
         # Always redirect to the singleton instance instead of showing a list.
         obj = WebhookSettings.get_settings()
-        return HttpResponseRedirect(reverse("admin:webhooks_webhooksettings_change", args=[obj.pk]))
+        return HttpResponseRedirect(reverse("admin:discord_webhooksettings_change", args=[obj.pk]))
+
+
+# =============================================================================
+# Discord Bot Admin (inbound message processing)
+# =============================================================================
+
+
+@admin.register(DiscordChannel)
+class DiscordChannelAdmin(admin.ModelAdmin):
+    list_display = ("name", "channel_id", "is_enabled", "created_at")
+    list_filter = ("is_enabled",)
+    search_fields = ("name", "channel_id")
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("name", "channel_id", "is_enabled")}),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+
+@admin.register(DiscordUserLink)
+class DiscordUserLinkAdmin(admin.ModelAdmin):
+    list_display = (
+        "discord_display_name",
+        "discord_username",
+        "maintainer",
+        "created_at",
+    )
+    list_filter = ("created_at",)
+    search_fields = (
+        "discord_username",
+        "discord_display_name",
+        "maintainer__user__username",
+        "maintainer__user__first_name",
+        "maintainer__user__last_name",
+    )
+    readonly_fields = ("created_at", "updated_at", "discord_avatar_url")
+    autocomplete_fields = ("maintainer",)
+    fieldsets = (
+        (
+            "Discord User",
+            {
+                "fields": (
+                    "discord_user_id",
+                    "discord_username",
+                    "discord_display_name",
+                    "discord_avatar_url",
+                )
+            },
+        ),
+        ("Linked Maintainer", {"fields": ("maintainer",)}),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )

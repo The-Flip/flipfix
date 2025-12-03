@@ -1,8 +1,12 @@
-"""Webhook configuration models."""
+"""Discord integration models for webhooks and bot."""
 
 from django.db import models
 
 from the_flip.apps.core.models import TimeStampedModel
+
+# =============================================================================
+# Webhook Models (outbound notifications)
+# =============================================================================
 
 
 class WebhookEndpoint(TimeStampedModel):
@@ -114,3 +118,73 @@ class WebhookSettings(models.Model):
         """Get or create the singleton settings instance."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+# =============================================================================
+# Discord Bot Models (inbound message processing)
+# =============================================================================
+
+
+class DiscordChannel(TimeStampedModel):
+    """A Discord channel the bot listens to for messages."""
+
+    channel_id = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Discord channel snowflake ID.",
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text="Display name for this channel (for admin reference).",
+    )
+    is_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether to listen to this channel.",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Discord channel"
+        verbose_name_plural = "Discord channels"
+
+    def __str__(self) -> str:
+        status = "enabled" if self.is_enabled else "disabled"
+        return f"{self.name} ({status})"
+
+
+class DiscordUserLink(TimeStampedModel):
+    """Links a Discord user to a Maintainer account."""
+
+    discord_user_id = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Discord user snowflake ID.",
+    )
+    discord_username = models.CharField(
+        max_length=100,
+        help_text="Discord username (e.g., 'deanmoses').",
+    )
+    discord_display_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Discord display name (e.g., 'Dean Moses').",
+    )
+    discord_avatar_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="URL to the user's Discord avatar.",
+    )
+    maintainer = models.OneToOneField(
+        "accounts.Maintainer",
+        on_delete=models.CASCADE,
+        related_name="discord_link",
+        help_text="The maintainer this Discord user is linked to.",
+    )
+
+    class Meta:
+        ordering = ["discord_username"]
+        verbose_name = "Discord user link"
+        verbose_name_plural = "Discord user links"
+
+    def __str__(self) -> str:
+        return f"{self.discord_display_name or self.discord_username} → {self.maintainer}"

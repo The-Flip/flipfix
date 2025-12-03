@@ -1,26 +1,35 @@
-"""Tests for webhook functionality."""
+"""Tests for Discord integration (webhooks and bot)."""
 
 from unittest.mock import MagicMock, patch
 
 import requests
 from django.test import TestCase
 
+from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     create_log_entry,
     create_machine,
+    create_machine_model,
     create_problem_report,
     create_staff_user,
 )
-from the_flip.apps.webhooks.formatters import (
+from the_flip.apps.discord.formatters import (
     format_discord_message,
     format_test_message,
 )
-from the_flip.apps.webhooks.models import (
+from the_flip.apps.discord.models import (
+    DiscordChannel,
+    DiscordUserLink,
     WebhookEndpoint,
     WebhookEventSubscription,
     WebhookSettings,
 )
-from the_flip.apps.webhooks.tasks import deliver_webhooks
+from the_flip.apps.discord.parsers import parse_message
+from the_flip.apps.discord.tasks import deliver_webhooks
+
+# =============================================================================
+# Webhook Model Tests
+# =============================================================================
 
 
 class WebhookEndpointModelTests(TestCase):
@@ -101,6 +110,94 @@ class WebhookSettingsTests(TestCase):
         settings2.save()
         self.assertEqual(WebhookSettings.objects.count(), 1)
         self.assertFalse(WebhookSettings.objects.get(pk=1).webhooks_enabled)
+
+
+# =============================================================================
+# Discord Bot Model Tests
+# =============================================================================
+
+
+class DiscordChannelModelTests(TestCase):
+    """Tests for the DiscordChannel model."""
+
+    def test_create_channel(self):
+        """Can create a Discord channel configuration."""
+        channel = DiscordChannel.objects.create(
+            channel_id="123456789",
+            name="maintenance",
+            is_enabled=True,
+        )
+        self.assertEqual(str(channel), "maintenance (enabled)")
+
+    def test_disabled_channel_str(self):
+        """Disabled channel shows in string representation."""
+        channel = DiscordChannel.objects.create(
+            channel_id="123456789",
+            name="maintenance",
+            is_enabled=False,
+        )
+        self.assertEqual(str(channel), "maintenance (disabled)")
+
+    def test_unique_channel_id(self):
+        """Cannot create duplicate channel IDs."""
+        DiscordChannel.objects.create(
+            channel_id="123456789",
+            name="maintenance",
+        )
+        from django.db import IntegrityError
+
+        with self.assertRaises(IntegrityError):
+            DiscordChannel.objects.create(
+                channel_id="123456789",
+                name="other",
+            )
+
+
+class DiscordUserLinkModelTests(TestCase):
+    """Tests for the DiscordUserLink model."""
+
+    def test_create_user_link(self):
+        """Can link a Discord user to a maintainer."""
+        staff_user = create_staff_user()
+        maintainer = Maintainer.objects.get(user=staff_user)
+
+        link = DiscordUserLink.objects.create(
+            discord_user_id="987654321",
+            discord_username="testuser",
+            discord_display_name="Test User",
+            maintainer=maintainer,
+        )
+        self.assertIn("Test User", str(link))
+        self.assertIn(str(maintainer), str(link))
+
+    def test_unique_discord_user_id(self):
+        """Cannot link same Discord user twice."""
+        staff_user = create_staff_user()
+        maintainer = Maintainer.objects.get(user=staff_user)
+
+        DiscordUserLink.objects.create(
+            discord_user_id="987654321",
+            discord_username="testuser",
+            maintainer=maintainer,
+        )
+
+        # Create another maintainer
+        staff_user2 = create_staff_user(username="staff2")
+        maintainer2 = Maintainer.objects.get(user=staff_user2)
+
+        from django.db import IntegrityError
+
+        with self.assertRaises(IntegrityError):
+            DiscordUserLink.objects.create(
+                discord_user_id="987654321",  # Same Discord ID
+                discord_username="testuser",
+                maintainer=maintainer2,
+            )
+
+
+# =============================================================================
+# Discord Message Formatter Tests
+# =============================================================================
 
 
 class DiscordFormatterTests(TestCase):
@@ -205,27 +302,25 @@ class DiscordFormatterTests(TestCase):
             self.assertIn("image", embed)
             self.assertEqual(embed["url"], main_url)
 
-    def test_format_log_entry_includes_created_by_name(self):
-        """Log entry without maintainers falls back to created_by user name."""
-        # Create a user with a full name
-        from django.contrib.auth import get_user_model
+    def test_format_log_entry_uses_discord_name_when_linked(self):
+        """Log entry uses Discord display name when maintainer is linked."""
+        maintainer = Maintainer.objects.get(user=self.staff_user)
 
-        user_model = get_user_model()
-        user = user_model.objects.create_user(
-            username="janedoe",
-            password="testpass123",  # pragma: allowlist secret
-            first_name="Jane",
-            last_name="Doe",
+        # Create Discord link
+        DiscordUserLink.objects.create(
+            discord_user_id="123456789",
+            discord_username="discorduser",
+            discord_display_name="Discord Display Name",
+            maintainer=maintainer,
         )
 
-        # Create log entry with only created_by (no maintainers)
-        log_entry = create_log_entry(machine=self.machine, created_by=user)
+        log_entry = create_log_entry(machine=self.machine, created_by=self.staff_user)
         message = format_discord_message("log_entry_created", log_entry)
 
         embed = message["embeds"][0]
 
-        # Description should include the user's full name
-        self.assertIn("Jane Doe", embed["description"])
+        # Description should include the Discord display name
+        self.assertIn("Discord Display Name", embed["description"])
 
     def test_format_test_message(self):
         """Format a test message has required structure."""
@@ -235,6 +330,11 @@ class DiscordFormatterTests(TestCase):
         embed = message["embeds"][0]
         self.assertIn("title", embed)
         self.assertIn("description", embed)
+
+
+# =============================================================================
+# Webhook Delivery Tests
+# =============================================================================
 
 
 class WebhookDeliveryTests(TestCase):
@@ -298,7 +398,7 @@ class WebhookDeliveryTests(TestCase):
 
         self.assertEqual(result["status"], "skipped")
 
-    @patch("the_flip.apps.webhooks.tasks.requests.post")
+    @patch("the_flip.apps.discord.tasks.requests.post")
     def test_successful_delivery(self, mock_post):
         """Successfully delivers webhook."""
         mock_response = MagicMock()
@@ -313,19 +413,24 @@ class WebhookDeliveryTests(TestCase):
         self.assertEqual(result["results"][0]["status"], "success")
         mock_post.assert_called_once()
 
-    @patch("the_flip.apps.webhooks.tasks.requests.post")
+    @patch("the_flip.apps.discord.tasks.requests.post")
     def test_handles_delivery_failure(self, mock_post):
         """Handles webhook delivery failure gracefully."""
         mock_post.side_effect = requests.RequestException("Connection error")
 
         report = create_problem_report(machine=self.machine)
         # Capture expected warning log to avoid noise in test output
-        with self.assertLogs("the_flip.apps.webhooks.tasks", level="WARNING"):
+        with self.assertLogs("the_flip.apps.discord.tasks", level="WARNING"):
             result = deliver_webhooks("problem_report_created", report.pk, "ProblemReport")
 
         self.assertEqual(result["status"], "completed")
         self.assertEqual(result["results"][0]["status"], "error")
         self.assertIn("Connection error", result["results"][0]["error"])
+
+
+# =============================================================================
+# Webhook Signal Tests
+# =============================================================================
 
 
 class WebhookSignalTests(TestCase):
@@ -346,7 +451,7 @@ class WebhookSignalTests(TestCase):
                 is_enabled=True,
             )
 
-    @patch("the_flip.apps.webhooks.tasks.async_task")
+    @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_problem_report_created(self, mock_async):
         """Signal fires when a problem report is created."""
         report = create_problem_report(machine=self.machine)
@@ -356,7 +461,7 @@ class WebhookSignalTests(TestCase):
         self.assertEqual(call_args[0][1], "problem_report_created")
         self.assertEqual(call_args[0][2], report.pk)
 
-    @patch("the_flip.apps.webhooks.tasks.async_task")
+    @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_log_entry_created(self, mock_async):
         """Signal fires when a log entry is created."""
         staff_user = create_staff_user()
@@ -366,3 +471,116 @@ class WebhookSignalTests(TestCase):
         calls = [c for c in mock_async.call_args_list if c[0][1] == "log_entry_created"]
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], log_entry.pk)
+
+
+# =============================================================================
+# Message Parser Tests
+# =============================================================================
+
+
+class MessageParserTests(TestCase):
+    """Tests for Discord message parsing."""
+
+    def setUp(self):
+        model = create_machine_model(name="Godzilla (Premium)")
+        self.machine = create_machine(model=model)
+        self.staff_user = create_staff_user()
+
+    def test_parse_explicit_pr_reference(self):
+        """Parses explicit PR #123 reference."""
+        report = create_problem_report(machine=self.machine)
+        content = f"Fixed the issue on PR #{report.pk}"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "log_entry")
+        self.assertEqual(result.problem_report, report)
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_url_to_problem_report(self):
+        """Parses URL to problem report."""
+        report = create_problem_report(machine=self.machine)
+        content = f"Working on https://theflip.app/problem-reports/{report.pk}/"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "log_entry")
+        self.assertEqual(result.problem_report, report)
+
+    def test_parse_machine_name_exact(self):
+        """Finds machine by exact name."""
+        content = "Fixed the flipper on Godzilla (Premium)"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_machine_name_prefix(self):
+        """Finds machine by prefix (Godzilla matches Godzilla (Premium))."""
+        content = "Fixed the flipper on Godzilla"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_problem_keywords(self):
+        """Recognizes problem keywords and creates problem report action."""
+        content = "Godzilla ball is stuck again"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "problem_report")
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_work_keywords(self):
+        """Recognizes work keywords and creates log entry action."""
+        content = "Fixed the flipper on Godzilla"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "log_entry")
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_parts_keywords(self):
+        """Recognizes parts keywords and creates part request action."""
+        content = "Need to order new flipper coil for Godzilla"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "part_request")
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_no_machine_ignores(self):
+        """Ignores messages with no machine reference."""
+        content = "Hey everyone, meeting at 3pm"
+
+        result = parse_message(content)
+
+        self.assertEqual(result.action, "ignore")
+
+    def test_parse_reply_to_problem_report_url(self):
+        """Reply to webhook post creates log entry linked to PR."""
+        report = create_problem_report(machine=self.machine)
+        reply_url = f"https://theflip.app/problem-reports/{report.pk}/"
+
+        result = parse_message(
+            content="Checked this out, needs new flipper",
+            reply_to_embed_url=reply_url,
+        )
+
+        self.assertEqual(result.action, "log_entry")
+        self.assertEqual(result.problem_report, report)
+        self.assertEqual(result.machine, self.machine)
+
+    def test_parse_ambiguous_machine_ignores(self):
+        """Ignores when multiple machines match."""
+        # Create another machine that also matches "Godzilla"
+        model2 = create_machine_model(name="Godzilla (LE)")
+        create_machine(model=model2)
+
+        content = "Fixed Godzilla"
+
+        result = parse_message(content)
+
+        # Should ignore because "Godzilla" matches both
+        self.assertEqual(result.action, "ignore")

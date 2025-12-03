@@ -1,10 +1,10 @@
-"""Django signals for webhook triggers."""
+"""Django signals for Discord webhook triggers."""
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from the_flip.apps.discord.tasks import dispatch_webhook
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-from the_flip.apps.webhooks.tasks import dispatch_webhook
 
 
 @receiver(post_save, sender=ProblemReport)

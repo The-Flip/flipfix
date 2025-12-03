@@ -3,8 +3,8 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
+from the_flip.apps.discord.tasks import dispatch_webhook
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
-from the_flip.apps.webhooks.tasks import dispatch_webhook
 
 
 @receiver(post_save, sender=PartRequest)

@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     "the_flip.apps.catalog",
     "the_flip.apps.maintenance",
     "the_flip.apps.parts",
-    "the_flip.apps.webhooks",
+    "the_flip.apps.discord",
 ]
 
 MIDDLEWARE = [
@@ -129,8 +129,17 @@ CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
 
 CONSTANCE_CONFIG = {
     "PARTS_ENABLED": (True, "Enable the parts request feature", bool),
+    # Discord Bot settings
+    "DISCORD_BOT_ENABLED": (False, "Enable the Discord bot for message processing", bool),
+    "DISCORD_BOT_TOKEN": ("", "Discord bot token (keep secret!)", str),
+    "DISCORD_GUILD_ID": ("", "Discord server (guild) ID", str),
 }
 
 CONSTANCE_CONFIG_FIELDSETS = {
     "Feature Flags": ("PARTS_ENABLED",),
+    "Discord Bot": (
+        "DISCORD_BOT_ENABLED",
+        "DISCORD_BOT_TOKEN",
+        "DISCORD_GUILD_ID",
+    ),
 }

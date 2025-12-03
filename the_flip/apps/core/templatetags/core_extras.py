@@ -370,7 +370,7 @@ def timeline(content, id="", inject_log_entries=True):
     id_attr = f' id="{id}"' if id else ""
     inject_attr = ' data-inject-log-entries="true"' if inject_log_entries else ""
     return format_html(
-        '<div class="timeline"{}{}>\n' '  <div class="timeline__line"></div>\n' "{}" "</div>",
+        '<div class="timeline"{}{}>\n  <div class="timeline__line"></div>\n{}</div>',
         mark_safe(id_attr),  # noqa: S308 - id is from template, not user input
         mark_safe(inject_attr),  # noqa: S308 - data attr is from template, not user input
         content,

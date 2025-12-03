@@ -17,7 +17,7 @@ the_flip/
     │   ├── catalog/          # Catalog of pinball machines and models
     │   ├── maintenance/      # Problem reports, log entries
     │   ├── parts/            # Part request tracking and management
-    │   ├── webhooks/         # Webhook notifications to external services
+    │   ├── discord/          # Discord integration (webhooks and bot)
     │   └── core/             # Shared utilities & decorators
     └── static/               # Project-level static files
 ```
@@ -31,8 +31,10 @@ Owns the catalog of pinball machines: Machine Models and Machine Instances. This
 Owns Problem Reports and Log Entries. Encapsulates workflows such as auto-closing tasks when machines are marked "good", rate-limiting public problem report submissions.
 #### `parts` app
 Owns requests for replacement parts and their lifecycle tracking (requested → ordered → received).
-#### `webhooks` app
-Manages web hook notifications to external services (Discord, Slack, etc.) when events occur. Configurable endpoints and per-event subscriptions.
+#### `discord` app
+Discord integration with two main features:
+- **Outbound webhooks**: Posts notifications to Discord when events occur (problem reports, log entries, parts requests)
+- **Inbound bot**: Listens to a configured Discord channel and creates tickets from employee messages
 #### `core` app
 Shared helpers that don't belong to a single domain app: decorators, custom admin mixins, base templates, date utilities, etc.
 

@@ -5,6 +5,7 @@ help:
 	@echo "Development:"
 	@echo "  make runserver      - Start development web server"
 	@echo "  make runq           - Start development queue worker"
+	@echo "  make runbot         - Start Discord bot"
 	@echo "  make shell          - Start Django shell"
 	@echo ""
 	@echo "Testing:"
@@ -63,6 +64,10 @@ superuser:
 .PHONY: runq
 runq:
 	.venv/bin/python manage.py qcluster
+
+.PHONY: runbot
+runbot:
+	.venv/bin/python manage.py run_discord_bot
 
 .PHONY: reset-db
 reset-db:
