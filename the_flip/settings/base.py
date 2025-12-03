@@ -154,3 +154,6 @@ CONSTANCE_CONFIG_FIELDSETS = {
         "DISCORD_WEBHOOKS_PARTS",
     ),
 }
+
+# Valid domains for Discord bot URL parsing (to identify links to this app)
+DISCORD_VALID_DOMAINS = ["theflip.app", "localhost", "127.0.0.1"]
