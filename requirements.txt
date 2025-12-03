@@ -31,3 +31,6 @@ linkify-it-py==2.0.3
 
 # Audit Logging
 django-simple-history==3.10.1
+
+# Discord Bot
+discord.py==2.4.0

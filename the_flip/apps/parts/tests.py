@@ -13,14 +13,14 @@ from the_flip.apps.core.test_utils import (
     create_staff_user,
     create_user,
 )
+from the_flip.apps.discord.formatters import format_discord_message
+from the_flip.apps.discord.models import (
+    WebhookEndpoint,
+    WebhookEventSubscription,
+)
 from the_flip.apps.parts.models import (
     PartRequest,
     PartRequestUpdate,
-)
-from the_flip.apps.webhooks.formatters import format_discord_message
-from the_flip.apps.webhooks.models import (
-    WebhookEndpoint,
-    WebhookEventSubscription,
 )
 
 
@@ -393,7 +393,7 @@ class PartRequestWebhookSignalTests(TestCase):
                 is_enabled=True,
             )
 
-    @patch("the_flip.apps.webhooks.tasks.async_task")
+    @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_part_request_created(self, mock_async):
         """Signal fires when a part request is created."""
         part_request = create_part_request(
@@ -406,7 +406,7 @@ class PartRequestWebhookSignalTests(TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], part_request.pk)
 
-    @patch("the_flip.apps.webhooks.tasks.async_task")
+    @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_part_request_update_created(self, mock_async):
         """Signal fires when a part request update is created."""
         part_request = create_part_request(requested_by=self.maintainer)
@@ -423,7 +423,7 @@ class PartRequestWebhookSignalTests(TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], update.pk)
 
-    @patch("the_flip.apps.webhooks.tasks.async_task")
+    @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_status_change_via_update(self, mock_async):
         """Signal fires when status changes via an update."""
         part_request = create_part_request(requested_by=self.maintainer)

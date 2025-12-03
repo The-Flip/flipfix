@@ -9,8 +9,8 @@ import requests
 from django_q.tasks import async_task
 
 if TYPE_CHECKING:
+    from the_flip.apps.discord.models import WebhookEndpoint
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-    from the_flip.apps.webhooks.models import WebhookEndpoint
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
     enqueues the actual webhook delivery to run asynchronously.
     """
     async_task(
-        "the_flip.apps.webhooks.tasks.deliver_webhooks",
+        "the_flip.apps.discord.tasks.deliver_webhooks",
         event_type,
         object_id,
         model_name,
@@ -35,7 +35,7 @@ def deliver_webhooks(event_type: str, object_id: int, model_name: str) -> dict:
 
     This runs asynchronously via Django Q.
     """
-    from the_flip.apps.webhooks.models import (
+    from the_flip.apps.discord.models import (
         WebhookEventSubscription,
         WebhookSettings,
     )
@@ -91,7 +91,7 @@ def _get_object(model_name: str, object_id: int):
 
         return (
             LogEntry.objects.select_related("machine", "problem_report")
-            .prefetch_related("maintainers")
+            .prefetch_related("maintainers", "maintainers__discord_link")
             .filter(pk=object_id)
             .first()
         )
@@ -99,7 +99,9 @@ def _get_object(model_name: str, object_id: int):
         from the_flip.apps.parts.models import PartRequest
 
         return (
-            PartRequest.objects.select_related("machine", "requested_by__user")
+            PartRequest.objects.select_related(
+                "machine", "requested_by__user", "requested_by__discord_link"
+            )
             .filter(pk=object_id)
             .first()
         )
@@ -107,7 +109,9 @@ def _get_object(model_name: str, object_id: int):
         from the_flip.apps.parts.models import PartRequestUpdate
 
         return (
-            PartRequestUpdate.objects.select_related("part_request__machine", "posted_by__user")
+            PartRequestUpdate.objects.select_related(
+                "part_request__machine", "posted_by__user", "posted_by__discord_link"
+            )
             .filter(pk=object_id)
             .first()
         )
@@ -120,7 +124,7 @@ def _deliver_to_endpoint(
     obj: ProblemReport | LogEntry,
 ) -> dict:
     """Deliver a webhook to a single endpoint."""
-    from the_flip.apps.webhooks.formatters import format_discord_message
+    from the_flip.apps.discord.formatters import format_discord_message
 
     try:
         payload = format_discord_message(event_type, obj)
@@ -155,8 +159,8 @@ def send_test_webhook(endpoint_id: int, event_type: str) -> dict:
     This is called directly (not via async_task) from the admin UI
     so the user gets immediate feedback.
     """
-    from the_flip.apps.webhooks.formatters import format_test_message
-    from the_flip.apps.webhooks.models import WebhookEndpoint
+    from the_flip.apps.discord.formatters import format_test_message
+    from the_flip.apps.discord.models import WebhookEndpoint
 
     try:
         endpoint = WebhookEndpoint.objects.get(pk=endpoint_id)

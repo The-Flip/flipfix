@@ -19,7 +19,7 @@ the_flip/
     │   ├── catalog/          # Catalog of pinball machines and models
     │   ├── maintenance/      # Problem reports, log entries
     │   ├── parts/            # Part request tracking and management
-    │   ├── webhooks/         # Webhook notifications to external services
+    │   ├── discord/          # Discord integration (webhooks and bot)
     │   └── core/             # Shared utilities & decorators
     └── static/               # Project-level static files
 ```

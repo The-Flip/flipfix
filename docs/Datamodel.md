@@ -44,10 +44,19 @@ Comment or status update on a part request. Can optionally change the part reque
 ### Part Request Update Media ([`PartRequestUpdateMedia`](../the_flip/apps/parts/models.py))
 Photos/videos attached to part request updates.
 
-## Webhooks app
+## Discord app
 
-### Webhook Endpoint ([`WebhookEndpoint`](../the_flip/apps/webhooks/models.py))
-External URL that receives notifications (e.g., Discord, Slack).
+### Webhook Endpoint ([`WebhookEndpoint`](../the_flip/apps/discord/models.py))
+External URL that receives notifications (Discord webhook URL).
 
-### Webhook Event Subscription ([`WebhookEventSubscription`](../the_flip/apps/webhooks/models.py))
+### Webhook Event Subscription ([`WebhookEventSubscription`](../the_flip/apps/discord/models.py))
 Links an endpoint to specific event types it should receive.
+
+### Webhook Settings ([`WebhookSettings`](../the_flip/apps/discord/models.py))
+Singleton model for global webhook enable/disable switches.
+
+### Discord Channel ([`DiscordChannel`](../the_flip/apps/discord/models.py))
+A Discord channel the bot listens to for messages.
+
+### Discord User Link ([`DiscordUserLink`](../the_flip/apps/discord/models.py))
+Links a Discord user to a Maintainer account for attribution.

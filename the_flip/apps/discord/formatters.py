@@ -9,6 +9,7 @@ from django.conf import settings
 from django.urls import reverse
 
 if TYPE_CHECKING:
+    from the_flip.apps.accounts.models import Maintainer
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
     from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
@@ -17,6 +18,26 @@ def get_base_url() -> str:
     """Get the base URL for the site."""
     # Use SITE_URL setting if available, otherwise construct from common settings
     return getattr(settings, "SITE_URL", "https://theflip.app")
+
+
+def _get_maintainer_display_name(maintainer: Maintainer) -> str:
+    """Get display name for a maintainer, preferring Discord name if linked."""
+    # Check for Discord link
+    discord_link = getattr(maintainer, "discord_link", None)
+    if discord_link is None:
+        # Try to fetch it (in case it wasn't prefetched)
+        try:
+            from the_flip.apps.discord.models import DiscordUserLink
+
+            discord_link = DiscordUserLink.objects.filter(maintainer=maintainer).first()
+        except Exception:
+            discord_link = None
+
+    if discord_link:
+        return discord_link.discord_display_name or discord_link.discord_username
+
+    # Fall back to maintainer's standard display name
+    return maintainer.display_name
 
 
 def format_discord_message(event_type: str, obj: Any) -> dict:
@@ -103,15 +124,20 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     # Get maintainer names (from explicit maintainers or fall back to created_by)
     maintainer_names = []
     for m in log_entry.maintainers.all():
-        maintainer_names.append(m.user.get_full_name() or m.user.username)
+        maintainer_names.append(_get_maintainer_display_name(m))
     if log_entry.maintainer_names:
         maintainer_names.append(log_entry.maintainer_names)
 
     # Fall back to created_by for auto-generated log entries
     if not maintainer_names and log_entry.created_by:
-        maintainer_names.append(
-            log_entry.created_by.get_full_name() or log_entry.created_by.username
-        )
+        # Check if created_by has a maintainer profile with discord link
+        maintainer = getattr(log_entry.created_by, "maintainer", None)
+        if maintainer:
+            maintainer_names.append(_get_maintainer_display_name(maintainer))
+        else:
+            maintainer_names.append(
+                log_entry.created_by.get_full_name() or log_entry.created_by.username
+            )
 
     # Add maintainer names with a visual prefix
     if maintainer_names:
@@ -170,8 +196,8 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     if part_request.machine:
         description += f"\n\n📍 Machine: {part_request.machine.display_name}"
 
-    # Add requester
-    requester = part_request.requested_by.display_name
+    # Add requester (use Discord name if available)
+    requester = _get_maintainer_display_name(part_request.requested_by)
     description += f"\n\n— {requester}"
 
     return {
@@ -244,8 +270,8 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     if update.part_request.machine:
         description += f"\n\n📍 Machine: {update.part_request.machine.display_name}"
 
-    # Add who posted
-    poster = update.posted_by.display_name
+    # Add who posted (use Discord name if available)
+    poster = _get_maintainer_display_name(update.posted_by)
     description += f"\n\n— {poster}"
 
     return {
