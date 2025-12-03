@@ -482,6 +482,11 @@ class MessageParserTests(TestCase):
     """Tests for Discord message parsing."""
 
     def setUp(self):
+        # Clear the machine cache to avoid stale data between tests
+        from django.core.cache import cache
+
+        cache.delete("machines_for_matching")
+
         model = create_machine_model(name="Godzilla (Premium)")
         self.machine = create_machine(model=model)
         self.staff_user = create_staff_user()

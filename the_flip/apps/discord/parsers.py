@@ -15,20 +15,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# Keywords for classification
+# Keywords for classification (single words only - matched via word splitting)
 PARTS_KEYWORDS = {"need", "order", "part", "parts", "buy", "purchase", "ordering"}
-PROBLEM_KEYWORDS = {
-    "broken",
-    "stuck",
-    "dead",
-    "issue",
-    "problem",
-    "not working",
-    "doesnt work",
-    "doesn't work",
-    "won't",
-    "wont",
-}
+PROBLEM_KEYWORDS = {"broken", "stuck", "dead", "issue", "problem"}
 WORK_KEYWORDS = {
     "fixed",
     "replaced",
@@ -38,8 +27,11 @@ WORK_KEYWORDS = {
     "installed",
     "swapped",
     "changed",
-    "worked on",
 }
+
+# Phrases for classification (multi-word - matched via substring)
+PROBLEM_PHRASES = ["not working", "doesnt work", "doesn't work", "won't start", "wont start"]
+WORK_PHRASES = ["worked on"]
 
 
 @dataclass
@@ -72,14 +64,12 @@ class ParseResult:
 
 def parse_message(
     content: str,
-    reply_to_message_id: str | None = None,
     reply_to_embed_url: str | None = None,
 ) -> ParseResult:
     """Parse a Discord message to determine what action to take.
 
     Args:
         content: The message text
-        reply_to_message_id: If this is a reply, the ID of the original message
         reply_to_embed_url: If replying to our webhook, the URL from the embed
 
     Returns:
@@ -191,14 +181,34 @@ def parse_message(
     )
 
 
+# Valid domains for URL parsing (production and common dev URLs)
+VALID_DOMAINS = ["theflip.app", "localhost", "127.0.0.1"]
+
+
 def _parse_url(url: str) -> ParsedReference | None:
-    """Parse a theflip.app URL to extract object references."""
+    """Parse a theflip.app URL to extract object references.
+
+    Only parses URLs from known valid domains to avoid false matches.
+    """
+    from urllib.parse import urlparse
+
+    # Validate the domain
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        # Check if hostname matches or ends with a valid domain
+        if not any(
+            hostname == domain or hostname.endswith(f".{domain}") for domain in VALID_DOMAINS
+        ):
+            return None
+    except Exception:
+        return None
+
     # Match patterns like:
     # /problem-reports/123/
     # /logs/456/
     # /parts/78/
     # /machines/medieval-madness/
-
     patterns = [
         (r"/problem-reports/(\d+)", "problem_report"),
         (r"/logs/(\d+)", "log_entry"),
@@ -240,16 +250,12 @@ def _find_machine(content: str) -> MachineInstance | None:
 
     Returns the machine if exactly one match is found, None otherwise.
     """
-    from the_flip.apps.catalog.models import MachineInstance
+    from the_flip.apps.catalog.models import get_machines_for_matching
 
     content_lower = content.lower()
 
-    # Get all active machines
-    machines = list(
-        MachineInstance.objects.select_related("model").filter(
-            operational_status__in=["good", "fixing", "broken", "unknown"]
-        )
-    )
+    # Get all active machines (cached in catalog app)
+    machines = get_machines_for_matching()
 
     matches = []
 
@@ -305,6 +311,21 @@ def _find_machine(content: str) -> MachineInstance | None:
         return None
 
 
+def _has_keywords(
+    content_lower: str, words: set[str], keywords: set[str], phrases: list[str] | None = None
+) -> bool:
+    """Check if content contains any of the keywords or phrases."""
+    # Check single-word keywords
+    if words & keywords:
+        return True
+    # Check multi-word phrases
+    if phrases:
+        for phrase in phrases:
+            if phrase in content_lower:
+                return True
+    return False
+
+
 def _classify_with_machine(content: str, machine: MachineInstance) -> ParseResult:
     """Classify a message when we know the machine."""
     from the_flip.apps.maintenance.models import ProblemReport
@@ -313,28 +334,28 @@ def _classify_with_machine(content: str, machine: MachineInstance) -> ParseResul
     words = set(content_lower.split())
 
     # Check for parts keywords
-    if words & PARTS_KEYWORDS:
+    if _has_keywords(content_lower, words, PARTS_KEYWORDS):
         return ParseResult(
             action="part_request",
             machine=machine,
             reason=f"Parts keywords found, machine: {machine.display_name}",
         )
 
-    # Check for problem keywords
-    if words & PROBLEM_KEYWORDS:
+    # Check for problem keywords/phrases
+    if _has_keywords(content_lower, words, PROBLEM_KEYWORDS, PROBLEM_PHRASES):
         return ParseResult(
             action="problem_report",
             machine=machine,
             reason=f"Problem keywords found, machine: {machine.display_name}",
         )
 
-    # Check for work keywords - look for open problem report to link to
-    if words & WORK_KEYWORDS:
-        open_pr = (
-            ProblemReport.objects.filter(machine=machine, status="open")
-            .order_by("-created_at")
-            .first()
-        )
+    # Fetch open problem report once (used for work keywords and default case)
+    open_pr = (
+        ProblemReport.objects.filter(machine=machine, status="open").order_by("-created_at").first()
+    )
+
+    # Check for work keywords/phrases - link to open problem report if exists
+    if _has_keywords(content_lower, words, WORK_KEYWORDS, WORK_PHRASES):
         if open_pr:
             return ParseResult(
                 action="log_entry",
@@ -350,10 +371,6 @@ def _classify_with_machine(content: str, machine: MachineInstance) -> ParseResul
             )
 
     # Default to log entry if we have a machine but no clear classification
-    # Check for open problem report to link to
-    open_pr = (
-        ProblemReport.objects.filter(machine=machine, status="open").order_by("-created_at").first()
-    )
     if open_pr:
         return ParseResult(
             action="log_entry",

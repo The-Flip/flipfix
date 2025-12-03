@@ -3,15 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 import discord
 from asgiref.sync import sync_to_async
 from constance import config
 from django.utils import timezone
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -105,9 +101,6 @@ class MaintenanceBot(discord.Client):
         def do_parse():
             return parse_message(
                 content=message.content,
-                reply_to_message_id=(
-                    str(message.reference.message_id) if message.reference else None
-                ),
                 reply_to_embed_url=reply_embed_url,
             )
 

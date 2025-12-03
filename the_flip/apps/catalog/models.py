@@ -162,6 +162,15 @@ class MachineInstanceQuerySet(models.QuerySet):
     def visible(self):
         return self.select_related("model", "location")
 
+    def active_for_matching(self):
+        """Return machines suitable for Discord message matching.
+
+        Includes machines with active operational statuses.
+        """
+        return self.select_related("model").filter(
+            operational_status__in=["good", "fixing", "broken", "unknown"]
+        )
+
 
 class MachineInstance(TimeStampedModel):
     """Physical machine owned by the museum."""
@@ -267,3 +276,21 @@ class MachineInstance(TimeStampedModel):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+
+def get_machines_for_matching() -> list[MachineInstance]:
+    """Get list of machines for Discord message matching.
+
+    Uses Django cache to avoid repeated database queries.
+    Cache expires after 5 minutes, so new machines will be picked up.
+    """
+    from django.core.cache import cache
+
+    cache_key = "machines_for_matching"
+    machines = cache.get(cache_key)
+
+    if machines is None:
+        machines = list(MachineInstance.objects.active_for_matching())
+        cache.set(cache_key, machines, timeout=300)  # 5 minutes
+
+    return machines
