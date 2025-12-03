@@ -101,8 +101,20 @@ class MaintenanceBot(discord.Client):
 
     async def _process_message(self, message: discord.Message):
         """Process a message from an enabled channel."""
-        from the_flip.apps.discord.models import DiscordUserLink
+        from the_flip.apps.discord.models import DiscordMessageMapping, DiscordUserLink
         from the_flip.apps.discord.parsers import parse_message
+
+        # Check for duplicate message (Discord can redeliver on network issues)
+        @sync_to_async
+        def check_duplicate():
+            return DiscordMessageMapping.is_processed(message.id)
+
+        if await check_duplicate():
+            logger.debug(
+                "discord_message_duplicate",
+                extra={"message_id": str(message.id)},
+            )
+            return
 
         # Get the reply context if this is a reply
         reply_embed_url = None
@@ -285,6 +297,7 @@ class MaintenanceBot(discord.Client):
         def create_entry():
             from django.db import transaction
 
+            from the_flip.apps.discord.models import DiscordMessageMapping
             from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 
             with transaction.atomic():
@@ -305,6 +318,9 @@ class MaintenanceBot(discord.Client):
                         media_type=LogEntryMedia.TYPE_PHOTO,
                         file=uploaded_file,
                     )
+
+                # Mark message as processed to prevent duplicates
+                DiscordMessageMapping.mark_processed(message.id, log_entry)
 
             return log_entry, len(image_files)
 
@@ -331,6 +347,7 @@ class MaintenanceBot(discord.Client):
         def create_report():
             from django.db import transaction
 
+            from the_flip.apps.discord.models import DiscordMessageMapping
             from the_flip.apps.maintenance.models import ProblemReport, ProblemReportMedia
 
             with transaction.atomic():
@@ -350,6 +367,9 @@ class MaintenanceBot(discord.Client):
                         file=uploaded_file,
                     )
 
+                # Mark message as processed to prevent duplicates
+                DiscordMessageMapping.mark_processed(message.id, report)
+
             return report, len(image_files)
 
         report, media_count = await create_report()
@@ -368,13 +388,18 @@ class MaintenanceBot(discord.Client):
     @sync_to_async
     def _create_part_request(self, message: discord.Message, result, user_link):
         """Create a PartRequest from a Discord message."""
+        from django.db import transaction
+
+        from the_flip.apps.discord.models import DiscordMessageMapping
         from the_flip.apps.parts.models import PartRequest
 
-        part_request = PartRequest.objects.create(
-            machine=result.machine,
-            text=message.content,
-            requested_by=user_link.maintainer,
-        )
+        with transaction.atomic():
+            part_request = PartRequest.objects.create(
+                machine=result.machine,
+                text=message.content,
+                requested_by=user_link.maintainer,
+            )
+            DiscordMessageMapping.mark_processed(message.id, part_request)
 
         logger.info(
             "discord_part_request_created",
@@ -389,13 +414,18 @@ class MaintenanceBot(discord.Client):
     @sync_to_async
     def _create_part_request_update(self, message: discord.Message, result, user_link):
         """Create a PartRequestUpdate from a Discord message."""
+        from django.db import transaction
+
+        from the_flip.apps.discord.models import DiscordMessageMapping
         from the_flip.apps.parts.models import PartRequestUpdate
 
-        update = PartRequestUpdate.objects.create(
-            part_request=result.part_request,
-            text=message.content,
-            posted_by=user_link.maintainer,
-        )
+        with transaction.atomic():
+            update = PartRequestUpdate.objects.create(
+                part_request=result.part_request,
+                text=message.content,
+                posted_by=user_link.maintainer,
+            )
+            DiscordMessageMapping.mark_processed(message.id, update)
 
         logger.info(
             "discord_part_request_update_created",

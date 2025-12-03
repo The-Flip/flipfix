@@ -181,16 +181,17 @@ def parse_message(
     )
 
 
-# Valid domains for URL parsing (production and common dev URLs)
-VALID_DOMAINS = ["theflip.app", "localhost", "127.0.0.1"]
-
-
 def _parse_url(url: str) -> ParsedReference | None:
     """Parse a theflip.app URL to extract object references.
 
-    Only parses URLs from known valid domains to avoid false matches.
+    Only parses URLs from known valid domains (DISCORD_VALID_DOMAINS setting)
+    to avoid false matches on random URLs in messages.
     """
     from urllib.parse import urlparse
+
+    from django.conf import settings
+
+    valid_domains = getattr(settings, "DISCORD_VALID_DOMAINS", ["theflip.app"])
 
     # Validate the domain
     try:
@@ -198,7 +199,7 @@ def _parse_url(url: str) -> ParsedReference | None:
         hostname = parsed.hostname or ""
         # Check if hostname matches or ends with a valid domain
         if not any(
-            hostname == domain or hostname.endswith(f".{domain}") for domain in VALID_DOMAINS
+            hostname == domain or hostname.endswith(f".{domain}") for domain in valid_domains
         ):
             return None
     except Exception:
