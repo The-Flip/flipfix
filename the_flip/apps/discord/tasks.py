@@ -78,42 +78,55 @@ def deliver_webhooks(event_type: str, object_id: int, model_name: str) -> dict:
     return {"status": "completed", "results": results}
 
 
+# Registry of webhook models with their optimized query configurations
+# Maps model name -> (import_path, select_related, prefetch_related)
+_WEBHOOK_MODEL_REGISTRY: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
+    "ProblemReport": (
+        "the_flip.apps.maintenance.models.ProblemReport",
+        ("machine",),
+        (),
+    ),
+    "LogEntry": (
+        "the_flip.apps.maintenance.models.LogEntry",
+        ("machine", "problem_report"),
+        ("maintainers", "maintainers__discord_link"),
+    ),
+    "PartRequest": (
+        "the_flip.apps.parts.models.PartRequest",
+        ("machine", "requested_by__user", "requested_by__discord_link"),
+        (),
+    ),
+    "PartRequestUpdate": (
+        "the_flip.apps.parts.models.PartRequestUpdate",
+        ("part_request__machine", "posted_by__user", "posted_by__discord_link"),
+        (),
+    ),
+}
+
+
 def _get_object(model_name: str, object_id: int):
-    """Fetch the object by model name and ID."""
-    if model_name == "ProblemReport":
-        from the_flip.apps.maintenance.models import ProblemReport
+    """Fetch the object by model name and ID with optimized related queries."""
+    if model_name not in _WEBHOOK_MODEL_REGISTRY:
+        logger.warning("Unknown webhook model: %s", model_name)
+        return None
 
-        return ProblemReport.objects.select_related("machine").filter(pk=object_id).first()
-    elif model_name == "LogEntry":
-        from the_flip.apps.maintenance.models import LogEntry
+    import_path, select_related, prefetch_related = _WEBHOOK_MODEL_REGISTRY[model_name]
 
-        return (
-            LogEntry.objects.select_related("machine", "problem_report")
-            .prefetch_related("maintainers", "maintainers__discord_link")
-            .filter(pk=object_id)
-            .first()
-        )
-    elif model_name == "PartRequest":
-        from the_flip.apps.parts.models import PartRequest
+    # Lazy import the model class
+    from importlib import import_module
 
-        return (
-            PartRequest.objects.select_related(
-                "machine", "requested_by__user", "requested_by__discord_link"
-            )
-            .filter(pk=object_id)
-            .first()
-        )
-    elif model_name == "PartRequestUpdate":
-        from the_flip.apps.parts.models import PartRequestUpdate
+    module_path, class_name = import_path.rsplit(".", 1)
+    module = import_module(module_path)
+    model_class = getattr(module, class_name)
 
-        return (
-            PartRequestUpdate.objects.select_related(
-                "part_request__machine", "posted_by__user", "posted_by__discord_link"
-            )
-            .filter(pk=object_id)
-            .first()
-        )
-    return None
+    # Build optimized query
+    queryset = model_class.objects.all()
+    if select_related:
+        queryset = queryset.select_related(*select_related)
+    if prefetch_related:
+        queryset = queryset.prefetch_related(*prefetch_related)
+
+    return queryset.filter(pk=object_id).first()
 
 
 def _deliver_to_endpoint(
