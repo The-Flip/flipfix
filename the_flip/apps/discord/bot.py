@@ -8,10 +8,14 @@ import discord
 import httpx
 from asgiref.sync import sync_to_async
 from constance import config
+from discord.ext import tasks
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+# How often to refresh the channel list (in minutes)
+CHANNEL_REFRESH_MINUTES = 5
 
 # Image content types we accept from Discord
 ALLOWED_IMAGE_TYPES = {
@@ -50,6 +54,15 @@ class MaintenanceBot(discord.Client):
         )
 
         # Load enabled channels from database
+        await self._refresh_channels()
+
+        # Start periodic channel refresh
+        if not self._periodic_channel_refresh.is_running():
+            self._periodic_channel_refresh.start()
+
+    @tasks.loop(minutes=CHANNEL_REFRESH_MINUTES)
+    async def _periodic_channel_refresh(self):
+        """Periodically refresh the channel list from the database."""
         await self._refresh_channels()
 
     async def _refresh_channels(self):
@@ -256,26 +269,29 @@ class MaintenanceBot(discord.Client):
 
         @sync_to_async
         def create_entry():
+            from django.db import transaction
+
             from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 
-            log_entry = LogEntry.objects.create(
-                machine=result.machine,
-                problem_report=result.problem_report,
-                text=message.content,
-                work_date=timezone.now(),
-                created_by=user_link.maintainer.user,
-            )
-            log_entry.maintainers.add(user_link.maintainer)
-
-            # Create media records for downloaded images
-            media_count = 0
-            for filename, content in image_data:
-                LogEntryMedia.objects.create(
-                    log_entry=log_entry,
-                    media_type=LogEntryMedia.TYPE_PHOTO,
-                    file=ContentFile(content, name=filename),
+            with transaction.atomic():
+                log_entry = LogEntry.objects.create(
+                    machine=result.machine,
+                    problem_report=result.problem_report,
+                    text=message.content,
+                    work_date=timezone.now(),
+                    created_by=user_link.maintainer.user,
                 )
-                media_count += 1
+                log_entry.maintainers.add(user_link.maintainer)
+
+                # Create media records for downloaded images
+                media_count = 0
+                for filename, content in image_data:
+                    LogEntryMedia.objects.create(
+                        log_entry=log_entry,
+                        media_type=LogEntryMedia.TYPE_PHOTO,
+                        file=ContentFile(content, name=filename),
+                    )
+                    media_count += 1
 
             return log_entry, media_count
 
@@ -300,24 +316,27 @@ class MaintenanceBot(discord.Client):
 
         @sync_to_async
         def create_report():
+            from django.db import transaction
+
             from the_flip.apps.maintenance.models import ProblemReport, ProblemReportMedia
 
-            report = ProblemReport.objects.create(
-                machine=result.machine,
-                problem_type="other",
-                description=message.content,
-                reported_by_user=user_link.maintainer.user,
-            )
-
-            # Create media records for downloaded images
-            media_count = 0
-            for filename, content in image_data:
-                ProblemReportMedia.objects.create(
-                    problem_report=report,
-                    media_type=ProblemReportMedia.TYPE_PHOTO,
-                    file=ContentFile(content, name=filename),
+            with transaction.atomic():
+                report = ProblemReport.objects.create(
+                    machine=result.machine,
+                    problem_type="other",
+                    description=message.content,
+                    reported_by_user=user_link.maintainer.user,
                 )
-                media_count += 1
+
+                # Create media records for downloaded images
+                media_count = 0
+                for filename, content in image_data:
+                    ProblemReportMedia.objects.create(
+                        problem_report=report,
+                        media_type=ProblemReportMedia.TYPE_PHOTO,
+                        file=ContentFile(content, name=filename),
+                    )
+                    media_count += 1
 
             return report, media_count
 
