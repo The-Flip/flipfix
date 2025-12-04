@@ -1,0 +1,16 @@
+# Railway platform config (separate from Railpack build config)
+# Build settings are in railpack.web.json and railpack.worker.json
+
+[build]
+# When updating this, also update paths-ignore in .github/workflows/ci.yml
+watchPatterns = [
+  "**",
+  "!**/*.md",
+  "!docs/**",
+  "!.github/**",
+  "!.claude/**",
+  "!.vscode/**",
+  "!.pre-commit-config.yaml",
+  "!.env.example",
+  "!.env.vscode"
+]
