@@ -5,14 +5,22 @@
     "build": {
       "commands": [
         "...",
+        "echo '=== CUSTOM BUILD STEP RUNNING ==='",
+        "pwd",
+        "ls -la",
+        "echo '=== Creating directories ==='",
         "mkdir -p media static_collected",
-        "DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py collectstatic --no-input"
-      ],
-      "deployOutputs": [{"include": ["static_collected"]}]
+        "echo '=== Running collectstatic ==='",
+        "DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py collectstatic --no-input",
+        "echo '=== Checking static_collected ==='",
+        "ls -la static_collected/",
+        "echo '=== CUSTOM BUILD STEP COMPLETE ==='"
+      ]
     }
   },
   "deploy": {
     "aptPackages": ["libheif1"],
-    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py migrate && gunicorn --bind 0.0.0.0:${PORT:-8000} the_flip.wsgi:application"
+    "inputs": [{"step": "build", "include": ["static_collected"]}],
+    "startCommand": "echo '=== DEPLOY START ===' && pwd && ls -la && echo '=== Checking for static_collected ===' && ls -la static_collected/ 2>/dev/null || echo 'static_collected NOT FOUND' && echo '=== Running migrate ===' && DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py migrate && echo '=== Starting gunicorn ===' && gunicorn --bind 0.0.0.0:${PORT:-8000} the_flip.wsgi:application"
   }
 }
