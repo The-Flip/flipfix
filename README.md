@@ -1,8 +1,8 @@
-# Flipfix
+# The Flip Pinball Museum's Maintenance System
 
 [![CI](https://github.com/deanmoses/the_flip/actions/workflows/ci.yml/badge.svg)](https://github.com/deanmoses/the_flip/actions/workflows/ci.yml)
 
-**Flipfix** is The Flip pinball museum's maintenance tracking system.
+This is a web app for managing pinball machine problem reports at The Flip pinball museum.
 
 It allows museum visitors to report problems with pinball machines (via QR codes on each machine), and enables maintainers to track, update, and resolve these issues.
 
