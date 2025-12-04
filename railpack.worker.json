@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["libheif1", "libheif-dev", "ffmpeg"],
+  "steps": {
+    "build": {
+      "commands": [
+        "chmod +x ./build.worker.sh",
+        "./build.worker.sh"
+      ]
+    }
+  },
+  "deploy": {
+    "aptPackages": ["libheif1", "ffmpeg"],
+    "inputs": [
+      { "step": "build", "include": ["."] }
+    ],
+    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.worker python manage.py qcluster"
+  }
+}

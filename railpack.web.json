@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["libheif1", "libheif-dev"],
+  "steps": {
+    "build": {
+      "commands": [
+        "chmod +x ./build.web.sh",
+        "./build.web.sh"
+      ]
+    }
+  },
+  "deploy": {
+    "aptPackages": ["libheif1"],
+    "inputs": [
+      { "step": "build", "include": ["."] }
+    ],
+    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.web gunicorn the_flip.wsgi:application"
+  }
+}
