@@ -23,6 +23,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://flipfix.theflip.museum",
     "https://the-flip-production.up.railway.app",
+    "https://*.up.railway.app",  # Staging + PR environments
 ]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
