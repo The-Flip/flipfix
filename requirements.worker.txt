@@ -1,5 +1,2 @@
 # Worker service dependencies
 -r requirements.base.txt
-
-# HTTP Requests (for worker → web service transfer)
-requests==2.32.4

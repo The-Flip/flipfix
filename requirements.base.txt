@@ -18,5 +18,8 @@ pillow-heif==0.18.0
 # Task Queue (web enqueues tasks, worker processes them)
 django-q2==1.8.0
 
+# HTTP Requests (webhooks, external API calls)
+requests==2.32.4
+
 # Audit Logging
 django-simple-history==3.10.1
