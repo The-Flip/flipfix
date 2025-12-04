@@ -7,7 +7,7 @@
       },
       {
         "type": "command",
-        "command": "pip3 install -q -r requirements.txt -r requirements-dev.txt 2>/dev/null"
+        "command": "pip3 install -q -r requirements.dev.txt 2>/dev/null"
       },
       {
         "type": "command",

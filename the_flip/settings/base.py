@@ -21,7 +21,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-    "whitenoise.runserver_nostatic",
     "django_q",
     "constance",
     "constance.backends.database",
@@ -36,7 +35,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "the_flip.middleware.MediaWhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -104,7 +102,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = REPO_ROOT / "static_collected"
 STATICFILES_DIRS = [REPO_ROOT / "the_flip/static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = REPO_ROOT / "media"

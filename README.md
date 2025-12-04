@@ -32,7 +32,7 @@ It's in Django.
 
 3. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements.dev.txt
    ```
 
 4. **Configure environment variables**
@@ -68,32 +68,19 @@ It's in Django.
 
 ## Development Tools
 
-After basic setup, install these development tools:
-
-1. **Install development dependencies**
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
-
-   This installs:
-   - **ruff** - Fast linter and formatter
-   - **mypy** - Type checker
-   - **coverage** - Test coverage reporting
-   - **pre-commit** - Git hooks for automated checks
-
-2. **Install pre-commit hooks** (recommended)
+1. **Install pre-commit hooks** (recommended)
    ```bash
    pre-commit install
    ```
 
    This automatically runs code quality checks before each commit.
 
-3. **Install FFmpeg** (for video transcoding features)
+2. **Install FFmpeg** (for video transcoding features)
    - macOS: `brew install ffmpeg`
    - Ubuntu/Debian: `apt-get install ffmpeg`
    - Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
 
-4. **Run background worker** (for video transcoding and webhooks)
+3. **Run background worker** (for video transcoding and webhooks)
    ```bash
    # In a separate terminal
    make runq

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "buildAptPackages": ["libheif1", "libheif-dev"],
+  "deploy": {
+    "aptPackages": ["libheif1"],
+    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} the_flip.wsgi:application"
+  }
+}

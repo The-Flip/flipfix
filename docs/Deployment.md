@@ -35,7 +35,7 @@ When you create a pull request, an ephemeral test environment is automatically c
 2. GitHub Actions runs CI checks (lint, typecheck, tests etc)
 3. You merge PR
 4. Merge triggers Railway deployment
-5. Railway builds (`build.sh`) and deploys
+5. Railway builds each service using Railpack (`railpack.web.json`, `railpack.worker.json`) and deploys
 6. Follow along in the Railway dashboard to see logs
 7. Deploy completes in ~2-5 minutes
 8. New version is live
@@ -44,7 +44,7 @@ When you create a pull request, an ephemeral test environment is automatically c
 
 ## Platform: Railway
 
-[Railway](https://railway.app/) is the hosting platform. See [Architecture.md](Architecture.md) for system components.
+[Railway](https://railway.app/) is the hosting platform. See [Architecture.md](Architecture.md) for the services.
 
 ---
 

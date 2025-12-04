@@ -325,7 +325,7 @@ If video processing fails:
    - Railway auto-shares DATABASE_URL within project
 
 3. **FFmpeg Installation**:
-   - Already in `nixpacks.toml`: `aptPkgs = ["libheif1", "libheif-dev", "ffmpeg"]`
+   - Already in `railpack.worker.json`: `buildAptPackages` and `deploy.aptPackages`
    - Shared build with web service
 
 **Cost:** Worker service ~$5-10/mo (starter plan)
@@ -411,7 +411,7 @@ After deploying worker:
 
 Add automated testing for FFmpeg availability in your CI pipeline to catch deployment issues early:
 - Railway build changes could break FFmpeg installation
-- nixpacks.toml edits might remove FFmpeg
+- railpack.worker.json edits might remove FFmpeg
 - Dependency conflicts could prevent FFmpeg from being available
 - Catch issues before deploying to production
 

@@ -1,5 +1,6 @@
 # Development dependencies
-# Install with: pip install -r requirements-dev.txt
+# Includes all production dependencies for full type checking support
+-r requirements.txt
 
 # Code formatting and linting
 ruff==0.8.4
