@@ -7,7 +7,8 @@
         "...",
         "mkdir -p media static_collected",
         "DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py collectstatic --no-input"
-      ]
+      ],
+      "deployOutputs": [{"include": ["static_collected"]}]
     }
   },
   "deploy": {
