@@ -24,20 +24,6 @@ the_flip/
     └── static/               # Project-level static files
 ```
 
-### Apps
-#### `accounts` app
-Wraps Django’s `AUTH_USER_MODEL` with the Maintainer profile. Handles admin customization (list filters, field ordering) and any future features like maintainer onboarding or role management.
-#### `catalog` app
-Owns the catalog of pinball machines: Machine Models and Machine Instances. This includes public-facing metadata (educational content, credits, operational status). This app publishes read APIs/pages that the museum floor uses.
-#### `maintenance` app
-Owns Problem Reports and Log Entries. Encapsulates workflows such as auto-closing tasks when machines are marked "good", rate-limiting public problem report submissions.
-#### `parts` app
-Owns requests for replacement parts and their lifecycle tracking (requested → ordered → received).
-#### `webhooks` app
-Manages web hook notifications to external services (Discord, Slack, etc.) when events occur. Configurable endpoints and per-event subscriptions.
-#### `core` app
-Shared helpers that don't belong to a single domain app: decorators, custom admin mixins, base templates, date utilities, etc.
-
 ### Conventions
 - Keep each app’s `models.py`, `admin.py`, `forms.py`, and `tests/` focused on that domain. For larger modules, split into packages (e.g., `catalog/models/machine.py`).
 - Put routes in the root `urls.py` rather than per-app, to keep them all together and scannable.
