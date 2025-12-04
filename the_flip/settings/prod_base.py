@@ -15,15 +15,13 @@ SITE_URL = "https://flipfix.theflip.museum"
 # Production domains - override base.py's env-var-based ALLOWED_HOSTS
 ALLOWED_HOSTS = [
     "flipfix.theflip.museum",
-    "the-flip-production.up.railway.app",
-    ".up.railway.app",  # PR environments (e.g., the-flip-pr-123.up.railway.app)
+    ".up.railway.app",  # Production, staging, and PR environments
 ]
 
 # CSRF trusted origins - required for Django 4+ with HTTPS
 CSRF_TRUSTED_ORIGINS = [
     "https://flipfix.theflip.museum",
-    "https://the-flip-production.up.railway.app",
-    "https://*.up.railway.app",  # Staging + PR environments
+    "https://*.up.railway.app",  # Production, staging, and PR environments
 ]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
