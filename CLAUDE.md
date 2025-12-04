@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Django web app for managing pinball machine maintenance at The Flip pinball museum. Visitors report problems via QR codes on machines; maintainers track and resolve issues.
+**Flipfix** is the maintenance tracking system for The Flip pinball museum. It's a Django web app where visitors report problems via QR codes on machines, and maintainers track, update, and resolve issues.
 
 ## Development Commands
 

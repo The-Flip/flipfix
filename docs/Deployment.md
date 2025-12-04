@@ -40,7 +40,9 @@ When you create a pull request, an ephemeral test environment is automatically c
 7. Deploy completes in ~2-5 minutes
 8. New version is live
 
-**Live system:** https://the-flip-production.up.railway.app/
+**Live system:**
+- Primary: https://flipfix.theflip.museum/
+- Railway fallback: https://the-flip-production.up.railway.app/
 
 ## Platform: Railway
 

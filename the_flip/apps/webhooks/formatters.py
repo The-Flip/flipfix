@@ -283,7 +283,7 @@ def format_test_message(event_type: str) -> dict:
             {
                 "title": f"Test: {label}",
                 "description": (
-                    "This is a test message from The Flip maintenance system.\n\n"
+                    "This is a test message from Flipfix.\n\n"
                     "If your server URLs are configured correctly, this post should show a preview of this image: "
                     f"{image_url}\n\n"
                     "**Machine:** Test Machine\n"

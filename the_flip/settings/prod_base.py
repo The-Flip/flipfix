@@ -9,8 +9,20 @@ from .base import *  # noqa
 
 DEBUG = False
 
-# Base URL for webhook links
-SITE_URL = "https://the-flip-production.up.railway.app"
+# Base URL for webhook links (primary domain)
+SITE_URL = "https://flipfix.theflip.museum"
+
+# Production domains - override base.py's env-var-based ALLOWED_HOSTS
+ALLOWED_HOSTS = [
+    "flipfix.theflip.museum",
+    ".up.railway.app",  # Production, staging, and PR environments
+]
+
+# CSRF trusted origins - required for Django 4+ with HTTPS
+CSRF_TRUSTED_ORIGINS = [
+    "https://flipfix.theflip.museum",
+    "https://*.up.railway.app",  # Production, staging, and PR environments
+]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = True

@@ -41,7 +41,9 @@ railway run python manage.py check_worker
 
 ### Django Admin
 
-Access the admin panel at: https://the-flip-production.up.railway.app/admin/
+Access the admin panel at: https://flipfix.theflip.museum/admin/
+
+(Railway fallback: https://the-flip-production.up.railway.app/admin/)
 
 **Monitor background tasks:**
 1. Navigate to "Django Q" section
