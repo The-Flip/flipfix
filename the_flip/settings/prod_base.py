@@ -4,7 +4,6 @@ import os
 import sys
 
 import dj_database_url
-from decouple import Csv, config
 
 from .base import *  # noqa
 
@@ -13,13 +12,18 @@ DEBUG = False
 # Base URL for webhook links (primary domain)
 SITE_URL = "https://flipfix.theflip.museum"
 
+# Production domains - override base.py's env-var-based ALLOWED_HOSTS
+ALLOWED_HOSTS = [
+    "flipfix.theflip.museum",
+    "the-flip-production.up.railway.app",
+    ".up.railway.app",  # PR environments (e.g., the-flip-pr-123.up.railway.app)
+]
+
 # CSRF trusted origins - required for Django 4+ with HTTPS
-# Reads from env var, defaults to both production domains
-CSRF_TRUSTED_ORIGINS = config(
-    "CSRF_TRUSTED_ORIGINS",
-    default="https://flipfix.theflip.museum,https://the-flip-production.up.railway.app",
-    cast=Csv(),
-)
+CSRF_TRUSTED_ORIGINS = [
+    "https://flipfix.theflip.museum",
+    "https://the-flip-production.up.railway.app",
+]
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_SSL_REDIRECT = True
