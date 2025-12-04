@@ -12,7 +12,7 @@ the_flip/
 ├── templates/                # Django templates organized by app
 └── the_flip/                 # Django project package
     ├── __init__.py
-    ├── settings/             # split settings module (base/dev/test/prod)
+    ├── settings/             # split settings (base/dev/test/prod/worker)
     ├── urls.py / asgi.py / wsgi.py
     ├── apps/
     │   ├── accounts/         # Maintainer profiles & auth glue
@@ -41,4 +41,4 @@ Shared helpers that don't belong to a single domain app: decorators, custom admi
 ### Conventions
 - Keep each app’s `models.py`, `admin.py`, `forms.py`, and `tests/` focused on that domain. For larger modules, split into packages (e.g., `catalog/models/machine.py`).
 - Put routes in the root `urls.py` rather than per-app, to keep them all together and scannable.
-- Use `settings/base.py` for shared defaults and layer `dev.py` (local development), `test.py` (CI/automated tests), and `prod.py` (production). Point the `DJANGO_SETTINGS_MODULE` environment variable at the appropriate module per environment.
+- Use `settings/base.py` for shared defaults and layer `dev.py` (local development), `test.py` (CI/automated tests), `prod.py` (web production), and `worker.py` (worker production). Point the `DJANGO_SETTINGS_MODULE` environment variable at the appropriate module per environment.

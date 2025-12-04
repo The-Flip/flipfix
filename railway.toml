@@ -23,7 +23,7 @@ watchPatterns = [
 #   - In Railway dashboard for each service, or
 #   - Via NIXPACKS_START_CMD environment variable
 # Web service should run: gunicorn the_flip.wsgi:application
-# Worker service should run: DJANGO_SETTINGS_MODULE=the_flip.settings.prod python manage.py qcluster
+# Worker service should run: DJANGO_SETTINGS_MODULE=the_flip.settings.worker python manage.py qcluster
 # Disable Railway health checks (blank path/null per Railway docs)
 healthcheckPath = ""
 healthcheckTimeout = 100
