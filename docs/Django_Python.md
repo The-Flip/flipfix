@@ -4,7 +4,7 @@
 
 - **URLs**: All routes live in root `urls.py` (not per-app) for scannability
 - **Shared code**: Put helpers in `core` app, never in `__init__.py`
-- **Settings**: Layered modules (`settings/base.py`, `dev.py`, `test.py`, `prod.py`). Set `DJANGO_SETTINGS_MODULE` accordingly.
+- **Settings**: Layered modules (`settings/base.py`, `dev.py`, `test.py`, `prod_base.py`, `web.py`, `worker.py`). Set `DJANGO_SETTINGS_MODULE` accordingly.
 - **Secrets**: Use `python-decouple` to read from environment variables. Never hardcode keys or passwords.
 - **Form styling**: Apply CSS classes from [HTML_CSS.md](HTML_CSS.md)
 - **Testing**: Follow [Testing.md](Testing.md) for strategy and coverage expectations

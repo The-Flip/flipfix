@@ -1,11 +1,6 @@
-"""Development settings."""
+"""Web service production settings."""
 
-from .base import *  # noqa
-
-DEBUG = True
-
-# Base URL for webhook links
-SITE_URL = "http://localhost:8000"
+from .prod_base import *  # noqa
 
 # Whitenoise for static/media file serving
 INSTALLED_APPS = ["whitenoise.runserver_nostatic", *INSTALLED_APPS]  # noqa: F405

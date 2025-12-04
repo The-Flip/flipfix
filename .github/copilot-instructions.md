@@ -14,7 +14,7 @@ This guide enables AI coding agents to work productively in this Django-based co
   - `catalog`: Machine models/instances
   - `maintenance`: Problem reports, logs
   - `core`: Shared utilities
-- Settings split by environment: `settings/base.py`, `dev.py`, `test.py`, `prod.py`. Set `DJANGO_SETTINGS_MODULE` accordingly.
+- Settings split by environment/service: `settings/base.py`, `dev.py`, `test.py`, `prod_base.py`, `web.py`, `worker.py`. Set `DJANGO_SETTINGS_MODULE` accordingly.
 - Templates organized by app in `templates/<app>/`.
 - Static files in `the_flip/static/`.
 - Shared helpers go in `core`, not in `__init__.py`.

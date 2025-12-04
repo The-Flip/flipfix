@@ -1,7 +1,11 @@
-from .base import *  # noqa
-import dj_database_url
+"""Shared production settings for web and worker services."""
+
 import os
 import sys
+
+import dj_database_url
+
+from .base import *  # noqa
 
 DEBUG = False
 
