@@ -7,7 +7,7 @@ This is a web app for managing pinball machine problem reports at The Flip pinba
 It allows museum visitors to report problems with pinball machines (via QR codes on each machine), and enables maintainers to track, update, and resolve these issues.
 
 ## Live System
-It's live at https://the-flip-production.up.railway.app
+It's live at https://flipfix.theflip.museum/
 
 ## Local Development Setup
 It's in Django.
