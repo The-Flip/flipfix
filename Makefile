@@ -12,7 +12,8 @@ help:
 	@echo "  make test           - Run full test suite"
 	@echo "  make test-fast      - Run tests excluding integration"
 	@echo "  make test-models    - Run model tests only"
-	@echo "  make test-classifier - Evaluate Discord message classifier"
+	@echo "  make test-classifier - Run classifier unit tests"
+	@echo "  make eval-classifier - Output classifier results to CSV"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make format         - Auto-format code"
@@ -44,6 +45,10 @@ test-models:
 .PHONY: test-classifier
 test-classifier:
 	DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test the_flip.apps.discord.tests.test_classifier_eval --keepdb
+
+.PHONY: eval-classifier
+eval-classifier:
+	.venv/bin/python manage.py evaluate_classifier
 
 .PHONY: runserver
 runserver:
