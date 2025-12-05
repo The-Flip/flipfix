@@ -12,6 +12,7 @@ help:
 	@echo "  make test           - Run full test suite"
 	@echo "  make test-fast      - Run tests excluding integration"
 	@echo "  make test-models    - Run model tests only"
+	@echo "  make test-classifier - Evaluate Discord message classifier"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make format         - Auto-format code"
@@ -39,6 +40,10 @@ test-fast:
 .PHONY: test-models
 test-models:
 	DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test --keepdb --tag=models
+
+.PHONY: test-classifier
+test-classifier:
+	DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test the_flip.apps.discord.tests.test_classifier_eval --keepdb
 
 .PHONY: runserver
 runserver:

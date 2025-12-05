@@ -102,7 +102,7 @@ class MaintenanceBot(discord.Client):
     async def _process_message(self, message: discord.Message):
         """Process a message from an enabled channel."""
         from the_flip.apps.discord.models import DiscordMessageMapping, DiscordUserLink
-        from the_flip.apps.discord.parsers import parse_message
+        from the_flip.apps.discord.parsers import RecordType, parse_message
 
         # Check for duplicate message (Discord can redeliver on network issues)
         @sync_to_async
@@ -150,13 +150,12 @@ class MaintenanceBot(discord.Client):
             "message_id": str(message.id),
             "author_id": str(message.author.id),
             "author_name": message.author.name,
-            "action": result.action,
+            "record_type": result.record_type.value if result.record_type else None,
             "reason": result.reason,
-            "confident": result.confident,
             "content_preview": message.content[:100],
         }
 
-        if result.action == "ignore":
+        if result.record_type is None:
             logger.info("discord_message_ignored", extra=log_extra)
             return
 
@@ -187,13 +186,13 @@ class MaintenanceBot(discord.Client):
             return
 
         # Create the appropriate record
-        if result.action == "log_entry":
+        if result.record_type == RecordType.LOG_ENTRY:
             await self._create_log_entry(message, result, user_link)
-        elif result.action == "problem_report":
+        elif result.record_type == RecordType.PROBLEM_REPORT:
             await self._create_problem_report(message, result, user_link)
-        elif result.action == "part_request":
+        elif result.record_type == RecordType.PART_REQUEST:
             await self._create_part_request(message, result, user_link)
-        elif result.action == "part_request_update":
+        elif result.record_type == RecordType.PART_REQUEST_UPDATE:
             await self._create_part_request_update(message, result, user_link)
 
     @sync_to_async
