@@ -21,8 +21,10 @@ Owns Problem Reports and Log Entries. Encapsulates workflows such as auto-closin
 ### `parts`
 Owns requests for replacement parts and their lifecycle tracking (requested → ordered → received).
 
-### `webhooks`
-Manages web hook notifications to external services (Discord, Slack, etc.) when events occur. Configurable endpoints and per-event subscriptions.
+### `discord`
+Discord integration with two main features:
+- **Outbound webhooks**: Posts notifications to Discord when events occur (problem reports, log entries, parts requests)
+- **Inbound bot**: Listens to a configured Discord channel and creates tickets from employee messages
 
 ## App Dependencies
 
@@ -33,7 +35,7 @@ Manages web hook notifications to external services (Discord, Slack, etc.) when 
 | **catalog** | core |
 | **maintenance** | core, accounts, catalog |
 | **parts** | core, accounts, catalog, maintenance |
-| **webhooks** | core, maintenance, parts |
+| **discord** | core, accounts, catalog, maintenance, parts |
 
 ## Services
 Railway runs these services:
