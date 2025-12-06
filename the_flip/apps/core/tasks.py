@@ -15,6 +15,7 @@ from decouple import config
 from django_q.tasks import async_task
 
 from the_flip.apps.core.models import get_media_model
+from the_flip.logging import bind_log_context, current_log_context, reset_log_context
 
 logger = logging.getLogger(__name__)
 
@@ -31,11 +32,19 @@ def enqueue_transcode(media_id: int, model_name: str) -> None:
         media_id: ID of the media record
         model_name: Name of the media model class (e.g., "LogEntryMedia", "PartRequestMedia")
     """
-    async_task(transcode_video_job, media_id, model_name, timeout=600)
+    async_task(
+        transcode_video_job,
+        media_id,
+        model_name,
+        current_log_context(),
+        timeout=600,
+    )
 
 
-def transcode_video_job(media_id: int, model_name: str) -> None:
+def transcode_video_job(media_id: int, model_name: str, log_context: dict | None = None) -> None:
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
+    token = bind_log_context(**log_context) if log_context else None
+
     try:
         media_model = get_media_model(model_name)
         media = media_model.objects.get(id=media_id)
@@ -138,6 +147,9 @@ def transcode_video_job(media_id: int, model_name: str) -> None:
                     os.unlink(tmp.name)
                 except OSError:
                     logger.warning("Could not delete temp file %s", tmp.name)
+
+        if token:
+            reset_log_context(token)
 
 
 def _upload_transcoded_files(

@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 import requests
 from django_q.tasks import async_task
 
+from the_flip.logging import bind_log_context, current_log_context, reset_log_context
+
 if TYPE_CHECKING:
     from the_flip.apps.discord.models import WebhookEndpoint
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
@@ -26,11 +28,14 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
         event_type,
         object_id,
         model_name,
+        current_log_context(),
         timeout=60,
     )
 
 
-def deliver_webhooks(event_type: str, object_id: int, model_name: str) -> dict:
+def deliver_webhooks(
+    event_type: str, object_id: int, model_name: str, log_context: dict | None = None
+) -> dict:
     """Deliver webhooks for a given event to all subscribed endpoints.
 
     This runs asynchronously via Django Q.
@@ -39,43 +44,49 @@ def deliver_webhooks(event_type: str, object_id: int, model_name: str) -> dict:
 
     from the_flip.apps.discord.models import WebhookEventSubscription
 
-    # Check global settings
-    if not config.DISCORD_WEBHOOKS_ENABLED:
-        return {"status": "skipped", "reason": "webhooks globally disabled"}
+    token = bind_log_context(**log_context) if log_context else None
 
-    # Check per-event-type settings
-    if event_type.startswith("problem_report"):
-        if not config.DISCORD_WEBHOOKS_PROBLEM_REPORTS:
-            return {"status": "skipped", "reason": "problem report webhooks disabled"}
-    elif event_type == "log_entry_created":
-        if not config.DISCORD_WEBHOOKS_LOG_ENTRIES:
-            return {"status": "skipped", "reason": "log entry webhooks disabled"}
-    elif event_type.startswith("part_request"):
-        if not config.DISCORD_WEBHOOKS_PARTS:
-            return {"status": "skipped", "reason": "parts webhooks disabled"}
+    try:
+        # Check global settings
+        if not config.DISCORD_WEBHOOKS_ENABLED:
+            return {"status": "skipped", "reason": "webhooks globally disabled"}
 
-    # Get all enabled subscriptions for this event type
-    subscriptions = WebhookEventSubscription.objects.filter(
-        event_type=event_type,
-        is_enabled=True,
-        endpoint__is_enabled=True,
-    ).select_related("endpoint")
+        # Check per-event-type settings
+        if event_type.startswith("problem_report"):
+            if not config.DISCORD_WEBHOOKS_PROBLEM_REPORTS:
+                return {"status": "skipped", "reason": "problem report webhooks disabled"}
+        elif event_type == "log_entry_created":
+            if not config.DISCORD_WEBHOOKS_LOG_ENTRIES:
+                return {"status": "skipped", "reason": "log entry webhooks disabled"}
+        elif event_type.startswith("part_request"):
+            if not config.DISCORD_WEBHOOKS_PARTS:
+                return {"status": "skipped", "reason": "parts webhooks disabled"}
 
-    if not subscriptions.exists():
-        return {"status": "skipped", "reason": "no subscribed endpoints"}
+        # Get all enabled subscriptions for this event type
+        subscriptions = WebhookEventSubscription.objects.filter(
+            event_type=event_type,
+            is_enabled=True,
+            endpoint__is_enabled=True,
+        ).select_related("endpoint")
 
-    # Fetch the object
-    obj = _get_object(model_name, object_id)
-    if obj is None:
-        return {"status": "error", "reason": f"{model_name} {object_id} not found"}
+        if not subscriptions.exists():
+            return {"status": "skipped", "reason": "no subscribed endpoints"}
 
-    # Deliver to each endpoint
-    results = []
-    for subscription in subscriptions:
-        result = _deliver_to_endpoint(subscription.endpoint, event_type, obj)
-        results.append(result)
+        # Fetch the object
+        obj = _get_object(model_name, object_id)
+        if obj is None:
+            return {"status": "error", "reason": f"{model_name} {object_id} not found"}
 
-    return {"status": "completed", "results": results}
+        # Deliver to each endpoint
+        results = []
+        for subscription in subscriptions:
+            result = _deliver_to_endpoint(subscription.endpoint, event_type, obj)
+            results.append(result)
+
+        return {"status": "completed", "results": results}
+    finally:
+        if token:
+            reset_log_context(token)
 
 
 # Registry of webhook models with their optimized query configurations

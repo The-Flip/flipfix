@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import MutableMapping
 from pathlib import Path
+from typing import Any
 
 from decouple import Csv, config
 
@@ -39,6 +41,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "the_flip.middleware.RequestContextMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
@@ -121,6 +124,12 @@ RATE_LIMIT_WINDOW_MINUTES = config("RATE_LIMIT_WINDOW_MINUTES", default=10, cast
 # Transcoding upload authentication token (shared between web and worker services)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
+# Logging levels (env-overridable)
+LOG_LEVEL = config("LOG_LEVEL", default="WARNING").upper()
+APP_LOG_LEVEL = config("APP_LOG_LEVEL", default="INFO").upper()
+DJANGO_LOG_LEVEL = config("DJANGO_LOG_LEVEL", default="WARNING").upper()
+DISCORD_BOT_LOG_LEVEL = config("DISCORD_BOT_LOG_LEVEL", default=None)
+
 # django-constance configuration (admin-editable settings)
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
 
@@ -163,3 +172,66 @@ CONSTANCE_CONFIG_FIELDSETS = {
 
 # Valid domains for Discord bot URL parsing (to identify links to this app)
 DISCORD_VALID_DOMAINS = ["theflip.app", "localhost", "127.0.0.1"]
+
+# Logging configuration - conservative defaults for production
+# Override in dev.py for more verbose output
+LOGGING: MutableMapping[str, Any] = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_context": {
+            "()": "the_flip.logging.RequestContextFilter",
+        },
+    },
+    "formatters": {
+        "dev": {
+            "()": "the_flip.logging.DevFormatter",
+        },
+        "json": {
+            "()": "the_flip.logging.JsonFormatter",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["request_context"],
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "the_flip": {
+            "handlers": ["console"],
+            "level": APP_LOG_LEVEL,
+            "propagate": False,
+        },
+        "the_flip.apps.discord": {
+            "handlers": ["console"],
+            "level": (DISCORD_BOT_LOG_LEVEL or APP_LOG_LEVEL),
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django_q": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
