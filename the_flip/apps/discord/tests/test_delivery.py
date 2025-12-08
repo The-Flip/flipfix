@@ -3,11 +3,11 @@
 from unittest.mock import MagicMock, patch
 
 import requests
+from constance.test import override_config
 from django.test import TestCase
 
 from the_flip.apps.core.test_utils import create_machine, create_problem_report
-from the_flip.apps.discord.models import WebhookEndpoint, WebhookEventSubscription
-from the_flip.apps.discord.tasks import deliver_webhooks
+from the_flip.apps.discord.tasks import deliver_webhook
 
 
 class WebhookDeliveryTests(TestCase):
@@ -15,37 +15,33 @@ class WebhookDeliveryTests(TestCase):
 
     def setUp(self):
         self.machine = create_machine()
-        self.endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-            is_enabled=True,
-        )
-        WebhookEventSubscription.objects.create(
-            endpoint=self.endpoint,
-            event_type=WebhookEndpoint.EVENT_PROBLEM_REPORT_CREATED,
-            is_enabled=True,
-        )
 
-    def test_skips_when_no_subscriptions(self):
-        """Skips delivery when no endpoints are subscribed."""
-        WebhookEventSubscription.objects.all().delete()
-
+    @override_config(DISCORD_WEBHOOK_URL="")
+    def test_skips_when_no_webhook_url(self):
+        """Skips delivery when no webhook URL is configured."""
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhooks("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
         self.assertEqual(result["status"], "skipped")
-        self.assertIn("no subscribed endpoints", result["reason"])
+        self.assertIn("no webhook URL", result["reason"])
 
-    def test_skips_disabled_endpoint(self):
-        """Skips disabled endpoints."""
-        self.endpoint.is_enabled = False
-        self.endpoint.save()
-
+    @override_config(
+        DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
+        DISCORD_WEBHOOKS_ENABLED=False,
+    )
+    def test_skips_when_webhooks_disabled(self):
+        """Skips delivery when webhooks are globally disabled."""
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhooks("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
         self.assertEqual(result["status"], "skipped")
+        self.assertIn("globally disabled", result["reason"])
 
+    @override_config(
+        DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
+        DISCORD_WEBHOOKS_ENABLED=True,
+        DISCORD_WEBHOOKS_PROBLEM_REPORTS=True,
+    )
     @patch("the_flip.apps.discord.tasks.requests.post")
     def test_successful_delivery(self, mock_post):
         """Successfully delivers webhook."""
@@ -54,13 +50,16 @@ class WebhookDeliveryTests(TestCase):
         mock_post.return_value = mock_response
 
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhooks("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "completed")
-        self.assertEqual(len(result["results"]), 1)
-        self.assertEqual(result["results"][0]["status"], "success")
+        self.assertEqual(result["status"], "success")
         mock_post.assert_called_once()
 
+    @override_config(
+        DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
+        DISCORD_WEBHOOKS_ENABLED=True,
+        DISCORD_WEBHOOKS_PROBLEM_REPORTS=True,
+    )
     @patch("the_flip.apps.discord.tasks.requests.post")
     def test_handles_delivery_failure(self, mock_post):
         """Handles webhook delivery failure gracefully."""
@@ -69,8 +68,7 @@ class WebhookDeliveryTests(TestCase):
         report = create_problem_report(machine=self.machine)
         # Capture expected warning log to avoid noise in test output
         with self.assertLogs("the_flip.apps.discord.tasks", level="WARNING"):
-            result = deliver_webhooks("problem_report_created", report.pk, "ProblemReport")
+            result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "completed")
-        self.assertEqual(result["results"][0]["status"], "error")
-        self.assertIn("Connection error", result["results"][0]["error"])
+        self.assertEqual(result["status"], "error")
+        self.assertIn("Connection error", result["error"])

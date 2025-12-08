@@ -5,7 +5,6 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from the_flip.apps.core.test_utils import create_log_entry, create_machine, create_staff_user
-from the_flip.apps.discord.models import WebhookEndpoint, WebhookEventSubscription
 from the_flip.apps.maintenance.models import ProblemReport
 
 
@@ -14,18 +13,6 @@ class WebhookSignalTests(TestCase):
 
     def setUp(self):
         self.machine = create_machine()
-        self.endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-            is_enabled=True,
-        )
-        # Subscribe to all events
-        for event_type, _ in WebhookEndpoint.EVENT_CHOICES:
-            WebhookEventSubscription.objects.create(
-                endpoint=self.endpoint,
-                event_type=event_type,
-                is_enabled=True,
-            )
 
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_problem_report_created(self, mock_async):

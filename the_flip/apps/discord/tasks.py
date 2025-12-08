@@ -11,7 +11,6 @@ from django_q.tasks import async_task
 from the_flip.logging import bind_log_context, current_log_context, reset_log_context
 
 if TYPE_CHECKING:
-    from the_flip.apps.discord.models import WebhookEndpoint
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
     enqueues the actual webhook delivery to run asynchronously.
     """
     async_task(
-        "the_flip.apps.discord.tasks.deliver_webhooks",
+        "the_flip.apps.discord.tasks.deliver_webhook",
         event_type,
         object_id,
         model_name,
@@ -33,20 +32,23 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
     )
 
 
-def deliver_webhooks(
+def deliver_webhook(
     event_type: str, object_id: int, model_name: str, log_context: dict | None = None
 ) -> dict:
-    """Deliver webhooks for a given event to all subscribed endpoints.
+    """Deliver webhook for a given event to the configured Discord webhook URL.
 
     This runs asynchronously via Django Q.
     """
     from constance import config
 
-    from the_flip.apps.discord.models import WebhookEventSubscription
-
     token = bind_log_context(**log_context) if log_context else None
 
     try:
+        # Check if webhook URL is configured
+        webhook_url = config.DISCORD_WEBHOOK_URL
+        if not webhook_url:
+            return {"status": "skipped", "reason": "no webhook URL configured"}
+
         # Check global settings
         if not config.DISCORD_WEBHOOKS_ENABLED:
             return {"status": "skipped", "reason": "webhooks globally disabled"}
@@ -62,28 +64,13 @@ def deliver_webhooks(
             if not config.DISCORD_WEBHOOKS_PARTS:
                 return {"status": "skipped", "reason": "parts webhooks disabled"}
 
-        # Get all enabled subscriptions for this event type
-        subscriptions = WebhookEventSubscription.objects.filter(
-            event_type=event_type,
-            is_enabled=True,
-            endpoint__is_enabled=True,
-        ).select_related("endpoint")
-
-        if not subscriptions.exists():
-            return {"status": "skipped", "reason": "no subscribed endpoints"}
-
         # Fetch the object
         obj = _get_object(model_name, object_id)
         if obj is None:
             return {"status": "error", "reason": f"{model_name} {object_id} not found"}
 
-        # Deliver to each endpoint
-        results = []
-        for subscription in subscriptions:
-            result = _deliver_to_endpoint(subscription.endpoint, event_type, obj)
-            results.append(result)
-
-        return {"status": "completed", "results": results}
+        # Deliver webhook
+        return _deliver_to_url(webhook_url, event_type, obj)
     finally:
         if token:
             reset_log_context(token)
@@ -140,59 +127,56 @@ def _get_object(model_name: str, object_id: int):
     return queryset.filter(pk=object_id).first()
 
 
-def _deliver_to_endpoint(
-    endpoint: WebhookEndpoint,
+def _deliver_to_url(
+    url: str,
     event_type: str,
     obj: ProblemReport | LogEntry,
 ) -> dict:
-    """Deliver a webhook to a single endpoint."""
+    """Deliver a webhook to a URL."""
     from the_flip.apps.discord.formatters import format_discord_message
 
     try:
         payload = format_discord_message(event_type, obj)
         response = requests.post(
-            endpoint.url,
+            url,
             json=payload,
             timeout=10,
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
         return {
-            "endpoint": endpoint.name,
             "status": "success",
             "status_code": response.status_code,
         }
     except requests.RequestException as e:
         logger.warning(
-            "Webhook delivery failed for endpoint %s: %s",
-            endpoint.name,
+            "Webhook delivery failed: %s",
             str(e),
         )
         return {
-            "endpoint": endpoint.name,
             "status": "error",
             "error": str(e),
         }
 
 
-def send_test_webhook(endpoint_id: int, event_type: str) -> dict:
-    """Send a test webhook to a specific endpoint.
+def send_test_webhook(event_type: str) -> dict:
+    """Send a test webhook to the configured URL.
 
     This is called directly (not via async_task) from the admin UI
     so the user gets immediate feedback.
     """
-    from the_flip.apps.discord.formatters import format_test_message
-    from the_flip.apps.discord.models import WebhookEndpoint
+    from constance import config
 
-    try:
-        endpoint = WebhookEndpoint.objects.get(pk=endpoint_id)
-    except WebhookEndpoint.DoesNotExist:
-        return {"status": "error", "error": "Endpoint not found"}
+    from the_flip.apps.discord.formatters import format_test_message
+
+    webhook_url = config.DISCORD_WEBHOOK_URL
+    if not webhook_url:
+        return {"status": "error", "error": "No webhook URL configured"}
 
     try:
         payload = format_test_message(event_type)
         response = requests.post(
-            endpoint.url,
+            webhook_url,
             json=payload,
             timeout=10,
             headers={"Content-Type": "application/json"},
@@ -200,7 +184,7 @@ def send_test_webhook(endpoint_id: int, event_type: str) -> dict:
         response.raise_for_status()
         return {
             "status": "success",
-            "message": f"Test message sent to {endpoint.name}",
+            "message": "Test message sent successfully",
         }
     except requests.RequestException as e:
         return {

@@ -1,4 +1,4 @@
-"""Tests for Discord models (webhooks and bot configuration)."""
+"""Tests for Discord models (bot configuration)."""
 
 from django.db import IntegrityError
 from django.test import TestCase
@@ -8,64 +8,7 @@ from the_flip.apps.core.test_utils import create_staff_user
 from the_flip.apps.discord.models import (
     DiscordChannel,
     DiscordUserLink,
-    WebhookEndpoint,
-    WebhookEventSubscription,
 )
-
-
-class WebhookEndpointModelTests(TestCase):
-    """Tests for the WebhookEndpoint model."""
-
-    def test_create_endpoint(self):
-        """Can create a webhook endpoint."""
-        endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-            is_enabled=True,
-        )
-        self.assertEqual(str(endpoint), "Test Endpoint (enabled)")
-
-    def test_disabled_endpoint_str(self):
-        """Disabled endpoint shows in string representation."""
-        endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-            is_enabled=False,
-        )
-        self.assertEqual(str(endpoint), "Test Endpoint (disabled)")
-
-
-class WebhookEventSubscriptionTests(TestCase):
-    """Tests for webhook event subscriptions."""
-
-    def test_create_subscription(self):
-        """Can subscribe an endpoint to an event type."""
-        endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-        )
-        subscription = WebhookEventSubscription.objects.create(
-            endpoint=endpoint,
-            event_type=WebhookEndpoint.EVENT_PROBLEM_REPORT_CREATED,
-        )
-        self.assertEqual(str(subscription), "Test Endpoint → Problem Report Created")
-
-    def test_unique_subscription(self):
-        """Cannot create duplicate subscriptions."""
-        endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-        )
-        WebhookEventSubscription.objects.create(
-            endpoint=endpoint,
-            event_type=WebhookEndpoint.EVENT_PROBLEM_REPORT_CREATED,
-        )
-
-        with self.assertRaises(IntegrityError):
-            WebhookEventSubscription.objects.create(
-                endpoint=endpoint,
-                event_type=WebhookEndpoint.EVENT_PROBLEM_REPORT_CREATED,
-            )
 
 
 class DiscordChannelModelTests(TestCase):

@@ -14,10 +14,6 @@ from the_flip.apps.core.test_utils import (
     create_user,
 )
 from the_flip.apps.discord.formatters import format_discord_message
-from the_flip.apps.discord.models import (
-    WebhookEndpoint,
-    WebhookEventSubscription,
-)
 from the_flip.apps.parts.models import (
     PartRequest,
     PartRequestUpdate,
@@ -376,22 +372,6 @@ class PartRequestWebhookSignalTests(TestCase):
         self.staff_user = create_staff_user(username="teststaff")
         self.maintainer = Maintainer.objects.get(user=self.staff_user)
         self.machine = create_machine()
-        self.endpoint = WebhookEndpoint.objects.create(
-            name="Test Endpoint",
-            url="https://discord.com/api/webhooks/123/abc",
-            is_enabled=True,
-        )
-        # Subscribe to parts events
-        for event_type in [
-            WebhookEndpoint.EVENT_PART_REQUEST_CREATED,
-            WebhookEndpoint.EVENT_PART_REQUEST_STATUS_CHANGED,
-            WebhookEndpoint.EVENT_PART_REQUEST_UPDATE_CREATED,
-        ]:
-            WebhookEventSubscription.objects.create(
-                endpoint=self.endpoint,
-                event_type=event_type,
-                is_enabled=True,
-            )
 
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_part_request_created(self, mock_async):

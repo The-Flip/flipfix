@@ -147,6 +147,7 @@ CONSTANCE_CONFIG = {
     # LLM settings
     "ANTHROPIC_API_KEY": ("", "Anthropic API key for Claude (keep secret!)", str),
     # Discord Webhook settings (outbound - posting to Discord)
+    "DISCORD_WEBHOOK_URL": ("", "Discord webhook URL to post notifications to", str),
     "DISCORD_WEBHOOKS_ENABLED": (True, "Master switch for all Discord webhook notifications", bool),
     "DISCORD_WEBHOOKS_PROBLEM_REPORTS": (True, "Send webhooks for problem report events", bool),
     "DISCORD_WEBHOOKS_LOG_ENTRIES": (True, "Send webhooks for log entry events", bool),
@@ -158,6 +159,7 @@ CONSTANCE_CONFIG_FIELDSETS = (
     (
         "Discord Webhooks (Outbound)",
         (
+            "DISCORD_WEBHOOK_URL",
             "DISCORD_WEBHOOKS_ENABLED",
             "DISCORD_WEBHOOKS_PROBLEM_REPORTS",
             "DISCORD_WEBHOOKS_LOG_ENTRIES",
