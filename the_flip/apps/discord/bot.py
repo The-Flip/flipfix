@@ -15,6 +15,7 @@ from the_flip.apps.discord.llm import (
     RecordSuggestion,
     analyze_messages,
 )
+from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.records import create_record
 
 logger = logging.getLogger(__name__)
@@ -427,6 +428,16 @@ class FlipfixBot(discord.Client):
         await interaction.response.defer(ephemeral=True)
 
         try:
+            # Check if this message has already been processed
+            if await _is_message_processed(str(message.id)):
+                embed = discord.Embed(
+                    title="Already Processed",
+                    description="This message has already been saved to Flipfix.",
+                    color=discord.Color.light_grey(),
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+                return
+
             # Gather context around the clicked message
             context = await self._gather_context(message)
 
@@ -498,8 +509,15 @@ class FlipfixBot(discord.Client):
 
         messages.sort(key=lambda m: m.created_at)
 
+        # Get IDs of already-processed messages to filter them from context
+        processed_ids = await _get_processed_message_ids([str(m.id) for m in messages])
+
         message_dicts = []
         for msg in messages:
+            # Skip already-processed messages (except the target - checked earlier)
+            if str(msg.id) in processed_ids and msg.id != message.id:
+                continue
+
             # Check for Flipfix URLs in embeds
             for embed in msg.embeds:
                 if embed.url and "theflip.app" in embed.url:
@@ -540,6 +558,28 @@ def _format_record_type(record_type: str) -> str:
         "part_request": "Part Request",
     }
     return type_labels.get(record_type, record_type.replace("_", " ").title())
+
+
+async def _is_message_processed(message_id: str) -> bool:
+    """Check if a Discord message has already been processed."""
+    from asgiref.sync import sync_to_async
+
+    return await sync_to_async(DiscordMessageMapping.is_processed)(message_id)
+
+
+async def _get_processed_message_ids(message_ids: list[str]) -> set[str]:
+    """Get the set of message IDs that have already been processed."""
+    from asgiref.sync import sync_to_async
+
+    @sync_to_async
+    def get_processed():
+        return set(
+            DiscordMessageMapping.objects.filter(discord_message_id__in=message_ids).values_list(
+                "discord_message_id", flat=True
+            )
+        )
+
+    return await get_processed()
 
 
 async def _send_error_response(interaction: discord.Interaction, message: str):
