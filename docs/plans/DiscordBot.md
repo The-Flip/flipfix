@@ -61,7 +61,6 @@ Ephemeral response updated with links to created records
 
 - `DiscordUserLink` - Map Discord users to maintainers
 - `DiscordMessageMapping` - Prevent duplicate processing
-- `DiscordChannel` - Could limit which channels show the context menu
 - `parsers/references.py` - `parse_url()` extracts Flipfix record references
 - `signals.py`, `tasks.py`, `formatters.py` - Outbound notification system
 

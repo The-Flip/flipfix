@@ -2,26 +2,7 @@
 
 from django.contrib import admin
 
-from .models import (
-    DiscordChannel,
-    DiscordUserLink,
-)
-
-# =============================================================================
-# Discord Bot Admin (inbound message processing)
-# =============================================================================
-
-
-@admin.register(DiscordChannel)
-class DiscordChannelAdmin(admin.ModelAdmin):
-    list_display = ("name", "channel_id", "is_enabled", "created_at")
-    list_filter = ("is_enabled",)
-    search_fields = ("name", "channel_id")
-    readonly_fields = ("created_at", "updated_at")
-    fieldsets = (
-        (None, {"fields": ("name", "channel_id", "is_enabled")}),
-        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
-    )
+from .models import DiscordUserLink
 
 
 @admin.register(DiscordUserLink)

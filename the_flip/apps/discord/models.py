@@ -1,39 +1,8 @@
-"""Discord integration models for webhooks and bot."""
+"""Discord integration models."""
 
 from django.db import models
 
 from the_flip.apps.core.models import TimeStampedModel
-
-# =============================================================================
-# Discord Bot Models (inbound message processing)
-# =============================================================================
-
-
-class DiscordChannel(TimeStampedModel):
-    """A Discord channel the bot listens to for messages."""
-
-    channel_id = models.CharField(
-        max_length=50,
-        unique=True,
-        help_text="Discord channel snowflake ID.",
-    )
-    name = models.CharField(
-        max_length=100,
-        help_text="Display name for this channel (for admin reference).",
-    )
-    is_enabled = models.BooleanField(
-        default=True,
-        help_text="Whether to listen to this channel.",
-    )
-
-    class Meta:
-        ordering = ["name"]
-        verbose_name = "Discord channel"
-        verbose_name_plural = "Discord channels"
-
-    def __str__(self) -> str:
-        status = "enabled" if self.is_enabled else "disabled"
-        return f"{self.name} ({status})"
 
 
 class DiscordUserLink(TimeStampedModel):

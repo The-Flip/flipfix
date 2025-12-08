@@ -46,9 +46,6 @@ Photos/videos attached to part request updates.
 
 ## Discord app
 
-### Discord Channel ([`DiscordChannel`](../the_flip/apps/discord/models.py))
-A Discord channel the bot listens to for messages.
-
 ### Discord User Link ([`DiscordUserLink`](../the_flip/apps/discord/models.py))
 Links a Discord user to a Maintainer account for attribution.
 
