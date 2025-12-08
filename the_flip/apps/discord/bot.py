@@ -10,7 +10,11 @@ import discord
 from constance import config
 from discord import app_commands
 
-from the_flip.apps.discord.llm import MessageContext, RecordSuggestion, analyze_messages
+from the_flip.apps.discord.llm import (
+    MessageContext,
+    RecordSuggestion,
+    analyze_messages,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -419,15 +423,22 @@ class FlipfixBot(discord.Client):
             )
 
             # Analyze with LLM
-            suggestions = await analyze_messages(context)
+            result = await analyze_messages(context)
 
-            if suggestions:
+            if result.is_error:
+                embed = discord.Embed(
+                    title="Analysis Error",
+                    description=result.error,
+                    color=discord.Color.red(),
+                )
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            elif result.suggestions:
                 logger.info(
                     "discord_suggestions_generated",
-                    extra={"suggestion_count": len(suggestions)},
+                    extra={"suggestion_count": len(result.suggestions)},
                 )
 
-                view = SequentialWizardView(suggestions)
+                view = SequentialWizardView(result.suggestions)
                 embed = view.build_step_embed()
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             else:

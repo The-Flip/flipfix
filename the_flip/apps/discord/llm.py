@@ -35,6 +35,26 @@ class MessageContext:
     flipfix_urls: list[str]
 
 
+@dataclass
+class AnalysisResult:
+    """Result of LLM analysis - either suggestions or an error."""
+
+    suggestions: list[RecordSuggestion]
+    error: str | None = None
+
+    @property
+    def is_error(self) -> bool:
+        return self.error is not None
+
+    @classmethod
+    def success(cls, suggestions: list[RecordSuggestion]) -> AnalysisResult:
+        return cls(suggestions=suggestions, error=None)
+
+    @classmethod
+    def failure(cls, error: str) -> AnalysisResult:
+        return cls(suggestions=[], error=error)
+
+
 SYSTEM_PROMPT = """You are analyzing a Discord message from a pinball museum's maintenance channel.
 Your job is to identify what maintenance records should be created in Flipfix (the maintenance tracking system).
 
@@ -108,12 +128,14 @@ RECORD_SUGGESTIONS_TOOL: ToolParam = {
 TOOL_CHOICE: ToolChoiceToolParam = {"type": "tool", "name": "record_suggestions"}
 
 
-async def analyze_messages(context: MessageContext) -> list[RecordSuggestion]:
+async def analyze_messages(context: MessageContext) -> AnalysisResult:
     """Use Claude to analyze Discord messages and suggest records to create."""
     api_key = await _get_api_key()
     if not api_key:
         logger.error("ANTHROPIC_API_KEY not configured")
-        return []
+        return AnalysisResult.failure(
+            "Anthropic API key not configured. Please contact an administrator."
+        )
 
     # Get machine list from database
     machines = await _get_machines_for_prompt()
@@ -136,14 +158,14 @@ async def analyze_messages(context: MessageContext) -> list[RecordSuggestion]:
             },
         )
 
-        return suggestions
+        return AnalysisResult.success(suggestions)
 
     except anthropic.APIError as e:
         logger.error("discord_llm_api_error", extra={"error": str(e)})
-        return []
+        return AnalysisResult.failure(f"AI service error: {e}")
     except Exception as e:
         logger.exception("discord_llm_error: %s", e)
-        return []
+        return AnalysisResult.failure("Unexpected error during analysis. Please try again.")
 
 
 @sync_to_async
