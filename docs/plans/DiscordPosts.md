@@ -8,10 +8,10 @@ Migrate outbound Discord notifications from webhooks to the Discord bot API. Cur
 
 The current webhook system works, but we're adding a Discord bot for inbound message sync (see [DiscordBot.md](DiscordBot.md)). Consolidating to a single Discord integration provides:
 
-1. **Single configuration** - One bot token instead of bot token + webhook URLs
-2. **Single modality** - All Discord code uses the same API/library
-3. **Richer interactions** - Buttons, threads, reactions on posted messages
-4. **Dynamic user resolution** - Bot can resolve Discord usernames/avatars
+ -  **Single configuration** - One bot token instead of bot token + webhook URLs
+ - **Single modality** - All Discord code uses the same API/library
+ - ability to do richer interaction (buttons, threads)
+ - ability to resolve users dynamically
 
 ## Current Architecture
 
@@ -36,87 +36,80 @@ Key files:
 ```
 Signal fires (e.g., ProblemReport created)
     ↓
-dispatch_discord_post() queues async task    [same pattern]
+dispatch_discord_post() queues async task
     ↓
-Django Q worker runs deliver_discord_post()  [same pattern]
+Django Q worker runs deliver_discord_post()
     ↓
-Post to Discord REST API using bot token     [swap HTTP POST target]
+Post to Discord REST API using bot token
 ```
 
 **We won't use the bot process to send messages**. Discord's REST API accepts bot token authentication for sending. The persistent WebSocket connection (the running bot) is only needed for *receiving* events like context menu commands.
 
 This means:
-- Django Q worker will post directly to Discord API (via the client lib we already have installed)
-- We will not have inter-process communication between worker and bot
-- We will reuse our existing retry/queue architecture
+- Django Q worker will post directly to Discord API (via the discord.py library we already have installed)
+- No inter-process communication between worker and bot
+- Reuse existing retry/queue architecture
 
 ## Implementation Plan
 
-### Phase 1: Add Bot-Based Posting (Parallel to Webhooks)
+### Phase 1: Bot-Based Posting
 
-Create new posting mechanism without removing webhooks yet.
-
-1. **Create `discord_api.py`** - Utility module for Discord REST API calls
+1. **Create `discord_http_utils.py`** - Utility module for Discord REST API calls
    ```python
    import discord
 
-   async def post_to_channel(channel_id: int, embeds: list[discord.Embed]) -> dict:
+   def post_to_channel(channel_id: int, embeds: list[dict]) -> dict:
        """Post a message to a Discord channel using the bot token."""
-       # Use discord.py's HTTP client or raw requests
+       # Use discord.py's HTTP client
        # Return success/error status
    ```
 
 2. **Add new task** in `tasks.py`
    ```python
    def deliver_discord_post(event_type: str, object_id: int, model_name: str):
-       """Deliver event to Discord via bot API (replaces webhook delivery)."""
-       # Same logic as deliver_webhooks, but call post_to_channel instead
+       """Deliver event to Discord via bot API."""
+       # Same logic as deliver_webhooks, but call post_to_channel
    ```
 
 3. **Add configuration** (constance)
-   - `DISCORD_POST_CHANNEL_ID` - Channel to post notifications to
-   - `DISCORD_POSTS_VIA_BOT` - Toggle to switch from webhooks to bot (for gradual rollout)
+   - `DISCORD_CHANNEL_ID` - Channel to post notifications to
+   - `POST_TO_DISCORD_ENABLED` - Master switch for outbound posts (default: off)
 
-4. **Update signals** to dispatch to new task when `DISCORD_POSTS_VIA_BOT` is enabled
+4. **Update signals** to dispatch to new task
 
 ### Phase 2: Feature Parity
 
 Ensure bot posting matches webhook capabilities:
 
 1. **Same embed formatting** - Reuse `formatters.py` (already builds embed dicts)
-2. **Per-event-type toggles** - Reuse existing `DISCORD_WEBHOOKS_*` settings
+2. **Per-event-type toggles** - Rename `DISCORD_WEBHOOKS_*` to `DISCORD_POST_*`
 3. **Error handling** - Same logging and error reporting
 
-### Phase 3: Enhanced Features
+### Phase 3: Cleanup
 
-Take advantage of bot capabilities:
-
-1. **Buttons on posts** - "View in Flipfix", "Claim Issue"
-2. **Thread creation** - Auto-create thread for discussion on problem reports
-3. **Reactions** - Add emoji based on event type
-4. **User mentions** - @mention maintainers when relevant
-
-### Phase 4: Cleanup
-
-Once bot posting is stable:
+Remove webhook code:
 
 1. **Remove webhook models** - `WebhookEndpoint`, `WebhookEventSubscription`
 2. **Remove webhook admin UI** - Endpoint management pages
-3. **Remove webhook settings** - Constance config for webhooks
+3. **Remove webhook settings** - Old constance config
 4. **Simplify signals** - Remove webhook dispatch code path
+
+### Phase 4: Go Live
+
+1. Test in staging
+2. Submit PR
+3. Deploy
 
 ## Technical Decisions
 
 ### Keep Queue Architecture
 
-We'll keep the queue architecture for posting to Discord.  The Django Q queue provides:
+We'll keep the queue architecture for posting to Discord. The Django Q queue provides:
 
 - Non-blocking signal handlers (web requests stay fast)
 - Automatic retries on failure
 - Timeout handling
 - Logging and monitoring
-
-No reason to change this.
 
 ### Use discord.py Library
 
@@ -128,27 +121,34 @@ We already have `discord.py==2.4.0` installed for the bot. Use it for posting to
 
 ### Single Channel
 
-Start with one notification channel (configurable).
+One notification channel (configurable via `DISCORD_CHANNEL_ID`).
 
 The webhook system supported multiple endpoints with different subscriptions, but we don't need that.
+
+### Channel Restriction for Context Menu
+
+The bot's "Save to Flipfix" context menu cannot be restricted to specific channels from code. Discord handles this via Server Settings → Integrations → [Bot] → Command Permissions.
+
+We can validate in code: if `interaction.channel_id != config.DISCORD_CHANNEL_ID`, respond with an error message.
 
 ## Configuration Changes
 
 ### Add
-- `DISCORD_CHANNEL_ID` - Target channel for notifications
+- `DISCORD_CHANNEL_ID` - Target channel for posts and context menu
+- `POST_TO_DISCORD_ENABLED` - Master switch for outbound posts (default: off)
+- `PULL_FROM_DISCORD_ENABLED` - Master switch for inbound bot (default: off)
 
-### Keep (Reuse)
+### Rename
+- `DISCORD_WEBHOOKS_PROBLEM_REPORTS` → `DISCORD_POST_PROBLEM_REPORTS`
+- `DISCORD_WEBHOOKS_LOG_ENTRIES` → `DISCORD_POST_LOG_ENTRIES`
+- `DISCORD_WEBHOOKS_PARTS` → `DISCORD_POST_PARTS`
+
+### Keep
 - `DISCORD_BOT_TOKEN` - Already exists for bot
-- `DISCORD_WEBHOOKS_PROBLEM_REPORTS` - Per-event toggles
-- `DISCORD_WEBHOOKS_LOG_ENTRIES`
-- `DISCORD_WEBHOOKS_PARTS`
+- `DISCORD_GUILD_ID` - Already exists for bot
 
-### Remove (Phase 4)
+### Remove (Phase 3)
+- `DISCORD_WEBHOOKS_ENABLED` - Replaced by `POST_TO_DISCORD_ENABLED`
+- `DISCORD_BOT_ENABLED` - Replaced by `PULL_FROM_DISCORD_ENABLED`
 - `WebhookEndpoint` model and admin
 - `WebhookEventSubscription` model and admin
-
-## Open Questions
-
-- [ ] Should we support multiple channels (like webhook endpoints)?
-- [ ] What buttons/interactions should we add to posted messages?
-- [ ] Should problem reports auto-create a thread for discussion?
