@@ -125,7 +125,7 @@ The webhook system supported multiple endpoints with different subscriptions, bu
 
 ### Channel Restriction for Context Menu
 
-The bot's "Save to Flipfix" context menu cannot be restricted to specific channels from code. Discord handles this via Server Settings → Integrations → [Bot] → Command Permissions.
+The bot's "Add to Flipfix" context menu cannot be restricted to specific channels from code. Discord handles this via Server Settings → Integrations → [Bot] → Command Permissions.
 
 We can validate in code: if `interaction.channel_id != config.DISCORD_CHANNEL_ID`, respond with an error message.
 

@@ -360,7 +360,7 @@ class FlipfixBot(discord.Client):
 
         try:
 
-            @self.tree.context_menu(name="Save to Flipfix")
+            @self.tree.context_menu(name="Add to Flipfix")
             async def save_to_flipfix(interaction: discord.Interaction, message: discord.Message):
                 await self._handle_add_command(interaction, message)
 
@@ -410,7 +410,7 @@ class FlipfixBot(discord.Client):
         )
 
     async def _handle_add_command(self, interaction: discord.Interaction, message: discord.Message):
-        """Handle the 'Save to Flipfix' context menu command."""
+        """Handle the 'Add to Flipfix' context menu command."""
         logger.info(
             "discord_command_received",
             extra={
