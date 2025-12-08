@@ -3,6 +3,7 @@ import dj_database_url
 from .base import *  # noqa
 
 DEBUG = False
+SITE_URL = "http://testserver"
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Use DATABASE_URL if provided (CI uses Postgres), otherwise SQLite for local dev

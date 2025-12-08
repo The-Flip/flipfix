@@ -8,7 +8,7 @@ from .types import ParsedReference, ReferenceType
 
 
 def parse_url(url: str) -> ParsedReference | None:
-    """Parse a theflip.app URL to extract object references.
+    """Parse a Flipfix URL to extract object references.
 
     Only parses URLs from known valid domains (DISCORD_VALID_DOMAINS setting)
     to avoid false matches on random URLs in messages.
@@ -17,7 +17,7 @@ def parse_url(url: str) -> ParsedReference | None:
 
     from django.conf import settings
 
-    valid_domains = getattr(settings, "DISCORD_VALID_DOMAINS", ["theflip.app"])
+    valid_domains = getattr(settings, "DISCORD_VALID_DOMAINS", [])
 
     # Validate the domain
     try:

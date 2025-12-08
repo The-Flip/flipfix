@@ -33,9 +33,9 @@ class CreatedRecord:
 
 def _get_base_url() -> str:
     """Get the base URL for building record links."""
-    if hasattr(settings, "SITE_URL") and settings.SITE_URL:
-        return settings.SITE_URL.rstrip("/")
-    return "https://theflip.app"
+    if not hasattr(settings, "SITE_URL") or not settings.SITE_URL:
+        raise ValueError("SITE_URL must be configured in settings")
+    return settings.SITE_URL.rstrip("/")
 
 
 @sync_to_async

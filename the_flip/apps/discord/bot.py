@@ -20,9 +20,6 @@ from the_flip.apps.discord.records import create_record
 
 logger = logging.getLogger(__name__)
 
-# Flipfix base URL
-FLIPFIX_URL = "https://theflip.app"
-
 
 @dataclass
 class WizardResult:
@@ -223,7 +220,7 @@ class SequentialWizardView(discord.ui.View):
             # Single record: inline link
             result = created[0]
             type_display = _format_record_type(result.suggestion.record_type)
-            url = result.url or FLIPFIX_URL
+            url = result.url
             embed = discord.Embed(
                 description=f"Created a {type_display} on {result.suggestion.machine_name}. [View in Flipfix ➡️]({url})",
                 color=discord.Color.green(),
@@ -233,7 +230,7 @@ class SequentialWizardView(discord.ui.View):
             lines = []
             for result in created:
                 type_display = _format_record_type(result.suggestion.record_type)
-                url = result.url or FLIPFIX_URL
+                url = result.url
                 lines.append(
                     f"• {type_display} on {result.suggestion.machine_name} — [View ➡️]({url})"
                 )
@@ -520,7 +517,7 @@ class FlipfixBot(discord.Client):
 
             # Check for Flipfix URLs in embeds
             for embed in msg.embeds:
-                if embed.url and "theflip.app" in embed.url:
+                if embed.url and _is_flipfix_url(embed.url):
                     flipfix_urls.append(embed.url)
 
             message_dicts.append(
@@ -558,6 +555,23 @@ def _format_record_type(record_type: str) -> str:
         "part_request": "Part Request",
     }
     return type_labels.get(record_type, record_type.replace("_", " ").title())
+
+
+def _is_flipfix_url(url: str) -> bool:
+    """Check if a URL is from a valid Flipfix domain."""
+    from urllib.parse import urlparse
+
+    from django.conf import settings
+
+    valid_domains = getattr(settings, "DISCORD_VALID_DOMAINS", [])
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        return any(
+            hostname == domain or hostname.endswith(f".{domain}") for domain in valid_domains
+        )
+    except Exception:
+        return False
 
 
 async def _is_message_processed(message_id: str) -> bool:

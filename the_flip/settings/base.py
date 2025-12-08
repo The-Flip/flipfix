@@ -173,7 +173,8 @@ CONSTANCE_CONFIG_FIELDSETS = (
 )
 
 # Valid domains for Discord bot URL parsing (to identify links to this app)
-DISCORD_VALID_DOMAINS = ["theflip.app", "localhost", "127.0.0.1"]
+# Production domain is derived from SITE_URL; localhost entries are for dev/test
+DISCORD_VALID_DOMAINS = config("DISCORD_VALID_DOMAINS", default="localhost,127.0.0.1", cast=Csv())
 
 # Logging configuration - conservative defaults for production
 # Override in dev.py for more verbose output

@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 
 def get_base_url() -> str:
     """Get the base URL for the site."""
-    # Use SITE_URL setting if available, otherwise construct from common settings
-    return getattr(settings, "SITE_URL", "https://theflip.app")
+    if not hasattr(settings, "SITE_URL") or not settings.SITE_URL:
+        raise ValueError("SITE_URL must be configured in settings")
+    return settings.SITE_URL
 
 
 def _get_maintainer_display_name(maintainer: Maintainer) -> str:
