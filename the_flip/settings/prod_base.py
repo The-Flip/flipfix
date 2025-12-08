@@ -88,8 +88,3 @@ else:
             conn_health_checks=True,
         )
     }
-
-# Feature flags - disabled by default in production (enable via admin)
-CONSTANCE_CONFIG = {
-    "PARTS_ENABLED": (False, "Enable the parts request feature", bool),
-}

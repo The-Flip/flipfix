@@ -134,7 +134,7 @@ DISCORD_BOT_LOG_LEVEL = config("DISCORD_BOT_LOG_LEVEL", default=None)
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
 
 CONSTANCE_CONFIG = {
-    "PARTS_ENABLED": (True, "Enable the parts request feature", bool),
+    "PARTS_ENABLED": (False, "Enable the parts request feature", bool),
     # Discord Bot settings (inbound - listening to Discord messages)
     "DISCORD_BOT_ENABLED": (False, "Master switch for Discord bot", bool),
     "DISCORD_BOT_TOKEN": ("", "Discord bot token (keep secret!)", str),
