@@ -7,12 +7,15 @@ from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     create_log_entry,
     create_machine,
+    create_part_request,
+    create_part_request_update,
     create_problem_report,
     create_staff_user,
 )
 from the_flip.apps.discord.formatters import format_discord_message, format_test_message
 from the_flip.apps.discord.models import DiscordUserLink
 from the_flip.apps.maintenance.models import LogEntryMedia
+from the_flip.apps.parts.models import PartRequest
 
 
 class DiscordFormatterTests(TestCase):
@@ -141,3 +144,81 @@ class DiscordFormatterTests(TestCase):
         embed = message["embeds"][0]
         self.assertIn("title", embed)
         self.assertIn("description", embed)
+
+
+class PartRequestWebhookFormatterTests(TestCase):
+    """Tests for part request Discord webhook formatting."""
+
+    def setUp(self):
+        self.staff_user = create_staff_user(username="teststaff")
+        self.maintainer = Maintainer.objects.get(user=self.staff_user)
+        self.machine = create_machine()
+
+    def test_format_part_request_created(self):
+        """Format a new part request message."""
+        part_request = create_part_request(
+            text="Need new flipper rubbers",
+            requested_by=self.maintainer,
+            machine=self.machine,
+        )
+        message = format_discord_message("part_request_created", part_request)
+
+        # Verify structure
+        self.assertIn("embeds", message)
+        self.assertEqual(len(message["embeds"]), 1)
+        embed = message["embeds"][0]
+
+        # Required fields exist
+        self.assertIn("title", embed)
+        self.assertIn("description", embed)
+        self.assertIn("url", embed)
+        self.assertIn("color", embed)
+
+        # Title includes part request ID
+        self.assertIn(f"#{part_request.pk}", embed["title"])
+
+        # Description includes the text
+        self.assertIn("flipper rubbers", embed["description"])
+
+        # URL points to the part request
+        self.assertIn(f"/parts/{part_request.pk}/", embed["url"])
+
+    def test_format_part_request_status_changed(self):
+        """Format a status change message."""
+        part_request = create_part_request(
+            text="Need new flipper rubbers",
+            requested_by=self.maintainer,
+            machine=self.machine,
+            status=PartRequest.STATUS_ORDERED,
+        )
+        message = format_discord_message("part_request_status_changed", part_request)
+
+        embed = message["embeds"][0]
+
+        # Title includes status
+        self.assertIn("Ordered", embed["title"])
+
+        # Description includes status
+        self.assertIn("Status", embed["description"])
+
+    def test_format_part_request_update_created(self):
+        """Format a part request update message."""
+        part_request = create_part_request(
+            text="Need new flipper rubbers",
+            requested_by=self.maintainer,
+            machine=self.machine,
+        )
+        update = create_part_request_update(
+            part_request=part_request,
+            posted_by=self.maintainer,
+            text="Ordered from Marco Specialties",
+        )
+        message = format_discord_message("part_request_update_created", update)
+
+        embed = message["embeds"][0]
+
+        # Title references the part request
+        self.assertIn(f"#{part_request.pk}", embed["title"])
+
+        # Description includes the update text
+        self.assertIn("Marco Specialties", embed["description"])

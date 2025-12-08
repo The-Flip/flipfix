@@ -1,7 +1,5 @@
 """Tests for parts management functionality."""
 
-from unittest.mock import patch
-
 from django.test import TestCase, tag
 from django.urls import reverse
 
@@ -13,7 +11,6 @@ from the_flip.apps.core.test_utils import (
     create_staff_user,
     create_user,
 )
-from the_flip.apps.discord.formatters import format_discord_message
 from the_flip.apps.parts.models import (
     PartRequest,
     PartRequestUpdate,
@@ -285,141 +282,6 @@ class PartRequestUpdateViewTests(TestCase):
         # Check the part request status was updated
         self.part_request.refresh_from_db()
         self.assertEqual(self.part_request.status, PartRequest.STATUS_ORDERED)
-
-
-class PartRequestWebhookFormatterTests(TestCase):
-    """Tests for part request Discord webhook formatting."""
-
-    def setUp(self):
-        self.staff_user = create_staff_user(username="teststaff")
-        self.maintainer = Maintainer.objects.get(user=self.staff_user)
-        self.machine = create_machine()
-
-    def test_format_part_request_created(self):
-        """Format a new part request message."""
-        part_request = create_part_request(
-            text="Need new flipper rubbers",
-            requested_by=self.maintainer,
-            machine=self.machine,
-        )
-        message = format_discord_message("part_request_created", part_request)
-
-        # Verify structure
-        self.assertIn("embeds", message)
-        self.assertEqual(len(message["embeds"]), 1)
-        embed = message["embeds"][0]
-
-        # Required fields exist
-        self.assertIn("title", embed)
-        self.assertIn("description", embed)
-        self.assertIn("url", embed)
-        self.assertIn("color", embed)
-
-        # Title includes part request ID
-        self.assertIn(f"#{part_request.pk}", embed["title"])
-
-        # Description includes the text
-        self.assertIn("flipper rubbers", embed["description"])
-
-        # URL points to the part request
-        self.assertIn(f"/parts/{part_request.pk}/", embed["url"])
-
-    def test_format_part_request_status_changed(self):
-        """Format a status change message."""
-        part_request = create_part_request(
-            text="Need new flipper rubbers",
-            requested_by=self.maintainer,
-            machine=self.machine,
-            status=PartRequest.STATUS_ORDERED,
-        )
-        message = format_discord_message("part_request_status_changed", part_request)
-
-        embed = message["embeds"][0]
-
-        # Title includes status
-        self.assertIn("Ordered", embed["title"])
-
-        # Description includes status
-        self.assertIn("Status", embed["description"])
-
-    def test_format_part_request_update_created(self):
-        """Format a part request update message."""
-        part_request = create_part_request(
-            text="Need new flipper rubbers",
-            requested_by=self.maintainer,
-            machine=self.machine,
-        )
-        update = create_part_request_update(
-            part_request=part_request,
-            posted_by=self.maintainer,
-            text="Ordered from Marco Specialties",
-        )
-        message = format_discord_message("part_request_update_created", update)
-
-        embed = message["embeds"][0]
-
-        # Title references the part request
-        self.assertIn(f"#{part_request.pk}", embed["title"])
-
-        # Description includes the update text
-        self.assertIn("Marco Specialties", embed["description"])
-
-
-class PartRequestWebhookSignalTests(TestCase):
-    """Tests for part request webhook signal triggers."""
-
-    def setUp(self):
-        self.staff_user = create_staff_user(username="teststaff")
-        self.maintainer = Maintainer.objects.get(user=self.staff_user)
-        self.machine = create_machine()
-
-    @patch("the_flip.apps.discord.tasks.async_task")
-    def test_signal_fires_on_part_request_created(self, mock_async):
-        """Signal fires when a part request is created."""
-        part_request = create_part_request(
-            requested_by=self.maintainer,
-            machine=self.machine,
-        )
-
-        # Find the part_request_created call
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_created"]
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0][0][2], part_request.pk)
-
-    @patch("the_flip.apps.discord.tasks.async_task")
-    def test_signal_fires_on_part_request_update_created(self, mock_async):
-        """Signal fires when a part request update is created."""
-        part_request = create_part_request(requested_by=self.maintainer)
-        mock_async.reset_mock()
-
-        update = create_part_request_update(
-            part_request=part_request,
-            posted_by=self.maintainer,
-            text="Update text",
-        )
-
-        # Find the part_request_update_created call
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_update_created"]
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0][0][2], update.pk)
-
-    @patch("the_flip.apps.discord.tasks.async_task")
-    def test_signal_fires_on_status_change_via_update(self, mock_async):
-        """Signal fires when status changes via an update."""
-        part_request = create_part_request(requested_by=self.maintainer)
-        mock_async.reset_mock()
-
-        create_part_request_update(
-            part_request=part_request,
-            posted_by=self.maintainer,
-            text="Ordered it",
-            new_status=PartRequest.STATUS_ORDERED,
-        )
-
-        # Should fire both update_created and status_changed
-        event_types = [c[0][1] for c in mock_async.call_args_list]
-        self.assertIn("part_request_update_created", event_types)
-        self.assertIn("part_request_status_changed", event_types)
 
 
 @tag("views")

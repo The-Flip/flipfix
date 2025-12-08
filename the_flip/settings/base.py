@@ -148,9 +148,17 @@ CONSTANCE_CONFIG = {
         "Master switch for all Discord webhook notifications",
         bool,
     ),
-    "DISCORD_WEBHOOKS_PROBLEM_REPORTS": (True, "Send webhooks for problem report events", bool),
-    "DISCORD_WEBHOOKS_LOG_ENTRIES": (True, "Send webhooks for log entry events", bool),
-    "DISCORD_WEBHOOKS_PARTS": (True, "Send webhooks for part request events", bool),
+    "DISCORD_WEBHOOKS_PROBLEM_REPORTS": (
+        True,
+        "Post to Discord when a problem report is created",
+        bool,
+    ),
+    "DISCORD_WEBHOOKS_LOG_ENTRIES": (
+        True,
+        "Post to Discord when a log entry is created",
+        bool,
+    ),
+    "DISCORD_WEBHOOKS_PARTS": (True, "Post to Discord when a parts request is created", bool),
 }
 
 CONSTANCE_CONFIG_FIELDSETS = (
