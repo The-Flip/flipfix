@@ -15,6 +15,7 @@ from the_flip.apps.discord.llm import (
     RecordSuggestion,
     analyze_messages,
 )
+from the_flip.apps.discord.records import create_record
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,10 @@ class WizardState:
     """State for the sequential wizard."""
 
     suggestions: list[RecordSuggestion]
+    discord_user_id: str
+    discord_message_id: int
+    discord_username: str
+    discord_display_name: str
     current_index: int = 0
     results: list[WizardResult] = field(default_factory=list)
 
@@ -106,17 +111,14 @@ class EditAndCreateModal(discord.ui.Modal):
                 # Update description with edited value
                 suggestion.description = self.description_input.value
 
-                # Phase 2: Mock creation - Phase 3 will actually create records
-                logger.info(
-                    "discord_record_created",
-                    extra={
-                        "record_type": suggestion.record_type,
-                        "machine_slug": suggestion.machine_slug,
-                        "description": suggestion.description[:100],
-                    },
+                result = await create_record(
+                    suggestion=suggestion,
+                    discord_user_id=state.discord_user_id,
+                    discord_message_id=state.discord_message_id,
+                    discord_username=state.discord_username,
+                    discord_display_name=state.discord_display_name,
                 )
-
-                state.record_result("created", url=FLIPFIX_URL)
+                state.record_result("created", url=result.url)
 
             # Advance to next or show completion
             if state.is_complete:
@@ -150,9 +152,22 @@ class CompletionView(discord.ui.View):
 class SequentialWizardView(discord.ui.View):
     """Sequential wizard that steps through each suggestion one at a time."""
 
-    def __init__(self, suggestions: list[RecordSuggestion]):
+    def __init__(
+        self,
+        suggestions: list[RecordSuggestion],
+        discord_user_id: str,
+        discord_message_id: int,
+        discord_username: str,
+        discord_display_name: str,
+    ):
         super().__init__(timeout=600)  # 10 minute timeout for wizard
-        self.state = WizardState(suggestions=suggestions)
+        self.state = WizardState(
+            suggestions=suggestions,
+            discord_user_id=discord_user_id,
+            discord_message_id=discord_message_id,
+            discord_username=discord_username,
+            discord_display_name=discord_display_name,
+        )
         self._update_buttons()
 
     def _update_buttons(self):
@@ -283,16 +298,14 @@ class SequentialWizardView(discord.ui.View):
         try:
             suggestion = self.state.current_suggestion
             if suggestion:
-                # Phase 2: Mock creation
-                logger.info(
-                    "discord_record_created",
-                    extra={
-                        "record_type": suggestion.record_type,
-                        "machine_slug": suggestion.machine_slug,
-                        "description": suggestion.description[:100],
-                    },
+                result = await create_record(
+                    suggestion=suggestion,
+                    discord_user_id=self.state.discord_user_id,
+                    discord_message_id=self.state.discord_message_id,
+                    discord_username=self.state.discord_username,
+                    discord_display_name=self.state.discord_display_name,
                 )
-                self.state.record_result("created", url=FLIPFIX_URL)
+                self.state.record_result("created", url=result.url)
 
             if self.state.is_complete:
                 embed, view = self.build_completion_view()
@@ -438,7 +451,13 @@ class FlipfixBot(discord.Client):
                     extra={"suggestion_count": len(result.suggestions)},
                 )
 
-                view = SequentialWizardView(result.suggestions)
+                view = SequentialWizardView(
+                    suggestions=result.suggestions,
+                    discord_user_id=str(interaction.user.id),
+                    discord_message_id=message.id,
+                    discord_username=interaction.user.name,
+                    discord_display_name=interaction.user.display_name,
+                )
                 embed = view.build_step_embed()
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             else:
