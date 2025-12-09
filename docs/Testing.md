@@ -33,15 +33,21 @@ Shared utilities in `the_flip.apps.core.test_utils`:
 
 ```python
 from the_flip.apps.core.test_utils import (
-    create_user, create_staff_user, create_superuser,
+    create_user, create_maintainer_user, create_superuser,
     create_machine_model, create_machine,
     create_problem_report, create_log_entry, create_shared_terminal,
 )
 
-user = create_staff_user()  # Auto-generates username
+maintainer = create_maintainer_user()  # Auto-generates username
 machine = create_machine()  # Creates model + instance
-user = create_staff_user(username="alice", first_name="Alice")
+maintainer = create_maintainer_user(username="alice", first_name="Alice")
 ```
+
+**Which user factory to use:**
+- `create_maintainer_user()` — For users accessing the maintainer portal (most tests)
+- `create_user()` — For regular users without special permissions
+- `create_superuser()` — For admin/superuser access
+- `create_staff_user()` — Only for Django admin access tests (sets `is_staff=True`)
 
 ### TestDataMixin
 
@@ -51,7 +57,7 @@ from the_flip.apps.core.test_utils import TestDataMixin
 class MyTestCase(TestDataMixin, TestCase):
     def setUp(self):
         super().setUp()
-        # Provides: self.machine, self.staff_user, self.regular_user, self.superuser
+        # Provides: self.machine, self.maintainer_user, self.regular_user, self.superuser
 ```
 
 ## Writing New Tests
