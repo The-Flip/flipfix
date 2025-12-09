@@ -107,12 +107,14 @@ def create_staff_user(username: str | None = None, **kwargs) -> User:
 
 
 def create_maintainer_user(username: str | None = None, **kwargs) -> User:
-    """Create a user with maintainer portal access.
+    """Create a user with maintainer portal access via Maintainers group."""
+    from django.contrib.auth.models import Group
 
-    Currently implemented via is_staff=True.
-    Will switch to group/permission-based in Phase 2.
-    """
-    return create_user(username=username, is_staff=True, **kwargs)
+    user = create_user(username=username, is_staff=False, **kwargs)
+    Maintainer.objects.get_or_create(user=user)
+    group = Group.objects.get(name="Maintainers")
+    user.groups.add(group)
+    return user
 
 
 def create_superuser(username: str | None = None, **kwargs) -> User:

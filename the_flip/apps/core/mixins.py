@@ -21,10 +21,9 @@ def can_access_maintainer_portal(user: AbstractUser | Any) -> bool:
     Check if user can access the maintainer portal.
 
     Used by CanAccessMaintainerPortalMixin and inline permission checks.
-    Currently checks is_staff or is_superuser.
-    Will switch to permission-based in Phase 2.
+    Uses permission-based check. Superusers automatically pass via has_perm().
     """
-    return user.is_staff or user.is_superuser
+    return user.has_perm("accounts.can_access_maintainer_portal")
 
 
 class CanAccessMaintainerPortalMixin(LoginRequiredMixin, UserPassesTestMixin):

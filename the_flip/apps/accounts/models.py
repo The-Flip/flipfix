@@ -17,6 +17,9 @@ class Maintainer(TimeStampedModel):
 
     class Meta:
         ordering = ["user__username"]
+        permissions = [
+            ("can_access_maintainer_portal", "Can access the maintainer portal"),
+        ]
 
     def __str__(self) -> str:
         return self.display_name
