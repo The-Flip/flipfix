@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
@@ -17,7 +16,7 @@ from django.views.generic import FormView, TemplateView, View
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.mixins import MediaUploadMixin
+from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, MediaUploadMixin
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import SearchForm
 from the_flip.apps.parts.forms import PartRequestForm, PartRequestUpdateForm
@@ -29,13 +28,10 @@ from the_flip.apps.parts.models import (
 )
 
 
-class PartRequestListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class PartRequestListView(CanAccessMaintainerPortalMixin, TemplateView):
     """List of all part requests. Maintainer-only access."""
 
     template_name = "parts/part_list.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -94,13 +90,10 @@ class PartRequestListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         return context
 
 
-class PartRequestListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class PartRequestListPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scrolling in the part request list."""
 
     template_name = "parts/partials/part_list_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         latest_update_prefetch = Prefetch(
@@ -141,14 +134,11 @@ class PartRequestListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
 
-class PartRequestCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
     """Create a new part request."""
 
     template_name = "parts/part_form.html"
     form_class = PartRequestForm
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         self.machine = None
@@ -226,13 +216,10 @@ class PartRequestCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return redirect("part-request-detail", pk=part_request.pk)
 
 
-class PartRequestDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, View):
+class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, View):
     """Detail view for a part request. Maintainer-only access."""
 
     template_name = "parts/part_detail.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_media_model(self):
         return PartRequestMedia
@@ -302,14 +289,11 @@ class PartRequestDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTest
         return render(request, self.template_name, context)
 
 
-class PartRequestUpdateCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
     """Add an update/comment to a part request."""
 
     template_name = "parts/part_update_form.html"
     form_class = PartRequestUpdateForm
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         self.part_request = get_object_or_404(
@@ -383,13 +367,10 @@ class PartRequestUpdateCreateView(LoginRequiredMixin, UserPassesTestMixin, FormV
         return redirect("part-request-detail", pk=self.part_request.pk)
 
 
-class PartRequestUpdatesPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scrolling updates on a part request detail page."""
 
     template_name = "parts/partials/part_update_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
@@ -419,11 +400,8 @@ class PartRequestUpdatesPartialView(LoginRequiredMixin, UserPassesTestMixin, Vie
         )
 
 
-class PartRequestStatusUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class PartRequestStatusUpdateView(CanAccessMaintainerPortalMixin, View):
     """AJAX-only endpoint to update part request status."""
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def post(self, request, *args, **kwargs):
         part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
@@ -470,13 +448,10 @@ class PartRequestStatusUpdateView(LoginRequiredMixin, UserPassesTestMixin, View)
         return JsonResponse({"error": "Unknown action"}, status=400)
 
 
-class PartRequestUpdateDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, View):
+class PartRequestUpdateDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, View):
     """Detail view for a part request update. Maintainer-only access."""
 
     template_name = "parts/part_update_detail.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_media_model(self):
         return PartRequestUpdateMedia

@@ -1,12 +1,17 @@
 """Accounts forms."""
 
+from typing import TYPE_CHECKING, cast
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
 from the_flip.apps.core.forms import StyledFormMixin
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as UserType
+
+User = cast("type[UserType]", get_user_model())
 
 
 class InvitationRegistrationForm(StyledFormMixin, forms.Form):
@@ -78,6 +83,8 @@ class SelfRegistrationForm(StyledFormMixin, forms.Form):
     last_name = forms.CharField(max_length=150, required=False)
     email = forms.EmailField(required=False)
     password = forms.CharField(widget=forms.PasswordInput)
+
+    existing_user: "UserType | None"
 
     def __init__(self, *args, **kwargs):
         self.existing_user = kwargs.pop("existing_user", None)

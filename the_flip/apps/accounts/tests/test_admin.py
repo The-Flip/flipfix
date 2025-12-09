@@ -3,11 +3,15 @@
 from django.test import TestCase, tag
 
 from the_flip.apps.accounts.models import Invitation
-from the_flip.apps.core.test_utils import create_staff_user, create_superuser
+from the_flip.apps.core.test_utils import (
+    SuppressRequestLogsMixin,
+    create_staff_user,
+    create_superuser,
+)
 
 
 @tag("admin")
-class InvitationAdminTests(TestCase):
+class InvitationAdminTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the Invitation admin interface."""
 
     def setUp(self):

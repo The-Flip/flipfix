@@ -6,6 +6,7 @@ from django.test import TestCase, tag
 from django.urls import reverse
 
 from the_flip.apps.core.test_utils import (
+    SuppressRequestLogsMixin,
     TestDataMixin,
     create_log_entry,
     create_shared_terminal,
@@ -17,7 +18,7 @@ from the_flip.apps.maintenance.utils import resize_image_file
 
 
 @tag("api", "ajax")
-class MaintainerAutocompleteViewTests(TestCase):
+class MaintainerAutocompleteViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the maintainer autocomplete API endpoint."""
 
     def setUp(self):
@@ -95,7 +96,7 @@ class MaintainerAutocompleteViewTests(TestCase):
 
 
 @tag("api")
-class ReceiveTranscodedMediaViewTests(TestDataMixin, TestCase):
+class ReceiveTranscodedMediaViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the HTTP API endpoint that receives transcoded media from worker service."""
 
     def setUp(self):

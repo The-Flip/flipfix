@@ -1,14 +1,17 @@
 import secrets
+from typing import TYPE_CHECKING, cast
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
 from django.views import View
 from django.views.generic import FormView, ListView, UpdateView
+
+from the_flip.apps.core.mixins import CanManageTerminalsMixin
 
 from .forms import (
     InvitationRegistrationForm,
@@ -19,7 +22,10 @@ from .forms import (
 )
 from .models import Invitation, Maintainer
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as UserType
+
+User = cast("type[UserType]", get_user_model())
 
 
 def is_claimable_user(user):
@@ -156,7 +162,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "accounts/profile.html"
     success_url = reverse_lazy("profile")
 
-    def get_object(self):
+    def get_object(self, queryset=None):  # noqa: ARG002
         return self.request.user
 
     def form_valid(self, form):
@@ -164,14 +170,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class SuperuserRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    """Mixin that requires the user to be a superuser."""
-
-    def test_func(self):
-        return self.request.user.is_superuser
-
-
-class TerminalListView(SuperuserRequiredMixin, ListView):
+class TerminalListView(CanManageTerminalsMixin, ListView):
     """List all shared terminal accounts."""
 
     template_name = "accounts/terminal_list.html"
@@ -181,7 +180,7 @@ class TerminalListView(SuperuserRequiredMixin, ListView):
         return Maintainer.objects.filter(is_shared_account=True).select_related("user")
 
 
-class TerminalLoginView(SuperuserRequiredMixin, View):
+class TerminalLoginView(CanManageTerminalsMixin, View):
     """Log in as a shared terminal account."""
 
     def post(self, request, pk):
@@ -193,7 +192,7 @@ class TerminalLoginView(SuperuserRequiredMixin, View):
         return redirect("home")
 
 
-class TerminalCreateView(SuperuserRequiredMixin, FormView):
+class TerminalCreateView(CanManageTerminalsMixin, FormView):
     """Create a new shared terminal account."""
 
     template_name = "accounts/terminal_form.html"
@@ -230,7 +229,7 @@ class TerminalCreateView(SuperuserRequiredMixin, FormView):
         return super().form_valid(form)
 
 
-class TerminalUpdateView(SuperuserRequiredMixin, FormView):
+class TerminalUpdateView(CanManageTerminalsMixin, FormView):
     """Edit a shared terminal account."""
 
     template_name = "accounts/terminal_form.html"
@@ -270,7 +269,7 @@ class TerminalUpdateView(SuperuserRequiredMixin, FormView):
         return super().form_valid(form)
 
 
-class TerminalDeactivateView(SuperuserRequiredMixin, View):
+class TerminalDeactivateView(CanManageTerminalsMixin, View):
     """Deactivate a shared terminal account."""
 
     def post(self, request, pk):
@@ -288,7 +287,7 @@ class TerminalDeactivateView(SuperuserRequiredMixin, View):
         return redirect("terminal-list")
 
 
-class TerminalReactivateView(SuperuserRequiredMixin, View):
+class TerminalReactivateView(CanManageTerminalsMixin, View):
     """Reactivate a shared terminal account."""
 
     def post(self, request, pk):

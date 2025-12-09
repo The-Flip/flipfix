@@ -6,16 +6,71 @@ from django.urls import reverse
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.core.test_utils import (
+    AccessControlTestCase,
     create_machine,
     create_machine_model,
-    create_staff_user,
+    create_maintainer_user,
     create_user,
 )
 from the_flip.apps.maintenance.models import LogEntry
 
 
+@tag("views", "access-control")
+class MaintainerMachineViewsAccessTests(AccessControlTestCase):
+    """Tests for maintainer machine views access control."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.regular_user = create_user(username="regularuser")
+        self.machine = create_machine(slug="test-machine")
+
+        self.list_url = reverse("maintainer-machine-list")
+        self.detail_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+
+    # MachineListView tests
+
+    def test_list_view_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_list_view_requires_maintainer_access(self):
+        """Non-maintainer users should be denied access (403)."""
+        self.client.force_login(self.regular_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_list_view_accessible_to_maintainer(self):
+        """Maintainer users should be able to access the list page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 200)
+
+    # MachineDetailViewForMaintainers tests
+
+    def test_detail_view_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_detail_view_requires_maintainer_access(self):
+        """Non-maintainer users should be denied access (403)."""
+        self.client.force_login(self.regular_user)
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_detail_view_accessible_to_maintainer(self):
+        """Maintainer users should be able to access the detail page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+
+
 @tag("views")
-class MachineQuickCreateViewTests(TestCase):
+class MachineQuickCreateViewTests(AccessControlTestCase):
     """Tests for the machine quick create view."""
 
     def setUp(self):
@@ -28,8 +83,8 @@ class MachineQuickCreateViewTests(TestCase):
             era=MachineModel.ERA_SS,
         )
 
-        # Create staff user (maintainer)
-        self.staff_user = create_staff_user(username="staffuser")
+        # Create maintainer user
+        self.maintainer_user = create_maintainer_user(username="maintainer")
 
         # Create regular user (non-staff)
         self.regular_user = create_user(username="regularuser")
@@ -50,14 +105,14 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_create_view_accessible_to_staff(self):
         """Staff users should be able to access the create page."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "catalog/machine_quick_create.html")
 
     def test_create_view_shows_existing_models_in_dropdown(self):
         """Create page should show existing models in dropdown."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
 
         # Should contain the existing model in the dropdown
@@ -66,7 +121,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_create_new_model_and_instance(self):
         """Should create both a new model and instance when model_name is provided."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         initial_model_count = MachineModel.objects.count()
         initial_instance_count = MachineInstance.objects.count()
@@ -93,19 +148,19 @@ class MachineQuickCreateViewTests(TestCase):
         new_model = MachineModel.objects.get(name="New Test Machine")
         self.assertEqual(new_model.manufacturer, "Stern")
         self.assertEqual(new_model.year, 2023)
-        self.assertEqual(new_model.created_by, self.staff_user)
-        self.assertEqual(new_model.updated_by, self.staff_user)
+        self.assertEqual(new_model.created_by, self.maintainer_user)
+        self.assertEqual(new_model.updated_by, self.maintainer_user)
 
         # Verify the new instance was created correctly
         new_instance = MachineInstance.objects.get(model=new_model)
         self.assertEqual(new_instance.operational_status, MachineInstance.STATUS_UNKNOWN)
         self.assertIsNone(new_instance.location)
-        self.assertEqual(new_instance.created_by, self.staff_user)
-        self.assertEqual(new_instance.updated_by, self.staff_user)
+        self.assertEqual(new_instance.created_by, self.maintainer_user)
+        self.assertEqual(new_instance.updated_by, self.maintainer_user)
 
     def test_create_new_model_without_manufacturer_and_year(self):
         """Should allow creating a model with only name (manufacturer and year optional)."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -127,7 +182,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_create_instance_of_existing_model(self):
         """Should create an instance of an existing model with name_override."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         initial_model_count = MachineModel.objects.count()
         initial_instance_count = MachineInstance.objects.count()
@@ -158,7 +213,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_validation_error_no_model_or_model_name(self):
         """Should show validation error if neither model nor model_name provided."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -183,7 +238,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_validation_error_existing_model_without_name_override(self):
         """Should require name_override when selecting an existing model."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -208,7 +263,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_success_message_displayed(self):
         """Should show success message after creating a machine."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -231,7 +286,7 @@ class MachineQuickCreateViewTests(TestCase):
 
     def test_redirect_to_machine_detail(self):
         """Should redirect to the new machine's detail page after creation."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -258,7 +313,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.staff_user = create_staff_user(username="staffuser")
+        self.maintainer_user = create_maintainer_user(username="maintainer")
         self.regular_user = create_user(username="regularuser")
         self.machine = create_machine(slug="test-machine")
 
@@ -277,7 +332,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def test_location_change_to_floor_creates_celebratory_log(self):
         """Moving to floor should create log entry with celebration emoji."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.machine.location = self.workshop
         self.machine.save()
 
@@ -297,7 +352,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def test_location_change_to_workshop_creates_standard_log(self):
         """Moving to non-floor location should create standard log entry."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.machine.location = self.floor
         self.machine.save()
 
@@ -318,7 +373,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def test_clearing_location_creates_log(self):
         """Clearing location should create a log entry."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.machine.location = self.floor
         self.machine.save()
         initial_log_count = LogEntry.objects.filter(machine=self.machine).count()
@@ -336,7 +391,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def test_location_noop_does_not_create_log(self):
         """Setting same location should not create a log entry."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.machine.location = self.floor
         self.machine.save()
         initial_log_count = LogEntry.objects.filter(machine=self.machine).count()
@@ -353,18 +408,18 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def test_location_change_log_linked_to_user(self):
         """Log entry should be created by the current user."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         self.client.post(self.update_url, {"action": "update_location", "location": "floor"})
 
         log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
-        self.assertEqual(log.created_by, self.staff_user)
+        self.assertEqual(log.created_by, self.maintainer_user)
 
     def test_status_change_adds_maintainer_if_exists(self):
         """Auto log entry should add user as maintainer if they have a Maintainer profile."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         # Get the Maintainer profile (created automatically for staff users)
-        maintainer = Maintainer.objects.get(user=self.staff_user)
+        maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
         self.machine.operational_status = MachineInstance.STATUS_GOOD
         self.machine._skip_auto_log = True
@@ -375,14 +430,14 @@ class MachineInlineUpdateViewTests(TestCase):
         )
 
         log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
-        self.assertEqual(log.created_by, self.staff_user)
+        self.assertEqual(log.created_by, self.maintainer_user)
         self.assertIn(maintainer, log.maintainers.all())
 
     def test_status_change_no_maintainer_if_not_exists(self):
         """Auto log entry should not fail if user has no Maintainer profile."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         # Ensure no Maintainer profile exists
-        Maintainer.objects.filter(user=self.staff_user).delete()
+        Maintainer.objects.filter(user=self.maintainer_user).delete()
 
         self.machine.operational_status = MachineInstance.STATUS_GOOD
         self.machine._skip_auto_log = True
@@ -393,5 +448,5 @@ class MachineInlineUpdateViewTests(TestCase):
         )
 
         log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
-        self.assertEqual(log.created_by, self.staff_user)
+        self.assertEqual(log.created_by, self.maintainer_user)
         self.assertEqual(log.maintainers.count(), 0)

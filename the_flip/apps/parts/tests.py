@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
+    AccessControlTestCase,
     create_machine,
     create_part_request,
     create_part_request_update,
@@ -139,7 +140,7 @@ class PartRequestUpdateModelTests(TestCase):
 
 
 @tag("views")
-class PartRequestViewTests(TestCase):
+class PartRequestViewTests(AccessControlTestCase):
     """Tests for part request views."""
 
     def setUp(self):

@@ -1,6 +1,5 @@
 from constance import config
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Case, CharField, Count, F, Max, Prefetch, Q, Value, When
 from django.db.models.functions import Lower
@@ -18,6 +17,7 @@ from the_flip.apps.catalog.forms import (
     MachineQuickCreateForm,
 )
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
+from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, can_access_maintainer_portal
 from the_flip.apps.maintenance.forms import ProblemReportForm, SearchForm
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
@@ -87,13 +87,13 @@ def get_activity_page(machine, page_num, page_size=10, search_query=None):
 
     # Tag entries for template differentiation
     for log in logs_list:
-        log.entry_type = "log"
+        log.entry_type = "log"  # type: ignore[attr-defined]
     for report in reports_list:
-        report.entry_type = "problem_report"
+        report.entry_type = "problem_report"  # type: ignore[attr-defined]
     for pr in part_requests_list:
-        pr.entry_type = "part_request"
+        pr.entry_type = "part_request"  # type: ignore[attr-defined]
     for pu in part_updates_list:
-        pu.entry_type = "part_request_update"
+        pu.entry_type = "part_request_update"  # type: ignore[attr-defined]
 
     # Combine, sort, slice to page
     combined = sorted(
@@ -161,7 +161,7 @@ class MachineListViewForPublic(ListView):
         )
 
 
-class MachineListView(MachineListViewForPublic):
+class MachineListView(CanAccessMaintainerPortalMixin, MachineListViewForPublic):
     template_name = "catalog/machine_list_for_maintainers.html"
 
     def get_context_data(self, **kwargs):
@@ -198,8 +198,8 @@ class MachineDetailViewForPublic(DetailView):
         return context
 
 
-class MachineDetailViewForMaintainers(MachineDetailViewForPublic):
-    """Maintainer-facing detail page; customize as needed."""
+class MachineDetailViewForMaintainers(CanAccessMaintainerPortalMixin, MachineDetailViewForPublic):
+    """Maintainer-facing detail page; requires maintainer portal access."""
 
     template_name = "catalog/machine_detail_maintainer.html"
 
@@ -242,7 +242,7 @@ class MachineDetailViewForMaintainers(MachineDetailViewForPublic):
 
     def post(self, request, *args, **kwargs):
         """Handle inline AJAX updates for status and location."""
-        if not request.user.is_staff:
+        if not can_access_maintainer_portal(request.user):
             return JsonResponse({"error": "Unauthorized"}, status=403)
 
         self.object = self.get_object()
@@ -295,11 +295,8 @@ class MachineDetailViewForMaintainers(MachineDetailViewForPublic):
         return JsonResponse({"error": "Unknown action"}, status=400)
 
 
-class MachineActivityPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class MachineActivityPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scroll of machine activity entries."""
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, slug):
         try:
@@ -329,7 +326,7 @@ class MachineActivityPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
 
-class MachineUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class MachineUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
     """Edit machine instance details (excluding model)."""
 
     model = MachineInstance
@@ -337,9 +334,6 @@ class MachineUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = "catalog/machine_edit.html"
     slug_field = "slug"
     slug_url_kwarg = "slug"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -354,7 +348,7 @@ class MachineUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return reverse("maintainer-machine-detail", kwargs={"slug": self.object.slug})
 
 
-class MachineModelUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+class MachineModelUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
     """Edit the pinball machine model."""
 
     model = MachineModel
@@ -362,9 +356,6 @@ class MachineModelUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
     template_name = "catalog/machine_model_edit.html"
     slug_field = "slug"
     slug_url_kwarg = "slug"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -384,7 +375,7 @@ class MachineModelUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView
         return reverse("machine-model-edit", kwargs={"slug": self.object.slug})
 
 
-class MachineQuickCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class MachineQuickCreateView(CanAccessMaintainerPortalMixin, FormView):
     """Quick create view for adding a new machine instance and optionally a new model.
 
     This view provides a streamlined interface for maintainers to quickly add machines
@@ -395,10 +386,6 @@ class MachineQuickCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
 
     template_name = "catalog/machine_quick_create.html"
     form_class = MachineQuickCreateForm
-
-    def test_func(self):
-        """Only staff members can create machines."""
-        return self.request.user.is_staff
 
     def form_valid(self, form):
         """Create the model (if needed) and instance, then redirect to the detail page."""

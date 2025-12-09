@@ -1,26 +1,32 @@
 """Tests for shared terminal account views."""
 
+from typing import TYPE_CHECKING, cast
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase, tag
 from django.urls import reverse
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
+    SuppressRequestLogsMixin,
+    create_maintainer_user,
     create_shared_terminal,
-    create_staff_user,
-    create_superuser,
+    create_terminal_manager_user,
     create_user,
 )
 
-User = get_user_model()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as UserType
+
+User = cast("type[UserType]", get_user_model())
 
 
-class TerminalTestMixin:
+class TerminalTestMixin(SuppressRequestLogsMixin, TestCase):
     """Mixin providing common setup for terminal tests."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         super().setUp()
-        self.superuser = create_superuser(username="admin")
+        self.terminal_manager = create_terminal_manager_user(username="admin")
         self.terminal = create_shared_terminal(
             username="workshop-terminal", first_name="Workshop", last_name="Terminal"
         )
@@ -32,28 +38,29 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.staff_user = create_staff_user(username="staffuser")
+        self.maintainer_user = create_maintainer_user(username="maintaineruser")
         self.list_url = reverse("terminal-list")
 
     def test_requires_superuser(self):
-        """Terminal list should require superuser access."""
+        """Terminal list should require superuser access (maintainers get 403)."""
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 302)
 
-        self.client.force_login(self.staff_user)
+        # Maintainers cannot manage terminals
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 403)
 
     def test_superuser_can_access(self):
         """Superuser should be able to access terminal list."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/terminal_list.html")
 
     def test_lists_shared_terminals(self):
         """Terminal list should show shared terminal accounts."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.list_url)
         self.assertContains(response, "Workshop Terminal")
 
@@ -62,7 +69,7 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
         self.terminal.user.is_active = False
         self.terminal.user.save()
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.list_url)
         self.assertContains(response, "Deactivated")
 
@@ -70,7 +77,7 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
         """Should show message when no terminals exist."""
         self.terminal.delete()
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.list_url)
         self.assertContains(response, "No shared terminal accounts yet")
 
@@ -85,13 +92,13 @@ class TerminalLoginViewTests(TerminalTestMixin, TestCase):
 
     def test_requires_post(self):
         """Terminal login should require POST request."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 405)
 
     def test_superuser_can_login_as_terminal(self):
         """Superuser should be able to log in as terminal."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.login_url, follow=True)
 
         self.assertRedirects(response, reverse("home"))
@@ -99,7 +106,7 @@ class TerminalLoginViewTests(TerminalTestMixin, TestCase):
 
     def test_shows_success_message(self):
         """Login should show success message."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.login_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -111,7 +118,7 @@ class TerminalLoginViewTests(TerminalTestMixin, TestCase):
         self.terminal.user.is_active = False
         self.terminal.user.save()
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.login_url)
         self.assertEqual(response.status_code, 404)
 
@@ -121,7 +128,7 @@ class TerminalCreateViewTests(TestCase):
     """Tests for the terminal create view."""
 
     def setUp(self):
-        self.superuser = create_superuser(username="admin")
+        self.terminal_manager = create_terminal_manager_user(username="admin")
         self.add_url = reverse("terminal-add")
 
     def test_requires_superuser(self):
@@ -131,14 +138,14 @@ class TerminalCreateViewTests(TestCase):
 
     def test_superuser_can_access(self):
         """Superuser should be able to access terminal create page."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.add_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/terminal_form.html")
 
     def test_creates_terminal(self):
         """Should create a shared terminal account."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         data = {"username": "new-terminal", "first_name": "New", "last_name": "Terminal"}
         response = self.client.post(self.add_url, data, follow=True)
 
@@ -156,7 +163,7 @@ class TerminalCreateViewTests(TestCase):
         """Should reject duplicate usernames."""
         create_user(username="existing")
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         data = {"username": "existing"}
         response = self.client.post(self.add_url, data)
 
@@ -165,7 +172,7 @@ class TerminalCreateViewTests(TestCase):
 
     def test_form_has_password_manager_protection(self):
         """Form should have attributes to prevent password manager autofill."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.add_url)
 
         self.assertContains(response, 'autocomplete="off"')
@@ -188,28 +195,28 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
 
     def test_superuser_can_access(self):
         """Superuser should be able to access terminal edit page."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "accounts/terminal_form.html")
 
     def test_prefills_form_data(self):
         """Form should be prefilled with current data."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertContains(response, 'value="Workshop"')
         self.assertContains(response, 'value="Terminal"')
 
     def test_shows_username_as_readonly(self):
         """Username should be displayed but not editable."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertContains(response, "workshop-terminal")
         self.assertNotContains(response, 'name="username"')
 
     def test_updates_terminal(self):
         """Should update terminal's first/last name."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         data = {"first_name": "Updated", "last_name": "Name"}
         response = self.client.post(self.edit_url, data, follow=True)
 
@@ -221,7 +228,7 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
 
     def test_shows_deactivate_button_for_active_terminal(self):
         """Should show deactivate button for active terminals."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertContains(response, "Deactivate")
 
@@ -230,7 +237,7 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
         self.terminal.user.is_active = False
         self.terminal.user.save()
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertNotContains(response, "Deactivate")
 
@@ -239,7 +246,7 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
         self.terminal.user.is_active = False
         self.terminal.user.save()
 
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.edit_url)
         self.assertContains(response, "Reactivate")
 
@@ -254,13 +261,13 @@ class TerminalDeactivateViewTests(TerminalTestMixin, TestCase):
 
     def test_requires_post(self):
         """Terminal deactivate should require POST request."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.deactivate_url)
         self.assertEqual(response.status_code, 405)
 
     def test_deactivates_terminal(self):
         """Should deactivate terminal account."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.deactivate_url, follow=True)
 
         self.assertRedirects(response, reverse("terminal-list"))
@@ -270,7 +277,7 @@ class TerminalDeactivateViewTests(TerminalTestMixin, TestCase):
 
     def test_shows_success_message(self):
         """Deactivate should show success message."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.deactivate_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -279,11 +286,11 @@ class TerminalDeactivateViewTests(TerminalTestMixin, TestCase):
 
 
 @tag("views", "terminals")
-class TerminalReactivateViewTests(TestCase):
+class TerminalReactivateViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the terminal reactivate view."""
 
     def setUp(self):
-        self.superuser = create_superuser(username="admin")
+        self.terminal_manager = create_terminal_manager_user(username="admin")
         self.terminal = create_shared_terminal(
             username="workshop-terminal", first_name="Workshop", last_name="Terminal"
         )
@@ -293,13 +300,13 @@ class TerminalReactivateViewTests(TestCase):
 
     def test_requires_post(self):
         """Terminal reactivate should require POST request."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.get(self.reactivate_url)
         self.assertEqual(response.status_code, 405)
 
     def test_reactivates_terminal(self):
         """Should reactivate terminal account."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.reactivate_url, follow=True)
 
         self.assertRedirects(response, reverse("terminal-list"))
@@ -309,7 +316,7 @@ class TerminalReactivateViewTests(TestCase):
 
     def test_shows_success_message(self):
         """Reactivate should show success message."""
-        self.client.force_login(self.superuser)
+        self.client.force_login(self.terminal_manager)
         response = self.client.post(self.reactivate_url, follow=True)
 
         messages = list(response.context["messages"])

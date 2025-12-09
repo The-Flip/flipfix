@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
@@ -98,9 +99,18 @@ def create_user(
 
 
 def create_staff_user(username: str | None = None, **kwargs) -> User:
-    """Create a staff user (maintainer).
+    """Create a staff user.
 
-    Convenience wrapper around create_user with is_staff=True.
+    Deprecated: Use create_maintainer_user() for maintainer portal access.
+    """
+    return create_user(username=username, is_staff=True, **kwargs)
+
+
+def create_maintainer_user(username: str | None = None, **kwargs) -> User:
+    """Create a user with maintainer portal access.
+
+    Currently implemented via is_staff=True.
+    Will switch to group/permission-based in Phase 2.
     """
     return create_user(username=username, is_staff=True, **kwargs)
 
@@ -109,6 +119,15 @@ def create_superuser(username: str | None = None, **kwargs) -> User:
     """Create a superuser (admin).
 
     Convenience wrapper around create_user with is_superuser=True.
+    """
+    return create_user(username=username, is_superuser=True, **kwargs)
+
+
+def create_terminal_manager_user(username: str | None = None, **kwargs) -> User:
+    """Create a user with terminal management access.
+
+    Currently implemented via is_superuser=True.
+    May switch to permission-based if terminal management is delegated in the future.
     """
     return create_user(username=username, is_superuser=True, **kwargs)
 
@@ -257,7 +276,7 @@ def create_shared_terminal(
     """
     if username is None:
         username = f"terminal-{_next_id('user')}"
-    user = create_staff_user(
+    user = create_maintainer_user(
         username=username,
         first_name=first_name,
         last_name=last_name,
@@ -290,7 +309,7 @@ def create_part_request(
     if text is None:
         text = f"Test part request {_next_id('part')}"
     if requested_by is None:
-        user = create_staff_user()
+        user = create_maintainer_user()
         requested_by = Maintainer.objects.get(user=user)
     return PartRequest.objects.create(
         text=text,
@@ -323,7 +342,7 @@ def create_part_request_update(
     if part_request is None:
         part_request = create_part_request()
     if posted_by is None:
-        user = create_staff_user()
+        user = create_maintainer_user()
         posted_by = Maintainer.objects.get(user=user)
     if text is None:
         text = f"Test part update {_next_id('part')}"
@@ -341,21 +360,76 @@ def create_part_request_update(
 # =============================================================================
 
 
+class SuppressRequestLogsMixin:
+    """Mixin to suppress Django request logging during tests.
+
+    Use this for test classes that intentionally trigger 4xx/5xx responses
+    (e.g., testing access control, 404s, method not allowed).
+
+    The mixin suppresses django.request logs at the class level, so all
+    tests in the class run quietly, but logs are restored afterward.
+
+    Usage:
+        class MyAccessControlTests(SuppressRequestLogsMixin, TestCase):
+            def test_unauthorized_returns_403(self):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 403)  # No log output
+
+    For convenience, use AccessControlTestCase instead of mixing this in manually.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import logging
+
+        cls._request_logger = logging.getLogger("django.request")
+        cls._original_level = cls._request_logger.level
+        cls._request_logger.setLevel(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._request_logger.setLevel(cls._original_level)
+        super().tearDownClass()
+
+
+class AccessControlTestCase(SuppressRequestLogsMixin, TestCase):
+    """TestCase for access control tests that intentionally trigger 4xx/5xx responses.
+
+    Automatically suppresses django.request logging to avoid noisy test output
+    when testing authentication, authorization, and error handling.
+
+    Usage:
+        class MyViewPermissionTests(AccessControlTestCase):
+            def test_requires_login(self):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 302)  # No log spam
+
+            def test_requires_staff(self):
+                self.client.force_login(regular_user)
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 403)  # No log spam
+    """
+
+    pass
+
+
 class TestDataMixin:
     """Mixin that provides common test data setup.
 
     Provides:
         - self.machine_model: A MachineModel instance
         - self.machine: A MachineInstance instance
-        - self.staff_user: A staff User (maintainer)
-        - self.regular_user: A non-staff User
+        - self.maintainer_user: A User with maintainer portal access
+        - self.staff_user: Alias for maintainer_user (deprecated)
+        - self.regular_user: A User without special permissions
         - self.superuser: A superuser (admin)
 
     Usage:
         class MyTestCase(TestDataMixin, TestCase):
             def setUp(self):
                 super().setUp()
-                # Now use self.machine, self.staff_user, etc.
+                # Now use self.machine, self.maintainer_user, etc.
     """
 
     def setUp(self):
@@ -366,6 +440,7 @@ class TestDataMixin:
             model=self.machine_model,
             slug="test-machine",
         )
-        self.staff_user = create_staff_user(username="staffuser")
+        self.maintainer_user = create_maintainer_user(username="testmaintainer")
+        self.staff_user = self.maintainer_user  # Deprecated alias
         self.regular_user = create_user(username="regularuser")
         self.superuser = create_superuser(username="admin")

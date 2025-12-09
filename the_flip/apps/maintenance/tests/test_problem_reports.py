@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
+    SuppressRequestLogsMixin,
     TestDataMixin,
     create_log_entry,
     create_problem_report,
@@ -18,7 +19,7 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport, ProblemRep
 
 
 @tag("views")
-class ProblemReportDetailViewTests(TestDataMixin, TestCase):
+class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the problem report detail view."""
 
     def setUp(self):
@@ -223,7 +224,7 @@ class ProblemReportDetailViewTests(TestDataMixin, TestCase):
 
 
 @tag("views")
-class ProblemReportListViewTests(TestDataMixin, TestCase):
+class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the global problem report list view."""
 
     def setUp(self):
@@ -308,7 +309,7 @@ class ProblemReportListViewTests(TestDataMixin, TestCase):
 
 
 @tag("views", "ajax")
-class ProblemReportListPartialViewTests(TestDataMixin, TestCase):
+class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the problem report list AJAX endpoint."""
 
     def setUp(self):
@@ -582,7 +583,7 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
 
 
 @tag("views", "ajax")
-class ProblemReportLogEntriesPartialViewTests(TestDataMixin, TestCase):
+class ProblemReportLogEntriesPartialViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the log entries AJAX endpoint on problem report detail."""
 
     def setUp(self):
@@ -728,7 +729,7 @@ class ProblemReportMediaCreateTests(TestDataMixin, TestCase):
 
 
 @tag("views", "ajax", "media")
-class ProblemReportMediaUploadTests(TestDataMixin, TestCase):
+class ProblemReportMediaUploadTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for AJAX media upload on problem report detail page."""
 
     def setUp(self):
@@ -794,7 +795,7 @@ class ProblemReportMediaUploadTests(TestDataMixin, TestCase):
 
 
 @tag("views", "ajax", "media")
-class ProblemReportMediaDeleteTests(TestDataMixin, TestCase):
+class ProblemReportMediaDeleteTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for AJAX media delete on problem report detail page."""
 
     def setUp(self):

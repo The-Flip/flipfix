@@ -5,13 +5,54 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 
 from the_flip.apps.core.tasks import enqueue_transcode
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractUser
     from django.db import models
     from django.http import HttpRequest
+
+
+def can_access_maintainer_portal(user: AbstractUser | Any) -> bool:
+    """
+    Check if user can access the maintainer portal.
+
+    Used by CanAccessMaintainerPortalMixin and inline permission checks.
+    Currently checks is_staff or is_superuser.
+    Will switch to permission-based in Phase 2.
+    """
+    return user.is_staff or user.is_superuser
+
+
+class CanAccessMaintainerPortalMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Mixin requiring maintainer portal access.
+
+    Behavior:
+    - Unauthenticated users -> redirect to login
+    - Authenticated but unauthorized -> 403
+    """
+
+    request: HttpRequest  # Provided by View
+
+    def test_func(self) -> bool:
+        return can_access_maintainer_portal(self.request.user)
+
+
+class CanManageTerminalsMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Mixin requiring terminal management access.
+
+    Currently checks is_superuser.
+    """
+
+    request: HttpRequest  # Provided by View
+
+    def test_func(self) -> bool:
+        return self.request.user.is_superuser
 
 
 class MediaUploadMixin:

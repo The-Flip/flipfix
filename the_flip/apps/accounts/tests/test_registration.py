@@ -5,13 +5,18 @@ from django.test import TestCase, tag
 from django.urls import reverse
 
 from the_flip.apps.accounts.models import Invitation, Maintainer
-from the_flip.apps.core.test_utils import create_staff_user, create_superuser, create_user
+from the_flip.apps.core.test_utils import (
+    AccessControlTestCase,
+    create_staff_user,
+    create_superuser,
+    create_user,
+)
 
 User = get_user_model()
 
 
 @tag("views", "registration")
-class InvitationRegistrationViewTests(TestCase):
+class InvitationRegistrationViewTests(AccessControlTestCase):
     """Tests for the invitation registration view."""
 
     def setUp(self):

@@ -9,7 +9,6 @@ from pathlib import Path
 import qrcode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -36,7 +35,11 @@ from PIL import Image, ImageOps
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
-from the_flip.apps.core.mixins import MediaUploadMixin
+from the_flip.apps.core.mixins import (
+    CanAccessMaintainerPortalMixin,
+    MediaUploadMixin,
+    can_access_maintainer_portal,
+)
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     LogEntryQuickForm,
@@ -52,11 +55,8 @@ from the_flip.apps.maintenance.models import (
 )
 
 
-class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
+class MaintainerAutocompleteView(CanAccessMaintainerPortalMixin, View):
     """JSON endpoint for maintainer name autocomplete."""
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         query = request.GET.get("q", "").strip().lower()
@@ -90,11 +90,8 @@ class MaintainerAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"maintainers": results})
 
 
-class MachineAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
-    """JSON endpoint for machine autocomplete (staff only)."""
-
-    def test_func(self):
-        return self.request.user.is_staff
+class MachineAutocompleteView(CanAccessMaintainerPortalMixin, View):
+    """JSON endpoint for machine autocomplete (maintainer-only)."""
 
     def get(self, request, *args, **kwargs):
         query = request.GET.get("q", "").strip()
@@ -147,13 +144,10 @@ class MachineAutocompleteView(LoginRequiredMixin, UserPassesTestMixin, View):
         return JsonResponse({"machines": results})
 
 
-class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ProblemReportListView(CanAccessMaintainerPortalMixin, TemplateView):
     """Global list of all problem reports across all machines. Maintainer-only access."""
 
     template_name = "maintenance/problem_report_list.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -205,13 +199,10 @@ class ProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         return context
 
 
-class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ProblemReportListPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scrolling in the global problem report list."""
 
     template_name = "maintenance/partials/global_problem_report_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         # Prefetch the most recent log entry for each problem report
@@ -251,13 +242,10 @@ class ProblemReportListPartialView(LoginRequiredMixin, UserPassesTestMixin, View
         )
 
 
-class ProblemReportLogEntriesPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scrolling log entries on a problem report detail page."""
 
     template_name = "maintenance/partials/problem_report_log_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
@@ -291,15 +279,12 @@ class ProblemReportLogEntriesPartialView(LoginRequiredMixin, UserPassesTestMixin
         )
 
 
-class MachineProblemReportListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
     """Paginated list of all problem reports for a specific machine."""
 
     template_name = "maintenance/machine_problem_report_list.html"
     context_object_name = "reports"
     paginate_by = 10
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
@@ -380,14 +365,11 @@ class PublicProblemReportCreateView(FormView):
         return redirect("public-problem-report-create", slug=self.machine.slug)
 
 
-class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
     """Maintainer-facing problem report creation (global or machine-scoped)."""
 
     template_name = "maintenance/problem_report_new.html"
     form_class = MaintainerProblemReportForm
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         self.machine = None
@@ -466,13 +448,10 @@ class ProblemReportCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView)
         return redirect("problem-report-detail", pk=report.pk)
 
 
-class ProblemReportDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, View):
+class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, View):
     """Detail view for a problem report with status toggle capability. Maintainer-only access."""
 
     template_name = "maintenance/problem_report_detail.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_media_model(self):
         return ProblemReportMedia
@@ -567,11 +546,8 @@ class ProblemReportDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTe
         return render(request, self.template_name, context)
 
 
-class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
     template_name = "maintenance/machine_log.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
@@ -611,12 +587,9 @@ class MachineLogView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
     template_name = "maintenance/machine_log_new.html"
     form_class = LogEntryQuickForm
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def dispatch(self, request, *args, **kwargs):
         # Two modes: either a machine slug OR a problem report pk
@@ -637,7 +610,7 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             self.is_global = True
             if not request.user.is_authenticated:
                 return redirect_to_login(request.get_full_path())
-            if not request.user.is_staff:
+            if not can_access_maintainer_portal(request.user):
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -781,11 +754,8 @@ class MachineLogCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return None
 
 
-class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
     template_name = "maintenance/partials/log_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
@@ -820,13 +790,10 @@ class MachineLogPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
 
-class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class LogListView(CanAccessMaintainerPortalMixin, TemplateView):
     """Global list of all log entries across all machines. Maintainer-only access."""
 
     template_name = "maintenance/log_list.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -869,13 +836,10 @@ class LogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return context
 
 
-class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
+class LogListPartialView(CanAccessMaintainerPortalMixin, View):
     """AJAX endpoint for infinite scrolling in the global log list."""
 
     template_name = "maintenance/partials/global_log_entry.html"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get(self, request, *args, **kwargs):
         logs = (
@@ -911,13 +875,10 @@ class LogListPartialView(LoginRequiredMixin, UserPassesTestMixin, View):
         )
 
 
-class LogEntryDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, DetailView):
     model = LogEntry
     template_name = "maintenance/log_entry_detail.html"
     context_object_name = "entry"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_queryset(self):
         return LogEntry.objects.select_related("machine").prefetch_related("maintainers", "media")
@@ -1007,7 +968,7 @@ class LogEntryDetailView(MediaUploadMixin, LoginRequiredMixin, UserPassesTestMix
         return None
 
 
-class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class MachineQRView(CanAccessMaintainerPortalMixin, DetailView):
     """Generate and display a printable QR code for a machine's public info page."""
 
     model = MachineInstance
@@ -1015,9 +976,6 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = "machine"
     slug_field = "slug"
     slug_url_kwarg = "slug"
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1086,13 +1044,10 @@ class MachineQRView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return context
 
 
-class MachineBulkQRCodeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    """Printable grid of QR codes for all machines (superusers only)."""
+class MachineBulkQRCodeView(CanAccessMaintainerPortalMixin, TemplateView):
+    """Printable grid of QR codes for all machines."""
 
     template_name = "maintenance/machine_qr_bulk.html"
-
-    def test_func(self):
-        return self.request.user.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

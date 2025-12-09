@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views import View
 
 from the_flip.apps.catalog.models import Location, MachineInstance
+from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
 from the_flip.apps.maintenance.models import LogEntry
 
 
-class MachineInlineUpdateView(LoginRequiredMixin, UserPassesTestMixin, View):
+class MachineInlineUpdateView(CanAccessMaintainerPortalMixin, View):
     """AJAX-only endpoint to update machine status/location."""
-
-    def test_func(self):
-        return self.request.user.is_staff
 
     def post(self, request, *args, **kwargs):
         machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
