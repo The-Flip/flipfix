@@ -150,7 +150,7 @@ class PartRequestWebhookFormatterTests(TestCase):
     """Tests for part request Discord webhook formatting."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.machine = create_machine()
 

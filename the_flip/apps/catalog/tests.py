@@ -21,8 +21,8 @@ class MaintainerMachineViewsAccessTests(AccessControlTestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.maintainer_user = create_maintainer_user(username="maintainer")
-        self.regular_user = create_user(username="regularuser")
+        self.maintainer_user = create_maintainer_user()
+        self.regular_user = create_user()
         self.machine = create_machine(slug="test-machine")
 
         self.list_url = reverse("maintainer-machine-list")
@@ -84,10 +84,10 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         )
 
         # Create maintainer user
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
 
         # Create regular user (non-staff)
-        self.regular_user = create_user(username="regularuser")
+        self.regular_user = create_user()
 
         self.create_url = reverse("machine-quick-create")
 
@@ -313,8 +313,8 @@ class MachineInlineUpdateViewTests(TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.maintainer_user = create_maintainer_user(username="maintainer")
-        self.regular_user = create_user(username="regularuser")
+        self.maintainer_user = create_maintainer_user()
+        self.regular_user = create_user()
         self.machine = create_machine(slug="test-machine")
 
         # Get or create locations

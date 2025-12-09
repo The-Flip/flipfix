@@ -440,7 +440,7 @@ class TestDataMixin:
             model=self.machine_model,
             slug="test-machine",
         )
-        self.maintainer_user = create_maintainer_user(username="testmaintainer")
+        self.maintainer_user = create_maintainer_user()
         self.staff_user = self.maintainer_user  # Deprecated alias
-        self.regular_user = create_user(username="regularuser")
-        self.superuser = create_superuser(username="admin")
+        self.regular_user = create_user()
+        self.superuser = create_superuser()

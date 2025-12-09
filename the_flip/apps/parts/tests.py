@@ -22,7 +22,7 @@ class PartRequestModelTests(TestCase):
     """Tests for the PartRequest model."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.machine = create_machine()
 
@@ -144,9 +144,9 @@ class PartRequestViewTests(AccessControlTestCase):
     """Tests for part request views."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
-        self.regular_user = create_user(username="regularuser")
+        self.regular_user = create_user()
         self.machine = create_machine()
 
     def test_list_view_requires_authentication(self):
@@ -246,7 +246,7 @@ class PartRequestUpdateViewTests(TestCase):
     """Tests for part request update views."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.part_request = create_part_request(requested_by=self.maintainer)
 
@@ -290,7 +290,7 @@ class PartRequestListFilterTests(TestCase):
     """Tests for part request list filtering."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.machine = create_machine()
 
@@ -353,7 +353,7 @@ class PartsFeatureFlagTests(TestCase):
         from constance.test import override_config
 
         self.override_config = override_config
-        self.maintainer_user = create_maintainer_user(username="maintainer")
+        self.maintainer_user = create_maintainer_user()
         self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.machine = create_machine()
 

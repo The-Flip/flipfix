@@ -26,7 +26,8 @@ class TerminalTestMixin(SuppressRequestLogsMixin, TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.terminal_manager = create_terminal_manager_user(username="admin")
+        self.terminal_manager = create_terminal_manager_user()
+        # Username is needed here because TerminalLoginViewTests asserts on it
         self.terminal = create_shared_terminal(
             username="workshop-terminal", first_name="Workshop", last_name="Terminal"
         )
@@ -38,7 +39,7 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.maintainer_user = create_maintainer_user(username="maintaineruser")
+        self.maintainer_user = create_maintainer_user()
         self.list_url = reverse("terminal-list")
 
     def test_requires_superuser(self):
@@ -128,7 +129,7 @@ class TerminalCreateViewTests(TestCase):
     """Tests for the terminal create view."""
 
     def setUp(self):
-        self.terminal_manager = create_terminal_manager_user(username="admin")
+        self.terminal_manager = create_terminal_manager_user()
         self.add_url = reverse("terminal-add")
 
     def test_requires_superuser(self):
@@ -290,10 +291,8 @@ class TerminalReactivateViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the terminal reactivate view."""
 
     def setUp(self):
-        self.terminal_manager = create_terminal_manager_user(username="admin")
-        self.terminal = create_shared_terminal(
-            username="workshop-terminal", first_name="Workshop", last_name="Terminal"
-        )
+        self.terminal_manager = create_terminal_manager_user()
+        self.terminal = create_shared_terminal()
         self.terminal.user.is_active = False
         self.terminal.user.save()
         self.reactivate_url = reverse("terminal-reactivate", kwargs={"pk": self.terminal.pk})

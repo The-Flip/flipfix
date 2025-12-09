@@ -35,7 +35,7 @@ class MaintainerAutocompleteViewTests(SuppressRequestLogsMixin, TestCase):
 
     def test_requires_staff_permission(self):
         """Non-staff users should be denied access."""
-        regular = create_user(username="regular")
+        regular = create_user()
         self.client.force_login(regular)
         response = self.client.get(self.autocomplete_url)
         self.assertEqual(response.status_code, 403)

@@ -16,8 +16,8 @@ class InvitationAdminTests(SuppressRequestLogsMixin, TestCase):
 
     def setUp(self):
         """Set up test data."""
-        self.superuser = create_superuser(username="admin")
-        self.staff_user = create_staff_user(username="staffuser")
+        self.superuser = create_superuser()
+        self.staff_user = create_staff_user()
         self.admin_url = "/admin/accounts/invitation/"
 
     def test_superuser_can_access_invitation_admin(self):

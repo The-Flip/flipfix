@@ -473,7 +473,7 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
 
     def test_create_problem_report_records_logged_in_user(self):
         """Submitting while authenticated should set reported_by_user."""
-        maintainer = create_maintainer_user(username="maintainer")
+        maintainer = create_maintainer_user()
         self.client.force_login(maintainer)
         data = {
             "problem_type": ProblemReport.PROBLEM_STUCK_BALL,
