@@ -28,6 +28,16 @@ if TYPE_CHECKING:
 User = cast("type[UserType]", get_user_model())
 
 
+def _make_maintainer(user: "UserType") -> Maintainer:
+    """Create Maintainer profile and add user to Maintainers group."""
+    from django.contrib.auth.models import Group
+
+    maintainer, _ = Maintainer.objects.get_or_create(user=user)
+    group = Group.objects.get(name="Maintainers")
+    user.groups.add(group)
+    return maintainer
+
+
 def is_claimable_user(user):
     """Check if a user account can be claimed (unclaimed and not admin)."""
     return user.email.endswith("@example.com") and not user.is_superuser
@@ -98,10 +108,8 @@ def self_register(request):
                     password=password,
                     first_name=first_name,
                     last_name=last_name,
-                    is_staff=True,
                 )
-                # Ensure Maintainer exists
-                Maintainer.objects.get_or_create(user=user)
+                _make_maintainer(user)
 
             login(request, user)
             display_name = user.get_full_name() or user.username
@@ -131,11 +139,8 @@ def invitation_register(request, token):
                 password=form.cleaned_data["password"],
                 first_name=form.cleaned_data.get("first_name", ""),
                 last_name=form.cleaned_data.get("last_name", ""),
-                is_staff=True,  # Maintainers need staff access
             )
-            # Maintainer is auto-created via signal for staff users
-            # but let's ensure it exists
-            Maintainer.objects.get_or_create(user=user)
+            _make_maintainer(user)
 
             # Mark invitation as used
             invitation.used = True
@@ -211,10 +216,8 @@ class TerminalCreateView(CanManageTerminalsMixin, FormView):
             first_name=form.cleaned_data.get("first_name") or "",
             last_name=form.cleaned_data.get("last_name") or "",
             password=secrets.token_urlsafe(32),
-            is_staff=True,
         )
-        # Signal auto-creates Maintainer, update it to be shared
-        maintainer = Maintainer.objects.get(user=user)
+        maintainer = _make_maintainer(user)
         maintainer.is_shared_account = True
         maintainer.save()
 

@@ -73,7 +73,8 @@ class InvitationRegistrationViewTests(AccessControlTestCase):
         self.assertEqual(user.email, "newuser@example.com")
         self.assertEqual(user.first_name, "New")
         self.assertEqual(user.last_name, "Maintainer")
-        self.assertTrue(user.is_staff)
+        self.assertTrue(user.groups.filter(name="Maintainers").exists())
+        self.assertTrue(user.has_perm("accounts.can_access_maintainer_portal"))
 
         # Maintainer should be created
         self.assertTrue(Maintainer.objects.filter(user=user).exists())
@@ -263,7 +264,7 @@ class SelfRegistrationViewTests(TestCase):
         self.assertEqual(user.email, "brandnew@email.com")
         self.assertEqual(user.first_name, "Brand")
         self.assertEqual(user.last_name, "New")
-        self.assertTrue(user.is_staff)
+        self.assertTrue(user.groups.filter(name="Maintainers").exists())
         self.assertTrue(user.check_password("SecurePass123!"))
 
         # Maintainer should be created

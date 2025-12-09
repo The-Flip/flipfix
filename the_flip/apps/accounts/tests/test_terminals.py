@@ -155,7 +155,7 @@ class TerminalCreateViewTests(TestCase):
         user = User.objects.get(username="new-terminal")
         self.assertEqual(user.first_name, "New")
         self.assertEqual(user.last_name, "Terminal")
-        self.assertTrue(user.is_staff)
+        self.assertTrue(user.groups.filter(name="Maintainers").exists())
 
         maintainer = Maintainer.objects.get(user=user)
         self.assertTrue(maintainer.is_shared_account)
