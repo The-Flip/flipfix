@@ -24,6 +24,8 @@ Most pages extend `layouts/two_column.html`. See that file for available blocks 
 
 For list pages with search and infinite scroll, extend `maintenance/global_list_base.html` instead.
 
+For simple centered pages (like error pages), extend `layouts/minimal_centered.html` which provides a `centered_content` block. Error pages extend `layouts/error.html` which builds on this with a consistent icon/heading/message structure.
+
 ## Component Expectations
 
 The project establishes component patterns in [the_flip/static/core/styles.css](../the_flip/static/core/styles.css). Before creating new components, review existing patterns:
@@ -33,6 +35,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
 - **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
 - **Flip Card** (`.flip-card` with `.flip-card__top`, `.flip-card__main`, `.flip-card__bottom` and optional left/right sub-elements for aligning content; use `.flip-card--clickable` when the whole card should be a link, and `.flip-card-list` to reset list spacing when rendering multiple flip-cards)
+- **Centered Container** (`.centered-container` - flexbox container that vertically and horizontally centers content)
 
 ### UI Components
 - **Buttons** (`.btn` with modifiers like `.btn-primary`, `.btn-secondary`)
@@ -50,6 +53,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 ### Utility Classes
 - `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
 - `.text-muted` - Muted text color
+- `.text-center` - Center-align text
 - `.form-inline` - Display form inline
 - `.badge-inline` - Badge with left margin (for badges inside buttons)
 - `.media-thumbnail` - Thumbnail image spacing

@@ -1777,6 +1777,10 @@ body {
   color: var(--color-text-muted);
 }
 
+.text-center {
+  text-align: center;
+}
+
 .text-danger {
   color: var(--color-problem);
 }
@@ -1976,6 +1980,26 @@ body {
   padding: var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+/* Flex layout for minimal pages - pushes footer to bottom, enables vertical centering */
+.body-minimal {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.body-minimal .main-minimal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.centered-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ========================================
