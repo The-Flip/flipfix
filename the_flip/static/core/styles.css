@@ -1777,6 +1777,10 @@ body {
   color: var(--color-text-muted);
 }
 
+.text-center {
+  text-align: center;
+}
+
 .text-danger {
   color: var(--color-problem);
 }
@@ -1976,6 +1980,13 @@ body {
   padding: var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+.centered-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
 }
 
 /* ========================================

@@ -1,0 +1,16 @@
+{% extends "layouts/minimal_centered.html" %}
+{% block title %}
+  {% block error_title %}Error{% endblock %}
+  · The Flip
+{% endblock %}
+{% block centered_content %}
+  <div class="text-center">
+    <i class="fa-solid fa-triangle-exclamation fa-3x text-muted"></i>
+    <h1 class="space-above-md">
+      {% block error_heading %}Error{% endblock %}
+    </h1>
+    <p class="text-muted space-above-sm">
+      {% block error_message %}Something went wrong.{% endblock %}
+    </p>
+  </div>
+{% endblock %}
