@@ -1,43 +1,32 @@
-{% extends "base.html" %}
-{% block title %}Login · {{ block.super }}{% endblock %}
-{% block content %}
-  <style>
-      .login-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: calc(100vh - 80px);
-          /* viewport minus header */
-      }
-  </style>
-  <div class="login-container">
-    <div class="card card--padded" style="max-width: 400px; width: 100%;">
-      <form method="post" action="{% url 'login' %}" class="form-main">
-        {% csrf_token %}
-        {% if form.errors %}<p class="text-problem body-small">Invalid username or password. Please try again.</p>{% endif %}
-        <div class="form-field">
-          <label for="id_username" class="form-label">Username</label>
-          <input type="text"
-                 name="username"
-                 id="id_username"
-                 class="form-input"
-                 required
-                 autocomplete="username">
-        </div>
-        <div class="form-field">
-          <label for="id_password" class="form-label">Password</label>
-          <input type="password"
-                 name="password"
-                 id="id_password"
-                 class="form-input"
-                 required
-                 autocomplete="current-password">
-        </div>
-        <input type="hidden" name="next" value="{{ next }}" />
-        <div class="form-actions">
-          <button type="submit" class="btn btn--primary btn--full">Login</button>
-        </div>
-      </form>
-    </div>
+{% extends "layouts/minimal_centered.html" %}
+{% block title %}Login · The Flip{% endblock %}
+{% block centered_content %}
+  <div class="card card--padded">
+    <form method="post" action="{% url 'login' %}" class="form-main">
+      {% csrf_token %}
+      {% if form.errors %}<p class="text-problem body-small">Invalid username or password. Please try again.</p>{% endif %}
+      <div class="form-field">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text"
+               name="username"
+               id="id_username"
+               class="form-input"
+               required
+               autocomplete="username">
+      </div>
+      <div class="form-field">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password"
+               name="password"
+               id="id_password"
+               class="form-input"
+               required
+               autocomplete="current-password">
+      </div>
+      <input type="hidden" name="next" value="{{ next }}" />
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary btn--full">Login</button>
+      </div>
+    </form>
   </div>
 {% endblock %}

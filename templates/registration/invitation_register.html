@@ -1,73 +1,83 @@
-{% extends "base_public_minimal.html" %}
-{% block title %}Complete Registration - The Flip{% endblock %}
-{% block content %}
-  <h2>Complete Your Registration</h2>
-  <p>You've been invited to join The Flip as a maintainer.</p>
-  <form method="post">
-    {% csrf_token %}
-    {% if form.non_field_errors %}
-      <div class="form-errors">
-        {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+{% extends "layouts/minimal_centered.html" %}
+{% block title %}Complete Registration · The Flip{% endblock %}
+{% block centered_content %}
+  <div class="card card--padded">
+    <h2>Complete Your Registration</h2>
+    <p class="text-muted">You've been invited to join The Flip as a maintainer.</p>
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="text-problem body-small">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      <div class="form-field">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text"
+               name="username"
+               id="id_username"
+               class="form-input"
+               value="{{ form.username.value|default:'' }}"
+               required
+               autocomplete="username">
+        {% if form.username.help_text %}<small class="form-hint">{{ form.username.help_text }}</small>{% endif %}
+        {% for error in form.username.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
       </div>
-    {% endif %}
-    <div class="form-field">
-      <label for="id_username">Username</label>
-      <input type="text"
-             name="username"
-             id="id_username"
-             value="{{ form.username.value|default:'' }}"
-             required
-             autocomplete="username">
-      {% if form.username.help_text %}<small>{{ form.username.help_text }}</small>{% endif %}
-      {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_first_name">First name</label>
-      <input type="text"
-             name="first_name"
-             id="id_first_name"
-             value="{{ form.first_name.value|default:'' }}"
-             autocomplete="given-name">
-      {% for error in form.first_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_last_name">Last name</label>
-      <input type="text"
-             name="last_name"
-             id="id_last_name"
-             value="{{ form.last_name.value|default:'' }}"
-             autocomplete="family-name">
-      {% for error in form.last_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_email">Email</label>
-      <input type="email"
-             name="email"
-             id="id_email"
-             value="{{ form.email.value|default:'' }}"
-             required
-             autocomplete="email">
-      {% if form.email.help_text %}<small>{{ form.email.help_text }}</small>{% endif %}
-      {% for error in form.email.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_password">Password</label>
-      <input type="password"
-             name="password"
-             id="id_password"
-             required
-             autocomplete="new-password">
-      {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <div class="form-field">
-      <label for="id_password_confirm">Confirm password</label>
-      <input type="password"
-             name="password_confirm"
-             id="id_password_confirm"
-             required
-             autocomplete="new-password">
-      {% for error in form.password_confirm.errors %}<p class="error">{{ error }}</p>{% endfor %}
-    </div>
-    <button type="submit" class="btn btn-primary">Create Account</button>
-  </form>
+      <div class="form-field">
+        <label for="id_first_name" class="form-label">First name</label>
+        <input type="text"
+               name="first_name"
+               id="id_first_name"
+               class="form-input"
+               value="{{ form.first_name.value|default:'' }}"
+               autocomplete="given-name">
+        {% for error in form.first_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_last_name" class="form-label">Last name</label>
+        <input type="text"
+               name="last_name"
+               id="id_last_name"
+               class="form-input"
+               value="{{ form.last_name.value|default:'' }}"
+               autocomplete="family-name">
+        {% for error in form.last_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_email" class="form-label">Email</label>
+        <input type="email"
+               name="email"
+               id="id_email"
+               class="form-input"
+               value="{{ form.email.value|default:'' }}"
+               required
+               autocomplete="email">
+        {% if form.email.help_text %}<small class="form-hint">{{ form.email.help_text }}</small>{% endif %}
+        {% for error in form.email.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password"
+               name="password"
+               id="id_password"
+               class="form-input"
+               required
+               autocomplete="new-password">
+        {% for error in form.password.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-field">
+        <label for="id_password_confirm" class="form-label">Confirm password</label>
+        <input type="password"
+               name="password_confirm"
+               id="id_password_confirm"
+               class="form-input"
+               required
+               autocomplete="new-password">
+        {% for error in form.password_confirm.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary btn--full">Create Account</button>
+      </div>
+    </form>
+  </div>
 {% endblock %}
