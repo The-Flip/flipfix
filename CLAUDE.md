@@ -15,7 +15,8 @@ make runq           # Start background worker (required for video transcoding an
 make shell          # Django shell
 
 # Testing
-make test           # Run test suite (uses test settings)
+make test           # Run fast suite (excludes integration)
+make test-all       # Run full suite (includes integration checks)
 
 # Code Quality
 make quality        # Format + lint + typecheck (run before committing)
