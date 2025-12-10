@@ -108,7 +108,7 @@ Load with `{% load core_extras %}`, then use:
 | `timeline` | Block tag | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line |
 | `timeline_entry` | Block tag | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}` |
 | `pill` | Inclusion tag | `{% pill label="Open" variant="open" %}` - Status pill/badge |
-| `form_field` | Inclusion tag | `{% form_field field %}` - Renders field with label, input, help text, errors |
+| `form_field` | Inclusion tag | `{% form_field field %}` - Renders field with label, input, help text, errors. Optional: `id`, `class_` |
 | `form_fields` | Inclusion tag | `{% form_fields form %}` - Renders all visible fields in a form |
 | `form_non_field_errors` | Inclusion tag | `{% form_non_field_errors form %}` - Renders non-field errors if any |
 | `field_errors` | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup) |

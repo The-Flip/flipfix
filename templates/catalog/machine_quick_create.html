@@ -35,36 +35,11 @@
       {% form_non_field_errors form %}
       <fieldset class="form-section">
         <legend>Machine Information</legend>
-        <div class="form-field">
-          {{ form.model.label_tag }}
-          {{ form.model }}
-          {% field_help_text form.model %}
-          {% field_errors form.model %}
-        </div>
-        <div class="form-field hidden" id="field-model-name">
-          {{ form.model_name.label_tag }}
-          {{ form.model_name }}
-          {% field_help_text form.model_name %}
-          {% field_errors form.model_name %}
-        </div>
-        <div class="form-field hidden" id="field-manufacturer">
-          {{ form.manufacturer.label_tag }}
-          {{ form.manufacturer }}
-          {% field_help_text form.manufacturer %}
-          {% field_errors form.manufacturer %}
-        </div>
-        <div class="form-field hidden" id="field-year">
-          {{ form.year.label_tag }}
-          {{ form.year }}
-          {% field_help_text form.year %}
-          {% field_errors form.year %}
-        </div>
-        <div class="form-field hidden" id="field-name-override">
-          {{ form.name_override.label_tag }}
-          {{ form.name_override }}
-          {% field_help_text form.name_override %}
-          {% field_errors form.name_override %}
-        </div>
+        {% form_field form.model %}
+        {% form_field form.model_name id="field-model-name" class_="hidden" %}
+        {% form_field form.manufacturer id="field-manufacturer" class_="hidden" %}
+        {% form_field form.year id="field-year" class_="hidden" %}
+        {% form_field form.name_override id="field-name-override" class_="hidden" %}
       </fieldset>
       <div class="form-actions">
         <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">

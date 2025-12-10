@@ -330,17 +330,19 @@ def pill(label: str, variant: str = "neutral", icon: str = ""):
 
 
 @register.inclusion_tag("components/form_field.html")
-def form_field(field):
+def form_field(field, id: str = "", class_: str = ""):
     """Render a form field with label, input, help text, and errors.
 
     Usage:
         {% form_field form.username %}
-        {% form_field field %}
+        {% form_field form.model_name id="field-model-name" class_="hidden" %}
 
     Args:
         field: A Django form field (BoundField)
+        id: Optional HTML id attribute for the wrapper div
+        class_: Optional additional CSS classes for the wrapper div
     """
-    return {"field": field}
+    return {"field": field, "id": id, "class_": class_}
 
 
 @register.inclusion_tag("components/form_fields.html")
