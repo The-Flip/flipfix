@@ -47,7 +47,7 @@
           {{ field.label_tag }}
           {{ field }}
           {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-          {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          {% for error in field.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
         </div>
       {% endfor %}
       <div class="form-actions">
