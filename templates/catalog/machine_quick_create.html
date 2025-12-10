@@ -1,83 +1,89 @@
-{% extends "base.html" %}
+{% extends "layouts/two_column.html" %}
+{% load core_extras %}
 {% block title %}Add Machine · {{ block.super }}{% endblock %}
-{% block content %}
+{% block breadcrumbs %}
   <nav class="breadcrumbs breadcrumbs--responsive">
     <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
     <span>/</span>
     <span class="breadcrumbs__current">Add Machine</span>
   </nav>
-  <div class="two-column">
-    <!-- Sidebar -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        <div class="sidebar__section">
-          <div class="sidebar__label">Add Machine</div>
-          <p class="sidebar__meta">Add a new machine to the collection</p>
+{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+    <i class="fa-solid fa-arrow-left meta"></i>
+    Back to Machines
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar %}
+  {% sidebar_section label="Add Machine" %}
+  <p class="sidebar__meta">Add a new machine to the collection</p>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'maintainer-machine-list' %}"
+   class="btn btn--secondary btn--full">
+  <i class="fa-solid fa-arrow-left meta"></i>
+  Back to Machines
+</a>
+{% endsidebar_section %}
+{% endsidebar %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="text-problem body-small">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
         </div>
-        <a href="{% url 'maintainer-machine-list' %}"
-           class="btn btn--secondary btn--full">
-          <i class="fa-solid fa-arrow-left meta"></i>
-          Back to Machines
+      {% endif %}
+      <fieldset class="form-section">
+        <legend>Machine Information</legend>
+        <div class="form-field">
+          {{ form.model.label_tag }}
+          {{ form.model }}
+          {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
+          {% for error in form.model.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field hidden" id="field-model-name">
+          {{ form.model_name.label_tag }}
+          {{ form.model_name }}
+          {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
+          {% for error in form.model_name.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field hidden" id="field-manufacturer">
+          {{ form.manufacturer.label_tag }}
+          {{ form.manufacturer }}
+          {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
+          {% for error in form.manufacturer.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field hidden" id="field-year">
+          {{ form.year.label_tag }}
+          {{ form.year }}
+          {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
+          {% for error in form.year.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-field hidden" id="field-name-override">
+          {{ form.name_override.label_tag }}
+          {{ form.name_override }}
+          {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
+          {% for error in form.name_override.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
+        </div>
+      </fieldset>
+      <div class="form-actions">
+        <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+          <i class="fa-solid fa-circle-xmark meta"></i>
+          Cancel
         </a>
+        <button type="submit" class="btn btn--log">
+          <i class="fa-solid fa-plus meta"></i>
+          Create Machine
+        </button>
       </div>
-    </aside>
-    <!-- Main -->
-    <div class="two-column__main">
-      <div class="card card--padded">
-        <form method="post" class="form-main">
-          {% csrf_token %}
-          {% if form.non_field_errors %}
-            <div class="text-problem body-small">
-              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
-            </div>
-          {% endif %}
-          <fieldset class="form-section">
-            <legend>Machine Information</legend>
-            <div class="form-field">
-              {{ form.model.label_tag }}
-              {{ form.model }}
-              {% if form.model.help_text %}<small class="help-text">{{ form.model.help_text }}</small>{% endif %}
-              {% for error in form.model.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field hidden" id="field-model-name">
-              {{ form.model_name.label_tag }}
-              {{ form.model_name }}
-              {% if form.model_name.help_text %}<small class="help-text">{{ form.model_name.help_text }}</small>{% endif %}
-              {% for error in form.model_name.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field hidden" id="field-manufacturer">
-              {{ form.manufacturer.label_tag }}
-              {{ form.manufacturer }}
-              {% if form.manufacturer.help_text %}<small class="help-text">{{ form.manufacturer.help_text }}</small>{% endif %}
-              {% for error in form.manufacturer.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field hidden" id="field-year">
-              {{ form.year.label_tag }}
-              {{ form.year }}
-              {% if form.year.help_text %}<small class="help-text">{{ form.year.help_text }}</small>{% endif %}
-              {% for error in form.year.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field hidden" id="field-name-override">
-              {{ form.name_override.label_tag }}
-              {{ form.name_override }}
-              {% if form.name_override.help_text %}<small class="help-text">{{ form.name_override.help_text }}</small>{% endif %}
-              {% for error in form.name_override.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
-            </div>
-          </fieldset>
-          <div class="form-actions">
-            <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-              <i class="fa-solid fa-circle-xmark meta"></i>
-              Cancel
-            </a>
-            <button type="submit" class="btn btn--log">
-              <i class="fa-solid fa-plus meta"></i>
-              Create Machine
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </form>
   </div>
+{% endblock %}
+{% block extra_scripts %}
   <script>
     (function() {
       const modelSelect = document.getElementById('{{ form.model.id_for_label }}');
