@@ -24,7 +24,7 @@ DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
 
-def enqueue_transcode(media_id: int, model_name: str) -> None:
+def enqueue_transcode(media_id: int, model_name: str, *, async_runner=async_task) -> None:
     """
     Enqueue a video transcoding job.
 
@@ -32,7 +32,7 @@ def enqueue_transcode(media_id: int, model_name: str) -> None:
         media_id: ID of the media record
         model_name: Name of the media model class (e.g., "LogEntryMedia", "PartRequestMedia")
     """
-    async_task(
+    async_runner(
         transcode_video_job,
         media_id,
         model_name,
@@ -41,9 +41,25 @@ def enqueue_transcode(media_id: int, model_name: str) -> None:
     )
 
 
-def transcode_video_job(media_id: int, model_name: str, log_context: dict | None = None) -> None:
+def transcode_video_job(
+    media_id: int,
+    model_name: str,
+    log_context: dict | None = None,
+    *,
+    probe=None,
+    run_ffmpeg=None,
+    upload=None,
+    django_web_service_url: str | None = None,
+    upload_token: str | None = None,
+) -> None:
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     token = bind_log_context(**log_context) if log_context else None
+
+    probe_fn = probe or _probe_duration_seconds
+    run_ffmpeg_fn = run_ffmpeg or _run_ffmpeg
+    upload_fn = upload or _upload_transcoded_files
+    web_service_url = django_web_service_url or DJANGO_WEB_SERVICE_URL
+    auth_token = upload_token or TRANSCODING_UPLOAD_TOKEN
 
     try:
         media_model = get_media_model(model_name)
@@ -58,9 +74,9 @@ def transcode_video_job(media_id: int, model_name: str, log_context: dict | None
 
     # Validate HTTP transfer configuration
     missing = []
-    if not DJANGO_WEB_SERVICE_URL:
+    if not web_service_url:
         missing.append("DJANGO_WEB_SERVICE_URL")
-    if not TRANSCODING_UPLOAD_TOKEN:
+    if not auth_token:
         missing.append("TRANSCODING_UPLOAD_TOKEN")
 
     if missing:
@@ -80,13 +96,13 @@ def transcode_video_job(media_id: int, model_name: str, log_context: dict | None
     tmp_poster = None
 
     try:
-        duration_seconds = _probe_duration_seconds(input_path)
+        duration_seconds = probe_fn(input_path)
         if duration_seconds is not None:
             media.duration = duration_seconds
             media.save(update_fields=["duration", "updated_at"])
 
         tmp_video = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
-        _run_ffmpeg(
+        run_ffmpeg_fn(
             [
                 "ffmpeg",
                 "-i",
@@ -115,7 +131,7 @@ def transcode_video_job(media_id: int, model_name: str, log_context: dict | None
         )
 
         tmp_poster = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-        _run_ffmpeg(
+        run_ffmpeg_fn(
             [
                 "ffmpeg",
                 "-i",
@@ -130,7 +146,14 @@ def transcode_video_job(media_id: int, model_name: str, log_context: dict | None
         )
 
         # Upload transcoded files to web service via HTTP
-        _upload_transcoded_files(media_id, tmp_video.name, tmp_poster.name, model_name=model_name)
+        upload_fn(
+            media_id,
+            tmp_video.name,
+            tmp_poster.name,
+            model_name=model_name,
+            web_service_url=web_service_url,
+            upload_token=auth_token,
+        )
         logger.info("Successfully uploaded transcoded video %s (%s)", media_id, model_name)
 
     except Exception as exc:  # noqa: BLE001
@@ -158,6 +181,9 @@ def _upload_transcoded_files(
     poster_path: str,
     max_retries: int = 3,
     model_name: str = "LogEntryMedia",
+    *,
+    web_service_url: str | None = None,
+    upload_token: str | None = None,
 ) -> None:
     """
     Upload transcoded video and poster to Django web service via HTTP.
@@ -174,18 +200,21 @@ def _upload_transcoded_files(
     Raises:
         Exception: If upload fails after all retries
     """
+    web_service_url = web_service_url or DJANGO_WEB_SERVICE_URL
+    upload_token = upload_token or TRANSCODING_UPLOAD_TOKEN
+
     missing = []
-    if not DJANGO_WEB_SERVICE_URL:
+    if not web_service_url:
         missing.append("DJANGO_WEB_SERVICE_URL")
-    if not TRANSCODING_UPLOAD_TOKEN:
+    if not upload_token:
         missing.append("TRANSCODING_UPLOAD_TOKEN")
 
     if missing:
         msg = f"Required environment variables not configured: {', '.join(missing)}"
         raise ValueError(msg)
 
-    upload_url = f"{DJANGO_WEB_SERVICE_URL.rstrip('/')}/api/transcoding/upload/"
-    headers = {"Authorization": f"Bearer {TRANSCODING_UPLOAD_TOKEN}"}
+    upload_url = f"{web_service_url.rstrip('/')}/api/transcoding/upload/"
+    headers = {"Authorization": f"Bearer {upload_token}"}
 
     for attempt in range(1, max_retries + 1):
         try:
