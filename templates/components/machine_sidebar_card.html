@@ -1,16 +1,19 @@
 {% if editable %}
-  <div class="sidebar-card-wrapper" id="machine-card-wrapper">
+  <div class="sidebar-card-wrapper"
+       data-sidebar-machine-edit
+       data-api-url="{% url 'api-machine-autocomplete' %}"
+       data-current-slug="{{ machine.slug }}"
+       data-csrf-token="{{ csrf_token }}">
     <button type="button"
             class="sidebar-card__edit"
-            id="machine-edit-btn"
+            data-edit-btn
             aria-label="Change machine"
             title="Change machine">
       <i class="fa-solid fa-pencil"></i>
     </button>
   {% endif %}
   <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-     class="sidebar-card sidebar-card--neutral"
-     id="machine-card-link">
+     class="sidebar-card sidebar-card--neutral">
     <div class="sidebar-card__header">{{ machine.display_name }}</div>
     <p class="sidebar-card__meta">
       {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
@@ -31,15 +34,15 @@
     </div>
   </a>
   {% if editable %}
-    <div class="sidebar-card-edit-dropdown hidden" id="machine-dropdown">
+    <div class="sidebar-card-edit-dropdown hidden" data-dropdown>
       <div class="sidebar-card-edit-dropdown__search">
         <input type="text"
-               id="machine-search"
                class="form-input form-input--sm"
                placeholder="Search machines..."
-               autocomplete="off">
+               autocomplete="off"
+               data-search>
       </div>
-      <div id="machine-dropdown-list"></div>
+      <div data-list></div>
     </div>
   </div>
 {% endif %}
