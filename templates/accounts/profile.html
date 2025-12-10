@@ -32,14 +32,7 @@
     <form method="post" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}
-      {% for field in form %}
-        <div class="form-field">
-          {{ field.label_tag }}
-          {{ field }}
-          {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-          {% for error in field.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
-        </div>
-      {% endfor %}
+      {% form_fields form %}
       <div class="form-actions">
         <a href="{% url 'home' %}" class="btn btn--secondary">
           <i class="fa-solid fa-circle-xmark meta"></i>
