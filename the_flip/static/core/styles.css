@@ -1203,6 +1203,7 @@ body {
 .sidebar-card-edit-dropdown__search {
   padding: var(--space-2);
   border-bottom: 1px solid var(--color-gray-200);
+  background: var(--color-white);
 }
 
 .sidebar-card-edit-dropdown__search input {
