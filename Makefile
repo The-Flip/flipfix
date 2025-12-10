@@ -9,7 +9,8 @@ help:
 	@echo "  make shell          - Start Django shell"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test           - Run full test suite"
+	@echo "  make test           - Run fast suite (excludes integration)"
+	@echo "  make test-all       - Run full test suite (includes integration)"
 	@echo "  make test-fast      - Run tests excluding integration"
 	@echo "  make test-models    - Run model tests only"
 	@echo "  make test-classifier - Run classifier unit tests"
@@ -32,6 +33,10 @@ help:
 
 .PHONY: test
 test:
+	DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test --keepdb --exclude-tag=integration
+
+.PHONY: test-all
+test-all:
 	DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test --keepdb
 
 .PHONY: test-fast
