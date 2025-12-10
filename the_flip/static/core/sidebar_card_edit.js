@@ -24,6 +24,19 @@
 // ============================================================
 
 /**
+ * Escape HTML special characters to prevent XSS.
+ */
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
  * POST a form action to the current page and reload on success.
  */
 async function postAction(action, valueKey, value, csrfToken) {
@@ -88,9 +101,9 @@ function initSidebarMachineEdit(wrapper) {
           (m) => `
         <button type="button"
                 class="sidebar-card-edit-dropdown__item${m.slug === currentSlug ? " sidebar-card-edit-dropdown__item--selected" : ""}"
-                data-value="${m.slug}">
-          <div>${m.display_name}</div>
-          ${m.location ? `<div class="sidebar-card-edit-dropdown__meta">${m.location}</div>` : ""}
+                data-value="${escapeHtml(m.slug)}">
+          <div>${escapeHtml(m.display_name)}</div>
+          ${m.location ? `<div class="sidebar-card-edit-dropdown__meta">${escapeHtml(m.location)}</div>` : ""}
         </button>
       `
         )
@@ -152,7 +165,7 @@ function initSidebarProblemEdit(wrapper) {
 
         if (filteredReports.length === 0) continue;
 
-        html += `<div class="sidebar-card-edit-dropdown__group">${group.machine_name}</div>`;
+        html += `<div class="sidebar-card-edit-dropdown__group">${escapeHtml(group.machine_name)}</div>`;
 
         for (const report of filteredReports) {
           const isSelected = report.id === currentId;
@@ -160,7 +173,7 @@ function initSidebarProblemEdit(wrapper) {
             <button type="button"
                     class="sidebar-card-edit-dropdown__item${isSelected ? " sidebar-card-edit-dropdown__item--selected" : ""}"
                     data-value="${report.id}">
-              <div>#${report.id}: ${report.summary}</div>
+              <div>#${report.id}: ${escapeHtml(report.summary)}</div>
             </button>
           `;
         }
