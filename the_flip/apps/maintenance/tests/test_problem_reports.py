@@ -226,6 +226,106 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
 
 @tag("views")
+class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for updating the machine of a problem report via AJAX."""
+
+    def setUp(self):
+        super().setUp()
+        from the_flip.apps.core.test_utils import create_machine
+
+        self.report = create_problem_report(
+            machine=self.machine,
+            description="Test problem",
+        )
+        self.other_machine = create_machine(slug="other-machine")
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
+
+    def test_update_machine_success(self):
+        """Successfully update problem report machine."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {
+                "action": "update_machine",
+                "machine_slug": self.other_machine.slug,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.machine, self.other_machine)
+
+    def test_update_machine_moves_linked_log_entries(self):
+        """Updating machine also moves all linked log entries."""
+        log_entry = create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Linked log entry",
+        )
+
+        self.client.force_login(self.staff_user)
+        self.client.post(
+            self.detail_url,
+            {
+                "action": "update_machine",
+                "machine_slug": self.other_machine.slug,
+            },
+        )
+
+        log_entry.refresh_from_db()
+        self.assertEqual(log_entry.machine, self.other_machine)
+
+    def test_update_machine_noop_when_same(self):
+        """Selecting the same machine returns noop status."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {
+                "action": "update_machine",
+                "machine_slug": self.machine.slug,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["status"], "noop")
+
+    def test_update_machine_invalid_slug(self):
+        """Invalid machine slug returns 404 error."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {
+                "action": "update_machine",
+                "machine_slug": "nonexistent-machine",
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        result = response.json()
+        self.assertFalse(result["success"])
+
+    def test_update_machine_requires_authentication(self):
+        """Anonymous users cannot update machine."""
+        response = self.client.post(
+            self.detail_url,
+            {
+                "action": "update_machine",
+                "machine_slug": self.other_machine.slug,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+
+@tag("views")
 class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the global problem report list view."""
 
@@ -941,3 +1041,87 @@ class ProblemReportDetailMediaDisplayTests(TestDataMixin, TestCase):
 
         self.assertContains(response, "media-grid__item")
         self.assertNotContains(response, "No media.")
+
+
+@tag("views")
+class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for the problem report autocomplete API."""
+
+    def setUp(self):
+        super().setUp()
+        from the_flip.apps.core.test_utils import create_machine
+
+        self.other_machine = create_machine(slug="other-machine")
+        self.report1 = create_problem_report(
+            machine=self.machine,
+            description="First problem on main machine",
+        )
+        self.report2 = create_problem_report(
+            machine=self.machine,
+            description="Second problem on main machine",
+        )
+        self.report3 = create_problem_report(
+            machine=self.other_machine,
+            description="Problem on other machine",
+        )
+        self.api_url = reverse("api-problem-report-autocomplete")
+
+    def test_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.api_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_returns_json_response(self):
+        """API returns JSON with groups structure."""
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.api_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+        data = response.json()
+        self.assertIn("groups", data)
+        self.assertIsInstance(data["groups"], list)
+
+    def test_groups_by_machine(self):
+        """Reports are grouped by machine."""
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.api_url)
+
+        data = response.json()
+        machine_names = [g["machine_name"] for g in data["groups"]]
+        self.assertIn(self.machine.display_name, machine_names)
+        self.assertIn(self.other_machine.display_name, machine_names)
+
+    def test_current_machine_appears_first(self):
+        """When current_machine is specified, that machine's group appears first."""
+        self.client.force_login(self.staff_user)
+        response = self.client.get(
+            self.api_url, {"current_machine": self.other_machine.slug}
+        )
+
+        data = response.json()
+        # Current machine group appears first with "(current)" suffix
+        first_group_name = data["groups"][0]["machine_name"]
+        self.assertIn(self.other_machine.display_name, first_group_name)
+        self.assertIn("(current)", first_group_name)
+
+    def test_includes_report_details(self):
+        """Each report includes id, summary, and machine_name."""
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.api_url)
+
+        data = response.json()
+        # Find a report in the response
+        all_reports = []
+        for group in data["groups"]:
+            all_reports.extend(group["reports"])
+
+        report_ids = [r["id"] for r in all_reports]
+        self.assertIn(self.report1.pk, report_ids)
+
+        # Check structure of a report
+        report = next(r for r in all_reports if r["id"] == self.report1.pk)
+        self.assertIn("summary", report)
+        self.assertIn("machine_name", report)
