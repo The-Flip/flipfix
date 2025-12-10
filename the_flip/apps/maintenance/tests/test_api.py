@@ -1,8 +1,7 @@
 """Tests for maintenance app API endpoints."""
 
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, tag
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 
 from the_flip.apps.core.test_utils import (
@@ -117,50 +116,53 @@ class ReceiveTranscodedMediaViewTests(
         )
 
         self.test_token = "test-secret-token-12345"  # noqa: S105
-        settings.TRANSCODING_UPLOAD_TOKEN = self.test_token
         self.upload_url = reverse("api-transcoding-upload")
 
-    def tearDown(self):
-        settings.TRANSCODING_UPLOAD_TOKEN = None
+    def _auth_headers(self, token: str | None = None) -> dict[str, str]:
+        bearer = token or self.test_token
+        return {"HTTP_AUTHORIZATION": f"Bearer {bearer}"}
 
     def test_requires_authorization_header(self):
         """Request without Authorization header should be rejected."""
-        response = self.client.post(self.upload_url, {})
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(self.upload_url, {})
         self.assertEqual(response.status_code, 401)
         self.assertIn("Missing or invalid Authorization header", response.json()["error"])
 
     def test_rejects_invalid_token(self):
         """Request with wrong token should be rejected."""
-        response = self.client.post(self.upload_url, {}, HTTP_AUTHORIZATION="Bearer wrong-token")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(self.upload_url, {}, **self._auth_headers("wrong-token"))
         self.assertEqual(response.status_code, 403)
         self.assertIn("Invalid authentication token", response.json()["error"])
 
     def test_requires_media_id(self):
         """Request without media_id should be rejected."""
-        response = self.client.post(
-            self.upload_url, {}, HTTP_AUTHORIZATION=f"Bearer {self.test_token}"
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(self.upload_url, {}, **self._auth_headers())
         self.assertEqual(response.status_code, 400)
         self.assertIn("Missing media_id", response.json()["error"])
 
     def test_requires_video_file(self):
         """Request without video_file should be rejected."""
-        response = self.client.post(
-            self.upload_url,
-            {"log_entry_media_id": str(self.media.id)},
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {"log_entry_media_id": str(self.media.id)},
+                **self._auth_headers(),
+            )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Missing video_file", response.json()["error"])
 
     def test_validates_video_file_type(self):
         """Video file must have video/* content type."""
         wrong_file = SimpleUploadedFile("fake.txt", b"not a video", content_type="text/plain")
-        response = self.client.post(
-            self.upload_url,
-            {"log_entry_media_id": str(self.media.id), "video_file": wrong_file},
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {"log_entry_media_id": str(self.media.id), "video_file": wrong_file},
+                **self._auth_headers(),
+            )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid video file type", response.json()["error"])
 
@@ -169,26 +171,28 @@ class ReceiveTranscodedMediaViewTests(
         video_file = SimpleUploadedFile("video.mp4", b"fake video", content_type="video/mp4")
         wrong_poster = SimpleUploadedFile("poster.txt", b"not an image", content_type="text/plain")
 
-        response = self.client.post(
-            self.upload_url,
-            {
-                "log_entry_media_id": str(self.media.id),
-                "video_file": video_file,
-                "poster_file": wrong_poster,
-            },
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {
+                    "log_entry_media_id": str(self.media.id),
+                    "video_file": video_file,
+                    "poster_file": wrong_poster,
+                },
+                **self._auth_headers(),
+            )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid poster file type", response.json()["error"])
 
     def test_rejects_nonexistent_media_id(self):
         """Request with non-existent media ID should be rejected."""
         video_file = SimpleUploadedFile("video.mp4", b"fake video", content_type="video/mp4")
-        response = self.client.post(
-            self.upload_url,
-            {"log_entry_media_id": "999999", "video_file": video_file},
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {"log_entry_media_id": "999999", "video_file": video_file},
+                **self._auth_headers(),
+            )
         self.assertEqual(response.status_code, 404)
         self.assertIn("not found", response.json()["error"])
 
@@ -201,15 +205,16 @@ class ReceiveTranscodedMediaViewTests(
             "poster.jpg", b"poster image content", content_type="image/jpeg"
         )
 
-        response = self.client.post(
-            self.upload_url,
-            {
-                "log_entry_media_id": str(self.media.id),
-                "video_file": video_file,
-                "poster_file": poster_file,
-            },
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {
+                    "log_entry_media_id": str(self.media.id),
+                    "video_file": video_file,
+                    "poster_file": poster_file,
+                },
+                **self._auth_headers(),
+            )
 
         self.assertEqual(response.status_code, 200)
         result = response.json()
@@ -228,11 +233,12 @@ class ReceiveTranscodedMediaViewTests(
             "transcoded.mp4", b"transcoded video content", content_type="video/mp4"
         )
 
-        response = self.client.post(
-            self.upload_url,
-            {"log_entry_media_id": str(self.media.id), "video_file": video_file},
-            HTTP_AUTHORIZATION=f"Bearer {self.test_token}",
-        )
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self.upload_url,
+                {"log_entry_media_id": str(self.media.id), "video_file": video_file},
+                **self._auth_headers(),
+            )
 
         self.assertEqual(response.status_code, 200)
         result = response.json()
@@ -245,9 +251,8 @@ class ReceiveTranscodedMediaViewTests(
 
     def test_server_not_configured_for_uploads(self):
         """If TRANSCODING_UPLOAD_TOKEN is not set, should return 500."""
-        settings.TRANSCODING_UPLOAD_TOKEN = None
-
-        response = self.client.post(self.upload_url, {}, HTTP_AUTHORIZATION="Bearer some-token")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=None):
+            response = self.client.post(self.upload_url, {}, **self._auth_headers("some-token"))
         self.assertEqual(response.status_code, 500)
         self.assertIn("Server not configured", response.json()["error"])
 
