@@ -15,10 +15,8 @@
     <span class="breadcrumbs__current">
       {% if is_create %}
         New Account
-      {% elif terminal.user.first_name or terminal.user.last_name %}
-        {{ terminal.user.first_name }} {{ terminal.user.last_name }} ({{ terminal.user.username }})
       {% else %}
-        {{ terminal.user.username }}
+        {{ terminal.user|display_name_with_username }}
       {% endif %}
     </span>
   </nav>
@@ -48,13 +46,7 @@
   {% sidebar %}
   {% sidebar_section label="Shared Terminal" %}
   {% if not is_create %}
-    <div class="sidebar__title">
-      {% if terminal.user.first_name or terminal.user.last_name %}
-        {{ terminal.user.first_name }} {{ terminal.user.last_name }} ({{ terminal.user.username }})
-      {% else %}
-        {{ terminal.user.username }}
-      {% endif %}
-    </div>
+    <div class="sidebar__title">{{ terminal.user|display_name_with_username }}</div>
   {% else %}
     <div class="sidebar__title text-muted">New terminal</div>
   {% endif %}
@@ -96,7 +88,7 @@
           {{ field.label_tag }}
           {{ field }}
           {% if field.help_text %}<small class="help-text">{{ field.help_text }}</small>{% endif %}
-          {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+          {% for error in field.errors %}<p class="text-problem body-small">{{ error }}</p>{% endfor %}
         </div>
       {% endfor %}
       <div class="form-actions">

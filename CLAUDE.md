@@ -128,6 +128,12 @@ Load with `{% load core_extras %}`, then use:
 2. Create template in `templates/components/` (for inclusion tags)
 3. Document in this table
 
+### Template Filters
+
+| Filter | Usage | Description |
+|--------|-------|-------------|
+| `display_name_with_username` | `{{ user\|display_name_with_username }}` | Returns "First Last (username)" or just "username" |
+
 ## Tool Usage
 
 Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-library-docs`) to look up current documentation when:
