@@ -1,51 +1,25 @@
 {% load core_extras %}
-{% if editable %}
-  <div class="sidebar-card-wrapper"
-       data-sidebar-problem-edit
-       data-api-url="{% url 'api-problem-report-autocomplete' %}"
-       data-current-id="{{ problem_report.pk|default:'null' }}"
-       data-current-machine-slug="{{ current_machine_slug }}"
-       data-csrf-token="{{ csrf_token }}">
-    <button type="button"
-            class="sidebar-card__edit"
-            data-edit-btn
-            aria-label="{% if problem_report %}Change problem report{% else %}Link to problem report{% endif %}"
-            title="{% if problem_report %}Change problem report{% else %}Link to problem report{% endif %}">
-      <i class="fa-solid fa-pencil"></i>
-    </button>
-  {% endif %}
-  {% if problem_report %}
-    <a href="{% url 'problem-report-detail' problem_report.pk %}"
-       class="sidebar-card sidebar-card--problem">
-      <div class="sidebar-card__header sidebar-card__header--problem">
-        <i class="fa-solid fa-bug"></i>
-        <span>#{{ problem_report.pk }}</span>
-      </div>
-      <p class="sidebar-card__text">{{ problem_report|problem_report_summary }}</p>
-      <p class="sidebar-card__meta">
-        {% if problem_report.reporter_display %}{{ problem_report.reporter_display }} ·{% endif %}
-        {{ problem_report.created_at|smart_date }}
-      </p>
-    </a>
-  {% else %}
-    <div class="sidebar-card sidebar-card--neutral">
-      <div class="sidebar-card__header text-muted">
-        <i class="fa-solid fa-bug"></i>
-        <span>None</span>
-      </div>
-      <p class="sidebar-card__meta">Not linked to a problem report</p>
+{% editable_sidebar_card editable=editable edit_type="problem" current_value=problem_report.pk current_machine_slug=current_machine_slug csrf_token=csrf_token %}
+{% if problem_report %}
+  <a href="{% url 'problem-report-detail' problem_report.pk %}"
+     class="sidebar-card sidebar-card--problem">
+    <div class="sidebar-card__header sidebar-card__header--problem">
+      <i class="fa-solid fa-bug"></i>
+      <span>#{{ problem_report.pk }}</span>
     </div>
-  {% endif %}
-  {% if editable %}
-    <div class="sidebar-card-edit-dropdown hidden" data-dropdown>
-      <div class="sidebar-card-edit-dropdown__search">
-        <input type="text"
-               class="form-input form-input--sm"
-               placeholder="Search problem reports..."
-               autocomplete="off"
-               data-search>
-      </div>
-      <div data-list></div>
+    <p class="sidebar-card__text">{{ problem_report|problem_report_summary }}</p>
+    <p class="sidebar-card__meta">
+      {% if problem_report.reporter_display %}{{ problem_report.reporter_display }} ·{% endif %}
+      {{ problem_report.created_at|smart_date }}
+    </p>
+  </a>
+{% else %}
+  <div class="sidebar-card sidebar-card--neutral">
+    <div class="sidebar-card__header text-muted">
+      <i class="fa-solid fa-bug"></i>
+      <span>None</span>
     </div>
+    <p class="sidebar-card__meta">Not linked to a problem report</p>
   </div>
 {% endif %}
+{% endeditable_sidebar_card %}

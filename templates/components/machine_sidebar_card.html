@@ -1,48 +1,24 @@
-{% if editable %}
-  <div class="sidebar-card-wrapper"
-       data-sidebar-machine-edit
-       data-api-url="{% url 'api-machine-autocomplete' %}"
-       data-current-slug="{{ machine.slug }}"
-       data-csrf-token="{{ csrf_token }}">
-    <button type="button"
-            class="sidebar-card__edit"
-            data-edit-btn
-            aria-label="Change machine"
-            title="Change machine">
-      <i class="fa-solid fa-pencil"></i>
-    </button>
-  {% endif %}
-  <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-     class="sidebar-card sidebar-card--neutral">
-    <div class="sidebar-card__header">{{ machine.display_name }}</div>
-    <p class="sidebar-card__meta">
-      {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
-      {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
-      {% if machine.model.year %}{{ machine.model.year }}{% endif %}
-    </p>
-    <div class="sidebar-card__badges">
-      <span class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}">
-        <i class="fa-solid {% if machine.operational_status == 'fixing' %}fa-wrench{% elif machine.operational_status == 'good' %}fa-check{% elif machine.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} meta"></i>
-        {{ machine.get_operational_status_display }}
+{% load core_extras %}
+{% editable_sidebar_card editable=editable edit_type="machine" current_value=machine.slug csrf_token=csrf_token %}
+<a href="{% url 'maintainer-machine-detail' machine.slug %}"
+   class="sidebar-card sidebar-card--neutral">
+  <div class="sidebar-card__header">{{ machine.display_name }}</div>
+  <p class="sidebar-card__meta">
+    {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
+    {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
+    {% if machine.model.year %}{{ machine.model.year }}{% endif %}
+  </p>
+  <div class="sidebar-card__badges">
+    <span class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}">
+      <i class="fa-solid {% if machine.operational_status == 'fixing' %}fa-wrench{% elif machine.operational_status == 'good' %}fa-check{% elif machine.operational_status == 'broken' %}fa-circle-xmark{% else %}fa-circle-question{% endif %} meta"></i>
+      {{ machine.get_operational_status_display }}
+    </span>
+    {% if machine.location %}
+      <span class="pill pill--neutral">
+        <i class="fa-solid fa-location-dot meta"></i>
+        {{ machine.location.name }}
       </span>
-      {% if machine.location %}
-        <span class="pill pill--neutral">
-          <i class="fa-solid fa-location-dot meta"></i>
-          {{ machine.location.name }}
-        </span>
-      {% endif %}
-    </div>
-  </a>
-  {% if editable %}
-    <div class="sidebar-card-edit-dropdown hidden" data-dropdown>
-      <div class="sidebar-card-edit-dropdown__search">
-        <input type="text"
-               class="form-input form-input--sm"
-               placeholder="Search machines..."
-               autocomplete="off"
-               data-search>
-      </div>
-      <div data-list></div>
-    </div>
+    {% endif %}
   </div>
-{% endif %}
+</a>
+{% endeditable_sidebar_card %}

@@ -342,6 +342,86 @@ def sidebar_section(content, label=""):
     )
 
 
+@register.simple_block_tag
+def editable_sidebar_card(
+    content,
+    editable=False,
+    edit_type="machine",
+    current_value="",
+    current_machine_slug="",
+    csrf_token="",
+    label="",
+    placeholder="",
+):
+    """Wrap a sidebar card with optional edit functionality.
+
+    When editable=True, wraps the card in an edit wrapper with a hover-reveal
+    edit button and dropdown for changing the value.
+
+    Usage:
+        {% editable_sidebar_card editable=True edit_type="machine" current_value=machine.slug csrf_token=csrf_token %}
+          <a href="..." class="sidebar-card">...</a>
+        {% endeditable_sidebar_card %}
+
+        {% editable_sidebar_card editable=True edit_type="problem" current_value=report.pk current_machine_slug=machine.slug csrf_token=csrf_token label="Link to problem" %}
+          <div class="sidebar-card">...</div>
+        {% endeditable_sidebar_card %}
+
+    Args:
+        content: The card content (captured between tags)
+        editable: Whether to show edit controls
+        edit_type: "machine" or "problem" (determines data attributes and API URL)
+        current_value: Current value (slug for machine, id for problem)
+        current_machine_slug: Current machine slug (only for problem type)
+        csrf_token: CSRF token for form submission
+        label: Aria label/title for edit button (defaults based on edit_type)
+        placeholder: Search input placeholder (defaults based on edit_type)
+    """
+    from django.urls import reverse
+
+    if not editable:
+        return content
+
+    # Set defaults based on edit type
+    if edit_type == "machine":
+        data_attr = "data-sidebar-machine-edit"
+        api_url = reverse("api-machine-autocomplete")
+        value_attrs = f'data-current-slug="{current_value}"'
+        label = label or "Change machine"
+        placeholder = placeholder or "Search machines..."
+    else:  # problem
+        current_id = current_value if current_value else "null"
+        data_attr = "data-sidebar-problem-edit"
+        api_url = reverse("api-problem-report-autocomplete")
+        value_attrs = f'data-current-id="{current_id}" data-current-machine-slug="{current_machine_slug}"'
+        # Use different default label based on whether linked to a problem report
+        if not label:
+            label = "Change problem report" if current_value else "Link to problem report"
+        placeholder = placeholder or "Search problem reports..."
+
+    return format_html(
+        '<div class="sidebar-card-wrapper" {data_attr} data-api-url="{api_url}" {value_attrs} data-csrf-token="{csrf_token}">\n'
+        '  <button type="button" class="sidebar-card__edit" data-edit-btn aria-label="{label}" title="{label}">\n'
+        '    <i class="fa-solid fa-pencil"></i>\n'
+        "  </button>\n"
+        "  {content}\n"
+        '  <div class="sidebar-card-edit-dropdown hidden" data-dropdown>\n'
+        '    <div class="sidebar-card-edit-dropdown__search">\n'
+        '      <input type="text" class="form-input form-input--sm" placeholder="{placeholder}" autocomplete="off" data-search>\n'
+        "    </div>\n"
+        "    <div data-list></div>\n"
+        "  </div>\n"
+        "</div>",
+        data_attr=mark_safe(data_attr),  # noqa: S308 - hardcoded value
+        api_url=api_url,
+        value_attrs=mark_safe(value_attrs),  # noqa: S308 - built from template values
+        csrf_token=csrf_token,
+        label=label,
+        content=content,
+        placeholder=placeholder,
+    )
+
+
 # -----------------------------------------------------------------------------
 # Timeline template tags
 # -----------------------------------------------------------------------------
