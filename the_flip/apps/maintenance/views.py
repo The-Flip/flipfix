@@ -574,13 +574,16 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             if new_machine.pk == self.report.machine_id:
                 return JsonResponse({"success": True, "status": "noop"})
 
-            self.report.machine = new_machine
-            self.report.save(update_fields=["machine", "updated_at"])
+            from django.db import transaction
 
-            # Move all child log entries to the new machine
-            child_log_count = LogEntry.objects.filter(problem_report=self.report).update(
-                machine=new_machine
-            )
+            with transaction.atomic():
+                self.report.machine = new_machine
+                self.report.save(update_fields=["machine", "updated_at"])
+
+                # Move all child log entries to the new machine
+                child_log_count = LogEntry.objects.filter(problem_report=self.report).update(
+                    machine=new_machine
+                )
 
             return JsonResponse(
                 {
