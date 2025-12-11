@@ -8,9 +8,8 @@
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">{{ machine.display_name }}</span>
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    <span>{{ machine.display_name }}</span>
   </nav>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">

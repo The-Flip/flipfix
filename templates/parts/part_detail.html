@@ -4,9 +4,8 @@
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'part-request-list' %}" class="breadcrumbs__link">Parts</a>
-    <span>/</span>
-    <span class="breadcrumbs__current"><i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}</span>
+    <a href="{% url 'part-request-list' %}">Parts</a>
+    <span><i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}</span>
   </nav>
   <!-- TWO COLUMN LAYOUT -->
   <div class="two-column">

@@ -3,9 +3,8 @@
 {% block breadcrumb_current %}Log Work{% endblock %}
 {% block breadcrumbs %}
   {% if is_global %}
-    <a href="{% url 'log-list' %}" class="breadcrumbs__link">Logs</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">New Log Entry</span>
+    <a href="{% url 'log-list' %}">Logs</a>
+    <span>New Log Entry</span>
   {% else %}
     {{ block.super }}
   {% endif %}

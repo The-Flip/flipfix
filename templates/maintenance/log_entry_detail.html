@@ -4,21 +4,14 @@
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}"
-       class="breadcrumbs__link">{{ entry.machine.display_name }}</a>
-    <span>/</span>
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.display_name }}</a>
     {% if entry.problem_report %}
-      <a href="{% url 'problem-report-detail' entry.problem_report.pk %}"
-         class="breadcrumbs__link">Problem #{{ entry.problem_report.pk }}</a>
-      <span>/</span>
+      <a href="{% url 'problem-report-detail' entry.problem_report.pk %}">Problem #{{ entry.problem_report.pk }}</a>
     {% else %}
-      <a href="{% url 'log-machine' entry.machine.slug %}"
-         class="breadcrumbs__link">Logs</a>
-      <span>/</span>
+      <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
     {% endif %}
-    <span class="breadcrumbs__current">Log Entry <i class="fa-solid fa-screwdriver-wrench"></i></span>
+    <span>Log Entry <i class="fa-solid fa-screwdriver-wrench"></i></span>
   </nav>
   <!-- TWO COLUMN LAYOUT -->
   <div class="two-column">

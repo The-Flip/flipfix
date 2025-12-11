@@ -2,14 +2,9 @@
 {% load static core_extras %}
 {% block title %}Add Update · Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'part-request-list' %}" class="breadcrumbs__link">Parts</a>
-    <span>/</span>
-    <a href="{% url 'part-request-detail' part_request.pk %}"
-       class="breadcrumbs__link">#{{ part_request.pk }}</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">Add Update</span>
-  </nav>
+  <a href="{% url 'part-request-list' %}">Parts</a>
+  <a href="{% url 'part-request-detail' part_request.pk %}">#{{ part_request.pk }}</a>
+  <span>Add Update</span>
 {% endblock %}
 {% block sidebar %}
   {% sidebar %}

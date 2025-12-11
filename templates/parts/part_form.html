@@ -9,18 +9,13 @@
   Parts Request · {{ block.super }}
 {% endblock %}
 {% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'part-request-list' %}" class="breadcrumbs__link">Parts</a>
-    <span>/</span>
-    {% if is_edit %}
-      <a href="{% url 'part-request-detail' part_request.pk %}"
-         class="breadcrumbs__link">#{{ part_request.pk }}</a>
-      <span>/</span>
-      <span class="breadcrumbs__current">Edit</span>
-    {% else %}
-      <span class="breadcrumbs__current">New Request</span>
-    {% endif %}
-  </nav>
+  <a href="{% url 'part-request-list' %}">Parts</a>
+  {% if is_edit %}
+    <a href="{% url 'part-request-detail' part_request.pk %}">#{{ part_request.pk }}</a>
+    <span>Edit</span>
+  {% else %}
+    <span>New Request</span>
+  {% endif %}
 {% endblock %}
 {% block sidebar %}
   {% sidebar %}

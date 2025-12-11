@@ -4,12 +4,9 @@
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive no-print">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-       class="breadcrumbs__link">{{ machine.display_name }}</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">QR Code</span>
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+    <span>QR Code</span>
   </nav>
   <!-- TWO COLUMN LAYOUT -->
   <div class="two-column">

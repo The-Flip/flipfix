@@ -1688,16 +1688,21 @@ body {
   margin-bottom: var(--space-4);
 }
 
-.breadcrumbs__link {
+.breadcrumbs > *:not(:first-child)::before {
+  content: "/";
+  margin-right: var(--space-2);
+}
+
+.breadcrumbs a {
   color: var(--color-gray-500);
   transition: color 0.15s ease;
 }
 
-.breadcrumbs__link:hover {
+.breadcrumbs a:hover {
   color: var(--color-accent);
 }
 
-.breadcrumbs__current {
+.breadcrumbs > span {
   font-weight: var(--font-semibold);
   color: var(--color-gray-700);
 }

@@ -1,11 +1,7 @@
 {% extends "layouts/two_column.html" %}
 {% load core_extras %}
 {% block title %}Profile · {{ block.super }}{% endblock %}
-{% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <span class="breadcrumbs__current">Profile</span>
-  </nav>
-{% endblock %}
+{% block breadcrumbs %}<span>Profile</span>{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'password_change' %}"
      class="btn btn--secondary btn--full">

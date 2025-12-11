@@ -1,11 +1,7 @@
 {% extends "layouts/two_column.html" %}
 {% load static core_extras %}
 {% block title %}Shared Terminals · {{ block.super }}{% endblock %}
-{% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <span class="breadcrumbs__current">Shared Terminal Accounts</span>
-  </nav>
-{% endblock %}
+{% block breadcrumbs %}<span>Shared Terminal Accounts</span>{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'terminal-add' %}" class="btn btn--secondary">
     <i class="fa-solid fa-plus meta"></i>

@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% load static core_extras %}
 {% block content %}
-  {% block breadcrumbs %}{% endblock %}
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    {% block breadcrumbs %}{% endblock %}
+  </nav>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">
     <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->

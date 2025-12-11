@@ -2,14 +2,9 @@
 {% load core_extras %}
 {% block title %}Edit {{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <a href="{% url 'maintainer-machine-detail' object.slug %}"
-       class="breadcrumbs__link">{{ object.display_name }}</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">Edit</span>
-  </nav>
+  <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+  <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.display_name }}</a>
+  <span>Edit</span>
 {% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'machine-model-edit' object.model.slug %}"

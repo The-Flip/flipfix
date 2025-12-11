@@ -2,11 +2,8 @@
 {% load core_extras %}
 {% block title %}Add Machine · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">Add Machine</span>
-  </nav>
+  <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+  <span>Add Machine</span>
 {% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">

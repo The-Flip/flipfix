@@ -4,15 +4,10 @@
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-    <span>/</span>
-    <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-       class="breadcrumbs__link">{{ machine.display_name }}</a>
-    <span>/</span>
-    <a href="{% url 'machine-problem-reports' machine.slug %}"
-       class="breadcrumbs__link">Problems</a>
-    <span>/</span>
-    <span class="breadcrumbs__current"><i class="fa-solid fa-bug"></i> #{{ report.pk }}</span>
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+    <a href="{% url 'machine-problem-reports' machine.slug %}">Problems</a>
+    <span><i class="fa-solid fa-bug"></i> #{{ report.pk }}</span>
   </nav>
   <!-- TWO COLUMN LAYOUT -->
   <div class="two-column">

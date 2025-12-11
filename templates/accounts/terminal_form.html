@@ -9,17 +9,14 @@
   · {{ block.super }}
 {% endblock %}
 {% block breadcrumbs %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'terminal-list' %}" class="breadcrumbs__link">Shared Terminal Accounts</a>
-    <span>/</span>
-    <span class="breadcrumbs__current">
-      {% if is_create %}
-        New Account
-      {% else %}
-        {{ terminal.user|display_name_with_username }}
-      {% endif %}
-    </span>
-  </nav>
+  <a href="{% url 'terminal-list' %}">Shared Terminal Accounts</a>
+  <span>
+    {% if is_create %}
+      New Account
+    {% else %}
+      {{ terminal.user|display_name_with_username }}
+    {% endif %}
+  </span>
 {% endblock %}
 {% block mobile_actions %}
   {% if not is_create %}

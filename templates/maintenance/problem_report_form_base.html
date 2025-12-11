@@ -9,19 +9,13 @@
   <nav class="breadcrumbs breadcrumbs--responsive">
     {% block breadcrumbs %}
       {% if machine %}
-        <a href="{% url 'maintainer-machine-list' %}" class="breadcrumbs__link">Machines</a>
-        <span>/</span>
-        <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-           class="breadcrumbs__link">{{ machine.display_name }}</a>
-        <span>/</span>
-        <a href="{% url 'machine-problem-reports' machine.slug %}"
-           class="breadcrumbs__link">Problems</a>
-        <span>/</span>
+        <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+        <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+        <a href="{% url 'machine-problem-reports' machine.slug %}">Problems</a>
       {% else %}
-        <a href="{% url 'problem-report-list' %}" class="breadcrumbs__link">Problem Reports</a>
-        <span>/</span>
+        <a href="{% url 'problem-report-list' %}">Problem Reports</a>
       {% endif %}
-      <span class="breadcrumbs__current">
+      <span>
         {% block breadcrumb_current %}New Report{% endblock %}
       </span>
     {% endblock %}
