@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 
 from the_flip.apps.core.forms import StyledFormMixin
@@ -200,3 +201,27 @@ class TerminalUpdateForm(StyledFormMixin, forms.Form):
             }
         ),
     )
+
+
+class SimplePasswordChangeForm(PasswordChangeForm):
+    """Password change form without confirmation field.
+
+    Removes the new_password2 field and adds show/hide toggle support.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove the confirmation field
+        del self.fields["new_password2"]
+
+    def clean_new_password1(self):
+        """Validate the new password."""
+        password = self.cleaned_data.get("new_password1")
+        if password:
+            validate_password(password, self.user)
+        return password
+
+    def clean(self):
+        """Skip the password confirmation check."""
+        # Don't call super().clean() since it checks new_password1 == new_password2
+        return self.cleaned_data

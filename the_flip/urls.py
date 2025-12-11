@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
 
+from the_flip.apps.accounts.forms import SimplePasswordChangeForm
 from the_flip.apps.accounts.views import (
     ProfileUpdateView,
     TerminalCreateView,
@@ -67,7 +68,8 @@ urlpatterns = [
     path(
         "profile/password/",
         auth_views.PasswordChangeView.as_view(
-            template_name="registration/password_change_form.html"
+            template_name="registration/password_change_form.html",
+            form_class=SimplePasswordChangeForm,
         ),
         name="password_change",
     ),  # Change password form
