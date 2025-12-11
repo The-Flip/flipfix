@@ -19,12 +19,28 @@ class InvitationRegistrationForm(StyledFormMixin, forms.Form):
 
     username = forms.CharField(
         max_length=150,
-        help_text="Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+        help_text="150 characters or fewer. Letters, digits and @/./+/-/_.",
+        widget=forms.TextInput(attrs={"autocomplete": "username"}),
     )
-    first_name = forms.CharField(max_length=150, required=False)
-    last_name = forms.CharField(max_length=150, required=False)
-    email = forms.EmailField(help_text="You can change this from the invitation email if needed.")
-    password = forms.CharField(widget=forms.PasswordInput)
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label="First name (optional)",
+        widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        label="Last name (optional)",
+        widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
+    )
+    email = forms.EmailField(
+        help_text="You can change this from the invitation email if needed.",
+        widget=forms.EmailInput(attrs={"autocomplete": "email"}),
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
 
     def clean_username(self):
         username = self.cleaned_data["username"]
@@ -70,9 +86,9 @@ class SelfRegistrationForm(StyledFormMixin, forms.Form):
     """Form for self-registration during beta period."""
 
     username = forms.CharField(max_length=150)
-    first_name = forms.CharField(max_length=150, required=False)
-    last_name = forms.CharField(max_length=150, required=False)
-    email = forms.EmailField(required=False)
+    first_name = forms.CharField(max_length=150, required=False, label="First name (optional)")
+    last_name = forms.CharField(max_length=150, required=False, label="Last name (optional)")
+    email = forms.EmailField(required=False, label="Email (optional)")
     password = forms.CharField(widget=forms.PasswordInput)
 
     existing_user: "UserType | None"

@@ -8,58 +8,13 @@
     <form method="post" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}
+      {% form_field form.username %}
+      {% form_field form.first_name %}
+      {% form_field form.last_name %}
+      {% form_field form.email %}
       <div class="form-field">
-        <label for="id_username" class="form-label">Username</label>
-        <input type="text"
-               name="username"
-               id="id_username"
-               class="form-input"
-               value="{{ form.username.value|default:'' }}"
-               required
-               autocomplete="username">
-        {% field_help_text form.username %}
-        {% field_errors form.username %}
-      </div>
-      <div class="form-field">
-        <label for="id_first_name" class="form-label">First name</label>
-        <input type="text"
-               name="first_name"
-               id="id_first_name"
-               class="form-input"
-               value="{{ form.first_name.value|default:'' }}"
-               autocomplete="given-name">
-        {% field_errors form.first_name %}
-      </div>
-      <div class="form-field">
-        <label for="id_last_name" class="form-label">Last name</label>
-        <input type="text"
-               name="last_name"
-               id="id_last_name"
-               class="form-input"
-               value="{{ form.last_name.value|default:'' }}"
-               autocomplete="family-name">
-        {% field_errors form.last_name %}
-      </div>
-      <div class="form-field">
-        <label for="id_email" class="form-label">Email</label>
-        <input type="email"
-               name="email"
-               id="id_email"
-               class="form-input"
-               value="{{ form.email.value|default:'' }}"
-               required
-               autocomplete="email">
-        {% field_help_text form.email %}
-        {% field_errors form.email %}
-      </div>
-      <div class="form-field">
-        <label for="id_password" class="form-label">Password</label>
-        <input type="password"
-               name="password"
-               id="id_password"
-               class="form-input"
-               required
-               autocomplete="new-password">
+        {{ form.password.label_tag }}
+        {{ form.password }}
         {% field_errors form.password %}
         <label class="checkbox-label">
           <input type="checkbox" id="show-password" class="checkbox">
