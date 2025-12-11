@@ -1691,6 +1691,8 @@ body {
 .breadcrumbs > *:not(:first-child)::before {
   content: "/";
   margin-right: var(--space-2);
+  font-weight: var(--font-normal);
+  color: var(--color-gray-500);
 }
 
 .breadcrumbs a {
