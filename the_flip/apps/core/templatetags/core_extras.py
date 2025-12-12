@@ -236,39 +236,6 @@ def log_entry_meta(entry):
 # -----------------------------------------------------------------------------
 
 
-@register.inclusion_tag("components/button.html")
-def button(
-    url: str,
-    label: str,
-    icon: str = "",
-    variant: str = "secondary",
-    full_width: bool = False,
-    icon_only: bool = False,
-):
-    """Render a button/link component.
-
-    Usage:
-        {% button url="/logs/new/" label="New Log" icon="plus" variant="log" %}
-        {% button url="/edit/" label="Edit" icon="pencil" icon_only=True %}
-
-    Args:
-        url: Link href
-        icon: FontAwesome icon name (without fa- prefix)
-        label: Button text (becomes aria-label if icon_only)
-        variant: 'primary', 'secondary', 'report', 'log'
-        full_width: Add btn--full class
-        icon_only: Render icon-only button with aria-label
-    """
-    return {
-        "url": url,
-        "label": label,
-        "icon": icon,
-        "variant": variant,
-        "full_width": full_width,
-        "icon_only": icon_only,
-    }
-
-
 @register.inclusion_tag("components/stat_grid.html")
 def stat_grid(stats: list):
     """Render a grid of statistics.
