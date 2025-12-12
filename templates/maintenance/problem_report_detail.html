@@ -118,53 +118,7 @@
         </div>
       </div>
       <!-- MEDIA CARD -->
-      <div class="card card--padded space-above-lg">
-        <div class="card__header">
-          <div class="card__title">Media</div>
-          <div class="card__actions">
-            <button type="button" id="upload-button" class="btn btn--secondary btn--sm">Upload Photos</button>
-          </div>
-        </div>
-        <div id="media-container" class="media-grid">
-          {% if report.media.all %}
-            {% for media in report.media.all %}
-              <div class="media-grid__item" data-media-id="{{ media.id }}">
-                {% if media.media_type == 'video' %}
-                  {% if media.transcode_status == 'ready' and media.transcoded_file %}
-                    <video controls poster="{{ media.poster_file.url }}">
-                      <source src="{{ media.transcoded_file.url }}" type="video/mp4">
-                      Your browser doesn't support video playback.
-                    </video>
-                  {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-                    <div class="media-grid__status">Processing video…</div>
-                  {% else %}
-                    <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
-                  {% endif %}
-                {% else %}
-                  <a href="{{ media.file.url }}" target="_blank">
-                    {% if media.thumbnail_file %}
-                      <img src="{{ media.thumbnail_file.url }}" alt="Problem report photo">
-                    {% else %}
-                      <img src="{{ media.file.url }}" alt="Problem report photo">
-                    {% endif %}
-                  </a>
-                {% endif %}
-                <button type="button"
-                        class="media-grid__delete"
-                        data-media-id="{{ media.id }}"
-                        aria-label="Delete media">×</button>
-              </div>
-            {% endfor %}
-          {% else %}
-            <p class="text-muted" id="no-media-message">No media.</p>
-          {% endif %}
-        </div>
-        <input type="file"
-               id="media-upload"
-               accept="image/*,video/*,.heic,.heif,image/heic,image/heif"
-               multiple
-               class="hidden">
-      </div>
+      {% include "core/partials/media_card_editable.html" with media_items=report.media.all alt="Problem report photo" %}
       <!-- LOG ENTRIES SECTION -->
       <div class="space-above-lg">
         <div class="section-header">
@@ -214,6 +168,7 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+  <script src="{% static 'core/media_grid.js' %}" defer></script>
   <script>
     const CSRF_TOKEN = '{{ csrf_token }}';
 
@@ -289,113 +244,6 @@
         saveStatus.className = 'status-indicator error';
       }
     });
-
-    // Upload media
-    const uploadButton = document.getElementById('upload-button');
-    const mediaInput = document.getElementById('media-upload');
-    const existingMediaCount = document.querySelectorAll('#media-container .media-grid__item').length;
-    if (uploadButton && existingMediaCount > 0) {
-      uploadButton.textContent = 'Upload More Photos';
-    }
-    if (uploadButton && mediaInput) {
-      uploadButton.addEventListener('click', () => mediaInput.click());
-    }
-
-    mediaInput.addEventListener('change', async (e) => {
-      if (!e.target.files || !e.target.files.length) return;
-
-      const files = Array.from(e.target.files);
-      const noMediaMessage = document.getElementById('no-media-message');
-      if (noMediaMessage) noMediaMessage.remove();
-
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append('action', 'upload_media');
-        formData.append('file', file);
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        try {
-          const response = await fetch(window.location.href, {
-            method: 'POST',
-            body: formData
-          });
-
-          const data = await response.json();
-          if (data.success) {
-            const mediaContainer = document.getElementById('media-container');
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'media-grid__item';
-            mediaItem.dataset.mediaId = data.media_id;
-            let content = '';
-            if (data.media_type === 'video') {
-              if (data.transcode_status === 'ready' && data.media_url) {
-                const posterAttr = data.poster_url ? ` poster="${data.poster_url}"` : '';
-                content = `
-                  <video controls${posterAttr}>
-                    <source src="${data.media_url}" type="video/mp4">
-                    Your browser doesn't support video playback.
-                  </video>
-                `;
-              } else if (data.transcode_status === 'failed') {
-                content = `<div class="media-grid__status media-grid__status--error">Video processing failed.</div>`;
-              } else {
-                content = `<div class="media-grid__status">Processing video…</div>`;
-              }
-            } else {
-              content = `
-                <a href="${data.media_url}" target="_blank">
-                  <img src="${data.thumbnail_url}" alt="Problem report photo">
-                </a>
-              `;
-            }
-            mediaItem.innerHTML = `
-              ${content}
-              <button type="button" class="media-grid__delete" data-media-id="${data.media_id}" aria-label="Delete media">×</button>
-            `;
-            mediaContainer.appendChild(mediaItem);
-            attachDeleteHandler(mediaItem.querySelector('.media-grid__delete'));
-            uploadButton.textContent = 'Upload More Photos';
-          } else {
-            alert('Failed to upload media: ' + (data.error || 'Unknown error'));
-          }
-        } catch (error) {
-          console.error('Upload error:', error);
-          alert('Failed to upload media');
-        }
-      }
-
-      e.target.value = '';
-    });
-
-    // Delete media
-    function attachDeleteHandler(button) {
-      button.addEventListener('click', async () => {
-        const mediaId = button.dataset.mediaId;
-        const formData = new FormData();
-        formData.append('action', 'delete_media');
-        formData.append('media_id', mediaId);
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        try {
-          const response = await fetch(window.location.href, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (response.ok) {
-            const mediaItem = button.closest('.media-grid__item');
-            mediaItem.remove();
-          } else {
-            alert('Failed to delete media');
-          }
-        } catch (error) {
-          console.error('Delete error:', error);
-          alert('Failed to delete media');
-        }
-      });
-    }
-
-    document.querySelectorAll('.media-grid__delete').forEach(attachDeleteHandler);
   </script>
   <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
   <script src="{% static 'core/searchable_dropdown.js' %}"></script>
