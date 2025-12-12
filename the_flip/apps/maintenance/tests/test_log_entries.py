@@ -222,6 +222,62 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
         self.assertFalse(result["success"])
 
 
+@tag("views", "ajax")
+class LogEntryDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for LogEntryDetailView AJAX text updates."""
+
+    def setUp(self):
+        super().setUp()
+        self.log_entry = create_log_entry(machine=self.machine, text="Original text")
+        self.detail_url = reverse("log-detail", kwargs={"pk": self.log_entry.pk})
+
+    def test_update_text_success(self):
+        """AJAX endpoint updates text successfully."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Updated description"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.log_entry.refresh_from_db()
+        self.assertEqual(self.log_entry.text, "Updated description")
+
+    def test_update_text_empty(self):
+        """AJAX endpoint allows empty text."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.log_entry.refresh_from_db()
+        self.assertEqual(self.log_entry.text, "")
+
+    def test_update_text_requires_auth(self):
+        """AJAX endpoint requires authentication."""
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+
+    def test_update_text_requires_maintainer(self):
+        """AJAX endpoint requires maintainer access."""
+        self.client.force_login(self.regular_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
 @tag("views")
 class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for updating the problem report of a log entry via AJAX."""

@@ -285,6 +285,134 @@ class PartRequestUpdateViewTests(TestCase):
         self.assertEqual(self.part_request.status, PartRequest.STATUS_ORDERED)
 
 
+@tag("views", "ajax")
+class PartRequestDetailViewTextUpdateTests(AccessControlTestCase):
+    """Tests for PartRequestDetailView AJAX text updates."""
+
+    def setUp(self):
+        super().setUp()
+        self.maintainer_user = create_maintainer_user()
+        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
+        self.regular_user = create_user()
+        self.part_request = create_part_request(
+            text="Original text",
+            requested_by=self.maintainer,
+        )
+        self.detail_url = reverse("part-request-detail", kwargs={"pk": self.part_request.pk})
+
+    def test_update_text_success(self):
+        """AJAX endpoint updates text successfully."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Updated description"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.part_request.refresh_from_db()
+        self.assertEqual(self.part_request.text, "Updated description")
+
+    def test_update_text_empty(self):
+        """AJAX endpoint allows empty text."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.part_request.refresh_from_db()
+        self.assertEqual(self.part_request.text, "")
+
+    def test_update_text_requires_auth(self):
+        """AJAX endpoint requires authentication."""
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+
+    def test_update_text_requires_maintainer(self):
+        """AJAX endpoint requires maintainer access."""
+        self.client.force_login(self.regular_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
+@tag("views", "ajax")
+class PartRequestUpdateDetailViewTextUpdateTests(AccessControlTestCase):
+    """Tests for PartRequestUpdateDetailView AJAX text updates."""
+
+    def setUp(self):
+        self.maintainer_user = create_maintainer_user()
+        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
+        self.regular_user = create_user()
+        self.part_request = create_part_request(requested_by=self.maintainer)
+        self.update = create_part_request_update(
+            part_request=self.part_request,
+            text="Original update text",
+            posted_by=self.maintainer,
+        )
+        self.detail_url = reverse(
+            "part-request-update-detail",
+            kwargs={"pk": self.update.pk},
+        )
+
+    def test_update_text_success(self):
+        """AJAX endpoint updates text successfully."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Updated text"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.update.refresh_from_db()
+        self.assertEqual(self.update.text, "Updated text")
+
+    def test_update_text_empty(self):
+        """AJAX endpoint allows empty text."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.update.refresh_from_db()
+        self.assertEqual(self.update.text, "")
+
+    def test_update_text_requires_auth(self):
+        """AJAX endpoint requires authentication."""
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+
+    def test_update_text_requires_maintainer(self):
+        """AJAX endpoint requires maintainer access."""
+        self.client.force_login(self.regular_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
 @tag("views")
 class PartRequestListFilterTests(TestCase):
     """Tests for part request list filtering."""

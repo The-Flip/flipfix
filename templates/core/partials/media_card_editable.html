@@ -1,6 +1,6 @@
 {# Editable media card with upload button, grid, and file input #}
 {# Usage: {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" %} #}
-{# Requires: Include media_grid.js and set CSRF_TOKEN in page script #}
+{# Requires: Include media_grid.js in page scripts #}
 <div class="card card--padded space-above-lg"
      data-media-card
      data-alt-text="{{ alt|default:'Photo' }}">

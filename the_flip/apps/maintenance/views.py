@@ -555,8 +555,8 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         action = request.POST.get("action")
 
         # Handle AJAX description update
-        if action == "update_description":
-            self.report.description = request.POST.get("description", "")
+        if action == "update_text":
+            self.report.description = request.POST.get("text", "")
             self.report.save(update_fields=["description", "updated_at"])
             return JsonResponse({"success": True})
 

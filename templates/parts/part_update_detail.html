@@ -32,103 +32,11 @@
 {% endblock %}
 {% block main %}
   <!-- DESCRIPTION CARD -->
-  <div class="card card--padded">
-    <div class="card__header">
-      <div class="card__title">Description</div>
-      <div class="card__actions">
-        <button type="button" id="edit-button" class="btn btn--secondary btn--sm">Edit</button>
-        <div id="edit-actions-header" class="hidden">
-          <button type="button" id="save-button" class="btn btn--primary btn--sm">Save</button>
-          <button type="button" id="cancel-button" class="btn btn--secondary btn--sm">Cancel</button>
-        </div>
-        <span id="save-status" class="status-indicator"></span>
-      </div>
-    </div>
-    <div id="text-view-mode">
-      <div id="text-display" class="markdown-content">{{ update.text|render_markdown }}</div>
-    </div>
-    <div id="text-edit-mode" class="hidden">
-      <textarea id="update-text"
-                class="form-input form-textarea"
-                data-update-id="{{ update.pk }}">{{ update.text }}</textarea>
-    </div>
-  </div>
+  {% include "core/partials/text_card_editable.html" with content=update.text %}
   <!-- MEDIA CARD -->
   {% include "core/partials/media_card_editable.html" with media_items=update.media.all alt="Update photo" %}
 {% endblock %}
 {% block extra_scripts %}
+  <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
-  <script>
-    const CSRF_TOKEN = '{{ csrf_token }}';
-
-    // Text edit mode switching
-    const textarea = document.getElementById('update-text');
-    const saveStatus = document.getElementById('save-status');
-    const textViewMode = document.getElementById('text-view-mode');
-    const textEditMode = document.getElementById('text-edit-mode');
-    const editButton = document.getElementById('edit-button');
-    const headerActions = document.getElementById('edit-actions-header');
-    const saveButton = document.getElementById('save-button');
-    const cancelButton = document.getElementById('cancel-button');
-
-    let originalText = textarea.value;
-
-    function setTextareaHeight() {
-      if (!textarea) return;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-      textarea.style.overflowY = 'hidden';
-    }
-
-    editButton.addEventListener('click', () => {
-      originalText = textarea.value;
-      textViewMode.classList.add('hidden');
-      textEditMode.classList.remove('hidden');
-      textarea.focus();
-      editButton.classList.add('hidden');
-      headerActions.classList.remove('hidden');
-      setTextareaHeight();
-      requestAnimationFrame(setTextareaHeight);
-    });
-
-    textarea.addEventListener('input', setTextareaHeight);
-
-    cancelButton.addEventListener('click', () => {
-      textarea.value = originalText;
-      saveStatus.textContent = '';
-      saveStatus.className = 'status-indicator';
-      textEditMode.classList.add('hidden');
-      textViewMode.classList.remove('hidden');
-      headerActions.classList.add('hidden');
-      editButton.classList.remove('hidden');
-    });
-
-    saveButton.addEventListener('click', async () => {
-      saveStatus.textContent = 'Saving...';
-      saveStatus.className = 'status-indicator saving';
-
-      try {
-        const formData = new FormData();
-        formData.append('action', 'update_text');
-        formData.append('text', textarea.value);
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        const response = await fetch(window.location.href, {
-          method: 'POST',
-          body: formData
-        });
-
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          saveStatus.textContent = 'Error saving';
-          saveStatus.className = 'status-indicator error';
-        }
-      } catch (error) {
-        console.error('Save error:', error);
-        saveStatus.textContent = 'Error saving';
-        saveStatus.className = 'status-indicator error';
-      }
-    });
-  </script>
 {% endblock %}

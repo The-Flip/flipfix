@@ -66,34 +66,13 @@
     <!-- MAIN COLUMN -->
     <div class="two-column__main">
       <!-- DESCRIPTION CARD -->
-      <div class="card card--padded">
-        <div class="card__header">
-          <div class="card__title">Description</div>
-          <div class="card__actions">
-            <button type="button" id="edit-button" class="btn btn--secondary btn--sm">Edit</button>
-            <div id="edit-actions-header" class="hidden">
-              <button type="button" id="save-button" class="btn btn--primary btn--sm">Save</button>
-              <button type="button" id="cancel-button" class="btn btn--secondary btn--sm">Cancel</button>
-            </div>
-            <span id="save-status" class="status-indicator"></span>
-          </div>
-        </div>
-        <div id="text-view-mode">
-          <div id="entry-text-display" class="markdown-content">{{ entry.text|render_markdown }}</div>
-        </div>
-        <div id="text-edit-mode" class="hidden">
-          <textarea id="entry-text"
-                    class="form-input form-textarea"
-                    data-entry-id="{{ entry.pk }}">{{ entry.text }}</textarea>
-        </div>
-      </div>
+      {% include "core/partials/text_card_editable.html" with content=entry.text %}
       <!-- MEDIA CARD -->
       {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" %}
     </div>
   </div>
 {% endblock %}
 {% block extra_scripts %}
-  <script src="{% static 'core/media_grid.js' %}" defer></script>
   <script>
     const CSRF_TOKEN = '{{ csrf_token }}';
 
@@ -151,76 +130,6 @@
         console.error('Save error:', error);
         workDateStatus.textContent = 'Error saving';
         workDateStatus.className = 'status-indicator error';
-      }
-    });
-
-    // Text edit mode switching
-    const textarea = document.getElementById('entry-text');
-    const saveStatus = document.getElementById('save-status');
-    const textViewMode = document.getElementById('text-view-mode');
-    const textEditMode = document.getElementById('text-edit-mode');
-    const editButton = document.getElementById('edit-button');
-    const headerActions = document.getElementById('edit-actions-header');
-    const saveButton = document.getElementById('save-button');
-    const cancelButton = document.getElementById('cancel-button');
-
-    let originalText = textarea.value;
-
-    function setTextareaHeight() {
-      if (!textarea) return;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-      textarea.style.overflowY = 'hidden';
-    }
-
-    editButton.addEventListener('click', () => {
-      originalText = textarea.value;
-      textViewMode.classList.add('hidden');
-      textEditMode.classList.remove('hidden');
-      textarea.focus();
-      editButton.classList.add('hidden');
-      headerActions.classList.remove('hidden');
-      setTextareaHeight();
-      requestAnimationFrame(setTextareaHeight);
-    });
-
-    textarea.addEventListener('input', setTextareaHeight);
-
-    cancelButton.addEventListener('click', () => {
-      textarea.value = originalText;
-      saveStatus.textContent = '';
-      saveStatus.className = 'status-indicator';
-      textEditMode.classList.add('hidden');
-      textViewMode.classList.remove('hidden');
-      headerActions.classList.add('hidden');
-      editButton.classList.remove('hidden');
-    });
-
-    saveButton.addEventListener('click', async () => {
-      saveStatus.textContent = 'Saving...';
-      saveStatus.className = 'status-indicator saving';
-
-      try {
-        const formData = new FormData();
-        formData.append('action', 'update_text');
-        formData.append('text', textarea.value);
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        const response = await fetch(window.location.href, {
-          method: 'POST',
-          body: formData
-        });
-
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          saveStatus.textContent = 'Error saving';
-          saveStatus.className = 'status-indicator error';
-        }
-      } catch (error) {
-        console.error('Save error:', error);
-        saveStatus.textContent = 'Error saving';
-        saveStatus.className = 'status-indicator error';
       }
     });
 
@@ -371,6 +280,8 @@
     }
 
   </script>
+  <script src="{% static 'core/text_edit.js' %}" defer></script>
+  <script src="{% static 'core/media_grid.js' %}" defer></script>
   <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
   <script src="{% static 'core/searchable_dropdown.js' %}"></script>
   <script src="{% static 'core/sidebar_card_edit.js' %}"></script>

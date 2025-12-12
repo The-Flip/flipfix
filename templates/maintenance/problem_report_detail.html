@@ -90,33 +90,7 @@
     <!-- MAIN COLUMN -->
     <div class="two-column__main">
       <!-- DESCRIPTION CARD -->
-      <div class="card card--padded">
-        <div class="card__header">
-          <div class="card__title">Description</div>
-          <div class="card__actions">
-            <button type="button" id="edit-button" class="btn btn--secondary btn--sm">Edit</button>
-            <div id="edit-actions-header" class="hidden">
-              <button type="button" id="save-button" class="btn btn--primary btn--sm">Save</button>
-              <button type="button" id="cancel-button" class="btn btn--secondary btn--sm">Cancel</button>
-            </div>
-            <span id="save-status" class="status-indicator"></span>
-          </div>
-        </div>
-        <div id="text-view-mode">
-          <div id="description-display" class="markdown-content">
-            {% if report.description %}
-              {{ report.description|render_markdown }}
-            {% else %}
-              <p class="text-muted">No description provided.</p>
-            {% endif %}
-          </div>
-        </div>
-        <div id="text-edit-mode" class="hidden">
-          <textarea id="description-text"
-                    class="form-input form-textarea"
-                    data-report-id="{{ report.pk }}">{{ report.description }}</textarea>
-        </div>
-      </div>
+      {% include "core/partials/text_card_editable.html" with content=report.description %}
       <!-- MEDIA CARD -->
       {% include "core/partials/media_card_editable.html" with media_items=report.media.all alt="Problem report photo" %}
       <!-- LOG ENTRIES SECTION -->
@@ -168,83 +142,8 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>
+  <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
-  <script>
-    const CSRF_TOKEN = '{{ csrf_token }}';
-
-    // Text edit mode switching
-    const textarea = document.getElementById('description-text');
-    const saveStatus = document.getElementById('save-status');
-    const textViewMode = document.getElementById('text-view-mode');
-    const textEditMode = document.getElementById('text-edit-mode');
-    const editButton = document.getElementById('edit-button');
-    const headerActions = document.getElementById('edit-actions-header');
-    const saveButton = document.getElementById('save-button');
-    const cancelButton = document.getElementById('cancel-button');
-
-    let originalText = textarea.value;
-
-    function setTextareaHeight() {
-      if (!textarea) return;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-      textarea.style.overflowY = 'hidden';
-    }
-
-    editButton.addEventListener('click', () => {
-      originalText = textarea.value;
-      textViewMode.classList.add('hidden');
-      textEditMode.classList.remove('hidden');
-      textarea.focus();
-      editButton.classList.add('hidden');
-      headerActions.classList.remove('hidden');
-      // Grow the textarea to fit existing content on first show
-      setTextareaHeight();
-      // If styles need a tick to apply, adjust once more
-      requestAnimationFrame(setTextareaHeight);
-    });
-
-    textarea.addEventListener('input', setTextareaHeight);
-
-    cancelButton.addEventListener('click', () => {
-      textarea.value = originalText;
-      saveStatus.textContent = '';
-      saveStatus.className = 'status-indicator';
-      textEditMode.classList.add('hidden');
-      textViewMode.classList.remove('hidden');
-      headerActions.classList.add('hidden');
-      editButton.classList.remove('hidden');
-    });
-
-    saveButton.addEventListener('click', async () => {
-      saveStatus.textContent = 'Saving...';
-      saveStatus.className = 'status-indicator saving';
-
-      try {
-        const formData = new FormData();
-        formData.append('action', 'update_description');
-        formData.append('description', textarea.value);
-        formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
-
-        const response = await fetch(window.location.href, {
-          method: 'POST',
-          body: formData
-        });
-
-        if (response.ok) {
-          // Reload page to get server-rendered markdown
-          window.location.reload();
-        } else {
-          saveStatus.textContent = 'Error saving';
-          saveStatus.className = 'status-indicator error';
-        }
-      } catch (error) {
-        console.error('Save error:', error);
-        saveStatus.textContent = 'Error saving';
-        saveStatus.className = 'status-indicator error';
-      }
-    });
-  </script>
   <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
   <script src="{% static 'core/searchable_dropdown.js' %}"></script>
   <script src="{% static 'core/sidebar_card_edit.js' %}"></script>

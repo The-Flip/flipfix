@@ -226,6 +226,65 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertNotContains(response, "Adjusted flipper alignment")
 
 
+@tag("views", "ajax")
+class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for ProblemReportDetailView AJAX text updates."""
+
+    def setUp(self):
+        super().setUp()
+        self.report = create_problem_report(
+            machine=self.machine,
+            description="Original description",
+        )
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
+
+    def test_update_text_success(self):
+        """AJAX endpoint updates description successfully."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Updated description"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.description, "Updated description")
+
+    def test_update_text_empty(self):
+        """AJAX endpoint allows empty description."""
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.description, "")
+
+    def test_update_text_requires_auth(self):
+        """AJAX endpoint requires authentication."""
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 302)  # Redirect to login
+
+    def test_update_text_requires_maintainer(self):
+        """AJAX endpoint requires maintainer access."""
+        self.client.force_login(self.regular_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_text", "text": "Should fail"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
 @tag("views")
 class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for updating the machine of a problem report via AJAX."""
