@@ -102,26 +102,26 @@
          class="space-above-sm"
          data-fetch-url="{% url 'problem-report-log-entries' report.pk %}">
       {% if log_entries %}
-        <div class="log-entry-list" id="log-list">
-          {% for entry in log_entries %}
-            {% include "maintenance/partials/problem_report_log_entry.html" with entry=entry %}
-          {% endfor %}
-        </div>
-        <div id="log-pagination"
-             data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
-      {% else %}
-        <p class="text-muted">
-          {% if search_form.q.value %}
-            No log entries match your search.
-          {% else %}
-            No log entries yet.
-          {% endif %}
-        </p>
-      {% endif %}
-    </div>
+        {% timeline id="log-list" %}
+        {% for entry in log_entries %}
+          {% include "maintenance/partials/problem_report_log_entry.html" with entry=entry %}
+        {% endfor %}
+      {% endtimeline %}
+      <div id="log-pagination"
+           data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+    {% else %}
+      <p class="text-muted">
+        {% if search_form.q.value %}
+          No log entries match your search.
+        {% else %}
+          No log entries yet.
+        {% endif %}
+      </p>
+    {% endif %}
     <div id="log-loading" class="hidden">Loading…</div>
     <div id="log-sentinel"></div>
   </div>
+</div>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/infinite_scroll.js' %}" defer></script>

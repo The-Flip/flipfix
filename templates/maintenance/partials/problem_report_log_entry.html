@@ -1,19 +1,16 @@
 {% load core_extras %}
-<article class="card card--padded card--log">
-  <a href="{% url 'log-detail' entry.pk %}"
-     style="display: block;
-            text-decoration: none;
-            color: inherit">
-    <div class="flex items-center justify-between stack-tight">
-      <div class="flex items-center stack-tight">
-        <i class="fa-solid fa-screwdriver-wrench text-log"></i>
-      </div>
-      <div class="log-entry-meta">{{ entry|log_entry_meta }}</div>
+{% timeline_entry icon="screwdriver-wrench" variant="log" %}
+<article class="card card--log timeline__card">
+  <a href="{% url 'log-detail' entry.pk %}" class="timeline__card-link">
+    <div class="timeline__header">
+      <span class="timeline__title timeline__title--log">Log Entry</span>
+      <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
     </div>
   </a>
-  <div class="space-above-sm">
-    <div class="markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+  <div class="timeline__body markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
+  {% if entry.media.all %}
     {% url 'log-detail' entry.pk as entry_url %}
     {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
-  </div>
+  {% endif %}
 </article>
+{% endtimeline_entry %}

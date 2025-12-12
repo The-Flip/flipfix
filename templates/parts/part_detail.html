@@ -49,13 +49,6 @@
   {% include "components/machine_sidebar_card.html" with machine=part_request.machine %}
 {% endsidebar_section %}
 {% endif %}
-{% sidebar_section %}
-<a href="{% url 'part-request-update-create' part_request.pk %}"
-   class="btn btn--log btn--full">
-  <i class="fa-solid fa-plus meta"></i>
-  Add Update
-</a>
-{% endsidebar_section %}
 {% endblock %}
 {% block main %}
   <!-- DESCRIPTION CARD -->
@@ -66,6 +59,11 @@
   <div class="space-above-lg">
     <div class="section-header">
       <h3 class="section-header__title">Updates</h3>
+      <a href="{% url 'part-request-update-create' part_request.pk %}"
+         class="btn btn--log btn--sm">
+        <i class="fa-solid fa-plus meta"></i>
+        Add Update
+      </a>
     </div>
     <div class="space-above-sm">
       <form method="get" action="">
@@ -96,9 +94,9 @@
         {% endif %}
       </p>
     {% endif %}
+    <div id="log-loading" class="hidden">Loading…</div>
+    <div id="log-sentinel"></div>
   </div>
-  <div id="log-loading" class="hidden">Loading…</div>
-  <div id="log-sentinel"></div>
 </div>
 {% endblock %}
 {% block extra_scripts %}
