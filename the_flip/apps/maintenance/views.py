@@ -469,6 +469,11 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
+        # Check if current user is a shared account (show autocomplete for reporter selection)
+        is_shared_account = False
+        if hasattr(self.request.user, "maintainer"):
+            is_shared_account = self.request.user.maintainer.is_shared_account
+        context["is_shared_account"] = is_shared_account
         selected_slug = (
             self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
         )
@@ -493,6 +498,10 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
         report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
+        # Save reporter name for shared accounts
+        reporter_name = (form.cleaned_data.get("reporter_name") or "").strip()
+        if reporter_name:
+            report.reported_by_name = reporter_name
         report.save()
 
         # Handle media uploads

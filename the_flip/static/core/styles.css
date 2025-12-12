@@ -995,14 +995,6 @@ body {
   border-top: 1px solid var(--color-gray-200);
 }
 
-.form-row-mobile {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-gray-200);
-}
-
 .file-preview-row {
   display: flex;
   gap: var(--space-2);
@@ -2106,10 +2098,6 @@ body {
   }
 
   .mobile-actions {
-    display: none;
-  }
-
-  .form-row-mobile {
     display: none;
   }
 }

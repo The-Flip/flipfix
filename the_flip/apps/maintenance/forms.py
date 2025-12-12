@@ -90,6 +90,13 @@ class MaintainerProblemReportForm(ProblemReportForm):
     class Meta(ProblemReportForm.Meta):
         fields = ["description"]  # Exclude problem_type; model defaults to "Other"
 
+    reporter_name = forms.CharField(
+        label="Reporter name",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Who is reporting this?"}),
+    )
+
     media_file = MultiFileField(
         label="Photo",
         required=False,

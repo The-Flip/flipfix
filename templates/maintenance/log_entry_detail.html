@@ -34,8 +34,12 @@
 <div id="work-date-status" class="status-indicator"></div>
 {% endsidebar_section %}
 {% sidebar_section label="Who" %}
-<div class="autocomplete" id="maintainer-autocomplete">
+<div class="autocomplete"
+     data-maintainer-autocomplete
+     data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}"
+     data-on-select="onMaintainerSelect">
   <input type="text"
+         data-maintainer-search
          id="maintainer-names"
          class="form-input form-input--sm"
          value="{% if entry.maintainers.all %}{{ entry.maintainers.all|join:", " }}{% elif entry.maintainer_names %}{{ entry.maintainer_names }}{% endif %}"
@@ -43,7 +47,7 @@
          autocomplete="off"
          data-1p-ignore="true"
          data-lpignore="true">
-  <div class="autocomplete__dropdown hidden" id="maintainer-dropdown"></div>
+  <div class="autocomplete__dropdown hidden"></div>
 </div>
 <div id="maintainer-save-indicator" class="status-indicator"></div>
 {% endsidebar_section %}
@@ -55,6 +59,8 @@
   {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" %}
 {% endblock %}
 {% block extra_scripts %}
+  <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
+  <script src="{% static 'core/maintainer_autocomplete.js' %}"></script>
   <script>
     const CSRF_TOKEN = '{{ csrf_token }}';
 
@@ -115,12 +121,10 @@
       }
     });
 
-    // Maintainer autocomplete
+    // Maintainer auto-save
     const maintainerInput = document.getElementById('maintainer-names');
     const maintainerStatus = document.getElementById('maintainer-save-indicator');
-    const maintainerDropdown = document.getElementById('maintainer-dropdown');
-    let maintainers = [];
-    let activeMaintainerIndex = -1;
+
     async function saveMaintainers() {
       if (!maintainerInput || !maintainerStatus) return;
       maintainerStatus.textContent = 'Saving...';
@@ -156,115 +160,18 @@
       }
     }
 
-    function formatMaintainer(m) {
-      if (m.display_name === m.username) {
-        return m.username;
-      }
-      return `${m.display_name} (${m.username})`;
-    }
-
-    function filterMaintainers(query) {
-      const q = query.toLowerCase().trim();
-      if (!q) return maintainers;
-      return maintainers.filter(m =>
-        m.first_name.toLowerCase().startsWith(q) ||
-        m.last_name.toLowerCase().startsWith(q) ||
-        m.username.toLowerCase().startsWith(q)
-      );
-    }
-
-    function showMaintainerDropdown(filtered) {
-      if (!maintainerDropdown) return;
-      if (!filtered.length) {
-        maintainerDropdown.classList.add('hidden');
-        return;
-      }
-      maintainerDropdown.innerHTML = filtered.map((m, i) =>
-        `<div class="autocomplete__item${i === activeMaintainerIndex ? ' autocomplete__item-active' : ''}" data-index="${i}" data-username="${m.username}">${formatMaintainer(m)}</div>`
-      ).join('');
-      maintainerDropdown.classList.remove('hidden');
-    }
-
-    function hideMaintainerDropdown() {
-      if (maintainerDropdown) {
-        maintainerDropdown.classList.add('hidden');
-      }
-      activeMaintainerIndex = -1;
-    }
-
-    function attachMaintainerAutocomplete() {
-      if (!maintainerInput || !maintainerDropdown) return;
-
-      fetch('{% url "api-maintainer-autocomplete" %}')
-        .then(response => response.json())
-        .then(data => { maintainers = data.maintainers || []; })
-        .catch(() => { maintainers = []; });
-
-      maintainerInput.addEventListener('focus', () => {
-        const filtered = filterMaintainers(maintainerInput.value);
-        showMaintainerDropdown(filtered);
-      });
-
-      maintainerInput.addEventListener('input', () => {
-        activeMaintainerIndex = -1;
-        const filtered = filterMaintainers(maintainerInput.value);
-        showMaintainerDropdown(filtered);
-      });
-
-      maintainerInput.addEventListener('keydown', (e) => {
-        const filtered = filterMaintainers(maintainerInput.value);
-        if (!filtered.length || maintainerDropdown.classList.contains('hidden')) return;
-
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          activeMaintainerIndex = Math.min(activeMaintainerIndex + 1, filtered.length - 1);
-          showMaintainerDropdown(filtered);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          activeMaintainerIndex = Math.max(activeMaintainerIndex - 1, 0);
-          showMaintainerDropdown(filtered);
-        } else if (e.key === 'Enter' && activeMaintainerIndex >= 0) {
-          e.preventDefault();
-          maintainerInput.value = filterMaintainers(maintainerInput.value)[activeMaintainerIndex].display_name;
-          hideMaintainerDropdown();
-          saveMaintainers();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        if (maintainerDropdown && maintainerDropdown.contains(e.target)) {
-          const item = e.target.closest('.autocomplete__item');
-          if (item) {
-            const idx = Number(item.dataset.index);
-            const filtered = filterMaintainers(maintainerInput.value);
-            maintainerInput.value = filtered[idx]?.display_name || '';
-            saveMaintainers();
-          }
-          hideMaintainerDropdown();
-        } else if (maintainerDropdown && !maintainerInput.contains(e.target)) {
-          hideMaintainerDropdown();
-        }
-      });
+    // Callback for maintainer autocomplete selection
+    function onMaintainerSelect(maintainer, input) {
+      saveMaintainers();
     }
 
     if (maintainerInput) {
       maintainerInput.addEventListener('change', saveMaintainers);
-      maintainerInput.addEventListener('blur', () => {
-        saveMaintainers();
-      });
-      maintainerInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          saveMaintainers();
-        }
-      });
-      attachMaintainerAutocomplete();
+      maintainerInput.addEventListener('blur', saveMaintainers);
     }
-
   </script>
   <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
-  <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
   <script src="{% static 'core/searchable_dropdown.js' %}"></script>
   <script src="{% static 'core/sidebar_card_edit.js' %}"></script>
 {% endblock %}

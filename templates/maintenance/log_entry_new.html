@@ -25,6 +25,56 @@
     <input type="hidden" name="tz_offset" id="tz-offset">
     <!-- MAIN COLUMN: Primary form fields -->
     <div class="two-column__main form-main">
+      {% if is_shared_account %}
+        <!-- WHO -->
+        <div class="form-field">
+          <label for="{{ form.submitter_name.id_for_label }}" class="form-label">
+            Who did the work? <span class="text-problem">*</span>
+          </label>
+          <div class="autocomplete"
+               data-maintainer-autocomplete
+               data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
+            <input type="text"
+                   data-maintainer-search
+                   id="{{ form.submitter_name.id_for_label }}"
+                   name="{{ form.submitter_name.html_name }}"
+                   class="form-input"
+                   placeholder="Who did the work?"
+                   value="{{ form.submitter_name.value|default:'' }}"
+                   autocomplete="off"
+                   required>
+            <div class="autocomplete__dropdown hidden"></div>
+          </div>
+          {% field_errors form.submitter_name %}
+        </div>
+      {% endif %}
+      {% if is_global %}
+        <!-- MACHINE (global pages only - in main content for mobile visibility) -->
+        <div class="form-field">
+          <label class="form-label">
+            Machine <span class="text-problem">*</span>
+          </label>
+          <div class="autocomplete"
+               data-machine-autocomplete
+               data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
+            <input type="search"
+                   id="machine-log-search"
+                   placeholder="Search machines..."
+                   class="form-input"
+                   autocomplete="off"
+                   data-machine-search
+                   required
+                   value="{% if selected_machine %}{{ selected_machine.display_name }}{% endif %}">
+            <input type="hidden"
+                   name="{{ form.machine_slug.html_name }}"
+                   id="{{ form.machine_slug.id_for_label }}"
+                   value="{{ form.machine_slug.value|default_if_none:'' }}"
+                   data-machine-slug-input>
+            <div class="autocomplete__dropdown hidden"></div>
+          </div>
+          {% field_errors form.machine_slug %}
+        </div>
+      {% endif %}
       <!-- WORK DESCRIPTION -->
       <div class="form-field">
         <label for="{{ form.text.id_for_label }}" class="form-label">
@@ -52,25 +102,6 @@
         <!-- Uploaded files preview -->
         <div class="file-preview-row" id="file-preview-row"></div>
       </div>
-      <!-- WHEN/WHO (visible on mobile, hidden on desktop) -->
-      <div class="form-row-mobile">
-        <div class="form-field">
-          <label class="sidebar__label">When</label>
-          <input type="datetime-local"
-                 id="work_date_mobile"
-                 name="{{ form.work_date.html_name }}"
-                 class="form-input form-input--sm">
-        </div>
-        <div class="form-field">
-          <label class="sidebar__label">Who</label>
-          <input type="text"
-                 id="submitter_name_mobile"
-                 name="{{ form.submitter_name.html_name }}"
-                 class="form-input form-input--sm"
-                 placeholder="Who did the work?"
-                 value="{{ form.submitter_name.value|default:'' }}">
-        </div>
-      </div>
       <!-- FORM ACTIONS -->
       <div class="form-actions">
         {% if problem_report %}
@@ -94,83 +125,41 @@
     <!-- SIDEBAR: Context & Metadata (desktop only) -->
     <aside class="two-column__sidebar">
       <div class="card card--padded sidebar--sticky">
-        <!-- MACHINE -->
         {% if machine %}
+          <!-- MACHINE CARD (machine-specific pages) -->
           <div class="sidebar__section">
             <div class="sidebar__label">Machine</div>
-            <div class="sidebar__title">{{ machine.display_name }}</div>
-            <div class="sidebar__subtitle">
-              {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
-              {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
-              {% if machine.model.year %}{{ machine.model.year }}{% endif %}
-            </div>
-            <div class="flex flex-wrap stack-tight space-above-sm">
-              <span class="pill {% if machine.operational_status == 'good' %}pill--status-good{% elif machine.operational_status == 'fixing' %}pill--status-fixing{% elif machine.operational_status == 'broken' %}pill--status-broken{% else %}pill--neutral{% endif %}">
-                {% if machine.operational_status == 'fixing' %}
-                  <i class="fa-solid fa-wrench meta"></i>
-                {% elif machine.operational_status == 'good' %}
-                  <i class="fa-solid fa-check meta"></i>
-                {% elif machine.operational_status == 'broken' %}
-                  <i class="fa-solid fa-circle-xmark meta"></i>
-                {% else %}
-                  <i class="fa-solid fa-circle-question meta"></i>
-                {% endif %}
-                {{ machine.get_operational_status_display }}
-              </span>
-              {% if machine.location and machine.location.slug != "floor" %}
-                <span class="pill pill--neutral">
-                  <i class="fa-solid fa-location-dot meta"></i>
-                  {{ machine.location.name }}
-                </span>
-              {% endif %}
-            </div>
-          </div>
-        {% else %}
-          <!-- Global: Machine selector -->
-          <div class="sidebar__section">
-            <div class="sidebar__label">
-              Machine <span class="text-problem">*</span>
-            </div>
-            <div class="autocomplete"
-                 data-machine-autocomplete
-                 data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
-              <input type="search"
-                     id="machine-log-search"
-                     placeholder="Search machines..."
-                     class="form-input form-input--sm"
-                     autocomplete="off"
-                     data-machine-search
-                     required
-                     value="{% if selected_machine %}{{ selected_machine.display_name }}{% endif %}">
-              <input type="hidden"
-                     name="{{ form.machine_slug.html_name }}"
-                     id="{{ form.machine_slug.id_for_label }}"
-                     value="{{ form.machine_slug.value|default_if_none:'' }}"
-                     data-machine-slug-input>
-              <div class="autocomplete__dropdown hidden"></div>
-            </div>
-            {% field_errors form.machine_slug %}
+            {% include "components/machine_sidebar_card.html" with machine=machine %}
           </div>
         {% endif %}
-        <!-- LINKED PROBLEM -->
         {% if problem_report %}
+          <!-- LINKED PROBLEM CARD -->
           <div class="sidebar__section">
             <div class="sidebar__label">Problem</div>
-            <a href="{% url 'problem-report-detail' problem_report.pk %}"
-               class="linked-problem-card">
-              <div class="linked-problem-card__header">
-                <i class="fa-solid fa-bug text-problem"></i>
-                <span class="linked-problem-card__number">#{{ problem_report.pk }}</span>
-              </div>
-              <p class="linked-problem-card__text">{{ problem_report|problem_report_summary }}</p>
-              <p class="linked-problem-card__meta">
-                {% if problem_report.reporter_display %}{{ problem_report.reporter_display }} ·{% endif %}
-                {{ problem_report.created_at|smart_date }}
-              </p>
-            </a>
+            {% include "components/problem_report_sidebar_card.html" with problem_report=problem_report %}
           </div>
         {% endif %}
-        <!-- WHEN -->
+        {% if not is_shared_account %}
+          <!-- WHO (non-shared accounts - in sidebar, pre-filled) -->
+          <div class="sidebar__section">
+            <div class="sidebar__label">Who</div>
+            <div class="autocomplete"
+                 data-maintainer-autocomplete
+                 data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
+              <input type="text"
+                     data-maintainer-search
+                     id="{{ form.submitter_name.id_for_label }}"
+                     name="{{ form.submitter_name.html_name }}"
+                     class="form-input form-input--sm"
+                     placeholder="Who did the work?"
+                     value="{{ form.submitter_name.value|default:'' }}"
+                     autocomplete="off">
+              <div class="autocomplete__dropdown hidden"></div>
+            </div>
+            {% field_errors form.submitter_name %}
+          </div>
+        {% endif %}
+        <!-- WHEN (sidebar only - not critical for mobile) -->
         <div class="sidebar__section">
           <div class="sidebar__label">When</div>
           <input type="datetime-local"
@@ -179,21 +168,6 @@
                  class="form-input form-input--sm">
           {% field_errors form.work_date %}
         </div>
-        <!-- WHO -->
-        <div class="sidebar__section">
-          <div class="sidebar__label">Who</div>
-          <div class="autocomplete" id="submitter-autocomplete">
-            <input type="text"
-                   id="{{ form.submitter_name.id_for_label }}"
-                   name="{{ form.submitter_name.html_name }}"
-                   class="form-input form-input--sm"
-                   placeholder="Who did the work?"
-                   value="{{ form.submitter_name.value|default:'' }}"
-                   autocomplete="off">
-            <div class="autocomplete__dropdown hidden" id="submitter-dropdown"></div>
-          </div>
-          {% field_errors form.submitter_name %}
-        </div>
       </div>
     </aside>
   </form>
@@ -201,6 +175,7 @@
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
+  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
   <script>
     // Helper: format Date as datetime-local value (YYYY-MM-DDTHH:MM)
     function toDateTimeLocalValue(date) {
@@ -219,9 +194,7 @@
     (function() {
       const now = toDateTimeLocalValue(new Date());
       const workDateInput = document.getElementById('{{ form.work_date.id_for_label }}');
-      const workDateMobile = document.getElementById('work_date_mobile');
       if (workDateInput && !workDateInput.value) workDateInput.value = now;
-      if (workDateMobile && !workDateMobile.value) workDateMobile.value = now;
     })();
 
     // Auto-resize description textarea to fit content
@@ -262,99 +235,5 @@
       });
     })();
 
-    // Maintainer autocomplete
-    (function() {
-      const input = document.getElementById('{{ form.submitter_name.id_for_label }}');
-      const dropdown = document.getElementById('submitter-dropdown');
-      let maintainers = [];
-      let activeIndex = -1;
-
-      if (!input || !dropdown) return;
-
-      // Fetch maintainers on page load
-      fetch('{% url "api-maintainer-autocomplete" %}')
-        .then(response => response.json())
-        .then(data => { maintainers = data.maintainers || []; })
-        .catch(() => { maintainers = []; });
-
-      function formatMaintainer(m) {
-        if (m.display_name === m.username) {
-          return m.username;
-        }
-        return `${m.display_name} (${m.username})`;
-      }
-
-      function showDropdown(filtered) {
-        if (filtered.length === 0) {
-          dropdown.classList.add('hidden');
-          return;
-        }
-        dropdown.innerHTML = filtered.map((m, i) =>
-          `<div class="autocomplete__item${i === activeIndex ? ' autocomplete__item-active' : ''}" data-index="${i}" data-username="${m.username}">${formatMaintainer(m)}</div>`
-        ).join('');
-        dropdown.classList.remove('hidden');
-      }
-
-      function hideDropdown() {
-        dropdown.classList.add('hidden');
-        activeIndex = -1;
-      }
-
-      function filterMaintainers(query) {
-        const q = query.toLowerCase().trim();
-        if (!q) return maintainers;
-        return maintainers.filter(m =>
-          m.first_name.toLowerCase().startsWith(q) ||
-          m.last_name.toLowerCase().startsWith(q) ||
-          m.username.toLowerCase().startsWith(q)
-        );
-      }
-
-      input.addEventListener('focus', () => {
-        const filtered = filterMaintainers(input.value);
-        showDropdown(filtered);
-      });
-
-      input.addEventListener('input', () => {
-        activeIndex = -1;
-        const filtered = filterMaintainers(input.value);
-        showDropdown(filtered);
-      });
-
-      input.addEventListener('keydown', (e) => {
-        const filtered = filterMaintainers(input.value);
-        if (dropdown.classList.contains('hidden') || filtered.length === 0) return;
-
-        if (e.key === 'ArrowDown') {
-          e.preventDefault();
-          activeIndex = Math.min(activeIndex + 1, filtered.length - 1);
-          showDropdown(filtered);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          activeIndex = Math.max(activeIndex - 1, 0);
-          showDropdown(filtered);
-        } else if (e.key === 'Enter' && activeIndex >= 0) {
-          e.preventDefault();
-          input.value = filtered[activeIndex].username;
-          hideDropdown();
-        } else if (e.key === 'Escape') {
-          hideDropdown();
-        }
-      });
-
-      dropdown.addEventListener('click', (e) => {
-        const item = e.target.closest('.autocomplete__item');
-        if (item) {
-          input.value = item.dataset.username;
-          hideDropdown();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        if (!e.target.closest('#submitter-autocomplete')) {
-          hideDropdown();
-        }
-      });
-    })();
   </script>
 {% endblock %}
