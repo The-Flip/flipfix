@@ -236,39 +236,6 @@ def log_entry_meta(entry):
 # -----------------------------------------------------------------------------
 
 
-@register.inclusion_tag("components/button.html")
-def button(
-    url: str,
-    label: str,
-    icon: str = "",
-    variant: str = "secondary",
-    full_width: bool = False,
-    icon_only: bool = False,
-):
-    """Render a button/link component.
-
-    Usage:
-        {% button url="/logs/new/" label="New Log" icon="plus" variant="log" %}
-        {% button url="/edit/" label="Edit" icon="pencil" icon_only=True %}
-
-    Args:
-        url: Link href
-        icon: FontAwesome icon name (without fa- prefix)
-        label: Button text (becomes aria-label if icon_only)
-        variant: 'primary', 'secondary', 'report', 'log'
-        full_width: Add btn--full class
-        icon_only: Render icon-only button with aria-label
-    """
-    return {
-        "url": url,
-        "label": label,
-        "icon": icon,
-        "variant": variant,
-        "full_width": full_width,
-        "icon_only": icon_only,
-    }
-
-
 @register.inclusion_tag("components/stat_grid.html")
 def stat_grid(stats: list):
     """Render a grid of statistics.
@@ -405,6 +372,53 @@ def field_help_text(field):
         field: A Django form field (BoundField)
     """
     return {"field": field}
+
+
+@register.inclusion_tag("components/maintainer_autocomplete_field.html", takes_context=True)
+def maintainer_autocomplete_field(
+    context,
+    field,
+    label: str = "",
+    placeholder: str = "Search users...",
+    size: str = "",
+    show_label: bool = True,
+    required: bool = False,
+):
+    """Render a maintainer autocomplete field with dropdown.
+
+    Usage:
+        {% maintainer_autocomplete_field form.requester_name %}
+        {% maintainer_autocomplete_field form.requester_name label="Who" size="sm" %}
+        {% maintainer_autocomplete_field form.submitter_name show_label=False %}
+        {% maintainer_autocomplete_field form.submitter_name required=True %}
+
+    Args:
+        context: Template context (auto-passed with takes_context=True)
+        field: A Django form field (BoundField)
+        label: Custom label text (defaults to field.label)
+        placeholder: Input placeholder text
+        size: Size variant - "" (default) or "sm" for smaller sidebar inputs
+        show_label: Whether to show the label (default True)
+        required: Whether the field is required (adds HTML required attribute and asterisk)
+    """
+    input_class = "form-input form-input--sm" if size == "sm" else "form-input"
+
+    # Get the hidden username value from POST data (preserves value on form re-render)
+    username_value = ""
+    request = context.get("request")
+    if request and request.method == "POST":
+        username_field_name = f"{field.html_name}_username"
+        username_value = request.POST.get(username_field_name, "")
+
+    return {
+        "field": field,
+        "label": label or (field.label if hasattr(field, "label") else ""),
+        "placeholder": placeholder,
+        "input_class": input_class,
+        "show_label": show_label,
+        "required": required,
+        "username_value": username_value,
+    }
 
 
 # -----------------------------------------------------------------------------

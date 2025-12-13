@@ -15,6 +15,12 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
     """Form for creating or editing a part request."""
 
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
+    requester_name = forms.CharField(
+        label="Who is requesting this?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Who is requesting this?"}),
+    )
     media_file = MultiFileField(
         label="Photos/Videos",
         required=False,
@@ -107,6 +113,12 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
 class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
     """Form for creating an update/comment on a part request."""
 
+    requester_name = forms.CharField(
+        label="Who is posting this?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Search users..."}),
+    )
     new_status = forms.ChoiceField(
         label="Change status to",
         choices=[("", "No change")] + list(PartRequest.STATUS_CHOICES),

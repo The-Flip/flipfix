@@ -27,26 +27,7 @@
     <div class="two-column__main form-main">
       {% if is_shared_account %}
         <!-- WHO -->
-        <div class="form-field">
-          <label for="{{ form.submitter_name.id_for_label }}" class="form-label">
-            Who did the work? <span class="text-problem">*</span>
-          </label>
-          <div class="autocomplete"
-               data-maintainer-autocomplete
-               data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
-            <input type="text"
-                   data-maintainer-search
-                   id="{{ form.submitter_name.id_for_label }}"
-                   name="{{ form.submitter_name.html_name }}"
-                   class="form-input"
-                   placeholder="Who did the work?"
-                   value="{{ form.submitter_name.value|default:'' }}"
-                   autocomplete="off"
-                   required>
-            <div class="autocomplete__dropdown hidden"></div>
-          </div>
-          {% field_errors form.submitter_name %}
-        </div>
+        {% maintainer_autocomplete_field form.submitter_name label="Who did the work?" required=True %}
       {% endif %}
       {% if is_global %}
         <!-- MACHINE (global pages only - in main content for mobile visibility) -->
@@ -143,20 +124,7 @@
           <!-- WHO (non-shared accounts - in sidebar, pre-filled) -->
           <div class="sidebar__section">
             <div class="sidebar__label">Who</div>
-            <div class="autocomplete"
-                 data-maintainer-autocomplete
-                 data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
-              <input type="text"
-                     data-maintainer-search
-                     id="{{ form.submitter_name.id_for_label }}"
-                     name="{{ form.submitter_name.html_name }}"
-                     class="form-input form-input--sm"
-                     placeholder="Who did the work?"
-                     value="{{ form.submitter_name.value|default:'' }}"
-                     autocomplete="off">
-              <div class="autocomplete__dropdown hidden"></div>
-            </div>
-            {% field_errors form.submitter_name %}
+            {% maintainer_autocomplete_field form.submitter_name size="sm" show_label=False %}
           </div>
         {% endif %}
         <!-- WHEN (sidebar only - not critical for mobile) -->

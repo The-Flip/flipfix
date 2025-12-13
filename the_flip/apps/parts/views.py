@@ -57,7 +57,9 @@ class PartRequestListView(CanAccessMaintainerPortalMixin, TemplateView):
                 | Q(machine__name_override__icontains=search_query)
                 | Q(requested_by__user__first_name__icontains=search_query)
                 | Q(requested_by__user__last_name__icontains=search_query)
+                | Q(requested_by_name__icontains=search_query)
                 | Q(updates__text__icontains=search_query)
+                | Q(updates__posted_by_name__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(parts, 10)
@@ -117,7 +119,9 @@ class PartRequestListPartialView(CanAccessMaintainerPortalMixin, View):
                 | Q(machine__name_override__icontains=search_query)
                 | Q(requested_by__user__first_name__icontains=search_query)
                 | Q(requested_by__user__last_name__icontains=search_query)
+                | Q(requested_by_name__icontains=search_query)
                 | Q(updates__text__icontains=search_query)
+                | Q(updates__posted_by_name__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(parts, 10)
@@ -146,12 +150,6 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
             self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
         return super().dispatch(request, *args, **kwargs)
 
-    def get_initial(self):
-        initial = super().get_initial()
-        if self.machine:
-            initial["machine_slug"] = self.machine.slug
-        return initial
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
@@ -163,7 +161,24 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
             context["selected_machine"] = MachineInstance.objects.filter(slug=selected_slug).first()
         elif self.machine:
             context["selected_machine"] = self.machine
+
+        # Check if current user is on a shared/terminal account
+        is_shared_account = False
+        if hasattr(self.request.user, "maintainer"):
+            is_shared_account = self.request.user.maintainer.is_shared_account
+        context["is_shared_account"] = is_shared_account
         return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.machine:
+            initial["machine_slug"] = self.machine.slug
+
+        # Pre-fill requester_name with current user's display name (for non-shared accounts)
+        if hasattr(self.request.user, "maintainer"):
+            if not self.request.user.maintainer.is_shared_account:
+                initial["requester_name"] = str(self.request.user.maintainer)
+        return initial
 
     def form_valid(self, form):
         machine = self.machine
@@ -172,11 +187,41 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
             if slug:
                 machine = MachineInstance.objects.filter(slug=slug).first()
 
-        # Get the maintainer for the current user
-        maintainer = get_object_or_404(Maintainer, user=self.request.user)
+        # Determine the requester from hidden username field or text input
+        current_maintainer = get_object_or_404(Maintainer, user=self.request.user)
+        requester_username = self.request.POST.get("requester_name_username", "").strip()
+        requester_name_text = form.cleaned_data.get("requester_name", "").strip()
+
+        maintainer = None
+        requester_name = ""
+
+        if current_maintainer.is_shared_account:
+            # For shared accounts: try username lookup first, then fall back to text
+            if requester_username:
+                maintainer = Maintainer.objects.filter(
+                    user__username__iexact=requester_username,
+                    is_shared_account=False,
+                ).first()
+            if not maintainer and requester_name_text:
+                # No valid username selected, but text was entered - use text field
+                requester_name = requester_name_text
+            if not maintainer and not requester_name:
+                form.add_error("requester_name", "Please enter your name.")
+                return self.form_invalid(form)
+        else:
+            # For non-shared accounts, use selected user or fall back to current user
+            maintainer = current_maintainer
+            if requester_username:
+                matched = Maintainer.objects.filter(
+                    user__username__iexact=requester_username,
+                    is_shared_account=False,
+                ).first()
+                if matched:
+                    maintainer = matched
 
         part_request = form.save(commit=False)
         part_request.requested_by = maintainer
+        part_request.requested_by_name = requester_name
         part_request.machine = machine
         part_request.save()
 
@@ -274,7 +319,9 @@ class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, Vi
 
         search_query = request.GET.get("q", "").strip()
         if search_query:
-            updates = updates.filter(Q(text__icontains=search_query)).distinct()
+            updates = updates.filter(
+                Q(text__icontains=search_query) | Q(posted_by_name__icontains=search_query)
+            ).distinct()
 
         paginator = Paginator(updates, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -305,14 +352,60 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["part_request"] = self.part_request
+
+        # Check if current user is on a shared/terminal account
+        is_shared_account = False
+        if hasattr(self.request.user, "maintainer"):
+            is_shared_account = self.request.user.maintainer.is_shared_account
+        context["is_shared_account"] = is_shared_account
         return context
 
+    def get_initial(self):
+        initial = super().get_initial()
+
+        # Pre-fill requester_name with current user's display name (for non-shared accounts)
+        if hasattr(self.request.user, "maintainer"):
+            if not self.request.user.maintainer.is_shared_account:
+                initial["requester_name"] = str(self.request.user.maintainer)
+        return initial
+
     def form_valid(self, form):
-        maintainer = get_object_or_404(Maintainer, user=self.request.user)
+        # Determine the poster from hidden username field or text input
+        current_maintainer = get_object_or_404(Maintainer, user=self.request.user)
+        requester_username = self.request.POST.get("requester_name_username", "").strip()
+        requester_name_text = form.cleaned_data.get("requester_name", "").strip()
+
+        maintainer = None
+        poster_name = ""
+
+        if current_maintainer.is_shared_account:
+            # For shared accounts: try username lookup first, then fall back to text
+            if requester_username:
+                maintainer = Maintainer.objects.filter(
+                    user__username__iexact=requester_username,
+                    is_shared_account=False,
+                ).first()
+            if not maintainer and requester_name_text:
+                # No valid username selected, but text was entered - use text field
+                poster_name = requester_name_text
+            if not maintainer and not poster_name:
+                form.add_error("requester_name", "Please enter your name.")
+                return self.form_invalid(form)
+        else:
+            # For non-shared accounts, use selected user or fall back to current user
+            maintainer = current_maintainer
+            if requester_username:
+                matched = Maintainer.objects.filter(
+                    user__username__iexact=requester_username,
+                    is_shared_account=False,
+                ).first()
+                if matched:
+                    maintainer = matched
 
         update = form.save(commit=False)
         update.part_request = self.part_request
         update.posted_by = maintainer
+        update.posted_by_name = poster_name
         update.save()
 
         # Handle media uploads
@@ -363,8 +456,8 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
         return redirect("part-request-detail", pk=self.part_request.pk)
 
     def form_invalid(self, form):
-        messages.error(self.request, "Please correct the errors below.")
-        return redirect("part-request-detail", pk=self.part_request.pk)
+        # Re-render form with errors (default FormView behavior)
+        return super().form_invalid(form)
 
 
 class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
@@ -383,7 +476,9 @@ class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
 
         search_query = request.GET.get("q", "").strip()
         if search_query:
-            updates = updates.filter(Q(text__icontains=search_query)).distinct()
+            updates = updates.filter(
+                Q(text__icontains=search_query) | Q(posted_by_name__icontains=search_query)
+            ).distinct()
 
         paginator = Paginator(updates, 10)
         page_obj = paginator.get_page(request.GET.get("page"))

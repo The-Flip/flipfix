@@ -54,11 +54,33 @@ def get_activity_entries(machine, search_query=None):
 
     if search_query:
         logs = logs.filter(
-            Q(text__icontains=search_query) | Q(problem_report__description__icontains=search_query)
+            Q(text__icontains=search_query)
+            | Q(problem_report__description__icontains=search_query)
+            | Q(maintainers__user__username__icontains=search_query)
+            | Q(maintainers__user__first_name__icontains=search_query)
+            | Q(maintainers__user__last_name__icontains=search_query)
+            | Q(maintainer_names__icontains=search_query)
         ).distinct()
-        reports = reports.filter(description__icontains=search_query)
-        part_requests = part_requests.filter(text__icontains=search_query)
-        part_updates = part_updates.filter(text__icontains=search_query)
+        reports = reports.filter(
+            Q(description__icontains=search_query)
+            | Q(reported_by_name__icontains=search_query)
+            | Q(log_entries__maintainers__user__username__icontains=search_query)
+            | Q(log_entries__maintainers__user__first_name__icontains=search_query)
+            | Q(log_entries__maintainers__user__last_name__icontains=search_query)
+            | Q(log_entries__maintainer_names__icontains=search_query)
+        ).distinct()
+        part_requests = part_requests.filter(
+            Q(text__icontains=search_query)
+            | Q(requested_by__user__first_name__icontains=search_query)
+            | Q(requested_by__user__last_name__icontains=search_query)
+            | Q(requested_by_name__icontains=search_query)
+        ).distinct()
+        part_updates = part_updates.filter(
+            Q(text__icontains=search_query)
+            | Q(posted_by__user__first_name__icontains=search_query)
+            | Q(posted_by__user__last_name__icontains=search_query)
+            | Q(posted_by_name__icontains=search_query)
+        ).distinct()
 
     logs = logs.order_by("-created_at")
     reports = reports.order_by("-created_at")

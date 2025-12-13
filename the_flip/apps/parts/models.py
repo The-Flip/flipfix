@@ -50,8 +50,15 @@ class PartRequest(TimeStampedModel):
     requested_by = models.ForeignKey(
         Maintainer,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="part_requests",
         help_text="The maintainer who requested this part.",
+    )
+    requested_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Name when requester is not in the system.",
     )
     machine = models.ForeignKey(
         MachineInstance,
@@ -84,6 +91,13 @@ class PartRequest(TimeStampedModel):
             self.STATUS_RECEIVED: "received",
             self.STATUS_CANCELLED: "cancelled",
         }.get(self.status, "")
+
+    @property
+    def requester_display(self) -> str:
+        """Return display name for who requested the part."""
+        if self.requested_by:
+            return str(self.requested_by)
+        return self.requested_by_name
 
 
 def part_request_media_upload_to(instance: PartRequestMedia, filename: str) -> str:
@@ -130,8 +144,15 @@ class PartRequestUpdate(TimeStampedModel):
     posted_by = models.ForeignKey(
         Maintainer,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="part_request_updates",
         help_text="The maintainer who posted this update.",
+    )
+    posted_by_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Name when poster is not in the system.",
     )
     text = models.TextField(
         help_text="Update text or comment.",
@@ -149,7 +170,14 @@ class PartRequestUpdate(TimeStampedModel):
         verbose_name_plural = "Part request updates"
 
     def __str__(self) -> str:
-        return f"Update on part request {self.part_request_id} by {self.posted_by}"
+        return f"Update on part request {self.part_request_id} by {self.poster_display}"
+
+    @property
+    def poster_display(self) -> str:
+        """Return display name for who posted the update."""
+        if self.posted_by:
+            return str(self.posted_by)
+        return self.posted_by_name
 
     def save(self, *args, **kwargs):
         # If new_status is set, also update the parent part request status

@@ -9,7 +9,7 @@
           Parts Request <i class="fa-solid fa-box-open"></i> #{{ entry.pk }} created
         </span>
       </div>
-      <span class="timeline__meta">{{ entry.created_at|smart_date }} · {{ entry.requested_by.display_name }}</span>
+      <span class="timeline__meta">{{ entry.created_at|smart_date }} · {{ entry.requester_display }}</span>
     </div>
     <div class="timeline__body markdown-content markdown-content--compact">
       {{ entry.text|truncatechars:200|render_markdown }}

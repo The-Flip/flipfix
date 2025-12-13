@@ -30,23 +30,7 @@
     <div class="two-column__main form-main">
       {% if is_shared_account %}
         <!-- WHO (shared accounts only - in main content for mobile visibility) -->
-        <div class="form-field">
-          <label for="{{ form.reporter_name.id_for_label }}" class="form-label">Who is reporting this?</label>
-          <div class="autocomplete"
-               data-maintainer-autocomplete
-               data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
-            <input type="text"
-                   data-maintainer-search
-                   id="{{ form.reporter_name.id_for_label }}"
-                   name="{{ form.reporter_name.html_name }}"
-                   class="form-input"
-                   placeholder="Who is reporting this?"
-                   value="{{ form.reporter_name.value|default:'' }}"
-                   autocomplete="off">
-            <div class="autocomplete__dropdown hidden"></div>
-          </div>
-          {% field_errors form.reporter_name %}
-        </div>
+        {% maintainer_autocomplete_field form.reporter_name label="Who is reporting this?" %}
       {% endif %}
       {% if not machine %}
         <!-- MACHINE (global pages only - in main content for mobile visibility) -->

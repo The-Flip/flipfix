@@ -85,6 +85,29 @@ class PartRequestModelTests(TestCase):
         part_request.status = PartRequest.STATUS_CANCELLED
         self.assertEqual(part_request.status_display_class, "cancelled")
 
+    def test_requester_display_with_fk(self):
+        """requester_display returns maintainer name when FK is set."""
+        part_request = create_part_request(requested_by=self.maintainer)
+        self.assertEqual(part_request.requester_display, str(self.maintainer))
+
+    def test_requester_display_with_text_field(self):
+        """requester_display returns text field when FK is null."""
+        part_request = PartRequest.objects.create(
+            text="Test request",
+            requested_by=None,
+            requested_by_name="Jane Visitor",
+        )
+        self.assertEqual(part_request.requester_display, "Jane Visitor")
+
+    def test_requester_display_prefers_fk_over_text(self):
+        """requester_display prefers FK over text field if both set."""
+        part_request = PartRequest.objects.create(
+            text="Test request",
+            requested_by=self.maintainer,
+            requested_by_name="Should not show",
+        )
+        self.assertEqual(part_request.requester_display, str(self.maintainer))
+
 
 class PartRequestUpdateModelTests(TestCase):
     """Tests for the PartRequestUpdate model."""
@@ -137,6 +160,34 @@ class PartRequestUpdateModelTests(TestCase):
 
         self.part_request.refresh_from_db()
         self.assertEqual(self.part_request.status, PartRequest.STATUS_ORDERED)
+
+    def test_poster_display_with_fk(self):
+        """poster_display returns maintainer name when FK is set."""
+        update = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+        )
+        self.assertEqual(update.poster_display, str(self.maintainer))
+
+    def test_poster_display_with_text_field(self):
+        """poster_display returns text field when FK is null."""
+        update = PartRequestUpdate.objects.create(
+            part_request=self.part_request,
+            posted_by=None,
+            posted_by_name="Jane Visitor",
+            text="Update text",
+        )
+        self.assertEqual(update.poster_display, "Jane Visitor")
+
+    def test_poster_display_prefers_fk_over_text(self):
+        """poster_display prefers FK over text field if both set."""
+        update = PartRequestUpdate.objects.create(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            posted_by_name="Should not show",
+            text="Update text",
+        )
+        self.assertEqual(update.poster_display, str(self.maintainer))
 
 
 @tag("views")
@@ -535,3 +586,266 @@ class PartsFeatureFlagTests(TestCase):
             logs, reports, part_requests, part_updates = get_activity_entries(self.machine)
             # Parts should be included
             self.assertEqual(list(part_requests), [part])
+
+
+@tag("views")
+class PartRequestSharedAccountTests(TestCase):
+    """Tests for part request creation from shared/terminal accounts."""
+
+    def setUp(self):
+        # Create a shared terminal account
+        self.shared_user = create_maintainer_user(username="terminal")
+        self.shared_maintainer = Maintainer.objects.get(user=self.shared_user)
+        self.shared_maintainer.is_shared_account = True
+        self.shared_maintainer.save()
+
+        # Create a regular maintainer for username lookup
+        self.regular_user = create_maintainer_user(username="alex")
+        self.regular_maintainer = Maintainer.objects.get(user=self.regular_user)
+
+    def test_shared_account_with_valid_username_uses_fk(self):
+        """Shared account selecting from dropdown saves to FK."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-create"),
+            {
+                "text": "Need flipper rubbers",
+                "requester_name": str(self.regular_maintainer),
+                "requester_name_username": self.regular_user.username,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        part_request = PartRequest.objects.first()
+        self.assertEqual(part_request.requested_by, self.regular_maintainer)
+        self.assertEqual(part_request.requested_by_name, "")
+
+    def test_shared_account_with_free_text_uses_text_field(self):
+        """Shared account typing free text saves to text field."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-create"),
+            {
+                "text": "Need flipper rubbers",
+                "requester_name": "Jane Visitor",
+                "requester_name_username": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        part_request = PartRequest.objects.first()
+        self.assertIsNone(part_request.requested_by)
+        self.assertEqual(part_request.requested_by_name, "Jane Visitor")
+
+    def test_shared_account_with_empty_name_shows_error(self):
+        """Shared account with empty name shows form error."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-create"),
+            {
+                "text": "Need flipper rubbers",
+                "requester_name": "",
+                "requester_name_username": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)  # Form re-rendered
+        self.assertContains(response, "Please enter your name")
+        self.assertEqual(PartRequest.objects.count(), 0)
+
+    def test_regular_account_uses_current_user(self):
+        """Regular account falls back to current user."""
+        self.client.force_login(self.regular_user)
+        response = self.client.post(
+            reverse("part-request-create"),
+            {
+                "text": "Need flipper rubbers",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        part_request = PartRequest.objects.first()
+        self.assertEqual(part_request.requested_by, self.regular_maintainer)
+
+
+@tag("views")
+class PartRequestUpdateSharedAccountTests(TestCase):
+    """Tests for part request update creation from shared/terminal accounts."""
+
+    def setUp(self):
+        # Create a shared terminal account
+        self.shared_user = create_maintainer_user(username="terminal")
+        self.shared_maintainer = Maintainer.objects.get(user=self.shared_user)
+        self.shared_maintainer.is_shared_account = True
+        self.shared_maintainer.save()
+
+        # Create a regular maintainer for username lookup
+        self.regular_user = create_maintainer_user(username="alex")
+        self.regular_maintainer = Maintainer.objects.get(user=self.regular_user)
+
+        # Create a part request to update
+        self.part_request = create_part_request(requested_by=self.regular_maintainer)
+
+    def test_shared_account_with_valid_username_uses_fk(self):
+        """Shared account selecting from dropdown saves to FK."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-update-create", kwargs={"pk": self.part_request.pk}),
+            {
+                "text": "Ordered from Marco",
+                "new_status": "",
+                "requester_name": str(self.regular_maintainer),
+                "requester_name_username": self.regular_user.username,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        update = PartRequestUpdate.objects.first()
+        self.assertEqual(update.posted_by, self.regular_maintainer)
+        self.assertEqual(update.posted_by_name, "")
+
+    def test_shared_account_with_free_text_uses_text_field(self):
+        """Shared account typing free text saves to text field."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-update-create", kwargs={"pk": self.part_request.pk}),
+            {
+                "text": "Ordered from Marco",
+                "new_status": "",
+                "requester_name": "Jane Visitor",
+                "requester_name_username": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        update = PartRequestUpdate.objects.first()
+        self.assertIsNone(update.posted_by)
+        self.assertEqual(update.posted_by_name, "Jane Visitor")
+
+    def test_shared_account_with_empty_name_shows_error(self):
+        """Shared account with empty name shows form error."""
+        self.client.force_login(self.shared_user)
+        response = self.client.post(
+            reverse("part-request-update-create", kwargs={"pk": self.part_request.pk}),
+            {
+                "text": "Ordered from Marco",
+                "new_status": "",
+                "requester_name": "",
+                "requester_name_username": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)  # Form re-rendered with errors
+        self.assertContains(response, "Please enter your name")
+        self.assertEqual(PartRequestUpdate.objects.count(), 0)
+
+    def test_regular_account_uses_current_user(self):
+        """Regular account falls back to current user."""
+        self.client.force_login(self.regular_user)
+        response = self.client.post(
+            reverse("part-request-update-create", kwargs={"pk": self.part_request.pk}),
+            {
+                "text": "Ordered from Marco",
+                "new_status": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        update = PartRequestUpdate.objects.first()
+        self.assertEqual(update.posted_by, self.regular_maintainer)
+
+
+@tag("views")
+class PartRequestSearchFreeTextNameTests(TestCase):
+    """Tests for searching part requests by free-text name fields."""
+
+    def setUp(self):
+        self.maintainer_user = create_maintainer_user()
+        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
+
+    def test_search_by_requested_by_name(self):
+        """Can find part requests by free-text requester name."""
+        # Create a part request with free-text name (no FK)
+        PartRequest.objects.create(
+            text="Need flipper rubbers",
+            requested_by=None,
+            requested_by_name="Wandering Willie",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?q=Wandering")
+
+        self.assertContains(response, "flipper rubbers")
+
+    def test_search_by_posted_by_name(self):
+        """Can find part requests by free-text update poster name."""
+        # Create a part request and update with free-text poster name
+        part_request = PartRequest.objects.create(
+            text="Need flipper rubbers",
+            requested_by=self.maintainer,
+        )
+        PartRequestUpdate.objects.create(
+            part_request=part_request,
+            text="Ordered from Marco",
+            posted_by=None,
+            posted_by_name="Visiting Vera",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?q=Visiting")
+
+        self.assertContains(response, "flipper rubbers")
+
+    def test_search_updates_by_posted_by_name(self):
+        """Can find updates by free-text poster name on detail page."""
+        # Create a part request and update with free-text poster name
+        part_request = PartRequest.objects.create(
+            text="Need flipper rubbers",
+            requested_by=self.maintainer,
+        )
+        PartRequestUpdate.objects.create(
+            part_request=part_request,
+            text="Ordered from Marco",
+            posted_by=None,
+            posted_by_name="Visiting Vera",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(
+            reverse("part-request-detail", kwargs={"pk": part_request.pk}) + "?q=Visiting"
+        )
+
+        self.assertContains(response, "Ordered from Marco")
+
+
+@tag("views")
+class PartRequestFormReRenderTests(TestCase):
+    """Tests for form re-rendering preserving hidden username field."""
+
+    def setUp(self):
+        # Create a shared terminal account
+        self.shared_user = create_maintainer_user(username="terminal")
+        self.shared_maintainer = Maintainer.objects.get(user=self.shared_user)
+        self.shared_maintainer.is_shared_account = True
+        self.shared_maintainer.save()
+
+        # Create a regular maintainer for username lookup
+        self.regular_user = create_maintainer_user(username="alex")
+        self.regular_maintainer = Maintainer.objects.get(user=self.regular_user)
+
+    def test_hidden_username_preserved_on_form_error(self):
+        """Hidden username field is preserved when form re-renders with errors."""
+        self.client.force_login(self.shared_user)
+
+        # Submit form with valid username but missing required field (text)
+        response = self.client.post(
+            reverse("part-request-create"),
+            {
+                "text": "",  # Empty text should trigger validation error
+                "requester_name": str(self.regular_maintainer),
+                "requester_name_username": self.regular_user.username,
+            },
+        )
+
+        # Form should re-render with error
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required")
+
+        # Hidden username should be preserved in re-rendered form
+        self.assertContains(
+            response,
+            f'value="{self.regular_user.username}"',
+            msg_prefix="Hidden username field should be preserved on form re-render",
+        )

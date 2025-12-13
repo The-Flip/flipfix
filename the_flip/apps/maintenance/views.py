@@ -253,6 +253,14 @@ class ProblemReportListView(CanAccessMaintainerPortalMixin, TemplateView):
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
                 | Q(log_entries__text__icontains=search_query)
+                | Q(log_entries__maintainers__user__username__icontains=search_query)
+                | Q(log_entries__maintainers__user__first_name__icontains=search_query)
+                | Q(log_entries__maintainers__user__last_name__icontains=search_query)
+                | Q(log_entries__maintainer_names__icontains=search_query)
+                | Q(reported_by_name__icontains=search_query)
+                | Q(reported_by_user__username__icontains=search_query)
+                | Q(reported_by_user__first_name__icontains=search_query)
+                | Q(reported_by_user__last_name__icontains=search_query)
             )
             reports = reports.distinct()
 
@@ -307,6 +315,14 @@ class ProblemReportListPartialView(CanAccessMaintainerPortalMixin, View):
                 | Q(machine__model__name__icontains=search_query)
                 | Q(machine__name_override__icontains=search_query)
                 | Q(log_entries__text__icontains=search_query)
+                | Q(log_entries__maintainers__user__username__icontains=search_query)
+                | Q(log_entries__maintainers__user__first_name__icontains=search_query)
+                | Q(log_entries__maintainers__user__last_name__icontains=search_query)
+                | Q(log_entries__maintainer_names__icontains=search_query)
+                | Q(reported_by_name__icontains=search_query)
+                | Q(reported_by_user__username__icontains=search_query)
+                | Q(reported_by_user__first_name__icontains=search_query)
+                | Q(reported_by_user__last_name__icontains=search_query)
             )
             reports = reports.distinct()
 
@@ -392,6 +408,14 @@ class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
             queryset = queryset.filter(
                 Q(description__icontains=search_query)
                 | Q(log_entries__text__icontains=search_query)
+                | Q(log_entries__maintainers__user__username__icontains=search_query)
+                | Q(log_entries__maintainers__user__first_name__icontains=search_query)
+                | Q(log_entries__maintainers__user__last_name__icontains=search_query)
+                | Q(log_entries__maintainer_names__icontains=search_query)
+                | Q(reported_by_name__icontains=search_query)
+                | Q(reported_by_user__username__icontains=search_query)
+                | Q(reported_by_user__first_name__icontains=search_query)
+                | Q(reported_by_user__last_name__icontains=search_query)
             ).distinct()
 
         return queryset
@@ -727,7 +751,9 @@ class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
                 | Q(problem_report__description__icontains=search_query)
+                | Q(problem_report__reported_by_name__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(logs, 10)
@@ -845,7 +871,17 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
         )
         self.machine = machine
 
-        maintainer = self.match_maintainer(submitter_name)
+        # Use hidden username field from autocomplete for reliable maintainer lookup,
+        # fall back to name-based matching if not available
+        submitter_username = self.request.POST.get("submitter_name_username", "").strip()
+        maintainer = None
+        if submitter_username:
+            maintainer = Maintainer.objects.filter(
+                user__username__iexact=submitter_username,
+                is_shared_account=False,
+            ).first()
+        if not maintainer:
+            maintainer = self.match_maintainer(submitter_name)
         if maintainer:
             log_entry.maintainers.add(maintainer)
         elif submitter_name:
@@ -931,6 +967,9 @@ class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
+                | Q(problem_report__description__icontains=search_query)
+                | Q(problem_report__reported_by_name__icontains=search_query)
             ).distinct()
 
         paginator = Paginator(logs, 10)
@@ -971,6 +1010,7 @@ class LogListView(CanAccessMaintainerPortalMixin, TemplateView):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
                 | Q(problem_report__description__icontains=search_query)
             ).distinct()
 
@@ -1016,6 +1056,7 @@ class LogListPartialView(CanAccessMaintainerPortalMixin, View):
                 | Q(maintainers__user__username__icontains=search_query)
                 | Q(maintainers__user__first_name__icontains=search_query)
                 | Q(maintainers__user__last_name__icontains=search_query)
+                | Q(maintainer_names__icontains=search_query)
                 | Q(problem_report__description__icontains=search_query)
             ).distinct()
 

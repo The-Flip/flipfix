@@ -72,6 +72,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
             username="reportsubmitter", first_name="Report", last_name="Submitter"
         )
         self.report.reported_by_user = submitter
+        self.report.reported_by_name = ""  # Clear so reported_by_user is used
         self.report.save()
 
         self.client.force_login(self.staff_user)
@@ -482,6 +483,42 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
         self.assertContains(response, self.report.description)
         self.assertNotContains(response, other_report.description)
+
+    def test_list_view_search_matches_reporter_name(self):
+        """List search should include free-text reporter name."""
+        # Create report with free-text reporter name
+        create_problem_report(
+            machine=self.machine,
+            description="Flickering lights",
+            reported_by_name="Wandering Willie",
+        )
+        create_problem_report(machine=self.machine, description="Other issue")
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.list_url, {"q": "Wandering"})
+
+        self.assertContains(response, "Flickering lights")
+        self.assertNotContains(response, "Other issue")
+
+    def test_list_view_search_matches_log_entry_maintainer_names(self):
+        """List search should include free-text log entry maintainer names."""
+        # Create report with log entry that has free-text maintainer name
+        report_with_log = create_problem_report(
+            machine=self.machine, description="Flickering lights"
+        )
+        create_log_entry(
+            machine=self.machine,
+            problem_report=report_with_log,
+            text="Investigated issue",
+            maintainer_names="Wandering Willie",
+        )
+        create_problem_report(machine=self.machine, description="Other issue")
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.list_url, {"q": "Wandering"})
+
+        self.assertContains(response, "Flickering lights")
+        self.assertNotContains(response, "Other issue")
 
 
 @tag("views", "ajax")
@@ -1225,3 +1262,31 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
         self.client.force_login(self.regular_user)
         response = self.client.get(self.api_url)
         self.assertEqual(response.status_code, 403)
+
+
+@tag("views")
+class ProblemReportListSearchTests(TestDataMixin, TestCase):
+    """Tests for global problem report list search functionality."""
+
+    def setUp(self):
+        super().setUp()
+        self.list_url = reverse("problem-report-list")
+
+    def test_search_finds_report_by_reported_by_user(self):
+        """Search should find problem reports by the submitting user's name."""
+        # Create a report submitted by a logged-in user
+        submitter = create_maintainer_user(
+            username="submitter",
+            first_name="Submitting",
+            last_name="Sam",
+        )
+        create_problem_report(
+            machine=self.machine,
+            description="Flipper not working",
+            reported_by_user=submitter,
+        )
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.list_url, {"q": "Submitting"})
+
+        self.assertContains(response, "Flipper not working")

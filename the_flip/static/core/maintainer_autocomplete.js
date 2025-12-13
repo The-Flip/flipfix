@@ -19,6 +19,7 @@
 
 function initMaintainerAutocomplete(container) {
   const input = container.querySelector("[data-maintainer-search]");
+  const usernameInput = container.querySelector("[data-maintainer-username]");
   const dropdown = container.querySelector(".autocomplete__dropdown");
   const endpoint = container.dataset.autocompleteUrl;
   const onSelectCallback = container.dataset.onSelect;
@@ -26,6 +27,9 @@ function initMaintainerAutocomplete(container) {
   if (!input || !dropdown || !endpoint) return;
 
   let maintainers = [];
+  // Track the display name that corresponds to the current hidden username value.
+  // Initialize from input if hidden field already has a value (e.g., form re-render).
+  let selectedDisplayName = usernameInput?.value ? input.value : "";
 
   // Prefetch all maintainers on init (small dataset)
   fetch(endpoint)
@@ -58,6 +62,11 @@ function initMaintainerAutocomplete(container) {
 
   function selectMaintainer(maintainer) {
     input.value = maintainer.display_name;
+    // Store username in hidden field for reliable server-side lookup
+    if (usernameInput) {
+      usernameInput.value = maintainer.username;
+      selectedDisplayName = maintainer.display_name;
+    }
     hideDropdown();
     // Call optional callback after selection
     if (onSelectCallback && typeof window[onSelectCallback] === "function") {
@@ -114,6 +123,11 @@ function initMaintainerAutocomplete(container) {
   });
 
   input.addEventListener("input", () => {
+    // Clear hidden username if user manually edits the text to something different
+    // than what was selected from the dropdown
+    if (usernameInput && input.value !== selectedDisplayName) {
+      usernameInput.value = "";
+    }
     const filtered = filterMaintainers(input.value);
     renderDropdown(filtered);
   });

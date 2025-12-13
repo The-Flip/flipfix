@@ -124,16 +124,29 @@
     // Maintainer auto-save
     const maintainerInput = document.getElementById('maintainer-names');
     const maintainerStatus = document.getElementById('maintainer-save-indicator');
+    let lastSavedValue = maintainerInput ? maintainerInput.value : '';
 
     async function saveMaintainers() {
       if (!maintainerInput || !maintainerStatus) return;
+
+      const newValue = maintainerInput.value.trim();
+
+      // If empty, restore previous value (no server call)
+      if (!newValue) {
+        maintainerInput.value = lastSavedValue;
+        return;
+      }
+
+      // Skip if unchanged
+      if (newValue === lastSavedValue) return;
+
       maintainerStatus.textContent = 'Saving...';
       maintainerStatus.className = 'status-indicator saving';
 
       try {
         const formData = new FormData();
         formData.append('action', 'update_maintainers');
-        formData.append('maintainers', maintainerInput.value);
+        formData.append('maintainers', newValue);
         formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
 
         const response = await fetch(window.location.href, {
@@ -143,6 +156,7 @@
 
         const data = await response.json();
         if (response.ok && data.success) {
+          lastSavedValue = newValue;
           maintainerStatus.textContent = 'Saved';
           maintainerStatus.className = 'status-indicator saved';
           setTimeout(() => {
@@ -150,11 +164,13 @@
             maintainerStatus.className = 'status-indicator';
           }, 2000);
         } else {
+          maintainerInput.value = lastSavedValue;
           maintainerStatus.textContent = data.error || 'Error';
           maintainerStatus.className = 'status-indicator error';
         }
       } catch (error) {
         console.error('Save error:', error);
+        maintainerInput.value = lastSavedValue;
         maintainerStatus.textContent = 'Error';
         maintainerStatus.className = 'status-indicator error';
       }

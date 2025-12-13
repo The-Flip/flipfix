@@ -22,6 +22,11 @@
      class="sidebar__title sidebar__link">{{ part_request.machine.display_name }}</a>
 {% endsidebar_section %}
 {% endif %}
+{% if not is_shared_account %}
+  {% sidebar_section label="Who" %}
+  {% maintainer_autocomplete_field form.requester_name size="sm" show_label=False %}
+{% endsidebar_section %}
+{% endif %}
 {% endblock %}
 {% block main %}
   <div class="card card--padded">
@@ -30,6 +35,10 @@
     </div>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
+      {% if is_shared_account %}
+        <!-- WHO (shared accounts only - in main content for mobile visibility) -->
+        {% maintainer_autocomplete_field form.requester_name label="Who is posting this?" %}
+      {% endif %}
       <!-- Comment -->
       <div class="form-field">
         <label for="id_text" class="form-label">Comment</label>
@@ -67,6 +76,8 @@
   </div>
 {% endblock %}
 {% block extra_scripts %}
+  <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
+  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
   <script>
     // File upload click handler
     document.getElementById('file-upload-link').addEventListener('click', function(e) {

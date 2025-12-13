@@ -746,6 +746,50 @@ class LogListSearchTests(TestDataMixin, TestCase):
         self.assertContains(response, "Coil stop broken")
         self.assertNotContains(response, "Adjusted flipper alignment")
 
+    def test_search_includes_maintainer_names(self):
+        """Search should match free-text maintainer names."""
+        log_with_name = create_log_entry(
+            machine=self.machine,
+            text="Replaced coil",
+            maintainer_names="Wandering Willie",
+        )
+        create_log_entry(machine=self.machine, text="Adjusted flipper alignment")
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.list_url, {"q": "Wandering"})
+
+        self.assertContains(response, log_with_name.text)
+        self.assertNotContains(response, "Adjusted flipper alignment")
+
+
+@tag("views")
+class MachineLogSearchTests(TestDataMixin, TestCase):
+    """Tests for machine log view search."""
+
+    def setUp(self):
+        super().setUp()
+        self.list_url = reverse("log-machine", kwargs={"slug": self.machine.slug})
+
+    def test_search_includes_problem_report_reporter_name(self):
+        """Search should match attached problem report's free-text reporter name."""
+        report = create_problem_report(
+            machine=self.machine,
+            description="Ball stuck",
+            reported_by_name="Visiting Vera",
+        )
+        log_with_report = create_log_entry(
+            machine=self.machine,
+            text="Cleared stuck ball",
+            problem_report=report,
+        )
+        create_log_entry(machine=self.machine, text="Adjusted flipper alignment")
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.list_url, {"q": "Visiting"})
+
+        self.assertContains(response, log_with_report.text)
+        self.assertNotContains(response, "Adjusted flipper alignment")
+
 
 @tag("views", "access-control")
 class MachineBulkQRCodeViewAccessTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):

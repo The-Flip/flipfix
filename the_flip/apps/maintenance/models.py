@@ -88,10 +88,11 @@ class ProblemReport(TimeStampedModel):
 
     @property
     def reporter_display(self) -> str:
-        if self.reported_by_user:
-            return self.reported_by_user.get_full_name() or self.reported_by_user.get_username()
+        # Prefer typed-in name (e.g., from shared terminal account)
         if self.reported_by_name:
             return self.reported_by_name
+        if self.reported_by_user:
+            return self.reported_by_user.get_full_name() or self.reported_by_user.get_username()
         if self.reported_by_contact:
             return self.reported_by_contact
         return ""

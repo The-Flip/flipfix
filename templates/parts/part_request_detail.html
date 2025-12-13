@@ -41,7 +41,7 @@
     </div>
   </div>
   <div class="sidebar__subtitle space-above-sm">
-    {{ part_request.requested_by.display_name }} · {{ part_request.created_at|smart_date }}
+    {{ part_request.requester_display }} · {{ part_request.created_at|smart_date }}
   </div>
 {% endsidebar_section %}
 {% if part_request.machine %}

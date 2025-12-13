@@ -450,3 +450,121 @@ class MachineInlineUpdateViewTests(TestCase):
         log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
         self.assertEqual(log.created_by, self.maintainer_user)
         self.assertEqual(log.maintainers.count(), 0)
+
+
+@tag("views")
+class MachineActivitySearchTests(TestCase):
+    """Tests for machine activity feed search including free-text name fields."""
+
+    def setUp(self):
+        self.maintainer_user = create_maintainer_user()
+        self.machine = create_machine(slug="test-machine")
+        self.detail_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+
+    def test_search_finds_log_entry_by_maintainer_names(self):
+        """Activity search should find log entries by free-text maintainer names."""
+        from the_flip.apps.core.test_utils import create_log_entry
+
+        create_log_entry(
+            machine=self.machine,
+            text="Replaced flipper",
+            maintainer_names="Wandering Willie",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url, {"q": "Wandering"})
+
+        self.assertContains(response, "Replaced flipper")
+
+    def test_search_finds_problem_report_by_reporter_name(self):
+        """Activity search should find problem reports by free-text reporter name."""
+        from the_flip.apps.core.test_utils import create_problem_report
+
+        create_problem_report(
+            machine=self.machine,
+            description="Lights flickering",
+            reported_by_name="Visiting Vera",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url, {"q": "Visiting"})
+
+        self.assertContains(response, "Lights flickering")
+
+    def test_search_finds_part_request_by_requester_name(self):
+        """Activity search should find part requests by free-text requester name."""
+        from constance.test import override_config
+
+        from the_flip.apps.parts.models import PartRequest
+
+        PartRequest.objects.create(
+            machine=self.machine,
+            text="Need new rubber rings",
+            requested_by_name="Requisitioning Ralph",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        with override_config(PARTS_ENABLED=True):
+            response = self.client.get(self.detail_url, {"q": "Requisitioning"})
+
+        self.assertContains(response, "Need new rubber rings")
+
+    def test_search_finds_part_update_by_poster_name(self):
+        """Activity search should find part request updates by free-text poster name."""
+        from constance.test import override_config
+
+        from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
+
+        part_request = PartRequest.objects.create(
+            machine=self.machine,
+            text="Flipper coil",
+        )
+        PartRequestUpdate.objects.create(
+            part_request=part_request,
+            text="Ordered from Marco",
+            posted_by_name="Updating Ursula",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        with override_config(PARTS_ENABLED=True):
+            response = self.client.get(self.detail_url, {"q": "Updating"})
+
+        self.assertContains(response, "Ordered from Marco")
+
+    def test_search_finds_problem_report_by_log_entry_maintainer_names(self):
+        """Activity search should find problem reports by their log entry's free-text maintainer names."""
+        from the_flip.apps.core.test_utils import create_log_entry, create_problem_report
+
+        report = create_problem_report(
+            machine=self.machine,
+            description="Ball stuck in gutter",
+        )
+        create_log_entry(
+            machine=self.machine,
+            problem_report=report,
+            text="Cleared the ball",
+            maintainer_names="Wandering Willie",
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url, {"q": "Wandering"})
+
+        self.assertContains(response, "Ball stuck in gutter")
+
+    def test_search_finds_log_entry_by_maintainer_fk(self):
+        """Activity search should find log entries by FK maintainer name."""
+        from the_flip.apps.accounts.models import Maintainer
+        from the_flip.apps.core.test_utils import create_log_entry
+
+        maintainer = Maintainer.objects.get(user=self.maintainer_user)
+        log = create_log_entry(
+            machine=self.machine,
+            text="Fixed the flipper",
+        )
+        log.maintainers.add(maintainer)
+
+        self.client.force_login(self.maintainer_user)
+        # Search by maintainer's first name
+        response = self.client.get(self.detail_url, {"q": self.maintainer_user.first_name})
+
+        self.assertContains(response, "Fixed the flipper")

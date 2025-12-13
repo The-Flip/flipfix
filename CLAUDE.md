@@ -102,7 +102,6 @@ Load with `{% load core_extras %}`, then use:
 |-----------|------|-------|
 | `two_column_layout` | Template | `{% extends "layouts/two_column.html" %}` with blocks: `mobile_actions`, `sidebar`, `main`. Sidebar block is auto-wrapped in sticky card. |
 | `sidebar_section` | Block tag | `{% sidebar_section label="Stats" %}...{% endsidebar_section %}` - Section within sidebar |
-| `button` | Inclusion tag | `{% button url="/path" label="Click" icon="plus" variant="log" full_width=True %}` |
 | `stat_grid` | Inclusion tag | `{% stat_grid stats=stats_list %}` where stats is list of `{value, label, variant}` dicts |
 | `timeline` | Block tag | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line |
 | `timeline_entry` | Block tag | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}` |
@@ -112,11 +111,6 @@ Load with `{% load core_extras %}`, then use:
 | `form_non_field_errors` | Inclusion tag | `{% form_non_field_errors form %}` - Renders non-field errors if any |
 | `field_errors` | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup) |
 | `field_help_text` | Inclusion tag | `{% field_help_text form.field_name %}` - Renders field help text only (for custom field markup) |
-
-### Button Variants
-- `secondary` (default), `primary`, `report`, `log`
-- Add `full_width=True` for full-width buttons
-- Add `icon_only=True` for icon-only buttons (label becomes aria-label)
 
 ### Pill Variants
 - `neutral` (default), `open`, `closed`, `status-fixing`, `status-good`, `status-broken`
