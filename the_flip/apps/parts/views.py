@@ -28,6 +28,40 @@ from the_flip.apps.parts.models import (
 )
 
 
+def get_part_request_queryset(search_query: str = ""):
+    """Build the queryset for part request lists.
+
+    Used by both the main list view and the infinite scroll partial view
+    to ensure consistent filtering, prefetching, and ordering.
+    """
+    latest_update_prefetch = Prefetch(
+        "updates",
+        queryset=PartRequestUpdate.objects.order_by("-created_at"),
+        to_attr="prefetched_updates",
+    )
+    queryset = (
+        PartRequest.objects.all()
+        .select_related("requested_by__user", "machine", "machine__model")
+        .prefetch_related("media", latest_update_prefetch)
+        .order_by("-created_at")
+    )
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(text__icontains=search_query)
+            | Q(status__icontains=search_query)
+            | Q(machine__model__name__icontains=search_query)
+            | Q(machine__name_override__icontains=search_query)
+            | Q(requested_by__user__first_name__icontains=search_query)
+            | Q(requested_by__user__last_name__icontains=search_query)
+            | Q(requested_by_name__icontains=search_query)
+            | Q(updates__text__icontains=search_query)
+            | Q(updates__posted_by_name__icontains=search_query)
+        ).distinct()
+
+    return queryset
+
+
 class PartRequestListView(CanAccessMaintainerPortalMixin, TemplateView):
     """List of all part requests. Maintainer-only access."""
 
@@ -35,32 +69,8 @@ class PartRequestListView(CanAccessMaintainerPortalMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        latest_update_prefetch = Prefetch(
-            "updates",
-            queryset=PartRequestUpdate.objects.order_by("-created_at"),
-            to_attr="prefetched_updates",
-        )
-        parts = (
-            PartRequest.objects.all()
-            .select_related("requested_by__user", "machine", "machine__model")
-            .prefetch_related("media", latest_update_prefetch)
-            .order_by("-created_at")
-        )
-
-        # Search (includes status field so users can search "ordered", "requested", etc.)
         search_query = self.request.GET.get("q", "").strip()
-        if search_query:
-            parts = parts.filter(
-                Q(text__icontains=search_query)
-                | Q(status__icontains=search_query)
-                | Q(machine__model__name__icontains=search_query)
-                | Q(machine__name_override__icontains=search_query)
-                | Q(requested_by__user__first_name__icontains=search_query)
-                | Q(requested_by__user__last_name__icontains=search_query)
-                | Q(requested_by_name__icontains=search_query)
-                | Q(updates__text__icontains=search_query)
-                | Q(updates__posted_by_name__icontains=search_query)
-            ).distinct()
+        parts = get_part_request_queryset(search_query)
 
         paginator = Paginator(parts, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -98,31 +108,8 @@ class PartRequestListPartialView(CanAccessMaintainerPortalMixin, View):
     template_name = "parts/partials/part_list_entry.html"
 
     def get(self, request, *args, **kwargs):
-        latest_update_prefetch = Prefetch(
-            "updates",
-            queryset=PartRequestUpdate.objects.order_by("-created_at"),
-            to_attr="prefetched_updates",
-        )
-        parts = (
-            PartRequest.objects.all()
-            .select_related("requested_by__user", "machine", "machine__model")
-            .prefetch_related("media", latest_update_prefetch)
-            .order_by("-created_at")
-        )
-
         search_query = request.GET.get("q", "").strip()
-        if search_query:
-            parts = parts.filter(
-                Q(text__icontains=search_query)
-                | Q(status__icontains=search_query)
-                | Q(machine__model__name__icontains=search_query)
-                | Q(machine__name_override__icontains=search_query)
-                | Q(requested_by__user__first_name__icontains=search_query)
-                | Q(requested_by__user__last_name__icontains=search_query)
-                | Q(requested_by_name__icontains=search_query)
-                | Q(updates__text__icontains=search_query)
-                | Q(updates__posted_by_name__icontains=search_query)
-            ).distinct()
+        parts = get_part_request_queryset(search_query)
 
         paginator = Paginator(parts, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
