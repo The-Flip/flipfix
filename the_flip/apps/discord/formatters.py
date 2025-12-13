@@ -197,8 +197,11 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     if part_request.machine:
         description += f"\n\n📍 Machine: {part_request.machine.display_name}"
 
-    # Add requester (use Discord name if available)
-    requester = _get_maintainer_display_name(part_request.requested_by)
+    # Add requester (use Discord name if available, or fall back to display property)
+    if part_request.requested_by:
+        requester = _get_maintainer_display_name(part_request.requested_by)
+    else:
+        requester = part_request.requester_display or "Unknown"
     description += f"\n\n— {requester}"
 
     return {
@@ -271,8 +274,11 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     if update.part_request.machine:
         description += f"\n\n📍 Machine: {update.part_request.machine.display_name}"
 
-    # Add who posted (use Discord name if available)
-    poster = _get_maintainer_display_name(update.posted_by)
+    # Add who posted (use Discord name if available, or fall back to display property)
+    if update.posted_by:
+        poster = _get_maintainer_display_name(update.posted_by)
+    else:
+        poster = update.poster_display or "Unknown"
     description += f"\n\n— {poster}"
 
     return {
