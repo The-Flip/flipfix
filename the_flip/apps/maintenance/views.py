@@ -36,6 +36,7 @@ from PIL import Image, ImageOps
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
+from the_flip.apps.core.ip import get_real_ip
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     MediaUploadMixin,
@@ -447,7 +448,7 @@ class PublicProblemReportCreateView(FormView):
 
     def post(self, request, *args, **kwargs):
         # Check rate limiting
-        ip_address = request.META.get("REMOTE_ADDR")
+        ip_address = get_real_ip(request)
         if ip_address and not self._check_rate_limit(ip_address):
             messages.error(request, "Too many reports submitted recently. Please try again later.")
             return redirect("public-problem-report-create", slug=self.machine.slug)
@@ -463,7 +464,7 @@ class PublicProblemReportCreateView(FormView):
     def form_valid(self, form):
         report = form.save(commit=False)
         report.machine = self.machine
-        report.ip_address = self.request.META.get("REMOTE_ADDR")
+        report.ip_address = get_real_ip(self.request)
         report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
@@ -518,7 +519,7 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
 
         report = form.save(commit=False)
         report.machine = machine
-        report.ip_address = self.request.META.get("REMOTE_ADDR")
+        report.ip_address = get_real_ip(self.request)
         report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user

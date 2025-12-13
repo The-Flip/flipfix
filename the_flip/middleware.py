@@ -10,6 +10,7 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from whitenoise.middleware import WhiteNoiseMiddleware
 
+from the_flip.apps.core.ip import get_real_ip
 from the_flip.logging import bind_log_context, reset_log_context
 
 
@@ -35,7 +36,7 @@ class RequestContextMiddleware:
             method=request.method,
             user_id=user_id,
             username=username,
-            remote_ip=request.META.get("REMOTE_ADDR"),
+            remote_ip=get_real_ip(request),
         )
         request.request_id = request_id  # type: ignore[attr-defined]
         try:
