@@ -6,31 +6,31 @@ python-decouple==3.8
 django-constance[database]==4.3.4
 
 # Database
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
 dj-database-url==2.3.0
 
 # Production Server
 gunicorn==23.0.0
 
 # Static Files Serving
-whitenoise==6.8.2
+whitenoise==6.11.0
 
 # QR Code Generation
-qrcode[pil]==8.0
+qrcode[pil]==8.2
 Pillow==11.0.0
 pillow-heif==0.18.0
-django-q2==1.8.0
+django-q2==1.9.0
 
 # HTTP Requests (for worker → web service transfer)
-requests==2.32.4
+requests==2.32.5
 
 # Markdown Rendering
-Markdown==3.7
+Markdown==3.10
 nh3==0.2.18
 linkify-it-py==2.0.3
 
 # Audit Logging
-django-simple-history==3.10.1
+django-simple-history==3.11.0
 
 # Client IP Detection (behind proxies)
 django-ipware==7.0.1
