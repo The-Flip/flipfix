@@ -207,9 +207,14 @@ table {
   --color-input-border: #d1d5db;
   --color-input-focus: #3b82f6;
   --color-avatar-bg: #d97706;
+
+  /* Links */
+  --color-link: #2563eb;
 }
 
-/* --- Colors (Dark Theme) --- */
+/* --- Colors (Dark Theme) ---
+   Based on VS Code's "Dark Modern" theme (exact values).
+   Source: https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/dark_modern.json */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #1f1f1f;
@@ -254,6 +259,9 @@ table {
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
     --color-input-focus: #0078d4;
+
+    /* Links - VS Code: textLink.foreground */
+    --color-link: #4daafc;
   }
 }
 
