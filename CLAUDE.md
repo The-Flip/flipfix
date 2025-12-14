@@ -12,19 +12,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Development
 make runserver      # Start dev web server
 make runq           # Start background worker (required for video transcoding and web hooks)
+make runbot         # Start Discord bot
 make shell          # Django shell
 
 # Testing
 make test           # Run fast suite (excludes integration)
 make test-all       # Run full suite (includes integration checks)
+make test-classifier # Run classifier unit tests
+make eval-classifier # Output classifier results to CSV
 
 # Code Quality
+make format         # Auto-format code
+make lint           # Lint code
+make typecheck      # Check Python types
 make quality        # Format + lint + typecheck (run before committing)
+make precommit      # Run pre-commit hooks
 
 # Database
 make migrate        # Run migrations
 make migrations     # Create new migrations
 make reset-db       # Reset database and migrations
+make superuser      # Create superuser
+make sample-data    # Create sample data (dev only)
 ```
 
 Run a single test:
@@ -79,6 +88,9 @@ the_flip/
     │   ├── accounts/       # Maintainer profiles & auth
     │   ├── catalog/        # Machine models/instances
     │   ├── maintenance/    # Problem reports, log entries, tasks
+    │   ├── discord/        # Discord bot integration
+    │   ├── parts/          # Parts inventory tracking
+    │   ├── webhooks/       # Webhook handlers
     │   └── core/           # Shared utilities & decorators
     └── static/             # Project-level static files
 ```
@@ -102,7 +114,9 @@ Load with `{% load core_extras %}`, then use:
 |-----------|------|-------|
 | `two_column_layout` | Template | `{% extends "layouts/two_column.html" %}` with blocks: `mobile_actions`, `sidebar`, `main`. Sidebar block is auto-wrapped in sticky card. |
 | `sidebar_section` | Block tag | `{% sidebar_section label="Stats" %}...{% endsidebar_section %}` - Section within sidebar |
+| `editable_sidebar_card` | Block tag | `{% editable_sidebar_card editable=True edit_type="machine" current_value=slug csrf_token=csrf_token %}...{% endeditable_sidebar_card %}` - Sidebar card with edit dropdown |
 | `stat_grid` | Inclusion tag | `{% stat_grid stats=stats_list %}` where stats is list of `{value, label, variant}` dicts |
+| `empty_state` | Inclusion tag | `{% empty_state empty_message="No items." search_message="No results." is_search=query %}` - Empty/no results message |
 | `timeline` | Block tag | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line |
 | `timeline_entry` | Block tag | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}` |
 | `pill` | Inclusion tag | `{% pill label="Open" variant="open" %}` - Status pill/badge |
@@ -112,6 +126,7 @@ Load with `{% load core_extras %}`, then use:
 | `form_non_field_errors` | Inclusion tag | `{% form_non_field_errors form %}` - Renders non-field errors if any |
 | `field_errors` | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup) |
 | `field_help_text` | Inclusion tag | `{% field_help_text form.field_name %}` - Renders field help text only (for custom field markup) |
+| `maintainer_autocomplete_field` | Inclusion tag | `{% maintainer_autocomplete_field form.name %}` - Autocomplete input for user search. Optional: `label`, `placeholder`, `size`, `show_label`, `required` |
 
 **Form Field Marking**: Do NOT mark required fields with asterisks. The `form_field` component auto-appends "(optional)" to fields with `required=False`. For manual markup, add "(optional)" to the label or use `{% form_label field %}`. See `docs/Forms.md` for full form guidance.
 
@@ -131,7 +146,14 @@ Load with `{% load core_extras %}`, then use:
 
 | Filter | Usage | Description |
 |--------|-------|-------------|
+| `render_markdown` | `{{ text\|render_markdown }}` | Convert markdown to sanitized HTML with auto-linked URLs |
+| `smart_date` | `{{ timestamp\|smart_date }}` | Render timestamp as `<time>` element for JS formatting |
 | `display_name_with_username` | `{{ user\|display_name_with_username }}` | Returns "First Last (username)" or just "username" |
+| `month_name` | `{{ month_num\|month_name }}` | Convert month number (1-12) to name |
+| `problem_report_summary` | `{{ report\|problem_report_summary }}` | Concise summary: type + description |
+| `problem_report_meta` | `{{ report\|problem_report_meta }}` | Reporter name + timestamp |
+| `log_entry_meta` | `{{ entry\|log_entry_meta }}` | Maintainer names + timestamp |
+| `getfield` | `{{ form\|getfield:"name" }}` | Get form field by name |
 
 ## Tool Usage
 
