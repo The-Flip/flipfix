@@ -12,6 +12,7 @@ The development documentation for The Flip maintenance system.
 - **[Testing.md](Testing.md)** - Test structure, runner configuration, coverage requirements, and testing best practices
 - **[Deployment.md](Deployment.md)** - Deployment pipeline (PR environments, production)
 - **[Operations.md](Operations.md)** - Operations guide (monitoring, rollback, backups)
+- **[Discord.md](Discord.md)** - Discord integration setup (webhooks and bot)
 
 ## For AI Assistants
 
