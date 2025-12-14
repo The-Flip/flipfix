@@ -26,13 +26,11 @@ class InvitationRegistrationForm(StyledFormMixin, forms.Form):
     first_name = forms.CharField(
         max_length=150,
         required=False,
-        label="First name (optional)",
         widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
     )
     last_name = forms.CharField(
         max_length=150,
         required=False,
-        label="Last name (optional)",
         widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
     )
     email = forms.EmailField(
@@ -87,9 +85,9 @@ class SelfRegistrationForm(StyledFormMixin, forms.Form):
     """Form for self-registration during beta period."""
 
     username = forms.CharField(max_length=150)
-    first_name = forms.CharField(max_length=150, required=False, label="First name (optional)")
-    last_name = forms.CharField(max_length=150, required=False, label="Last name (optional)")
-    email = forms.EmailField(required=False, label="Email (optional)")
+    first_name = forms.CharField(max_length=150, required=False)
+    last_name = forms.CharField(max_length=150, required=False)
+    email = forms.EmailField(required=False)
     password = forms.CharField(widget=forms.PasswordInput)
 
     existing_user: "UserType | None"

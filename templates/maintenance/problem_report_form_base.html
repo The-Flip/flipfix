@@ -35,9 +35,7 @@
       {% if not machine %}
         <!-- MACHINE (global pages only - in main content for mobile visibility) -->
         <div class="form-field">
-          <label class="form-label">
-            Machine <span class="text-problem">*</span>
-          </label>
+          <label class="form-label">Machine</label>
           <div class="autocomplete"
                data-machine-autocomplete
                data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
@@ -62,9 +60,7 @@
       {% block problem_type_field %}
         <!-- PROBLEM TYPE -->
         <div class="form-field">
-          <label class="form-label">
-            What type of problem? <span class="text-problem">*</span>
-          </label>
+          <label class="form-label">What type of problem?</label>
           <div class="radio-group">
             {% for radio in form.problem_type %}
               <label class="radio-label">

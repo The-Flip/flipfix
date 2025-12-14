@@ -1,6 +1,6 @@
 # HTML & CSS Development Guide
 
-This is a guide for developers and AI assistants creating HTML and CSS.
+This guide covers creating HTML and CSS for this project.
 
 Focus on clean, modern, lightweight mobile-friendly pages that rely on a single cached stylesheet.
 
@@ -41,7 +41,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **Buttons** (`.btn` with modifiers like `.btn--primary`, `.btn--secondary`, `.btn--log`, `.btn--report`)
 - **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`, `.badge-inline`)
 - **Cards** (`.card` with BEM elements like `.card__header`, `.card__body`)
-- **Forms** (`.form-field` wrapper pattern, `.form-inline` for inline forms)
+- **Forms** (`.form-field` wrapper pattern, `.form-inline` for inline forms) - See [Forms.md](Forms.md) for form building patterns and components
 - **Messages & Alerts** (`.message` with type modifiers like `.message--success`, `.message--error`)
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
 
@@ -54,6 +54,8 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
 - `.text-muted` - Muted text color
 - `.text-center` - Center-align text
+- `.text-xs` - Extra small text
+- `.text-sm` - Small text
 - `.form-inline` - Display form inline
 - `.badge-inline` - Badge with left margin (for badges inside buttons)
 - `.media-thumbnail` - Thumbnail image spacing

@@ -32,9 +32,7 @@
       {% if is_global %}
         <!-- MACHINE (global pages only - in main content for mobile visibility) -->
         <div class="form-field">
-          <label class="form-label">
-            Machine <span class="text-problem">*</span>
-          </label>
+          <label class="form-label">Machine</label>
           <div class="autocomplete"
                data-machine-autocomplete
                data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
@@ -58,9 +56,7 @@
       {% endif %}
       <!-- WORK DESCRIPTION -->
       <div class="form-field">
-        <label for="{{ form.text.id_for_label }}" class="form-label">
-          What work was done? <span class="text-problem">*</span>
-        </label>
+        <label for="{{ form.text.id_for_label }}" class="form-label">What work was done?</label>
         <textarea id="{{ form.text.id_for_label }}"
                   name="{{ form.text.html_name }}"
                   class="form-input form-textarea"

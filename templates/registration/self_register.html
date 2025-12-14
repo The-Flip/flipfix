@@ -14,7 +14,7 @@
     {% form_non_field_errors form %}
     <!-- Username section -->
     <div class="form-field">
-      {{ form.username.label_tag }}
+      {% form_label form.username %}
       <div class="input-with-button">
         <input type="text"
                name="username"
@@ -42,7 +42,7 @@
              autocomplete="username"
              id="id_username_hidden">
       <div class="form-field">
-        {{ form.first_name.label_tag }}
+        {% form_label form.first_name %}
         <input type="text"
                name="first_name"
                id="id_first_name"
@@ -52,7 +52,7 @@
         {% field_errors form.first_name %}
       </div>
       <div class="form-field">
-        {{ form.last_name.label_tag }}
+        {% form_label form.last_name %}
         <input type="text"
                name="last_name"
                id="id_last_name"
@@ -62,7 +62,7 @@
         {% field_errors form.last_name %}
       </div>
       <div class="form-field">
-        {{ form.email.label_tag }}
+        {% form_label form.email %}
         <input type="email"
                name="email"
                id="id_email"
@@ -72,7 +72,7 @@
         {% field_errors form.email %}
       </div>
       <div class="form-field">
-        {{ form.password.label_tag }}
+        {% form_label form.password %}
         <input type="password"
                name="password"
                id="id_password"

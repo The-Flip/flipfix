@@ -106,11 +106,14 @@ Load with `{% load core_extras %}`, then use:
 | `timeline` | Block tag | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line |
 | `timeline_entry` | Block tag | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}` |
 | `pill` | Inclusion tag | `{% pill label="Open" variant="open" %}` - Status pill/badge |
+| `form_label` | Simple tag | `{% form_label field %}` - Renders label with "(optional)" for non-required fields |
 | `form_field` | Inclusion tag | `{% form_field field %}` - Renders field with label, input, help text, errors. Optional: `id`, `class_` |
 | `form_fields` | Inclusion tag | `{% form_fields form %}` - Renders all visible fields in a form |
 | `form_non_field_errors` | Inclusion tag | `{% form_non_field_errors form %}` - Renders non-field errors if any |
 | `field_errors` | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup) |
 | `field_help_text` | Inclusion tag | `{% field_help_text form.field_name %}` - Renders field help text only (for custom field markup) |
+
+**Form Field Marking**: Do NOT mark required fields with asterisks. The `form_field` component auto-appends "(optional)" to fields with `required=False`. For manual markup, add "(optional)" to the label or use `{% form_label field %}`. See `docs/Forms.md` for full form guidance.
 
 ### Pill Variants
 - `neutral` (default), `open`, `closed`, `status-fixing`, `status-good`, `status-broken`
@@ -151,6 +154,7 @@ Before generating code or explanations, read the docs at `docs/README.md` and li
 - `docs/Project_Structure.md` - Directory layout
 - `docs/Django_Python.md` - Django conventions
 - `docs/HTML_CSS.md` - CSS patterns and component classes
+- `docs/Forms.md` - Form building patterns and components
 - `docs/Datamodel.md` - Domain models and relationships
 - `docs/Testing.md` - Testing strategy
 

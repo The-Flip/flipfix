@@ -23,7 +23,9 @@
         {% field_errors form.problem_type %}
       </div>
       <div class="form-field">
-        <label for="{{ form.description.id_for_label }}" class="form-label">Details (optional)</label>
+        <label for="{{ form.description.id_for_label }}" class="form-label">
+          Details <span class="text-muted text-xs">(optional)</span>
+        </label>
         <textarea id="{{ form.description.id_for_label }}"
                   name="{{ form.description.html_name }}"
                   class="form-input form-textarea"

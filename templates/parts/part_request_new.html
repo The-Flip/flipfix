@@ -50,7 +50,9 @@
       <!-- Machine selector (if not pre-selected) -->
       {% if not machine %}
         <div class="form-field">
-          <label class="form-label">Machine (optional)</label>
+          <label class="form-label">
+            Machine <span class="text-muted text-xs">(optional)</span>
+          </label>
           <div class="autocomplete"
                data-machine-autocomplete
                data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
@@ -69,14 +71,14 @@
                    data-machine-slug-input>
             <div class="autocomplete__dropdown hidden"></div>
           </div>
-          {% if form.machine_slug.errors %}<p class="text-problem body-small">{{ form.machine_slug.errors.0 }}</p>{% endif %}
+          {% field_errors form.machine_slug %}
         </div>
       {% endif %}
       <!-- Description -->
       <div class="form-field">
-        <label for="id_text" class="form-label">Description</label>
+        {% form_label form.text %}
         {{ form.text }}
-        {% if form.text.errors %}<p class="text-problem body-small">{{ form.text.errors.0 }}</p>{% endif %}
+        {% field_errors form.text %}
         <!-- File upload link (GitHub-style) -->
         <div class="form-hint space-above-sm">
           <input type="file"
@@ -89,7 +91,7 @@
             <i class="fa-solid fa-paperclip space-right-xs"></i>Paste, drop, or click to add photos
           </a>
         </div>
-        {% if form.media_file.errors %}<p class="text-problem body-small">{{ form.media_file.errors.0 }}</p>{% endif %}
+        {% field_errors form.media_file %}
         <!-- Uploaded files preview -->
         <div class="file-preview-row" id="file-preview-row"></div>
       </div>

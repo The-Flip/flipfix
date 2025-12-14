@@ -296,6 +296,29 @@ def pill(label: str, variant: str = "neutral", icon: str = ""):
 # -----------------------------------------------------------------------------
 
 
+@register.simple_tag
+def form_label(field):
+    """Render a form field label, appending "(optional)" for non-required fields.
+
+    Usage:
+        {% form_label field %}
+
+    Args:
+        field: A Django form field (BoundField)
+    """
+    if field.field.required:
+        return format_html(
+            '<label for="{}" class="form-label">{}</label>',
+            field.id_for_label,
+            field.label,
+        )
+    return format_html(
+        '<label for="{}" class="form-label">{} <span class="text-muted text-xs">(optional)</span></label>',
+        field.id_for_label,
+        field.label,
+    )
+
+
 @register.inclusion_tag("components/form_field.html")
 def form_field(field, id: str = "", class_: str = ""):
     """Render a form field with label, input, help text, and errors.

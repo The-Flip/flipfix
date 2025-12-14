@@ -13,7 +13,7 @@
       {% form_field form.last_name %}
       {% form_field form.email %}
       <div class="form-field">
-        {{ form.password.label_tag }}
+        {% form_label form.password %}
         {{ form.password }}
         {% field_errors form.password %}
         <label class="checkbox-label">

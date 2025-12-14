@@ -1915,6 +1915,15 @@ body {
   border: 0;
 }
 
+/* Text sizes */
+.text-xs {
+  font-size: var(--text-xs);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
 /* Text colors */
 .text-log {
   color: var(--color-log);

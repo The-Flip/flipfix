@@ -41,9 +41,9 @@
       {% endif %}
       <!-- Comment -->
       <div class="form-field">
-        <label for="id_text" class="form-label">Comment</label>
+        {% form_label form.text %}
         {{ form.text }}
-        {% if form.text.errors %}<p class="text-problem body-small">{{ form.text.errors.0 }}</p>{% endif %}
+        {% field_errors form.text %}
         <!-- File upload link (GitHub-style) -->
         <div class="form-hint space-above-sm">
           <input type="file"
@@ -56,15 +56,15 @@
             <i class="fa-solid fa-paperclip space-right-xs"></i>Paste, drop, or click to add photos
           </a>
         </div>
-        {% if form.media_file.errors %}<p class="text-problem body-small">{{ form.media_file.errors.0 }}</p>{% endif %}
+        {% field_errors form.media_file %}
         <!-- Uploaded files preview -->
         <div class="file-preview-row" id="file-preview-row"></div>
       </div>
       <!-- Status change -->
       <div class="form-field">
-        <label for="id_new_status" class="form-label">Change status to</label>
+        <label for="{{ form.new_status.id_for_label }}" class="form-label">Change status to</label>
         {{ form.new_status }}
-        {% if form.new_status.errors %}<p class="text-problem body-small">{{ form.new_status.errors.0 }}</p>{% endif %}
+        {% field_errors form.new_status %}
       </div>
       <!-- Submit -->
       <div class="form-actions">
