@@ -88,7 +88,7 @@ def render_markdown(text):
     if not text:
         return ""
     # Convert markdown to HTML
-    html = markdown.markdown(text, extensions=["fenced_code", "nl2br"])
+    html = markdown.markdown(text, extensions=["fenced_code", "nl2br", "smarty"])
     # Convert bare URLs to links
     html = _linkify_urls(html)
     # Sanitize to prevent XSS

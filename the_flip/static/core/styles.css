@@ -164,6 +164,7 @@ table {
   /* Surfaces & text */
   --color-background: #FBF7F0;
   --color-surface: #FFFFFF;
+  --color-border: #d1d5db;
   --color-border-soft: #E7E5E4;
   --color-text-primary: #333333;
   --color-text-muted: #6b7280;
@@ -207,13 +208,19 @@ table {
   --color-input-border: #d1d5db;
   --color-input-focus: #3b82f6;
   --color-avatar-bg: #d97706;
+
+  /* Links */
+  --color-link: #2563eb;
 }
 
-/* --- Colors (Dark Theme) --- */
+/* --- Colors (Dark Theme) ---
+   Based on VS Code's "Dark Modern" theme (exact values).
+   Source: https://github.com/microsoft/vscode/blob/main/extensions/theme-defaults/themes/dark_modern.json */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #1f1f1f;
     --color-surface: #252525;
+    --color-border: #616161;
     --color-border-soft: #2b2b2b;
 
     --color-text-primary: #cccccc;
@@ -254,6 +261,9 @@ table {
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
     --color-input-focus: #0078d4;
+
+    /* Links - VS Code: textLink.foreground */
+    --color-link: #4daafc;
   }
 }
 
@@ -1849,6 +1859,36 @@ body {
 
 .markdown-content a:hover {
   text-decoration: underline;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-4);
+  margin: var(--space-3) 0;
+  color: var(--color-text-muted);
+}
+
+/* Code blocks: ```code``` - wrapped in <pre><code> */
+.markdown-content pre {
+  background-color: var(--color-border-soft);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+}
+
+/* Inline code: `code` - just <code> */
+.markdown-content code {
+  background-color: var(--color-border-soft);
+  padding: var(--space-0-5) var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+/* Reset inline styles when code is inside a code block */
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
 }
 
 /* --- Stats Grid --- */
