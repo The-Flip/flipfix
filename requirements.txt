@@ -37,5 +37,6 @@ django-ipware==7.0.1
 
 # Discord Bot
 discord.py==2.4.0
+audioop-lts==0.2.1  # Python 3.13 compatibility for discord.py
 httpx==0.28.1
 anthropic

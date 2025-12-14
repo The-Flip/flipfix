@@ -27,7 +27,7 @@ class WizardResult:
 
     suggestion: RecordSuggestion
     action: str  # "created", "skipped"
-    url: str | None = None  # URL to the created record (Phase 3)
+    url: str | None = None  # URL to the created record
 
 
 @dataclass
