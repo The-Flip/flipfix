@@ -33,7 +33,7 @@ def get_activity_entries(machine, search_query=None):
         queryset=LogEntry.objects.order_by("-created_at"),
         to_attr="prefetched_log_entries",
     )
-    logs = LogEntry.objects.filter(machine=machine).prefetch_related("maintainers", "media")
+    logs = LogEntry.objects.filter(machine=machine).prefetch_related("maintainers__user", "media")
     reports = (
         ProblemReport.objects.filter(machine=machine)
         .select_related("reported_by_user")
