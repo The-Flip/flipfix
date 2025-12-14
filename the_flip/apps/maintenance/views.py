@@ -102,7 +102,7 @@ def get_log_entry_queryset(search_query: str = ""):
     queryset = (
         LogEntry.objects.all()
         .select_related("machine", "machine__model", "problem_report")
-        .prefetch_related("maintainers", "media")
+        .prefetch_related("maintainers__user", "media")
         .order_by("-work_date")
     )
 
@@ -373,7 +373,9 @@ class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
                 | Q(maintainer_names__icontains=search_query)
             ).distinct()
 
-        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
+        log_entries = log_entries.prefetch_related("maintainers__user", "media").order_by(
+            "-created_at"
+        )
 
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
@@ -725,7 +727,9 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
                 | Q(maintainer_names__icontains=search_query)
             ).distinct()
 
-        log_entries = log_entries.prefetch_related("maintainers", "media").order_by("-created_at")
+        log_entries = log_entries.prefetch_related("maintainers__user", "media").order_by(
+            "-created_at"
+        )
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -751,7 +755,7 @@ class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
         logs = (
             LogEntry.objects.filter(machine=self.machine)
             .select_related("machine", "problem_report")
-            .prefetch_related("maintainers", "media")
+            .prefetch_related("maintainers__user", "media")
             .order_by("-work_date")
         )
 
@@ -967,7 +971,7 @@ class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
         logs = (
             LogEntry.objects.filter(machine=machine)
             .select_related("machine", "problem_report")
-            .prefetch_related("maintainers", "media")
+            .prefetch_related("maintainers__user", "media")
             .order_by("-work_date")
         )
 
@@ -1057,7 +1061,9 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
     context_object_name = "entry"
 
     def get_queryset(self):
-        return LogEntry.objects.select_related("machine").prefetch_related("maintainers", "media")
+        return LogEntry.objects.select_related("machine").prefetch_related(
+            "maintainers__user", "media"
+        )
 
     def get_media_model(self):
         return LogEntryMedia
