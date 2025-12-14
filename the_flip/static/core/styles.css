@@ -1851,6 +1851,36 @@ body {
   text-decoration: underline;
 }
 
+.markdown-content blockquote {
+  border-left: 3px solid var(--color-border-soft);
+  padding-left: var(--space-4);
+  margin: var(--space-3) 0;
+  color: var(--color-text-muted);
+}
+
+/* Code blocks: ```code``` - wrapped in <pre><code> */
+.markdown-content pre {
+  background-color: var(--color-border-soft);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+}
+
+/* Inline code: `code` - just <code> */
+.markdown-content code {
+  background-color: var(--color-border-soft);
+  padding: var(--space-0-5) var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+/* Reset inline styles when code is inside a code block */
+.markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
 /* --- Stats Grid --- */
 .stat-grid {
   display: grid;
