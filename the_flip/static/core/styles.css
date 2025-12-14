@@ -164,6 +164,7 @@ table {
   /* Surfaces & text */
   --color-background: #FBF7F0;
   --color-surface: #FFFFFF;
+  --color-border: #d1d5db;
   --color-border-soft: #E7E5E4;
   --color-text-primary: #333333;
   --color-text-muted: #6b7280;
@@ -219,6 +220,7 @@ table {
   :root {
     --color-background: #1f1f1f;
     --color-surface: #252525;
+    --color-border: #616161;
     --color-border-soft: #2b2b2b;
 
     --color-text-primary: #cccccc;
@@ -1860,7 +1862,7 @@ body {
 }
 
 .markdown-content blockquote {
-  border-left: 3px solid var(--color-border-soft);
+  border-left: 3px solid var(--color-border);
   padding-left: var(--space-4);
   margin: var(--space-3) 0;
   color: var(--color-text-muted);
