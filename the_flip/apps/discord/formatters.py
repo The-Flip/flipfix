@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import urllib.parse
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from the_flip.apps.accounts.models import Maintainer
@@ -156,6 +159,16 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         log_entry.media.filter(media_type=LogEntryMedia.TYPE_PHOTO)  # type: ignore[attr-defined]
         .exclude(file="")
         .order_by("display_order", "created_at")[:4]
+    )
+
+    logger.info(
+        "discord_log_entry_photos",
+        extra={
+            "log_entry_id": log_entry.pk,
+            "photo_count": len(photos),
+            "base_url": base_url,
+            "photo_urls": [p.file.url for p in photos] if photos else [],
+        },
     )
 
     embeds = []
