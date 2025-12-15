@@ -6,6 +6,7 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -167,6 +168,7 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
                 initial["requester_name"] = str(self.request.user.maintainer)
         return initial
 
+    @transaction.atomic
     def form_valid(self, form):
         machine = self.machine
         if not machine:
@@ -235,7 +237,10 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    enqueue_transcode(media.id, model_name="PartRequestMedia")
+                    media_id = media.id
+                    transaction.on_commit(
+                        lambda mid=media_id: enqueue_transcode(mid, model_name="PartRequestMedia")
+                    )
 
         messages.success(
             self.request,
@@ -356,6 +361,7 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
                 initial["requester_name"] = str(self.request.user.maintainer)
         return initial
 
+    @transaction.atomic
     def form_valid(self, form):
         # Determine the poster from hidden username field or text input
         current_maintainer = get_object_or_404(Maintainer, user=self.request.user)
@@ -418,7 +424,12 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    enqueue_transcode(media.id, model_name="PartRequestUpdateMedia")
+                    media_id = media.id
+                    transaction.on_commit(
+                        lambda mid=media_id: enqueue_transcode(
+                            mid, model_name="PartRequestUpdateMedia"
+                        )
+                    )
 
         if update.new_status:
             messages.success(

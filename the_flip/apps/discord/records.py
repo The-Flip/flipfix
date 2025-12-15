@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.db import transaction
 from django.urls import reverse
 
 from the_flip.apps.accounts.models import Maintainer
@@ -39,6 +40,7 @@ def _get_base_url() -> str:
 
 
 @sync_to_async
+@transaction.atomic
 def create_record(
     suggestion: RecordSuggestion,
     discord_user_id: str,
@@ -47,6 +49,9 @@ def create_record(
     discord_display_name: str | None = None,
 ) -> CreatedRecord:
     """Create a record from a suggestion.
+
+    This function is atomic - all database operations (record creation,
+    message mapping, user linking) either all succeed or all roll back.
 
     Args:
         suggestion: The LLM-generated suggestion
@@ -124,16 +129,16 @@ def _get_maintainer_for_discord_user(
     """Get the Maintainer linked to a Discord user.
 
     If no link exists but we find a maintainer with a matching username,
-    auto-create the link.
+    auto-create the link using get_or_create for idempotency.
     """
     # First, check for existing link
-    try:
-        link = DiscordUserLink.objects.select_related("maintainer").get(
-            discord_user_id=discord_user_id
-        )
+    link = (
+        DiscordUserLink.objects.select_related("maintainer")
+        .filter(discord_user_id=discord_user_id)
+        .first()
+    )
+    if link:
         return link.maintainer
-    except DiscordUserLink.DoesNotExist:
-        pass
 
     # No existing link - try to auto-link by username or display name match
     maintainer = None
@@ -147,23 +152,27 @@ def _get_maintainer_for_discord_user(
         maintainer = Maintainer.objects.filter(user__username__iexact=discord_display_name).first()
 
     if maintainer:
-        # Auto-create the link
-        DiscordUserLink.objects.create(
+        # Auto-create the link using get_or_create for idempotency
+        # (handles race conditions where another request creates the link first)
+        link, created = DiscordUserLink.objects.get_or_create(
             discord_user_id=discord_user_id,
-            discord_username=discord_username or "",
-            discord_display_name=discord_display_name or "",
-            maintainer=maintainer,
-        )
-        logger.info(
-            "discord_user_auto_linked",
-            extra={
-                "discord_user_id": discord_user_id,
-                "discord_username": discord_username,
-                "discord_display_name": discord_display_name,
-                "maintainer_id": maintainer.id,
+            defaults={
+                "discord_username": discord_username or "",
+                "discord_display_name": discord_display_name or "",
+                "maintainer": maintainer,
             },
         )
-        return maintainer
+        if created:
+            logger.info(
+                "discord_user_auto_linked",
+                extra={
+                    "discord_user_id": discord_user_id,
+                    "discord_username": discord_username,
+                    "discord_display_name": discord_display_name,
+                    "maintainer_id": maintainer.id,
+                },
+            )
+        return link.maintainer
 
     return None
 

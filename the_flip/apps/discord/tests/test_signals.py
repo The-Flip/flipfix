@@ -27,10 +27,12 @@ class WebhookSignalTests(TestCase):
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_problem_report_created(self, mock_async):
         """Signal fires when a problem report is created."""
-        report = ProblemReport.objects.create(
-            machine=self.machine,
-            description="Test problem",
-        )
+        # All webhook signals use transaction.on_commit
+        with self.captureOnCommitCallbacks(execute=True):
+            report = ProblemReport.objects.create(
+                machine=self.machine,
+                description="Test problem",
+            )
 
         mock_async.assert_called()
         call_args = mock_async.call_args
@@ -64,10 +66,12 @@ class PartRequestWebhookSignalTests(TestCase):
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_part_request_created(self, mock_async):
         """Signal fires when a part request is created."""
-        part_request = create_part_request(
-            requested_by=self.maintainer,
-            machine=self.machine,
-        )
+        # All webhook signals use transaction.on_commit
+        with self.captureOnCommitCallbacks(execute=True):
+            part_request = create_part_request(
+                requested_by=self.maintainer,
+                machine=self.machine,
+            )
 
         # Find the part_request_created call
         calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_created"]
@@ -77,14 +81,17 @@ class PartRequestWebhookSignalTests(TestCase):
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_part_request_update_created(self, mock_async):
         """Signal fires when a part request update is created."""
-        part_request = create_part_request(requested_by=self.maintainer)
+        with self.captureOnCommitCallbacks(execute=True):
+            part_request = create_part_request(requested_by=self.maintainer)
         mock_async.reset_mock()
 
-        update = create_part_request_update(
-            part_request=part_request,
-            posted_by=self.maintainer,
-            text="Update text",
-        )
+        # All webhook signals use transaction.on_commit
+        with self.captureOnCommitCallbacks(execute=True):
+            update = create_part_request_update(
+                part_request=part_request,
+                posted_by=self.maintainer,
+                text="Update text",
+            )
 
         # Find the part_request_update_created call
         calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_update_created"]
@@ -94,15 +101,18 @@ class PartRequestWebhookSignalTests(TestCase):
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_status_change_via_update(self, mock_async):
         """Signal fires when status changes via an update."""
-        part_request = create_part_request(requested_by=self.maintainer)
+        with self.captureOnCommitCallbacks(execute=True):
+            part_request = create_part_request(requested_by=self.maintainer)
         mock_async.reset_mock()
 
-        create_part_request_update(
-            part_request=part_request,
-            posted_by=self.maintainer,
-            text="Ordered it",
-            new_status=PartRequest.STATUS_ORDERED,
-        )
+        # All webhook signals use transaction.on_commit
+        with self.captureOnCommitCallbacks(execute=True):
+            create_part_request_update(
+                part_request=part_request,
+                posted_by=self.maintainer,
+                text="Ordered it",
+                new_status=PartRequest.STATUS_ORDERED,
+            )
 
         # Should fire both update_created and status_changed
         event_types = [c[0][1] for c in mock_async.call_args_list]

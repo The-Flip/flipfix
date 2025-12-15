@@ -520,6 +520,7 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
             context["selected_machine"] = self.machine
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         machine = self.machine
         if not machine:
@@ -564,7 +565,10 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    enqueue_transcode(media.id, model_name="ProblemReportMedia")
+                    media_id = media.id
+                    transaction.on_commit(
+                        lambda mid=media_id: enqueue_transcode(mid, model_name="ProblemReportMedia")
+                    )
 
         messages.success(
             self.request,
@@ -680,7 +684,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         if action == "delete_media":
             return self.handle_delete_media(request)
 
-        # Toggle status
+        # Toggle status (wrapped in transaction so status + log entry are atomic)
         if self.report.status == ProblemReport.STATUS_OPEN:
             self.report.status = ProblemReport.STATUS_CLOSED
             action_text = "closed"
@@ -690,16 +694,17 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             action_text = "re-opened"
             log_text = "Re-opened problem report"
 
-        self.report.save(update_fields=["status", "updated_at"])
-        log_entry = LogEntry.objects.create(
-            machine=self.report.machine,
-            problem_report=self.report,
-            text=log_text,
-            created_by=request.user,
-        )
-        maintainer = Maintainer.objects.filter(user=request.user).first()
-        if maintainer:
-            log_entry.maintainers.add(maintainer)
+        with transaction.atomic():
+            self.report.save(update_fields=["status", "updated_at"])
+            log_entry = LogEntry.objects.create(
+                machine=self.report.machine,
+                problem_report=self.report,
+                text=log_text,
+                created_by=request.user,
+            )
+            maintainer = Maintainer.objects.filter(user=request.user).first()
+            if maintainer:
+                log_entry.maintainers.add(maintainer)
         messages.success(
             request,
             format_html(
@@ -849,6 +854,7 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
             context["selected_machine"] = self.machine
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         submitter_name = form.cleaned_data["submitter_name"].strip()
         description = form.cleaned_data["text"].strip()
@@ -922,7 +928,8 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    enqueue_transcode(media.id)
+                    media_id = media.id
+                    transaction.on_commit(lambda mid=media_id: enqueue_transcode(mid))
 
         # Close problem report if checkbox was checked
         if self.problem_report and self.request.POST.get("close_problem"):
