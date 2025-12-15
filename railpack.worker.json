@@ -3,6 +3,6 @@
   "buildAptPackages": ["libheif1", "libheif-dev", "ffmpeg"],
   "deploy": {
     "aptPackages": ["libheif1", "ffmpeg"],
-    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.worker python -u manage.py qcluster"
+    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.worker python manage.py qcluster"
   }
 }
