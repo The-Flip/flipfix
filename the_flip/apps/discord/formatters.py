@@ -155,6 +155,7 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     }
 
     # Get photo URLs (up to 4 for Discord gallery effect)
+    all_media = list(log_entry.media.all())
     photos = list(
         log_entry.media.filter(media_type=LogEntryMedia.TYPE_PHOTO)  # type: ignore[attr-defined]
         .exclude(file="")
@@ -165,6 +166,9 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         "discord_log_entry_photos",
         extra={
             "log_entry_id": log_entry.pk,
+            "all_media_count": len(all_media),
+            "all_media_types": [m.media_type for m in all_media],
+            "all_media_files": [str(m.file) for m in all_media],
             "photo_count": len(photos),
             "base_url": base_url,
             "photo_urls": [p.file.url for p in photos] if photos else [],
