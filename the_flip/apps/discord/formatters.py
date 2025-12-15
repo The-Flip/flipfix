@@ -269,6 +269,13 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
         status_display = update.get_new_status_display()
         description += f"\n\n**Status changed to:** {status_display}"
 
+    # Add parts request reference with truncated description (matching log entry pattern)
+    pr = update.part_request
+    pr_desc = pr.text[:50]
+    if len(pr.text) > 50:
+        pr_desc += "..."
+    description += f"\n\n📎 [Parts Request #{pr.pk}]({url}): {pr_desc}"
+
     # Add who posted (use Discord name if available, or fall back to display property)
     if update.posted_by:
         poster = _get_maintainer_display_name(update.posted_by)
