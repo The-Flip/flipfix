@@ -11,9 +11,6 @@ LOGGING = deepcopy(BASE_LOGGING)
 
 DEBUG = True
 
-# Base URL for webhook links
-SITE_URL = "http://localhost:8000"
-
 # Whitenoise for static/media file serving
 INSTALLED_APPS = ["whitenoise.runserver_nostatic", *INSTALLED_APPS]  # noqa: F405
 MIDDLEWARE.insert(1, "the_flip.middleware.MediaWhiteNoiseMiddleware")  # noqa: F405

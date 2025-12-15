@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from django.db import models
+from django.db import models, transaction
 from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
@@ -180,11 +180,13 @@ class PartRequestUpdate(TimeStampedModel):
         return self.posted_by_name
 
     def save(self, *args, **kwargs):
-        # If new_status is set, also update the parent part request status
-        if self.new_status and self.part_request.status != self.new_status:
-            self.part_request.status = self.new_status
-            self.part_request.save(update_fields=["status", "updated_at"])
-        super().save(*args, **kwargs)
+        # If new_status is set, also update the parent part request status.
+        # Wrap in transaction so both saves succeed or both roll back.
+        with transaction.atomic():
+            if self.new_status and self.part_request.status != self.new_status:
+                self.part_request.status = self.new_status
+                self.part_request.save(update_fields=["status", "updated_at"])
+            super().save(*args, **kwargs)
 
 
 def part_request_update_media_upload_to(instance: PartRequestUpdateMedia, filename: str) -> str:

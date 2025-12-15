@@ -21,7 +21,15 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
 
     This function is called synchronously from signal handlers and
     enqueues the actual webhook delivery to run asynchronously.
+
+    Checks if webhooks are enabled before queueing to avoid filling
+    the task queue when webhooks are disabled.
     """
+    from constance import config
+
+    if not config.DISCORD_WEBHOOKS_ENABLED or not config.DISCORD_WEBHOOK_URL:
+        return
+
     async_task(
         "the_flip.apps.discord.tasks.deliver_webhook",
         event_type,

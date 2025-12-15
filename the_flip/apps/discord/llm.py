@@ -174,9 +174,18 @@ async def analyze_messages(context: MessageContext) -> AnalysisResult:
 
         return AnalysisResult.success(suggestions)
 
+    except anthropic.APIStatusError as e:
+        logger.error("discord_llm_api_error", extra={"error": str(e), "status_code": e.status_code})
+        if e.status_code == 529:
+            return AnalysisResult.failure(
+                "The AI service is temporarily overloaded. Please try again in a moment."
+            )
+        return AnalysisResult.failure(
+            f"AI service error (code {e.status_code}). Please try again later."
+        )
     except anthropic.APIError as e:
         logger.error("discord_llm_api_error", extra={"error": str(e)})
-        return AnalysisResult.failure(f"AI service error: {e}")
+        return AnalysisResult.failure("AI service error. Please try again later.")
     except Exception as e:
         logger.exception("discord_llm_error: %s", e)
         return AnalysisResult.failure("Unexpected error during analysis. Please try again.")

@@ -15,6 +15,11 @@ SECRET_KEY = config("SECRET_KEY", default="dev-secret-key")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
+# Base absolute URL for external systems following links into this system,
+# such as Discord webhooks and Discord bot record links.
+# Must be publicly accessible - localhost won't work for Discord integration
+SITE_URL = config("SITE_URL", default="")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

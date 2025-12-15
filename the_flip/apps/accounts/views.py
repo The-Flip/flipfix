@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -209,6 +210,7 @@ class TerminalCreateView(CanManageTerminalsMixin, FormView):
         context["is_create"] = True
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         # Create user with random password
         user = User.objects.create_user(

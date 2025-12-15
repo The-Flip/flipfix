@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db import transaction
 from django.http import JsonResponse
 
 from the_flip.apps.core.tasks import enqueue_transcode
@@ -113,7 +115,9 @@ class MediaUploadMixin:
         media = media_model.objects.create(**create_kwargs)
 
         if is_video:
-            enqueue_transcode(media.id, model_name=media_model.__name__)
+            transaction.on_commit(
+                partial(enqueue_transcode, media.id, model_name=media_model.__name__)
+            )
 
         return JsonResponse(
             {

@@ -18,7 +18,7 @@ def get_base_url() -> str:
     """Get the base URL for the site."""
     if not hasattr(settings, "SITE_URL") or not settings.SITE_URL:
         raise ValueError("SITE_URL must be configured in settings")
-    return settings.SITE_URL
+    return settings.SITE_URL.rstrip("/")
 
 
 def _get_maintainer_display_name(maintainer: Maintainer) -> str:
@@ -41,6 +41,62 @@ def _get_maintainer_display_name(maintainer: Maintainer) -> str:
     return maintainer.display_name
 
 
+def _make_absolute_url(base_url: str, path: str) -> str:
+    """Make a URL absolute, handling both relative and absolute paths.
+
+    If path is already absolute (starts with http:// or https://), return as-is.
+    Otherwise, prepend base_url.
+    """
+    if path.startswith(("http://", "https://")):
+        return path
+    return base_url + path
+
+
+def _build_gallery_embeds(
+    main_embed: dict[str, Any],
+    photos: list,
+    url: str,
+    base_url: str,
+    color: int,
+) -> list[dict[str, Any]]:
+    """Build Discord embeds with photo gallery support.
+
+    Discord displays up to 4 images in a gallery when multiple embeds share
+    the same URL. The first photo goes in the main embed; additional photos
+    get their own embeds.
+
+    Args:
+        main_embed: The primary embed with title, description, etc.
+        photos: List of media objects with thumbnail_file attribute.
+        url: The URL for all embeds (must match for gallery effect).
+        base_url: Base URL to prepend to thumbnail paths (ignored if path is absolute).
+        color: Color for additional photo embeds.
+
+    Returns:
+        List of embed dicts ready for Discord webhook payload.
+    """
+    if not photos:
+        return [main_embed]
+
+    # First photo goes in the main embed
+    image_url = _make_absolute_url(base_url, photos[0].thumbnail_file.url)
+    main_embed["image"] = {"url": image_url}
+    embeds = [main_embed]
+
+    # Additional photos get their own embeds with same URL (creates gallery)
+    for photo in photos[1:]:
+        image_url = _make_absolute_url(base_url, photo.thumbnail_file.url)
+        embeds.append(
+            {
+                "url": url,
+                "image": {"url": image_url},
+                "color": color,
+            }
+        )
+
+    return embeds
+
+
 def format_discord_message(event_type: str, obj: Any) -> dict:
     """Format a Discord webhook message for the given event and object."""
     if event_type == "problem_report_created":
@@ -59,6 +115,8 @@ def format_discord_message(event_type: str, obj: Any) -> dict:
 
 def _format_problem_report_created(report: ProblemReport) -> dict:
     """Format a new problem report notification."""
+    from the_flip.apps.maintenance.models import ProblemReportMedia
+
     base_url = get_base_url()
     url = base_url + reverse("problem-report-detail", kwargs={"pk": report.pk})
 
@@ -77,16 +135,23 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     # Add reporter attribution
     description += f"\n\n— {report.reporter_display}"
 
-    return {
-        "embeds": [
-            {
-                "title": f"⚠️ Problem Report on {report.machine.display_name}",
-                "description": description,
-                "url": url,
-                "color": 15158332,  # Red color for problems
-            }
-        ]
+    # Build the main embed
+    color = 15158332  # Red color for problems
+    main_embed: dict[str, Any] = {
+        "title": f"⚠️ Problem Report on {report.machine.display_name}",
+        "description": description,
+        "url": url,
+        "color": color,
     }
+
+    # Get photos with thumbnails (up to 4 for Discord gallery)
+    photos = list(
+        report.media.filter(media_type=ProblemReportMedia.TYPE_PHOTO)
+        .exclude(thumbnail_file="")
+        .order_by("display_order", "created_at")[:4]
+    )
+
+    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
 
 
 def _format_log_entry_created(log_entry: LogEntry) -> dict:
@@ -144,46 +209,28 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         description += f"\n\n— {', '.join(maintainer_names)}"
 
     # Build the main embed
+    color = 3447003  # Blue color for work logs
     main_embed: dict[str, Any] = {
         "title": f"🗒️ Log on {log_entry.machine.display_name}",
         "description": description,
         "url": url,
-        "color": 3447003,  # Blue color for work logs
+        "color": color,
     }
 
-    # Get photo URLs (up to 4 for Discord gallery effect)
+    # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
         log_entry.media.filter(media_type=LogEntryMedia.TYPE_PHOTO)  # type: ignore[attr-defined]
-        .exclude(file="")
+        .exclude(thumbnail_file="")
         .order_by("display_order", "created_at")[:4]
     )
 
-    embeds = []
-    if photos:
-        # First photo goes in the main embed
-        first_photo = photos[0]
-        image_url = base_url + first_photo.file.url
-        main_embed["image"] = {"url": image_url}
-        embeds.append(main_embed)
-
-        # Additional photos get their own embeds with same url (creates gallery)
-        for photo in photos[1:]:
-            image_url = base_url + photo.file.url
-            embeds.append(
-                {
-                    "url": url,  # Same URL links them visually in Discord
-                    "image": {"url": image_url},
-                    "color": 3447003,
-                }
-            )
-    else:
-        embeds.append(main_embed)
-
-    return {"embeds": embeds}
+    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
 
 
 def _format_part_request_created(part_request: PartRequest) -> dict:
     """Format a new part request notification."""
+    from the_flip.apps.parts.models import PartRequestMedia
+
     base_url = get_base_url()
     url = base_url + reverse("part-request-detail", kwargs={"pk": part_request.pk})
 
@@ -192,10 +239,6 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     if len(part_request.text) > 500:
         description += "..."
 
-    # Add machine info if linked
-    if part_request.machine:
-        description += f"\n\n📍 Machine: {part_request.machine.display_name}"
-
     # Add requester (use Discord name if available, or fall back to display property)
     if part_request.requested_by:
         requester = _get_maintainer_display_name(part_request.requested_by)
@@ -203,16 +246,29 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
         requester = part_request.requester_display or "Unknown"
     description += f"\n\n— {requester}"
 
-    return {
-        "embeds": [
-            {
-                "title": f"📦 Parts Requested: #{part_request.pk}",
-                "description": description,
-                "url": url,
-                "color": 3447003,  # Blue color (same as logs)
-            }
-        ]
+    # Build title with machine name if available
+    if part_request.machine:
+        title = f"📦 Parts Request #{part_request.pk} for {part_request.machine.display_name}"
+    else:
+        title = f"📦 Parts Request #{part_request.pk}"
+
+    # Build the main embed
+    color = 3447003  # Blue color (same as logs)
+    main_embed: dict[str, Any] = {
+        "title": title,
+        "description": description,
+        "url": url,
+        "color": color,
     }
+
+    # Get photos with thumbnails (up to 4 for Discord gallery)
+    photos = list(
+        part_request.media.filter(media_type=PartRequestMedia.TYPE_PHOTO)
+        .exclude(thumbnail_file="")
+        .order_by("display_order", "created_at")[:4]
+    )
+
+    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
 
 
 def _format_part_request_status_changed(part_request: PartRequest) -> dict:
@@ -238,14 +294,12 @@ def _format_part_request_status_changed(part_request: PartRequest) -> dict:
         text_preview += "..."
     description += f"\n\n{text_preview}"
 
-    # Add machine info if linked
-    if part_request.machine:
-        description += f"\n\n📍 Machine: {part_request.machine.display_name}"
-
     return {
         "embeds": [
             {
-                "title": f"{emoji} Parts Request #{part_request.pk}: {status_display}",
+                "title": f"{emoji} Parts Request #{part_request.pk} for {part_request.machine.display_name}: {status_display}"
+                if part_request.machine
+                else f"{emoji} Parts Request #{part_request.pk}: {status_display}",
                 "description": description,
                 "url": url,
                 "color": 3447003,  # Blue color (same as logs)
@@ -256,6 +310,8 @@ def _format_part_request_status_changed(part_request: PartRequest) -> dict:
 
 def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     """Format a new part request update notification."""
+    from the_flip.apps.parts.models import PartRequestUpdateMedia
+
     base_url = get_base_url()
     url = base_url + reverse("part-request-detail", kwargs={"pk": update.part_request.pk})
 
@@ -269,9 +325,12 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
         status_display = update.get_new_status_display()
         description += f"\n\n**Status changed to:** {status_display}"
 
-    # Add machine info if linked
-    if update.part_request.machine:
-        description += f"\n\n📍 Machine: {update.part_request.machine.display_name}"
+    # Add parts request reference with truncated description (matching log entry pattern)
+    pr = update.part_request
+    pr_desc = pr.text[:50]
+    if len(pr.text) > 50:
+        pr_desc += "..."
+    description += f"\n\n📎 [Parts Request #{pr.pk}]({url}): {pr_desc}"
 
     # Add who posted (use Discord name if available, or fall back to display property)
     if update.posted_by:
@@ -280,16 +339,29 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
         poster = update.poster_display or "Unknown"
     description += f"\n\n— {poster}"
 
-    return {
-        "embeds": [
-            {
-                "title": f"💬 Update on Parts Request #{update.part_request.pk}",
-                "description": description,
-                "url": url,
-                "color": 3447003,  # Blue color (same as logs)
-            }
-        ]
+    # Build title
+    if update.part_request.machine:
+        title = f"💬 Update on Parts Request #{update.part_request.pk} for {update.part_request.machine.display_name}"
+    else:
+        title = f"💬 Update on Parts Request #{update.part_request.pk}"
+
+    # Build the main embed
+    color = 3447003  # Blue color (same as logs)
+    main_embed: dict[str, Any] = {
+        "title": title,
+        "description": description,
+        "url": url,
+        "color": color,
     }
+
+    # Get photos with thumbnails (up to 4 for Discord gallery)
+    photos = list(
+        update.media.filter(media_type=PartRequestUpdateMedia.TYPE_PHOTO)
+        .exclude(thumbnail_file="")
+        .order_by("display_order", "created_at")[:4]
+    )
+
+    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
 
 
 def format_test_message(event_type: str) -> dict:

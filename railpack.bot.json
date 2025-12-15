@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "DJANGO_SETTINGS_MODULE=the_flip.settings.prod_base python manage.py run_discord_bot"
+  }
+}

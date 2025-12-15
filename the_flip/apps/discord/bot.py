@@ -27,7 +27,7 @@ class WizardResult:
 
     suggestion: RecordSuggestion
     action: str  # "created", "skipped"
-    url: str | None = None  # URL to the created record (Phase 3)
+    url: str | None = None  # URL to the created record
 
 
 @dataclass
@@ -317,8 +317,8 @@ class SequentialWizardView(discord.ui.View):
             await _send_error_response(interaction, "Failed to create record.")
 
 
-class FlipfixBot(discord.Client):
-    """Discord bot with context menu command for adding records to Flipfix."""
+class DiscordBot(discord.Client):
+    """Discord bot with context menu command for using Discord messages to create records to Flipfix."""
 
     def __init__(self):
         intents = discord.Intents.default()
@@ -624,7 +624,7 @@ def run_bot():
         logger.error("Discord bot token not configured")
         return
 
-    bot = FlipfixBot()
+    bot = DiscordBot()
 
     try:
         bot.run(token)
