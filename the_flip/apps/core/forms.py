@@ -1,6 +1,15 @@
 """Core form utilities and mixins."""
 
+from pathlib import Path
+
 from django import forms
+from django.core.files.uploadedfile import UploadedFile
+from PIL import Image, UnidentifiedImageError
+
+# Media validation constants
+MAX_MEDIA_FILE_SIZE_BYTES = 200 * 1024 * 1024  # 200MB
+ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".hevc"}
+ALLOWED_HEIC_EXTENSIONS = {".heic", ".heif"}
 
 # Widget type to CSS class mapping
 WIDGET_CSS_CLASSES = {
@@ -49,3 +58,95 @@ class StyledFormMixin:
                     if css_class not in existing:
                         widget.attrs["class"] = f"{existing} {css_class}".strip()
                     break
+
+
+def validate_media_files(files: list[UploadedFile]) -> list[UploadedFile]:
+    """Validate uploaded media files (photos or videos).
+
+    Args:
+        files: List of uploaded files to validate.
+
+    Returns:
+        List of validated files.
+
+    Raises:
+        forms.ValidationError: If any file fails validation.
+    """
+    if not files:
+        return []
+
+    cleaned_files = []
+
+    for media in files:
+        if media.size and media.size > MAX_MEDIA_FILE_SIZE_BYTES:
+            raise forms.ValidationError("File too large. Maximum size is 200MB.")
+
+        content_type = (getattr(media, "content_type", "") or "").lower()
+        ext = Path(getattr(media, "name", "")).suffix.lower()
+
+        # Videos pass through without image verification
+        if content_type.startswith("video/") or ext in ALLOWED_VIDEO_EXTENSIONS:
+            cleaned_files.append(media)
+            continue
+
+        # Reject non-image content types (except HEIC which browsers may not recognize)
+        if (
+            content_type
+            and not content_type.startswith("image/")
+            and ext not in ALLOWED_HEIC_EXTENSIONS
+        ):
+            raise forms.ValidationError("Upload a valid image or video.")
+
+        # Verify image can be opened by PIL
+        try:
+            media.seek(0)
+        except (OSError, AttributeError):
+            pass
+
+        try:
+            Image.open(media).verify()
+        except (UnidentifiedImageError, OSError) as err:
+            raise forms.ValidationError("Upload a valid image or video.") from err
+        finally:
+            try:
+                media.seek(0)
+            except (OSError, AttributeError):
+                pass
+
+        cleaned_files.append(media)
+
+    return cleaned_files
+
+
+def collect_media_files(files_dict, field_name: str, cleaned_data: dict) -> list[UploadedFile]:
+    """Collect uploaded files from both multi-file and single-file contexts.
+
+    Handles the complexity of file uploads coming from different sources:
+    - Multi-file uploads via getlist()
+    - Single file uploads in tests
+    - Lists/tuples passed directly
+
+    Args:
+        files_dict: The request.FILES or similar object.
+        field_name: Name of the file field.
+        cleaned_data: The form's cleaned_data dict.
+
+    Returns:
+        List of uploaded files.
+    """
+    files = []
+
+    # Try multi-file upload first
+    if hasattr(files_dict, "getlist"):
+        files = list(files_dict.getlist(field_name))
+
+    # Fallback for single-file contexts (e.g., tests passing a simple dict)
+    if not files:
+        single = cleaned_data.get(field_name)
+        if single:
+            if isinstance(single, list | tuple):
+                files = list(single)
+            else:
+                files = [single]
+
+    return files
