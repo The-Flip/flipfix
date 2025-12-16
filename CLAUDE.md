@@ -6,6 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Flipfix** is the maintenance tracking system for The Flip pinball museum. It's a Django web app where visitors report problems via QR codes on machines, and maintainers track, update, and resolve issues.
 
+## Required Reading Before Implementation
+
+STOP and read the relevant doc before writing code:
+
+| Task | Read First |
+|------|------------|
+| Templates, HTML, CSS, Javascript | `docs/HTML_CSS.md` |
+| Forms, inputs, validation | `docs/Forms.md` |
+| Models, relationships | `docs/Datamodel.md` |
+| Writing tests | `docs/Testing.md` |
+| Django patterns, views | `docs/Django_Python.md` |
+| System architecture | `docs/Architecture.md` |
+| Directory layout | `docs/Project_Structure.md` |
+
+Follow the patterns in these docs exactly. Do not introduce new conventions without asking. Update docs when changing behavior.
+
 ## Development Commands
 
 ```bash
@@ -40,6 +56,21 @@ Run a single test:
 ```bash
 DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test the_flip.apps.maintenance.tests.TestClassName.test_method_name
 ```
+
+## Tool Usage
+
+Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-library-docs`) to look up current documentation when:
+- Implementing Django features (models, views, forms, admin, etc.)
+- Working with Python standard library or third-party packages
+- Configuring Railway hosting and deployment
+- Answering questions about library APIs or best practices
+
+Use GitHub MCP (`mcp__github__*`) for repository operations:
+- Repository: owner=`deanmoses`, repo=`the_flip`
+- Creating, viewing, and updating issues and pull requests
+- Checking PR status, reviews, and comments
+- Listing commits and browsing repository contents
+
 
 ## Claude Code for the Web
 
@@ -154,30 +185,3 @@ Load with `{% load core_extras %}`, then use:
 | `problem_report_meta` | `{{ report\|problem_report_meta }}` | Reporter name + timestamp |
 | `log_entry_meta` | `{{ entry\|log_entry_meta }}` | Maintainer names + timestamp |
 | `getfield` | `{{ form\|getfield:"name" }}` | Get form field by name |
-
-## Tool Usage
-
-Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-library-docs`) to look up current documentation when:
-- Implementing Django features (models, views, forms, admin, etc.)
-- Working with Python standard library or third-party packages
-- Configuring Railway hosting and deployment
-- Answering questions about library APIs or best practices
-
-Use GitHub MCP (`mcp__github__*`) for repository operations:
-- Repository: owner=`deanmoses`, repo=`the_flip`
-- Creating, viewing, and updating issues and pull requests
-- Checking PR status, reviews, and comments
-- Listing commits and browsing repository contents
-
-## AI Assistant Requirements
-
-Before generating code or explanations, read the docs at `docs/README.md` and linked guides:
-- `docs/Architecture.md` - System components
-- `docs/Project_Structure.md` - Directory layout
-- `docs/Django_Python.md` - Django conventions
-- `docs/HTML_CSS.md` - CSS patterns and component classes
-- `docs/Forms.md` - Form building patterns and components
-- `docs/Datamodel.md` - Domain models and relationships
-- `docs/Testing.md` - Testing strategy
-
-Do not introduce new conventions without consulting user. Update docs when changing behavior.
