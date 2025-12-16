@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import base64
 from datetime import UTC, datetime, timedelta
 from datetime import timezone as dt_timezone
-from io import BytesIO
 from pathlib import Path
 
-import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
@@ -32,7 +29,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
-from PIL import Image, ImageOps
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
@@ -42,6 +38,7 @@ from the_flip.apps.core.mixins import (
     MediaUploadMixin,
     can_access_maintainer_portal,
 )
+from the_flip.apps.core.qr import QR_BOX_SIZE_BULK, generate_qr_code_base64
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     LogEntryQuickForm,
@@ -1326,64 +1323,11 @@ class MachineQRView(CanAccessMaintainerPortalMixin, DetailView):
         context = super().get_context_data(**kwargs)
         machine = self.object
 
-        # Build the absolute URL for the public problem report page
         public_url = self.request.build_absolute_uri(
             reverse("public-problem-report-create", args=[machine.slug])
         )
 
-        # Generate QR code with high error correction for logo embedding
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,  # High error correction (30%)
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(public_url)
-        qr.make(fit=True)
-
-        # Create QR code image and convert to RGB for logo overlay
-        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-
-        # Add logo to center of QR code
-        logo_path = (
-            Path(__file__).resolve().parent.parent.parent / "static/core/images/logo_white.png"
-        )
-        if logo_path.exists():
-            # Invert white logo to black for visibility on white QR background
-            logo = Image.open(logo_path).convert("RGBA")
-            r, g, b, a = logo.split()
-            rgb = Image.merge("RGB", (r, g, b))
-            inverted = ImageOps.invert(rgb)
-            logo = Image.merge("RGBA", (*inverted.split(), a))
-
-            # Calculate logo size (28% of QR code size, within 30% error correction capacity)
-            qr_width, qr_height = qr_img.size
-            logo_size = int(qr_width * 0.28)
-
-            # Resize logo maintaining aspect ratio
-            logo.thumbnail((logo_size, logo_size), Image.LANCZOS)
-
-            # Add white background/padding to logo for better contrast
-            padding = 4
-            logo_with_bg = Image.new(
-                "RGB", (logo.size[0] + padding * 2, logo.size[1] + padding * 2), "white"
-            )
-            logo_pos = (padding, padding)
-            logo_with_bg.paste(logo, logo_pos, logo if logo.mode == "RGBA" else None)
-
-            # Calculate center position and paste logo
-            logo_position = (
-                (qr_width - logo_with_bg.size[0]) // 2,
-                (qr_height - logo_with_bg.size[1]) // 2,
-            )
-            qr_img.paste(logo_with_bg, logo_position)
-
-        # Convert to base64 for inline display
-        buffer = BytesIO()
-        qr_img.save(buffer, format="PNG")
-        qr_code_data = base64.b64encode(buffer.getvalue()).decode()
-
-        context["qr_code_data"] = qr_code_data
+        context["qr_code_data"] = generate_qr_code_base64(public_url)
         context["public_url"] = public_url
 
         return context
@@ -1399,57 +1343,14 @@ class MachineBulkQRCodeView(CanAccessMaintainerPortalMixin, TemplateView):
         machines = MachineInstance.objects.visible().select_related("model", "location")
         qr_entries = []
 
-        logo_path = (
-            Path(__file__).resolve().parent.parent.parent / "static/core/images/logo_white.png"
-        )
-        logo_img = None
-        if logo_path.exists():
-            logo_img = Image.open(logo_path).convert("RGBA")
-
         for machine in machines:
             public_url = self.request.build_absolute_uri(
                 reverse("public-problem-report-create", args=[machine.slug])
             )
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_H,
-                box_size=8,
-                border=4,
-            )
-            qr.add_data(public_url)
-            qr.make(fit=True)
-            qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-
-            if logo_img:
-                logo = logo_img.copy()
-                r, g, b, a = logo.split()
-                rgb = Image.merge("RGB", (r, g, b))
-                inverted = ImageOps.invert(rgb)
-                logo = Image.merge("RGBA", (*inverted.split(), a))
-
-                qr_width, qr_height = qr_img.size
-                logo_size = int(qr_width * 0.25)
-                logo.thumbnail((logo_size, logo_size), Image.LANCZOS)
-
-                padding = 4
-                logo_with_bg = Image.new(
-                    "RGB", (logo.size[0] + padding * 2, logo.size[1] + padding * 2), "white"
-                )
-                logo_with_bg.paste(logo, (padding, padding), logo)
-                logo_position = (
-                    (qr_width - logo_with_bg.size[0]) // 2,
-                    (qr_height - logo_with_bg.size[1]) // 2,
-                )
-                qr_img.paste(logo_with_bg, logo_position)
-
-            buffer = BytesIO()
-            qr_img.save(buffer, format="PNG")
-            qr_code_data = base64.b64encode(buffer.getvalue()).decode()
-
             qr_entries.append(
                 {
                     "machine": machine,
-                    "qr_data": qr_code_data,
+                    "qr_data": generate_qr_code_base64(public_url, box_size=QR_BOX_SIZE_BULK),
                     "public_url": public_url,
                 }
             )
