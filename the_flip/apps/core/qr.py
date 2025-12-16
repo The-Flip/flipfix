@@ -9,6 +9,7 @@ from pathlib import Path
 import qrcode
 from PIL import Image, ImageOps
 from PIL.Image import Resampling
+from qrcode.constants import ERROR_CORRECT_H
 
 # QR code configuration
 QR_BOX_SIZE_SINGLE = 10  # Larger boxes for single QR display
@@ -85,7 +86,7 @@ def generate_qr_code(url: str, box_size: int = QR_BOX_SIZE_SINGLE) -> Image.Imag
     """
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,  # High error correction (30%)
+        error_correction=ERROR_CORRECT_H,  # High error correction (30%)
         box_size=box_size,
         border=QR_BORDER,
     )
