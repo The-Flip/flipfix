@@ -29,6 +29,26 @@ class Maintainer(TimeStampedModel):
         full_name = self.user.get_full_name()
         return full_name or self.user.get_username()
 
+    @classmethod
+    def match_by_name(cls, name: str) -> "Maintainer | None":
+        """Find a maintainer by username or full name (case-insensitive).
+
+        Args:
+            name: Username or full name to match.
+
+        Returns:
+            Matching Maintainer or None if not found.
+        """
+        normalized = name.lower().strip()
+        if not normalized:
+            return None
+        for maintainer in cls.objects.select_related("user"):
+            username = maintainer.user.username.lower()
+            full_name = (maintainer.user.get_full_name() or "").lower()
+            if normalized in {username, full_name}:
+                return maintainer
+        return None
+
 
 def generate_invitation_token() -> str:
     """Generate a secure random token for invitations."""

@@ -902,7 +902,7 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
                 is_shared_account=False,
             ).first()
         if not maintainer:
-            maintainer = self.match_maintainer(submitter_name)
+            maintainer = Maintainer.match_by_name(submitter_name)
         if maintainer:
             log_entry.maintainers.add(maintainer)
         elif submitter_name:
@@ -957,17 +957,6 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
         if self.problem_report:
             return redirect("problem-report-detail", pk=self.problem_report.pk)
         return redirect("log-machine", slug=self.machine.slug)
-
-    def match_maintainer(self, name: str):
-        normalized = name.lower().strip()
-        if not normalized:
-            return None
-        for maintainer in Maintainer.objects.select_related("user"):
-            username = maintainer.user.username.lower()
-            full_name = (maintainer.user.get_full_name() or "").lower()
-            if normalized in {username, full_name}:
-                return maintainer
-        return None
 
 
 class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
@@ -1132,7 +1121,7 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
             matched = []
             unmatched = []
             for name in names:
-                maintainer = self.match_maintainer(name)
+                maintainer = Maintainer.match_by_name(name)
                 if maintainer:
                     matched.append(maintainer)
                 else:
@@ -1322,17 +1311,6 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
             )
 
         return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
-
-    def match_maintainer(self, name: str):
-        normalized = name.lower().strip()
-        if not normalized:
-            return None
-        for maintainer in Maintainer.objects.select_related("user"):
-            username = maintainer.user.username.lower()
-            full_name = (maintainer.user.get_full_name() or "").lower()
-            if normalized in {username, full_name}:
-                return maintainer
-        return None
 
 
 class MachineQRView(CanAccessMaintainerPortalMixin, DetailView):
