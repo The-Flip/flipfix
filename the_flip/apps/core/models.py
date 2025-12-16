@@ -19,7 +19,9 @@ MAX_IMAGE_DIMENSION = 2400
 THUMB_IMAGE_DIMENSION = 800
 
 
-class TimeStampedModel(models.Model):
+class TimeStampedMixin(models.Model):
+    """Mixin providing created_at and updated_at timestamp fields."""
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -138,7 +140,7 @@ def resize_image_file(
 # ---------------------------------------------------------------------------
 
 
-class AbstractMedia(TimeStampedModel):
+class AbstractMedia(TimeStampedMixin):
     """
     Abstract base class for media attachments (photos and videos).
 

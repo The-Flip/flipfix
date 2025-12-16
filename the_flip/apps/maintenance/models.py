@@ -13,7 +13,7 @@ from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.models import AbstractMedia, TimeStampedModel
+from the_flip.apps.core.models import AbstractMedia, TimeStampedMixin
 
 
 class ProblemReportQuerySet(models.QuerySet):
@@ -21,7 +21,7 @@ class ProblemReportQuerySet(models.QuerySet):
         return self.filter(status=ProblemReport.STATUS_OPEN)
 
 
-class ProblemReport(TimeStampedModel):
+class ProblemReport(TimeStampedMixin):
     """Visitor-submitted problem report about a machine."""
 
     STATUS_OPEN = "open"
@@ -98,7 +98,7 @@ class ProblemReport(TimeStampedModel):
         return "Anonymous"
 
 
-class LogEntry(TimeStampedModel):
+class LogEntry(TimeStampedMixin):
     """Maintainer log entry documenting work on a machine."""
 
     machine = models.ForeignKey(

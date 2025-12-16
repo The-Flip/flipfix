@@ -5,10 +5,10 @@ import secrets
 from django.conf import settings
 from django.db import models
 
-from the_flip.apps.core.models import TimeStampedModel
+from the_flip.apps.core.models import TimeStampedMixin
 
 
-class Maintainer(TimeStampedModel):
+class Maintainer(TimeStampedMixin):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     is_shared_account = models.BooleanField(
         default=False,
@@ -55,7 +55,7 @@ def generate_invitation_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-class Invitation(TimeStampedModel):
+class Invitation(TimeStampedMixin):
     """Invitation for a new maintainer to register."""
 
     email = models.EmailField(unique=True)

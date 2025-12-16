@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
-from the_flip.apps.core.models import TimeStampedModel
+from the_flip.apps.core.models import TimeStampedMixin
 
 
 class Location(models.Model):
@@ -37,7 +37,7 @@ class Location(models.Model):
         super().save(*args, **kwargs)
 
 
-class MachineModel(TimeStampedModel):
+class MachineModel(TimeStampedMixin):
     """Represents a pinball machine model."""
 
     ERA_PM = "PM"
@@ -172,7 +172,7 @@ class MachineInstanceQuerySet(models.QuerySet):
         )
 
 
-class MachineInstance(TimeStampedModel):
+class MachineInstance(TimeStampedMixin):
     """Physical machine owned by the museum."""
 
     STATUS_GOOD = "good"

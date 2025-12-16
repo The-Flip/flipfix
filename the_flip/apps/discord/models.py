@@ -2,10 +2,10 @@
 
 from django.db import models
 
-from the_flip.apps.core.models import TimeStampedModel
+from the_flip.apps.core.models import TimeStampedMixin
 
 
-class DiscordUserLink(TimeStampedModel):
+class DiscordUserLink(TimeStampedMixin):
     """Links a Discord user to a Maintainer account."""
 
     discord_user_id = models.CharField(

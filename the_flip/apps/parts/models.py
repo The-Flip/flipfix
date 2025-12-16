@@ -9,7 +9,7 @@ from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.models import AbstractMedia, TimeStampedModel
+from the_flip.apps.core.models import AbstractMedia, TimeStampedMixin
 
 
 class PartRequestQuerySet(models.QuerySet):
@@ -24,7 +24,7 @@ class PartRequestQuerySet(models.QuerySet):
         return self.filter(status__in=[PartRequest.STATUS_REQUESTED, PartRequest.STATUS_ORDERED])
 
 
-class PartRequest(TimeStampedModel):
+class PartRequest(TimeStampedMixin):
     """A request for a part needed for maintenance."""
 
     STATUS_REQUESTED = "requested"
@@ -133,7 +133,7 @@ class PartRequestMedia(AbstractMedia):
         return f"{self.get_media_type_display()} for part request {self.part_request_id}"
 
 
-class PartRequestUpdate(TimeStampedModel):
+class PartRequestUpdate(TimeStampedMixin):
     """An update or comment on a part request."""
 
     part_request = models.ForeignKey(
