@@ -1,12 +1,13 @@
 """Forms for parts management."""
 
-from pathlib import Path
-
 from django import forms
-from PIL import Image, UnidentifiedImageError
 
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.forms import StyledFormMixin
+from the_flip.apps.core.forms import (
+    StyledFormMixin,
+    collect_media_files,
+    validate_media_files,
+)
 from the_flip.apps.maintenance.forms import MultiFileField, MultiFileInput
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
@@ -55,59 +56,8 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = []
-        if hasattr(self.files, "getlist"):
-            files = list(self.files.getlist("media_file"))
-        if not files:
-            single = self.cleaned_data.get("media_file")
-            if single:
-                if isinstance(single, list | tuple):
-                    files = list(single)
-                else:
-                    files = [single]
-        if not files:
-            return []
-
-        max_size_bytes = 200 * 1024 * 1024
-        allowed_video_exts = {".mp4", ".mov", ".m4v", ".hevc"}
-        cleaned_files = []
-
-        for media in files:
-            if media.size and media.size > max_size_bytes:
-                raise forms.ValidationError("File too large. Maximum size is 200MB.")
-
-            content_type = (getattr(media, "content_type", "") or "").lower()
-            ext = Path(getattr(media, "name", "")).suffix.lower()
-
-            if content_type.startswith("video/") or ext in allowed_video_exts:
-                cleaned_files.append(media)
-                continue
-
-            if (
-                content_type
-                and not content_type.startswith("image/")
-                and ext not in {".heic", ".heif"}
-            ):
-                raise forms.ValidationError("Upload a valid image or video.")
-
-            try:
-                media.seek(0)
-            except Exception:
-                pass
-
-            try:
-                Image.open(media).verify()
-            except (UnidentifiedImageError, OSError):
-                raise forms.ValidationError("Upload a valid image or video.")
-            finally:
-                try:
-                    media.seek(0)
-                except Exception:
-                    pass
-
-            cleaned_files.append(media)
-
-        return cleaned_files
+        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        return validate_media_files(files)
 
 
 class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
@@ -150,56 +100,5 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = []
-        if hasattr(self.files, "getlist"):
-            files = list(self.files.getlist("media_file"))
-        if not files:
-            single = self.cleaned_data.get("media_file")
-            if single:
-                if isinstance(single, list | tuple):
-                    files = list(single)
-                else:
-                    files = [single]
-        if not files:
-            return []
-
-        max_size_bytes = 200 * 1024 * 1024
-        allowed_video_exts = {".mp4", ".mov", ".m4v", ".hevc"}
-        cleaned_files = []
-
-        for media in files:
-            if media.size and media.size > max_size_bytes:
-                raise forms.ValidationError("File too large. Maximum size is 200MB.")
-
-            content_type = (getattr(media, "content_type", "") or "").lower()
-            ext = Path(getattr(media, "name", "")).suffix.lower()
-
-            if content_type.startswith("video/") or ext in allowed_video_exts:
-                cleaned_files.append(media)
-                continue
-
-            if (
-                content_type
-                and not content_type.startswith("image/")
-                and ext not in {".heic", ".heif"}
-            ):
-                raise forms.ValidationError("Upload a valid image or video.")
-
-            try:
-                media.seek(0)
-            except Exception:
-                pass
-
-            try:
-                Image.open(media).verify()
-            except (UnidentifiedImageError, OSError):
-                raise forms.ValidationError("Upload a valid image or video.")
-            finally:
-                try:
-                    media.seek(0)
-                except Exception:
-                    pass
-
-            cleaned_files.append(media)
-
-        return cleaned_files
+        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        return validate_media_files(files)
