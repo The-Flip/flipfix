@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from datetime import timezone as dt_timezone
-from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
@@ -32,6 +31,7 @@ from django.views.generic import DetailView, FormView, ListView, TemplateView, V
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
+from the_flip.apps.core.forms import is_video_file
 from the_flip.apps.core.ip import get_real_ip
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
@@ -543,14 +543,7 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
             for media_file in media_files:
-                content_type = (getattr(media_file, "content_type", "") or "").lower()
-                ext = Path(getattr(media_file, "name", "")).suffix.lower()
-                is_video = content_type.startswith("video/") or ext in {
-                    ".mp4",
-                    ".mov",
-                    ".m4v",
-                    ".hevc",
-                }
+                is_video = is_video_file(media_file)
 
                 media = ProblemReportMedia.objects.create(
                     problem_report=report,
@@ -908,14 +901,7 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
 
         if media_files:
             for media_file in media_files:
-                content_type = (getattr(media_file, "content_type", "") or "").lower()
-                ext = Path(getattr(media_file, "name", "")).suffix.lower()
-                is_video = content_type.startswith("video/") or ext in {
-                    ".mp4",
-                    ".mov",
-                    ".m4v",
-                    ".hevc",
-                }
+                is_video = is_video_file(media_file)
 
                 media = LogEntryMedia.objects.create(
                     log_entry=log_entry,

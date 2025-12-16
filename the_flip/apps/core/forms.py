@@ -151,3 +151,17 @@ def collect_media_files(files_dict: Any, field_name: str, cleaned_data: dict) ->
                 files = [single]
 
     return files
+
+
+def is_video_file(uploaded_file: UploadedFile) -> bool:
+    """Check if an uploaded file is a video based on content type and extension.
+
+    Args:
+        uploaded_file: The uploaded file to check.
+
+    Returns:
+        True if the file is a video, False otherwise.
+    """
+    content_type = (getattr(uploaded_file, "content_type", "") or "").lower()
+    ext = Path(getattr(uploaded_file, "name", "")).suffix.lower()
+    return content_type.startswith("video/") or ext in ALLOWED_VIDEO_EXTENSIONS
