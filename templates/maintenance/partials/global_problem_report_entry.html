@@ -19,7 +19,7 @@
     {% endif %}
   </div>
   {% url 'problem-report-detail' entry.pk as entry_url %}
-  {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
+  {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url model_name="ProblemReportMedia" %}
   {% if entry.prefetched_log_entries %}
     {% with latest_log=entry.prefetched_log_entries.0 %}
       <a href="{% url 'log-detail' latest_log.pk %}"

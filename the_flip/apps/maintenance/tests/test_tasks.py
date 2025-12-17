@@ -2,7 +2,7 @@
 
 import logging
 import subprocess
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, tag
@@ -11,11 +11,20 @@ from the_flip.apps.core.test_utils import TemporaryMediaMixin, create_machine
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 
 
-@tag("tasks", "unit")
-class TranscodeVideoJobTests(TemporaryMediaMixin, TestCase):
-    """Tests for transcode_video_job task."""
+class VideoMediaTestMixin:
+    """
+    Mixin providing video media test fixtures.
+
+    Provides: self.machine, self.log_entry, self.media (video with pending status)
+
+    Usage:
+        class MyTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
+            def test_something(self):
+                # self.media is a LogEntryMedia with TYPE_VIDEO
+    """
 
     def setUp(self):
+        super().setUp()
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
         self.machine = create_machine()
@@ -23,17 +32,21 @@ class TranscodeVideoJobTests(TemporaryMediaMixin, TestCase):
             machine=self.machine,
             text="Test entry with video",
         )
-        # Create a media record with a fake video file
-        self.video_file = SimpleUploadedFile(
-            "test.mp4", b"fake video content", content_type="video/mp4"
-        )
+        video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
         self.media = LogEntryMedia.objects.create(
             log_entry=self.log_entry,
             media_type=LogEntryMedia.TYPE_VIDEO,
-            file=self.video_file,
+            file=video_file,
             transcode_status=LogEntryMedia.STATUS_PENDING,
         )
 
+
+@tag("tasks", "unit")
+class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
+    """Tests for transcode_video_job task."""
+
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", None)
+    @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", None)
     def test_transcode_raises_without_required_config(self):
         """Task raises ValueError when DJANGO_WEB_SERVICE_URL is not configured."""
         from the_flip.apps.core.tasks import transcode_video_job
@@ -49,8 +62,6 @@ class TranscodeVideoJobTests(TemporaryMediaMixin, TestCase):
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
-                django_web_service_url=None,
-                upload_token=None,
             )
 
         self.assertIn("DJANGO_WEB_SERVICE_URL", str(context.exception))
@@ -83,26 +94,8 @@ class TranscodeVideoJobTests(TemporaryMediaMixin, TestCase):
 
 
 @tag("tasks", "unit")
-class TranscodeVideoErrorHandlingTests(TemporaryMediaMixin, TestCase):
+class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode error handling."""
-
-    def setUp(self):
-        logging.disable(logging.CRITICAL)
-        self.addCleanup(logging.disable, logging.NOTSET)
-        self.machine = create_machine()
-        self.log_entry = LogEntry.objects.create(
-            machine=self.machine,
-            text="Test entry with video",
-        )
-        self.video_file = SimpleUploadedFile(
-            "test.mp4", b"fake video content", content_type="video/mp4"
-        )
-        self.media = LogEntryMedia.objects.create(
-            log_entry=self.log_entry,
-            media_type=LogEntryMedia.TYPE_VIDEO,
-            file=self.video_file,
-            transcode_status=LogEntryMedia.STATUS_PENDING,
-        )
 
     def test_transcode_sets_failed_status_when_ffmpeg_errors(self):
         """Task sets status to FAILED when ffmpeg exits with error."""
@@ -125,8 +118,6 @@ class TranscodeVideoErrorHandlingTests(TemporaryMediaMixin, TestCase):
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
-                django_web_service_url="http://test.com",
-                upload_token="test-token",
             )
 
         self.media.refresh_from_db()
@@ -155,8 +146,6 @@ class TranscodeVideoErrorHandlingTests(TemporaryMediaMixin, TestCase):
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
-                django_web_service_url="http://test.com",
-                upload_token="test-token",
             )
 
         self.media.refresh_from_db()

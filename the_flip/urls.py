@@ -29,7 +29,7 @@ from the_flip.apps.catalog.views import (
 )
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
 from the_flip.apps.core.admin_views import admin_debug_view
-from the_flip.apps.core.views import HomeView, healthz
+from the_flip.apps.core.views import HomeView, TranscodeStatusView, healthz
 from the_flip.apps.maintenance import views as maintenance_views
 from the_flip.apps.parts import views as parts_views
 from the_flip.views import serve_media
@@ -200,6 +200,11 @@ urlpatterns = [
         maintenance_views.ReceiveTranscodedMediaView.as_view(),
         name="api-transcoding-upload",
     ),  # Webhook: receive transcoded video from external service
+    path(
+        "api/transcode/status/",
+        TranscodeStatusView.as_view(),
+        name="api-transcode-status",
+    ),  # AJAX: poll video transcode status
     path(
         "api/maintainers/",
         maintenance_views.MaintainerAutocompleteView.as_view(),

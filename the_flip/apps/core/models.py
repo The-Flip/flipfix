@@ -228,17 +228,13 @@ class AbstractMedia(TimeStampedMixin):
 # Media model registry
 # ---------------------------------------------------------------------------
 
-# Maps model names to their import paths for lazy loading
+# Maps model names to import paths for lazy loading. Add new media models here.
 _MEDIA_MODEL_REGISTRY: dict[str, str] = {
     "LogEntryMedia": "the_flip.apps.maintenance.models.LogEntryMedia",
+    "ProblemReportMedia": "the_flip.apps.maintenance.models.ProblemReportMedia",
     "PartRequestMedia": "the_flip.apps.parts.models.PartRequestMedia",
     "PartRequestUpdateMedia": "the_flip.apps.parts.models.PartRequestUpdateMedia",
 }
-
-
-def register_media_model(model_name: str, import_path: str) -> None:
-    """Register a media model for the transcode worker to find."""
-    _MEDIA_MODEL_REGISTRY[model_name] = import_path
 
 
 def get_media_model(model_name: str):

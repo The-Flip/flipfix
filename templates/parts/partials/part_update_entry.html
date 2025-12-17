@@ -16,7 +16,7 @@
   <div class="timeline__body markdown-content markdown-content--compact">{{ update.text|render_markdown }}</div>
   {% if update.media.all %}
     {% url 'part-request-update-detail' update.pk as update_url %}
-    {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all detail_url=update_url %}
+    {% include "core/partials/media_grid_readonly.html" with media_items=update.media.all detail_url=update_url model_name="PartRequestUpdateMedia" %}
   {% endif %}
 </article>
 {% endtimeline_entry %}

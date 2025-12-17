@@ -23,6 +23,46 @@ logger = logging.getLogger(__name__)
 DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
+# FFmpeg encoding settings
+MAX_VIDEO_DIMENSION = 2400  # Maximum width/height to prevent huge output files
+VIDEO_CRF_QUALITY = "23"  # CRF quality (18-28 range, lower = better quality)
+VIDEO_PRESET = "medium"  # Encoding speed preset (slower = better compression)
+AUDIO_BITRATE = "128k"  # Audio bitrate
+POSTER_WIDTH = 320  # Thumbnail width in pixels
+
+
+def _get_transcoding_config(
+    web_service_url: str | None = None,
+    upload_token: str | None = None,
+) -> tuple[str, str]:
+    """
+    Get and validate required transcoding configuration.
+
+    Args:
+        web_service_url: Override for DJANGO_WEB_SERVICE_URL (uses env var if None)
+        upload_token: Override for TRANSCODING_UPLOAD_TOKEN (uses env var if None)
+
+    Returns:
+        Tuple of (web_service_url, upload_token) after validation
+
+    Raises:
+        ValueError: If required configuration is missing
+    """
+    url = web_service_url or DJANGO_WEB_SERVICE_URL
+    token = upload_token or TRANSCODING_UPLOAD_TOKEN
+
+    missing = []
+    if not url:
+        missing.append("DJANGO_WEB_SERVICE_URL")
+    if not token:
+        missing.append("TRANSCODING_UPLOAD_TOKEN")
+
+    if missing:
+        msg = f"Required environment variables not configured: {', '.join(missing)}"
+        raise ValueError(msg)
+
+    return url, token
+
 
 def enqueue_transcode(media_id: int, model_name: str, *, async_runner=async_task) -> None:
     """
@@ -49,8 +89,6 @@ def transcode_video_job(
     probe=None,
     run_ffmpeg=None,
     upload=None,
-    django_web_service_url: str | None = None,
-    upload_token: str | None = None,
 ) -> None:
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     token = bind_log_context(**log_context) if log_context else None
@@ -58,8 +96,6 @@ def transcode_video_job(
     probe_fn = probe or _probe_duration_seconds
     run_ffmpeg_fn = run_ffmpeg or _run_ffmpeg
     upload_fn = upload or _upload_transcoded_files
-    web_service_url = django_web_service_url or DJANGO_WEB_SERVICE_URL
-    auth_token = upload_token or TRANSCODING_UPLOAD_TOKEN
 
     try:
         media_model = get_media_model(model_name)
@@ -73,18 +109,13 @@ def transcode_video_job(
         return
 
     # Validate HTTP transfer configuration
-    missing = []
-    if not web_service_url:
-        missing.append("DJANGO_WEB_SERVICE_URL")
-    if not auth_token:
-        missing.append("TRANSCODING_UPLOAD_TOKEN")
-
-    if missing:
-        msg = f"Required environment variables not configured: {', '.join(missing)}"
-        logger.error("Transcode job %s aborted: %s", media_id, msg)
+    try:
+        web_service_url, upload_token = _get_transcoding_config()
+    except ValueError as e:
+        logger.error("Transcode job %s aborted: %s", media_id, str(e))
         media.transcode_status = media_model.STATUS_FAILED
         media.save(update_fields=["transcode_status", "updated_at"])
-        raise ValueError(msg)
+        raise
 
     logger.info("Transcoding video %s (%s) for HTTP transfer to web service", media_id, model_name)
 
@@ -108,7 +139,7 @@ def transcode_video_job(
                 "-i",
                 str(input_path),
                 "-vf",
-                "scale=min(iw\\,2400):min(ih\\,2400):force_original_aspect_ratio=decrease",
+                f"scale=min(iw\\,{MAX_VIDEO_DIMENSION}):min(ih\\,{MAX_VIDEO_DIMENSION}):force_original_aspect_ratio=decrease",
                 "-c:v",
                 "libx264",
                 "-pix_fmt",
@@ -116,13 +147,13 @@ def transcode_video_job(
                 "-profile:v",
                 "main",
                 "-crf",
-                "23",
+                VIDEO_CRF_QUALITY,
                 "-preset",
-                "medium",
+                VIDEO_PRESET,
                 "-c:a",
                 "aac",
                 "-b:a",
-                "128k",
+                AUDIO_BITRATE,
                 "-movflags",
                 "+faststart",
                 "-y",
@@ -137,7 +168,7 @@ def transcode_video_job(
                 "-i",
                 str(input_path),
                 "-vf",
-                "thumbnail,scale=320:-2",
+                f"thumbnail,scale={POSTER_WIDTH}:-2",
                 "-frames:v",
                 "1",
                 "-y",
@@ -150,13 +181,13 @@ def transcode_video_job(
             media_id,
             tmp_video.name,
             tmp_poster.name,
+            web_service_url,
+            upload_token,
             model_name=model_name,
-            web_service_url=web_service_url,
-            upload_token=auth_token,
         )
         logger.info("Successfully uploaded transcoded video %s (%s)", media_id, model_name)
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.error(
             "Failed to transcode video %s (%s): %s", media_id, model_name, exc, exc_info=True
         )
@@ -175,15 +206,35 @@ def transcode_video_job(
             reset_log_context(token)
 
 
+def _sleep_with_backoff(attempt: int, max_retries: int, error_detail: str) -> None:
+    """
+    Sleep with exponential backoff, or raise if retries exhausted.
+
+    Args:
+        attempt: Current attempt number (1-indexed)
+        max_retries: Maximum attempts allowed
+        error_detail: Error message for final failure
+
+    Raises:
+        Exception: If max retries exceeded
+    """
+    if attempt < max_retries:
+        wait_time = 2**attempt  # Exponential backoff: 2s, 4s, 8s
+        logger.info("Waiting %d seconds before retry...", wait_time)
+        time.sleep(wait_time)
+    else:
+        error_msg = f"Upload failed after {max_retries} attempts: {error_detail}"
+        raise Exception(error_msg)  # noqa: TRY002
+
+
 def _upload_transcoded_files(
     media_id: int,
     video_path: str,
     poster_path: str,
+    web_service_url: str,
+    upload_token: str,
     max_retries: int = 3,
     model_name: str = "LogEntryMedia",
-    *,
-    web_service_url: str | None = None,
-    upload_token: str | None = None,
 ) -> None:
     """
     Upload transcoded video and poster to Django web service via HTTP.
@@ -194,25 +245,14 @@ def _upload_transcoded_files(
         media_id: ID of media record
         video_path: Path to transcoded video file
         poster_path: Path to poster image file
+        web_service_url: Base URL of web service
+        upload_token: Bearer token for authentication
         max_retries: Maximum number of upload attempts (default: 3)
         model_name: Name of the media model class (default: LogEntryMedia)
 
     Raises:
         Exception: If upload fails after all retries
     """
-    web_service_url = web_service_url or DJANGO_WEB_SERVICE_URL
-    upload_token = upload_token or TRANSCODING_UPLOAD_TOKEN
-
-    missing = []
-    if not web_service_url:
-        missing.append("DJANGO_WEB_SERVICE_URL")
-    if not upload_token:
-        missing.append("TRANSCODING_UPLOAD_TOKEN")
-
-    if missing:
-        msg = f"Required environment variables not configured: {', '.join(missing)}"
-        raise ValueError(msg)
-
     upload_url = f"{web_service_url.rstrip('/')}/api/transcoding/upload/"
     headers = {"Authorization": f"Bearer {upload_token}"}
 
@@ -256,18 +296,7 @@ def _upload_transcoded_files(
                 response.status_code,
                 response.text[:200],
             )
-
-            if attempt < max_retries:
-                # Exponential backoff: 2^attempt seconds (2s, 4s, 8s)
-                wait_time = 2**attempt
-                logger.info("Waiting %d seconds before retry...", wait_time)
-                time.sleep(wait_time)
-            else:
-                # Final attempt failed
-                error_msg = (
-                    f"Upload failed after {max_retries} attempts: HTTP {response.status_code}"
-                )
-                raise Exception(error_msg)  # noqa: TRY002
+            _sleep_with_backoff(attempt, max_retries, f"HTTP {response.status_code}")
 
         except requests.exceptions.RequestException as e:
             logger.warning(
@@ -277,14 +306,7 @@ def _upload_transcoded_files(
                 media_id,
                 str(e),
             )
-
-            if attempt < max_retries:
-                wait_time = 2**attempt
-                logger.info("Waiting %d seconds before retry...", wait_time)
-                time.sleep(wait_time)
-            else:
-                error_msg = f"Upload failed after {max_retries} attempts: {e}"
-                raise Exception(error_msg) from e  # noqa: TRY002
+            _sleep_with_backoff(attempt, max_retries, str(e))
 
 
 def _probe_duration_seconds(input_path: Path) -> int | None:

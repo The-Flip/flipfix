@@ -1,9 +1,11 @@
 {# Editable media card with upload button, grid, and file input #}
-{# Usage: {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" %} #}
-{# Requires: Include media_grid.js in page scripts #}
+{# Usage: {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" model_name="LogEntryMedia" %} #}
+{# Requires: Include media_grid.js and video_transcode_poll.js in page scripts #}
+{% load core_extras %}
 <div class="card card--padded space-above-lg"
      data-media-card
-     data-alt-text="{{ alt|default:'Photo' }}">
+     data-alt-text="{{ alt|default:'Photo' }}"
+     data-model-name="{{ model_name|default:'LogEntryMedia' }}">
   <div class="card__header">
     <div class="card__title">Media</div>
     <div class="card__actions">
@@ -23,7 +25,9 @@
                 Your browser doesn't support video playback.
               </video>
             {% elif media.transcode_status == 'processing' or media.transcode_status == 'pending' %}
-              <div class="media-grid__status">Processing video…</div>
+              <div class="media-grid__status"
+                   data-media-poll-id="{{ media.id }}"
+                   data-media-poll-model="{{ model_name|default:'LogEntryMedia' }}">Processing video...</div>
             {% else %}
               <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
             {% endif %}

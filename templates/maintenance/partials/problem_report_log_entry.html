@@ -10,7 +10,7 @@
   <div class="timeline__body markdown-content markdown-content--compact">{{ entry.text|render_markdown }}</div>
   {% if entry.media.all %}
     {% url 'log-detail' entry.pk as entry_url %}
-    {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
+    {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url model_name="LogEntryMedia" %}
   {% endif %}
 </article>
 {% endtimeline_entry %}

@@ -21,7 +21,7 @@
     {{ entry.text|truncatechars:200|render_markdown }}
   </div>
   {% url 'part-request-detail' entry.pk as entry_url %}
-  {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url %}
+  {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url model_name="PartRequestMedia" %}
   {% if entry.prefetched_updates %}
     {% with latest_update=entry.prefetched_updates.0 %}
       <a href="{% url 'part-request-update-detail' latest_update.pk %}"

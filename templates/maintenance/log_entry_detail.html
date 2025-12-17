@@ -56,7 +56,7 @@
   <!-- DESCRIPTION CARD -->
   {% include "core/partials/text_card_editable.html" with content=entry.text %}
   <!-- MEDIA CARD -->
-  {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" %}
+  {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" model_name="LogEntryMedia" %}
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}"></script>
@@ -188,6 +188,7 @@
   </script>
   <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
+  <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
   <script src="{% static 'core/searchable_dropdown.js' %}"></script>
   <script src="{% static 'core/sidebar_card_edit.js' %}"></script>
 {% endblock %}

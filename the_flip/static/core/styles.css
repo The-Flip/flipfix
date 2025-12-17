@@ -438,6 +438,11 @@ body {
   cursor: pointer;
 }
 
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .btn--full {
   width: 100%;
   gap: var(--space-2);

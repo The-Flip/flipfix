@@ -54,7 +54,7 @@
   <!-- DESCRIPTION CARD -->
   {% include "core/partials/text_card_editable.html" with content=part_request.text %}
   <!-- MEDIA CARD -->
-  {% include "core/partials/media_card_editable.html" with media_items=part_request.media.all alt="Part request photo" %}
+  {% include "core/partials/media_card_editable.html" with media_items=part_request.media.all alt="Part request photo" model_name="PartRequestMedia" %}
   <!-- UPDATES SECTION -->
   <div class="space-above-lg">
     <div class="section-header">
@@ -181,4 +181,5 @@
   </script>
   <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
+  <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
 {% endblock %}
