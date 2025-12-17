@@ -176,7 +176,8 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
-    <script src="{% static 'core/core.js' %}"></script>
-    {% block extra_scripts %}{% endblock %}
+    <script src="{% static 'core/core.js' %}" defer></script>
+    {% block extra_scripts %}
+    {% endblock %}
   </body>
 </html>
