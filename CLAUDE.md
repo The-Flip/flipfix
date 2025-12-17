@@ -143,6 +143,7 @@ the_flip/
   - Use `python-decouple` to read from environment variables.
   - When tests need keys, tokens or passwords, generate them dynamically to avoid triggering the `detect-secrets` pre-commit hook, using secrets.token_hex(16).
 - **Use Mixins, not base classes**: for shared behavior, use mixins (classes that call `super()`) instead of base classes. Python's MRO breaks when base classes don't call `super()` - sibling classes get skipped silently.
+- **Use `functools.partial` for deferred calls**: use `partial(func, kwarg=val)` with keyword arguments (not positional) for `transaction.on_commit()` and similar callbacks.
 
 ## Key Conventions
 
