@@ -4,27 +4,7 @@ This is the spec for supporting maintainers uploading videos while logging their
 
 ## Implementation Status
 
-**Status:** Implemented with architectural modification
-
-The plan below was fully implemented. One significant change was made during implementation:
-
-### Architecture Change: HTTP Upload
-
-The original plan assumed the web server and worker process share a filesystem. In production on Railway, the worker runs as a separate service with no shared disk access.
-
-**Solution:** The worker transcodes locally to temp files, then uploads the results to the web server via HTTP:
-
-1. Worker transcodes video and generates poster to temp files
-2. Worker POSTs files to `/api/transcoding/upload/` with Bearer token authentication
-3. Web server validates token, saves files to storage, updates media record status
-
-**Required environment variables:**
-- `DJANGO_WEB_SERVICE_URL` - Base URL of web service (e.g., `http://localhost:8000`)
-- `TRANSCODING_UPLOAD_TOKEN` - Shared secret for authentication
-
-**Files added for HTTP transfer:**
-- `the_flip/apps/maintenance/views.py` - `ReceiveTranscodedMediaView` endpoint
-- `the_flip/apps/core/tasks.py` - `_upload_transcoded_files()` function
+**Status:** Fully implemented.
 
 ---
 
@@ -41,6 +21,31 @@ The original plan assumed the web server and worker process share a filesystem. 
 - `ffmpeg` runs in the worker; cap video long side at 2400px and generate a poster.
 - Automatically prune old task rows via django-q2 settings.
 - Worker recycling after N tasks to prevent memory bloat from FFmpeg.
+
+## File Transfer Between Services
+
+Railway does not support mounting the same persistent volume to multiple services. The web service owns the persistent storage where uploaded files are saved. The worker runs as a separate service with no direct access to the files owned by the web service.
+Therefore, the worker service will communicate with the web service via HTTP to transfer files:
+
+1. Worker GETs source video from `/api/transcoding/download/<model_name>/<media_id>/`
+2. Worker transcodes video and generates poster to temp files
+3. Worker POSTs transcoded files to `/api/transcoding/upload/<model_name>/<media_id>/`
+4. Web server validates token, saves files to storage, updates media record status
+5. Worker cleans up all temp files
+
+**Security:**
+- Both endpoints require Bearer token authentication (`TRANSCODING_UPLOAD_TOKEN`)
+- `DJANGO_WEB_SERVICE_URL` must use HTTPS in production (Railway provides this by default)
+- Token is static with no automatic rotation; acceptable for this low-volume volunteer app where the token is only used service-to-service within Railway's private network
+
+**Required environment variables:**
+- `TRANSCODING_UPLOAD_TOKEN` - Shared secret for authentication (required on both web and worker)
+- `DJANGO_WEB_SERVICE_URL` - Base URL of web service (worker only; must be HTTPS in production)
+- `RAILPACK_DEPLOY_APT_PACKAGES=ffmpeg` - Installs ffmpeg during build (worker only)
+
+**Files for HTTP transfer:**
+- `the_flip/apps/maintenance/views.py` - `ReceiveTranscodedMediaView` (upload) and `ServeSourceMediaView` (download)
+- `the_flip/apps/core/tasks.py` - `_download_source_file()` and `_upload_transcoded_files()`
 
 ## Dependencies
 - Add `django-q2` to `requirements.txt`.
@@ -79,15 +84,20 @@ Q_CLUSTER = {
 Key functions:
 - `enqueue_transcode(media_id, model_name)` - Queue video transcode job
 - `transcode_video_job(media_id, model_name)` - Main worker function
-- `_upload_transcoded_files()` - HTTP POST to web service
+- `_download_source_file()` - HTTP GET source video from web service
+- `_upload_transcoded_files()` - HTTP POST transcoded files to web service
 
 **Key implementation details:**
 - Uses `async_task()` for django-q2 integration
 - FFmpeg stderr captured for debugging
 - Temp files cleaned up after upload
-- Original file deleted after successful transcode (saves ~50% storage)
+- Original file deleted only after upload confirmed successful (saves ~50% storage)
 - Worker recycles after 5 videos (per `Q_CLUSTER` settings)
-- Exponential backoff retry for HTTP uploads (3 attempts)
+- Exponential backoff retry for HTTP transfers (3 attempts for both download and upload)
+- Download timeout: 300s (5 min) for large source files
+- Upload timeout: 300s (5 min) for transcoded files
+
+**Tradeoff - no original retention:** Original files are deleted after successful transcode to save storage. If a transcoded file is later found corrupted, user must re-upload. This is acceptable for ~2 videos/week where re-uploading is low-friction.
 
 ## Upload flow
 - Form/validation: allow `image/*,video/*` with size cap (200MB) and small video extension/MIME whitelist.
@@ -196,8 +206,8 @@ If video processing fails:
    - Railway auto-shares DATABASE_URL within project
 
 3. **FFmpeg Installation**:
-   - Already in `railpack.worker.json`: `buildAptPackages` and `deploy.aptPackages`
-   - Shared build with web service
+   - Set `RAILPACK_DEPLOY_APT_PACKAGES=ffmpeg` on the Worker service
+   - Note: Railpack's Python provider ignores `aptPackages` in config files; must use env var
 
 **Cost:** Worker service ~$5-10/mo (starter plan)
 

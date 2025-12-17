@@ -65,7 +65,7 @@ ignore = [
 "the_flip/apps/maintenance/utils.py" = ["S110"]  # Allow intentional exception suppression
 "the_flip/apps/maintenance/forms.py" = ["S110", "B904"]  # Allow exception suppression and error handling patterns
 "the_flip/apps/parts/forms.py" = ["S110", "B904"]  # Allow exception suppression and error handling patterns
-"the_flip/apps/maintenance/tasks.py" = ["S603", "S607"]  # Allow subprocess for ffmpeg/ffprobe
+"the_flip/apps/core/tasks.py" = ["S603", "S607"]  # Allow subprocess for ffmpeg/ffprobe (trusted binaries validated at runtime)
 
 [tool.ruff.lint.isort]
 # Django-style import ordering

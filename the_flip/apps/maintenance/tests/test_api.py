@@ -1,5 +1,7 @@
 """Tests for maintenance app API endpoints."""
 
+import secrets
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings, tag
 from django.urls import reverse
@@ -115,8 +117,15 @@ class ReceiveTranscodedMediaViewTests(
             transcode_status=LogEntryMedia.STATUS_PROCESSING,
         )
 
-        self.test_token = "test-secret-token-12345"  # noqa: S105
-        self.upload_url = reverse("api-transcoding-upload")
+        # Generate token dynamically to avoid triggering secret scanners
+        self.test_token = secrets.token_hex(16)
+
+    def _build_upload_url(self, model_name: str = "LogEntryMedia", media_id: int | None = None):
+        """Build upload URL with path parameters."""
+        return reverse(
+            "api-transcoding-upload",
+            kwargs={"model_name": model_name, "media_id": media_id or self.media.id},
+        )
 
     def _auth_headers(self, token: str | None = None) -> dict[str, str]:
         bearer = token or self.test_token
@@ -125,32 +134,23 @@ class ReceiveTranscodedMediaViewTests(
     def test_requires_authorization_header(self):
         """Request without Authorization header should be rejected."""
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
-            response = self.client.post(self.upload_url, {})
+            response = self.client.post(self._build_upload_url(), {})
         self.assertEqual(response.status_code, 401)
         self.assertIn("Missing or invalid Authorization header", response.json()["error"])
 
     def test_rejects_invalid_token(self):
         """Request with wrong token should be rejected."""
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
-            response = self.client.post(self.upload_url, {}, **self._auth_headers("wrong-token"))
+            response = self.client.post(
+                self._build_upload_url(), {}, **self._auth_headers("wrong-token")
+            )
         self.assertEqual(response.status_code, 403)
         self.assertIn("Invalid authentication token", response.json()["error"])
-
-    def test_requires_media_id(self):
-        """Request without media_id should be rejected."""
-        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
-            response = self.client.post(self.upload_url, {}, **self._auth_headers())
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing media_id", response.json()["error"])
 
     def test_requires_video_file(self):
         """Request without video_file should be rejected."""
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
-            response = self.client.post(
-                self.upload_url,
-                {"log_entry_media_id": str(self.media.id)},
-                **self._auth_headers(),
-            )
+            response = self.client.post(self._build_upload_url(), {}, **self._auth_headers())
         self.assertEqual(response.status_code, 400)
         self.assertIn("Missing video_file", response.json()["error"])
 
@@ -159,9 +159,7 @@ class ReceiveTranscodedMediaViewTests(
         wrong_file = SimpleUploadedFile("fake.txt", b"not a video", content_type="text/plain")
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
             response = self.client.post(
-                self.upload_url,
-                {"log_entry_media_id": str(self.media.id), "video_file": wrong_file},
-                **self._auth_headers(),
+                self._build_upload_url(), {"video_file": wrong_file}, **self._auth_headers()
             )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Invalid video file type", response.json()["error"])
@@ -173,12 +171,8 @@ class ReceiveTranscodedMediaViewTests(
 
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
             response = self.client.post(
-                self.upload_url,
-                {
-                    "log_entry_media_id": str(self.media.id),
-                    "video_file": video_file,
-                    "poster_file": wrong_poster,
-                },
+                self._build_upload_url(),
+                {"video_file": video_file, "poster_file": wrong_poster},
                 **self._auth_headers(),
             )
         self.assertEqual(response.status_code, 400)
@@ -189,12 +183,24 @@ class ReceiveTranscodedMediaViewTests(
         video_file = SimpleUploadedFile("video.mp4", b"fake video", content_type="video/mp4")
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
             response = self.client.post(
-                self.upload_url,
-                {"log_entry_media_id": "999999", "video_file": video_file},
+                self._build_upload_url(media_id=999999),
+                {"video_file": video_file},
                 **self._auth_headers(),
             )
         self.assertEqual(response.status_code, 404)
         self.assertIn("not found", response.json()["error"])
+
+    def test_rejects_invalid_model_name(self):
+        """Request with invalid model_name should be rejected."""
+        video_file = SimpleUploadedFile("video.mp4", b"fake video", content_type="video/mp4")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(model_name="InvalidModel"),
+                {"video_file": video_file},
+                **self._auth_headers(),
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Unknown media model", response.json()["error"])
 
     def test_successful_upload_with_video_and_poster(self):
         """Successful upload should save files and update status."""
@@ -207,12 +213,8 @@ class ReceiveTranscodedMediaViewTests(
 
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
             response = self.client.post(
-                self.upload_url,
-                {
-                    "log_entry_media_id": str(self.media.id),
-                    "video_file": video_file,
-                    "poster_file": poster_file,
-                },
+                self._build_upload_url(),
+                {"video_file": video_file, "poster_file": poster_file},
                 **self._auth_headers(),
             )
 
@@ -235,9 +237,7 @@ class ReceiveTranscodedMediaViewTests(
 
         with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
             response = self.client.post(
-                self.upload_url,
-                {"log_entry_media_id": str(self.media.id), "video_file": video_file},
-                **self._auth_headers(),
+                self._build_upload_url(), {"video_file": video_file}, **self._auth_headers()
             )
 
         self.assertEqual(response.status_code, 200)
@@ -252,7 +252,107 @@ class ReceiveTranscodedMediaViewTests(
     def test_server_not_configured_for_uploads(self):
         """If TRANSCODING_UPLOAD_TOKEN is not set, should return 500."""
         with override_settings(TRANSCODING_UPLOAD_TOKEN=None):
-            response = self.client.post(self.upload_url, {}, **self._auth_headers("some-token"))
+            response = self.client.post(
+                self._build_upload_url(), {}, **self._auth_headers("some-token")
+            )
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("Server not configured", response.json()["error"])
+
+
+@tag("api")
+class ServeSourceMediaViewTests(
+    TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
+):
+    """Tests for the HTTP API endpoint that serves source video files to worker service."""
+
+    def setUp(self):
+        super().setUp()
+        self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
+
+        original_file = SimpleUploadedFile(
+            "original.mp4", b"fake video content", content_type="video/mp4"
+        )
+        self.media = LogEntryMedia.objects.create(
+            log_entry=self.log_entry,
+            media_type=LogEntryMedia.TYPE_VIDEO,
+            file=original_file,
+            transcode_status=LogEntryMedia.STATUS_PENDING,
+        )
+
+        # Generate token dynamically to avoid triggering secret scanners
+        self.test_token = secrets.token_hex(16)
+
+    def _build_download_url(self, model_name: str = "LogEntryMedia", media_id: int | None = None):
+        """Build download URL with path parameters."""
+        return reverse(
+            "api-transcoding-download",
+            kwargs={"model_name": model_name, "media_id": media_id or self.media.id},
+        )
+
+    def _auth_headers(self, token: str | None = None) -> dict[str, str]:
+        bearer = token or self.test_token
+        return {"HTTP_AUTHORIZATION": f"Bearer {bearer}"}
+
+    def test_requires_authorization_header(self):
+        """Request without Authorization header should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(self._build_download_url())
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("Missing or invalid Authorization header", response.json()["error"])
+
+    def test_rejects_invalid_token(self):
+        """Request with wrong token should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(
+                self._build_download_url(), **self._auth_headers("wrong-token")
+            )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("Invalid authentication token", response.json()["error"])
+
+    def test_rejects_nonexistent_media_id(self):
+        """Request with non-existent media ID should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(
+                self._build_download_url(media_id=999999), **self._auth_headers()
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("not found", response.json()["error"])
+
+    def test_rejects_invalid_model_name(self):
+        """Request with invalid model_name should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(
+                self._build_download_url(model_name="InvalidModel"), **self._auth_headers()
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Unknown media model", response.json()["error"])
+
+    def test_successful_download(self):
+        """Successful download should stream the file."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(self._build_download_url(), **self._auth_headers())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "video/mp4")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertEqual(b"".join(response.streaming_content), b"fake video content")
+
+    def test_rejects_media_without_file(self):
+        """Request for media without a source file should be rejected."""
+        self.media.file.delete()
+        self.media.save()
+
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.get(self._build_download_url(), **self._auth_headers())
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("no source file", response.json()["error"])
+
+    def test_server_not_configured_for_downloads(self):
+        """If TRANSCODING_UPLOAD_TOKEN is not set, should return 500."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=None):
+            response = self.client.get(
+                self._build_download_url(), **self._auth_headers("some-token")
+            )
         self.assertEqual(response.status_code, 500)
         self.assertIn("Server not configured", response.json()["error"])
 

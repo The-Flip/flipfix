@@ -1,6 +1,7 @@
 """Tests for maintenance background tasks."""
 
 import logging
+import secrets
 import subprocess
 import tempfile
 from unittest.mock import Mock, patch
@@ -10,6 +11,9 @@ from django.test import TestCase, tag
 
 from the_flip.apps.core.test_utils import TemporaryMediaMixin, create_machine
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
+
+# Generate tokens dynamically to avoid triggering secret scanners
+TEST_TOKEN = secrets.token_hex(16)
 
 
 @tag("tasks", "unit")
@@ -22,10 +26,10 @@ class GetTranscodingConfigTests(TestCase):
 
         url, token = _get_transcoding_config(
             web_service_url="https://example.com",
-            upload_token="secret-token",
+            upload_token=TEST_TOKEN,
         )
         self.assertEqual(url, "https://example.com")
-        self.assertEqual(token, "secret-token")
+        self.assertEqual(token, TEST_TOKEN)
 
     @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", None)
     def test_raises_when_url_missing(self):
@@ -149,19 +153,16 @@ class UploadTranscodedFilesTests(TestCase):
             video_path=self.video_file.name,
             poster_path=self.poster_file.name,
             web_service_url="https://example.com",
-            upload_token="secret-token",
+            upload_token=TEST_TOKEN,
         )
 
         mock_post.assert_called_once()
-        call_kwargs = mock_post.call_args[1]
-        self.assertEqual(call_kwargs["headers"]["Authorization"], "Bearer secret-token")
+        call_args = mock_post.call_args
+        # Verify URL includes path params
+        self.assertIn("/api/transcoding/upload/LogEntryMedia/123/", call_args[0][0])
+        call_kwargs = call_args[1]
+        self.assertEqual(call_kwargs["headers"]["Authorization"], f"Bearer {TEST_TOKEN}")
         self.assertEqual(call_kwargs["timeout"], 300)
-
-        # Verify payload contains required fields
-        data = call_kwargs["data"]
-        self.assertEqual(data["media_id"], "123")
-        self.assertEqual(data["model_name"], "LogEntryMedia")
-        self.assertEqual(data["log_entry_media_id"], "123")  # Legacy field
 
     @patch("the_flip.apps.core.tasks.time.sleep")
     @patch("the_flip.apps.core.tasks.requests.post")
@@ -185,7 +186,7 @@ class UploadTranscodedFilesTests(TestCase):
             video_path=self.video_file.name,
             poster_path=self.poster_file.name,
             web_service_url="https://example.com",
-            upload_token="secret-token",
+            upload_token=TEST_TOKEN,
             max_retries=3,
         )
 
@@ -215,7 +216,7 @@ class UploadTranscodedFilesTests(TestCase):
             video_path=self.video_file.name,
             poster_path=self.poster_file.name,
             web_service_url="https://example.com",
-            upload_token="secret-token",
+            upload_token=TEST_TOKEN,
             max_retries=3,
         )
 
@@ -225,26 +226,170 @@ class UploadTranscodedFilesTests(TestCase):
     @patch("the_flip.apps.core.tasks.time.sleep")
     @patch("the_flip.apps.core.tasks.requests.post")
     def test_upload_raises_after_max_retries(self, mock_post, mock_sleep):
-        """Upload raises exception after exhausting all retries."""
-        from the_flip.apps.core.tasks import _upload_transcoded_files
+        """Upload raises TransferError after exhausting all retries."""
+        from the_flip.apps.core.tasks import TransferError, _upload_transcoded_files
 
         fail_response = Mock()
         fail_response.status_code = 503
         fail_response.text = "Service Unavailable"
         mock_post.return_value = fail_response
 
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(TransferError) as context:
             _upload_transcoded_files(
                 media_id=123,
                 video_path=self.video_file.name,
                 poster_path=self.poster_file.name,
                 web_service_url="https://example.com",
-                upload_token="secret-token",
+                upload_token=TEST_TOKEN,
                 max_retries=3,
             )
 
         self.assertIn("3 attempts", str(context.exception))
         self.assertEqual(mock_post.call_count, 3)
+
+
+@tag("tasks", "unit")
+class DownloadSourceFileTests(TestCase):
+    """Tests for _download_source_file helper."""
+
+    def setUp(self):
+        super().setUp()
+        logging.disable(logging.CRITICAL)
+        self.addCleanup(logging.disable, logging.NOTSET)
+
+    @patch("the_flip.apps.core.tasks.requests.get")
+    def test_download_succeeds_on_first_attempt(self, mock_get):
+        """Download succeeds immediately when server returns 200."""
+        import os
+
+        from the_flip.apps.core.tasks import _download_source_file
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {"Content-Disposition": 'filename="video.mp4"'}
+        mock_response.iter_content.return_value = [b"fake video content"]
+        mock_get.return_value = mock_response
+
+        result = _download_source_file(
+            media_id=123,
+            model_name="LogEntryMedia",
+            web_service_url="https://example.com",
+            upload_token=TEST_TOKEN,
+        )
+
+        try:
+            self.assertTrue(result.endswith(".mp4"))
+            self.assertTrue(os.path.exists(result))
+            with open(result, "rb") as f:
+                self.assertEqual(f.read(), b"fake video content")
+        finally:
+            if os.path.exists(result):
+                os.unlink(result)
+
+        mock_get.assert_called_once()
+        call_args = mock_get.call_args
+        # Verify URL includes path params
+        self.assertIn("/api/transcoding/download/LogEntryMedia/123/", call_args[0][0])
+        self.assertEqual(call_args[1]["headers"]["Authorization"], f"Bearer {TEST_TOKEN}")
+        self.assertEqual(call_args[1]["timeout"], 300)
+
+    @patch("the_flip.apps.core.tasks.time.sleep")
+    @patch("the_flip.apps.core.tasks.requests.get")
+    def test_download_retries_on_server_error(self, mock_get, mock_sleep):
+        """Download retries with backoff when server returns 500."""
+        import os
+
+        from the_flip.apps.core.tasks import _download_source_file
+
+        # First two attempts fail with 500, third succeeds
+        fail_response = Mock()
+        fail_response.status_code = 500
+        fail_response.text = "Internal Server Error"
+
+        success_response = Mock()
+        success_response.status_code = 200
+        success_response.headers = {}
+        success_response.iter_content.return_value = [b"video content"]
+
+        mock_get.side_effect = [fail_response, fail_response, success_response]
+
+        result = _download_source_file(
+            media_id=123,
+            model_name="LogEntryMedia",
+            web_service_url="https://example.com",
+            upload_token=TEST_TOKEN,
+            max_retries=3,
+        )
+
+        try:
+            self.assertTrue(os.path.exists(result))
+        finally:
+            if os.path.exists(result):
+                os.unlink(result)
+
+        self.assertEqual(mock_get.call_count, 3)
+        self.assertEqual(mock_sleep.call_count, 2)
+
+    @patch("the_flip.apps.core.tasks.time.sleep")
+    @patch("the_flip.apps.core.tasks.requests.get")
+    def test_download_retries_on_connection_error(self, mock_get, mock_sleep):
+        """Download retries with backoff on connection errors."""
+        import os
+
+        import requests as req
+
+        from the_flip.apps.core.tasks import _download_source_file
+
+        # First attempt fails with connection error, second succeeds
+        success_response = Mock()
+        success_response.status_code = 200
+        success_response.headers = {}
+        success_response.iter_content.return_value = [b"video content"]
+
+        mock_get.side_effect = [
+            req.exceptions.ConnectionError("Connection refused"),
+            success_response,
+        ]
+
+        result = _download_source_file(
+            media_id=123,
+            model_name="LogEntryMedia",
+            web_service_url="https://example.com",
+            upload_token=TEST_TOKEN,
+            max_retries=3,
+        )
+
+        try:
+            self.assertTrue(os.path.exists(result))
+        finally:
+            if os.path.exists(result):
+                os.unlink(result)
+
+        self.assertEqual(mock_get.call_count, 2)
+        mock_sleep.assert_called_once_with(2)
+
+    @patch("the_flip.apps.core.tasks.time.sleep")
+    @patch("the_flip.apps.core.tasks.requests.get")
+    def test_download_raises_after_max_retries(self, mock_get, mock_sleep):
+        """Download raises TransferError after exhausting all retries."""
+        from the_flip.apps.core.tasks import TransferError, _download_source_file
+
+        fail_response = Mock()
+        fail_response.status_code = 503
+        fail_response.text = "Service Unavailable"
+        mock_get.return_value = fail_response
+
+        with self.assertRaises(TransferError) as context:
+            _download_source_file(
+                media_id=123,
+                model_name="LogEntryMedia",
+                web_service_url="https://example.com",
+                upload_token=TEST_TOKEN,
+                max_retries=3,
+            )
+
+        self.assertIn("3 attempts", str(context.exception))
+        self.assertEqual(mock_get.call_count, 3)
 
 
 class VideoMediaTestMixin:
@@ -287,6 +432,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         """Task raises ValueError when DJANGO_WEB_SERVICE_URL is not configured."""
         from the_flip.apps.core.tasks import transcode_video_job
 
+        download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
         run_ffmpeg = Mock()
         upload = Mock()
@@ -295,6 +441,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
             transcode_video_job(
                 self.media.id,
                 "LogEntryMedia",
+                download=download,
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
@@ -303,6 +450,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         self.assertIn("DJANGO_WEB_SERVICE_URL", str(context.exception))
         self.media.refresh_from_db()
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
+        download.assert_not_called()
         probe.assert_not_called()
         run_ffmpeg.assert_not_called()
         upload.assert_not_called()
@@ -328,12 +476,13 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         # Status should remain pending (not changed)
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_PENDING)
 
-    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", "test-token")
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
     @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_success_path(self):
-        """Task runs probe, ffmpeg, and upload on success."""
+        """Task runs download, probe, ffmpeg, and upload on success."""
         from the_flip.apps.core.tasks import transcode_video_job
 
+        download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
         run_ffmpeg = Mock()
         upload = Mock()
@@ -341,9 +490,15 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         transcode_video_job(
             self.media.id,
             "LogEntryMedia",
+            download=download,
             probe=probe,
             run_ffmpeg=run_ffmpeg,
             upload=upload,
+        )
+
+        # Download called once with correct params
+        download.assert_called_once_with(
+            self.media.id, "LogEntryMedia", "https://example.com", TEST_TOKEN
         )
 
         # Probe called once to get duration
@@ -364,7 +519,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         self.assertEqual(self.media.duration, 120)
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_PROCESSING)
 
-    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", "test-token")
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
     @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_processing_status_before_work(self):
         """Task sets status to PROCESSING before starting transcode."""
@@ -377,6 +532,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
             self.media.refresh_from_db()
             statuses_during_run.append(self.media.transcode_status)
 
+        download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
         run_ffmpeg = Mock(side_effect=capture_status_on_ffmpeg)
         upload = Mock()
@@ -384,6 +540,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         transcode_video_job(
             self.media.id,
             "LogEntryMedia",
+            download=download,
             probe=probe,
             run_ffmpeg=run_ffmpeg,
             upload=upload,
@@ -397,10 +554,13 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
 class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode error handling."""
 
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_failed_status_when_ffmpeg_errors(self):
         """Task sets status to FAILED when ffmpeg exits with error."""
         from the_flip.apps.core.tasks import transcode_video_job
 
+        download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
         upload = Mock()
         run_ffmpeg = Mock()
@@ -415,6 +575,7 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
             transcode_video_job(
                 self.media.id,
                 "LogEntryMedia",
+                download=download,
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
@@ -422,27 +583,26 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
 
         self.media.refresh_from_db()
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
+        download.assert_called_once()
         probe.assert_called_once()
         upload.assert_not_called()
 
-    def test_transcode_fails_when_source_file_missing(self):
-        """Task sets status to FAILED when source file cannot be read."""
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    def test_transcode_fails_when_download_errors(self):
+        """Task sets status to FAILED when download raises an exception."""
         from the_flip.apps.core.tasks import transcode_video_job
 
+        download = Mock(side_effect=RuntimeError("Download failed after 3 attempts"))
         probe = Mock(return_value=120)
         upload = Mock()
         run_ffmpeg = Mock()
-        # Simulate ffmpeg failing when reading input (e.g., missing file)
-        run_ffmpeg.side_effect = subprocess.CalledProcessError(
-            returncode=1,
-            cmd=["ffmpeg", "-i", str(self.media.file.path)],
-            stderr="No such file or directory",
-        )
 
-        with self.assertRaises(subprocess.CalledProcessError):
+        with self.assertRaises(RuntimeError):
             transcode_video_job(
                 self.media.id,
                 "LogEntryMedia",
+                download=download,
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
@@ -450,15 +610,18 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
 
         self.media.refresh_from_db()
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
-        probe.assert_called_once()
+        download.assert_called_once()
+        probe.assert_not_called()
+        run_ffmpeg.assert_not_called()
         upload.assert_not_called()
 
-    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", "test-token")
+    @patch("the_flip.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
     @patch("the_flip.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_failed_status_when_upload_errors(self):
         """Task sets status to FAILED when upload raises an exception."""
         from the_flip.apps.core.tasks import transcode_video_job
 
+        download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
         run_ffmpeg = Mock()
         upload = Mock(side_effect=RuntimeError("Upload failed after 3 attempts"))
@@ -467,6 +630,7 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
             transcode_video_job(
                 self.media.id,
                 "LogEntryMedia",
+                download=download,
                 probe=probe,
                 run_ffmpeg=run_ffmpeg,
                 upload=upload,
@@ -474,6 +638,7 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
 
         self.media.refresh_from_db()
         self.assertEqual(self.media.transcode_status, LogEntryMedia.STATUS_FAILED)
+        download.assert_called_once()
         probe.assert_called_once()
         self.assertEqual(run_ffmpeg.call_count, 2)
         upload.assert_called_once()

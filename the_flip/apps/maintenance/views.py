@@ -21,11 +21,12 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Lower
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.utils.html import format_html
 from django.views.decorators.csrf import csrf_exempt
@@ -40,6 +41,7 @@ from the_flip.apps.core.mixins import (
     MediaUploadMixin,
     can_access_maintainer_portal,
 )
+from the_flip.apps.core.models import get_media_model
 from the_flip.apps.core.qr import QR_BOX_SIZE_BULK, generate_qr_code_base64
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
@@ -1347,55 +1349,50 @@ class MachineBulkQRCodeView(CanAccessMaintainerPortalMixin, TemplateView):
         return context
 
 
+def _validate_transcoding_auth(request) -> JsonResponse | None:
+    """
+    Validate Bearer token authentication for transcoding API endpoints.
+
+    Returns None if authentication is valid, or a JsonResponse with error details.
+    Uses constant-time comparison to prevent timing attacks.
+    """
+    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+    if not auth_header.startswith("Bearer "):
+        return JsonResponse(
+            {"success": False, "error": "Missing or invalid Authorization header"}, status=401
+        )
+
+    token = auth_header[7:]  # Remove "Bearer " prefix
+    if not settings.TRANSCODING_UPLOAD_TOKEN:
+        return JsonResponse(
+            {"success": False, "error": "Server not configured for transcoding"},
+            status=500,
+        )
+
+    if not constant_time_compare(token, settings.TRANSCODING_UPLOAD_TOKEN):
+        return JsonResponse({"success": False, "error": "Invalid authentication token"}, status=403)
+
+    return None
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class ReceiveTranscodedMediaView(View):
     """
     API endpoint for worker service to upload transcoded video files.
 
+    POST /api/transcoding/upload/<model_name>/<media_id>/
+
     Expects multipart/form-data with:
     - video_file: transcoded video file
     - poster_file: generated poster image
-    - media_id: ID of media record to update
-    - model_name: Name of the media model (LogEntryMedia, PartRequestMedia, etc.)
-    - log_entry_media_id: (legacy) ID of LogEntryMedia record to update
     - Authorization header: Bearer <token>
     """
 
-    def _get_media_model(self, model_name: str):
-        """Get the media model class by name."""
-        if model_name == "LogEntryMedia":
-            return LogEntryMedia
-        if model_name in ("PartRequestMedia", "PartRequestUpdateMedia"):
-            from the_flip.apps.parts.models import PartRequestMedia, PartRequestUpdateMedia
-
-            return PartRequestMedia if model_name == "PartRequestMedia" else PartRequestUpdateMedia
-        raise ValueError(f"Unknown media model: {model_name}")
-
-    def post(self, request, *args, **kwargs):
+    def post(self, request, model_name: str, media_id: int):
         # Validate authentication token
-        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
-        if not auth_header.startswith("Bearer "):
-            return JsonResponse(
-                {"success": False, "error": "Missing or invalid Authorization header"}, status=401
-            )
-
-        token = auth_header[7:]  # Remove "Bearer " prefix
-        if not settings.TRANSCODING_UPLOAD_TOKEN:
-            return JsonResponse(
-                {"success": False, "error": "Server not configured for transcoding uploads"},
-                status=500,
-            )
-
-        if token != settings.TRANSCODING_UPLOAD_TOKEN:
-            return JsonResponse(
-                {"success": False, "error": "Invalid authentication token"}, status=403
-            )
-
-        # Validate required fields - support both new and legacy field names
-        media_id = request.POST.get("media_id") or request.POST.get("log_entry_media_id")
-        model_name = request.POST.get("model_name", "LogEntryMedia")
-        if not media_id:
-            return JsonResponse({"success": False, "error": "Missing media_id"}, status=400)
+        auth_error = _validate_transcoding_auth(request)
+        if auth_error:
+            return auth_error
 
         video_file = request.FILES.get("video_file")
         poster_file = request.FILES.get("poster_file")
@@ -1421,14 +1418,11 @@ class ReceiveTranscodedMediaView(View):
 
         # Get media record using appropriate model
         try:
-            media_model = self._get_media_model(model_name)
+            media_model = get_media_model(model_name)
             media = media_model.objects.get(id=media_id)
         except ValueError as e:
-            return JsonResponse(
-                {"success": False, "error": str(e)},
-                status=400,
-            )
-        except Exception:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+        except media_model.DoesNotExist:
             return JsonResponse(
                 {"success": False, "error": f"{model_name} with id {media_id} not found"},
                 status=404,
@@ -1436,10 +1430,13 @@ class ReceiveTranscodedMediaView(View):
 
         # Save transcoded files and update record
         try:
+            # Capture original file reference for deferred deletion
+            original_file_name = media.file.name if media.file else None
+
             with transaction.atomic():
-                # Delete original file
+                # Clear original file reference (but don't delete yet)
                 if media.file:
-                    media.file.delete(save=False)
+                    media.file = None
 
                 # Save transcoded video
                 media.transcoded_file = video_file
@@ -1452,6 +1449,13 @@ class ReceiveTranscodedMediaView(View):
                 media.transcode_status = media_model.STATUS_READY
 
                 media.save()
+
+            # Delete original file only after transaction commits successfully
+            # This prevents data loss if save() fails
+            if original_file_name:
+                storage = media.transcoded_file.storage
+                file_to_delete = original_file_name
+                transaction.on_commit(lambda: storage.delete(file_to_delete))
 
             return JsonResponse(
                 {
@@ -1468,3 +1472,44 @@ class ReceiveTranscodedMediaView(View):
                 {"success": False, "error": f"Failed to save transcoded media: {str(e)}"},
                 status=500,
             )
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ServeSourceMediaView(View):
+    """
+    API endpoint for worker service to download source video files.
+
+    GET /api/transcoding/download/<model_name>/<media_id>/
+    Authorization: Bearer <token>
+
+    Returns the source file as a streaming response.
+    """
+
+    def get(self, request, model_name: str, media_id: int):
+        # Validate authentication token
+        auth_error = _validate_transcoding_auth(request)
+        if auth_error:
+            return auth_error
+
+        # Get media record
+        try:
+            media_model = get_media_model(model_name)
+            media = media_model.objects.get(id=media_id)
+        except ValueError as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=400)
+        except media_model.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": f"{model_name} with id {media_id} not found"},
+                status=404,
+            )
+
+        # Check that file exists
+        if not media.file:
+            return JsonResponse({"success": False, "error": "Media has no source file"}, status=404)
+
+        # Stream the file
+        return FileResponse(
+            media.file.open("rb"),
+            as_attachment=True,
+            filename=media.file.name.split("/")[-1],
+        )

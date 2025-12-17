@@ -19,12 +19,19 @@ from the_flip.logging import bind_log_context, current_log_context, reset_log_co
 
 logger = logging.getLogger(__name__)
 
+
+class TransferError(Exception):
+    """Raised when HTTP file transfer fails after all retries."""
+
+
 # Worker service settings for HTTP transfer
 DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
 # FFmpeg encoding settings
 MAX_VIDEO_DIMENSION = 2400  # Maximum width/height to prevent huge output files
+# Allowlist of trusted binaries for subprocess calls
+TRUSTED_BINARIES = frozenset({"ffmpeg", "ffprobe"})
 VIDEO_CRF_QUALITY = "23"  # CRF quality (18-28 range, lower = better quality)
 VIDEO_PRESET = "medium"  # Encoding speed preset (slower = better compression)
 AUDIO_BITRATE = "128k"  # Audio bitrate
@@ -86,6 +93,7 @@ def transcode_video_job(
     model_name: str,
     log_context: dict | None = None,
     *,
+    download=None,
     probe=None,
     run_ffmpeg=None,
     upload=None,
@@ -93,6 +101,7 @@ def transcode_video_job(
     """Transcode video to H.264/AAC MP4, extract poster, upload to web service."""
     token = bind_log_context(**log_context) if log_context else None
 
+    download_fn = download or _download_source_file
     probe_fn = probe or _probe_duration_seconds
     run_ffmpeg_fn = run_ffmpeg or _run_ffmpeg
     upload_fn = upload or _upload_transcoded_files
@@ -119,14 +128,18 @@ def transcode_video_job(
 
     logger.info("Transcoding video %s (%s) for HTTP transfer to web service", media_id, model_name)
 
-    input_path = Path(media.file.path)
     media.transcode_status = media_model.STATUS_PROCESSING
     media.save(update_fields=["transcode_status", "updated_at"])
 
+    tmp_source = None
     tmp_video = None
     tmp_poster = None
 
     try:
+        # Download source file from web service
+        tmp_source = download_fn(media_id, model_name, web_service_url, upload_token)
+        input_path = Path(tmp_source)
+
         duration_seconds = probe_fn(input_path)
         if duration_seconds is not None:
             media.duration = duration_seconds
@@ -195,6 +208,13 @@ def transcode_video_job(
         media.save(update_fields=["transcode_status", "updated_at"])
         raise
     finally:
+        # Clean up temp files (tmp_source is a path string, others are file objects)
+        if tmp_source and os.path.exists(tmp_source):
+            try:
+                os.unlink(tmp_source)
+            except OSError:
+                logger.warning("Could not delete temp file %s", tmp_source)
+
         for tmp in (tmp_video, tmp_poster):
             if tmp and os.path.exists(tmp.name):
                 try:
@@ -223,8 +243,100 @@ def _sleep_with_backoff(attempt: int, max_retries: int, error_detail: str) -> No
         logger.info("Waiting %d seconds before retry...", wait_time)
         time.sleep(wait_time)
     else:
-        error_msg = f"Upload failed after {max_retries} attempts: {error_detail}"
-        raise Exception(error_msg)  # noqa: TRY002
+        error_msg = f"Transfer failed after {max_retries} attempts: {error_detail}"
+        raise TransferError(error_msg)
+
+
+def _download_source_file(
+    media_id: int,
+    model_name: str,
+    web_service_url: str,
+    upload_token: str,
+    max_retries: int = 3,
+) -> str:
+    """
+    Download source video from web service to temp file.
+
+    Args:
+        media_id: ID of media record
+        model_name: Name of the media model class
+        web_service_url: Base URL of web service
+        upload_token: Bearer token for authentication
+        max_retries: Maximum number of download attempts (default: 3)
+
+    Returns:
+        Path to downloaded temp file (caller must clean up)
+
+    Raises:
+        Exception: If download fails after all retries
+    """
+    download_url = (
+        f"{web_service_url.rstrip('/')}/api/transcoding/download/{model_name}/{media_id}/"
+    )
+    headers = {"Authorization": f"Bearer {upload_token}"}
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(
+                "Downloading source file for media %s from %s (attempt %d/%d)",
+                media_id,
+                download_url,
+                attempt,
+                max_retries,
+            )
+
+            response = requests.get(download_url, headers=headers, stream=True, timeout=300)
+
+            if response.status_code == 200:
+                # Get file extension from Content-Disposition or default to .mp4
+                content_disp = response.headers.get("Content-Disposition", "")
+                if "filename=" in content_disp:
+                    filename = content_disp.split("filename=")[-1].strip('"')
+                    ext = Path(filename).suffix or ".mp4"
+                else:
+                    ext = ".mp4"
+
+                # Stream to temp file
+                tmp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
+                try:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        tmp.write(chunk)
+                    tmp.close()
+                    logger.info(
+                        "Downloaded source file for media %s to %s",
+                        media_id,
+                        tmp.name,
+                    )
+                    return tmp.name
+                except Exception:
+                    tmp.close()
+                    if os.path.exists(tmp.name):
+                        os.unlink(tmp.name)
+                    raise
+
+            # Log error and retry if not successful
+            logger.warning(
+                "Download attempt %d/%d failed for media %s: HTTP %d - %s",
+                attempt,
+                max_retries,
+                media_id,
+                response.status_code,
+                response.text[:200] if response.text else "(no body)",
+            )
+            _sleep_with_backoff(attempt, max_retries, f"HTTP {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(
+                "Download attempt %d/%d failed for media %s: %s",
+                attempt,
+                max_retries,
+                media_id,
+                str(e),
+            )
+            _sleep_with_backoff(attempt, max_retries, str(e))
+
+    # Should not reach here due to _sleep_with_backoff raising
+    raise TransferError(f"Download failed after {max_retries} attempts")
 
 
 def _upload_transcoded_files(
@@ -253,7 +365,7 @@ def _upload_transcoded_files(
     Raises:
         Exception: If upload fails after all retries
     """
-    upload_url = f"{web_service_url.rstrip('/')}/api/transcoding/upload/"
+    upload_url = f"{web_service_url.rstrip('/')}/api/transcoding/upload/{model_name}/{media_id}/"
     headers = {"Authorization": f"Bearer {upload_token}"}
 
     for attempt in range(1, max_retries + 1):
@@ -271,16 +383,8 @@ def _upload_transcoded_files(
                     "video_file": ("video.mp4", video_file, "video/mp4"),
                     "poster_file": ("poster.jpg", poster_file, "image/jpeg"),
                 }
-                data = {
-                    "media_id": str(media_id),
-                    "model_name": model_name,
-                    # Keep legacy field for backward compatibility
-                    "log_entry_media_id": str(media_id),
-                }
 
-                response = requests.post(
-                    upload_url, files=files, data=data, headers=headers, timeout=300
-                )
+                response = requests.post(upload_url, files=files, headers=headers, timeout=300)
 
             if response.status_code == 200:
                 result = response.json()
@@ -311,36 +415,36 @@ def _upload_transcoded_files(
 
 def _probe_duration_seconds(input_path: Path) -> int | None:
     """Return duration in whole seconds using ffprobe."""
+    cmd = [
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
+        "-show_entries",
+        "format=duration",
+        str(input_path),
+    ]
+    if cmd[0] not in TRUSTED_BINARIES:
+        return None
     try:
-        result = subprocess.run(  # noqa: S603
-            [  # noqa: S607 - trusted ffprobe binary
-                "ffprobe",
-                "-v",
-                "quiet",
-                "-print_format",
-                "json",
-                "-show_entries",
-                "format=duration",
-                str(input_path),
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         payload = json.loads(result.stdout or "{}")
         duration = payload.get("format", {}).get("duration")
         if duration is None:
             return None
         return int(float(duration))
-    except Exception:  # noqa: BLE001
+    except (subprocess.CalledProcessError, json.JSONDecodeError, ValueError, OSError):
         return None
 
 
 def _run_ffmpeg(cmd: list[str]) -> None:
     """Run ffmpeg/ffprobe with basic logging."""
+    if cmd[0] not in TRUSTED_BINARIES:
+        raise ValueError(f"Untrusted binary: {cmd[0]}")
     logger.info("Running command: %s", " ".join(cmd))
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)  # noqa: S603
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         if result.stdout:
             logger.debug("FFmpeg stdout: %s", result.stdout)
         if result.stderr:

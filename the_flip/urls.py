@@ -196,10 +196,15 @@ urlpatterns = [
     # API endpoints
     #
     path(
-        "api/transcoding/upload/",
+        "api/transcoding/download/<str:model_name>/<int:media_id>/",
+        maintenance_views.ServeSourceMediaView.as_view(),
+        name="api-transcoding-download",
+    ),  # Worker: download source video for transcoding
+    path(
+        "api/transcoding/upload/<str:model_name>/<int:media_id>/",
         maintenance_views.ReceiveTranscodedMediaView.as_view(),
         name="api-transcoding-upload",
-    ),  # Webhook: receive transcoded video from external service
+    ),  # Worker: upload transcoded video and poster
     path(
         "api/transcode/status/",
         TranscodeStatusView.as_view(),
