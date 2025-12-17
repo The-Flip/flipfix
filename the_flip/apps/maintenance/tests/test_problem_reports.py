@@ -1,6 +1,7 @@
 """Tests for problem report views and functionality."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.conf import settings
 from django.test import TestCase, tag
@@ -971,7 +972,7 @@ class ProblemReportMediaUploadTests(
 
         data = {
             "action": "upload_media",
-            "file": img_io,
+            "media_file": img_io,
         }
         response = self.client.post(self.detail_url, data)
         self.assertEqual(response.status_code, 403)
@@ -993,7 +994,7 @@ class ProblemReportMediaUploadTests(
 
         data = {
             "action": "upload_media",
-            "file": img_io,
+            "media_file": img_io,
         }
         response = self.client.post(self.detail_url, data)
 
@@ -1007,6 +1008,37 @@ class ProblemReportMediaUploadTests(
         media = ProblemReportMedia.objects.first()
         self.assertEqual(media.problem_report, self.report)
         self.assertEqual(media.media_type, ProblemReportMedia.TYPE_PHOTO)
+
+    @patch("the_flip.apps.core.mixins.enqueue_transcode")
+    def test_video_upload_enqueues_transcode_with_model_name(self, mock_enqueue):
+        """Video upload should call enqueue_transcode with correct model_name.
+
+        This test verifies that when a video is uploaded via AJAX to a problem report,
+        the view correctly calls enqueue_transcode with model_name="ProblemReportMedia".
+        """
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_login(self.staff_user)
+
+        video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.detail_url,
+                {
+                    "action": "upload_media",
+                    "media_file": video_file,
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        self.assertTrue(json_data["success"])
+        self.assertEqual(json_data["media_type"], "video")
+
+        # Verify enqueue_transcode was called with correct arguments
+        media = ProblemReportMedia.objects.first()
+        mock_enqueue.assert_called_once_with(media_id=media.id, model_name="ProblemReportMedia")
 
 
 @tag("views", "ajax", "media")

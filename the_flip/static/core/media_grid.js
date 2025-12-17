@@ -173,7 +173,7 @@
   async function uploadFile(file, container, uploadButton, altText, modelName) {
     const formData = new FormData();
     formData.append('action', 'upload_media');
-    formData.append('file', file);
+    formData.append('media_file', file);
     formData.append('csrfmiddlewaretoken', getCsrfToken());
 
     try {

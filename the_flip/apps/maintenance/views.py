@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from datetime import timezone as dt_timezone
+from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
@@ -559,9 +560,10 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    media_id = media.id
                     transaction.on_commit(
-                        lambda mid=media_id: enqueue_transcode(mid, model_name="ProblemReportMedia")
+                        partial(
+                            enqueue_transcode, media_id=media.id, model_name="ProblemReportMedia"
+                        )
                     )
 
         messages.success(
@@ -915,8 +917,9 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    media_id = media.id
-                    transaction.on_commit(lambda mid=media_id: enqueue_transcode(mid))
+                    transaction.on_commit(
+                        partial(enqueue_transcode, media_id=media.id, model_name="LogEntryMedia")
+                    )
 
         # Close problem report if checkbox was checked
         if self.problem_report and self.request.POST.get("close_problem"):

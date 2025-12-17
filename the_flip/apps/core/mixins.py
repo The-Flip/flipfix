@@ -81,15 +81,15 @@ class MediaUploadMixin:
         Handle media file upload from AJAX request.
 
         Expects:
-            - request.FILES["file"]: The uploaded file
+            - request.FILES["media_file"]: The uploaded file
 
         Returns:
             JsonResponse with media details or error
         """
-        if "file" not in request.FILES:
+        if "media_file" not in request.FILES:
             return JsonResponse({"success": False, "error": "No file provided"}, status=400)
 
-        upload = request.FILES["file"]
+        upload = request.FILES["media_file"]
         content_type = (getattr(upload, "content_type", "") or "").lower()
         ext = Path(getattr(upload, "name", "")).suffix.lower()
         is_video = content_type.startswith("video/") or ext in {
@@ -116,7 +116,7 @@ class MediaUploadMixin:
 
         if is_video:
             transaction.on_commit(
-                partial(enqueue_transcode, media.id, model_name=media_model.__name__)
+                partial(enqueue_transcode, media_id=media.id, model_name=media_model.__name__)
             )
 
         return JsonResponse(
