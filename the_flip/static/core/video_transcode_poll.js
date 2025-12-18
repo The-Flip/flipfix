@@ -68,10 +68,10 @@
    */
   function scheduleNextPoll() {
     attemptCount++;
-    currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL_MS);
 
     if (getPendingMedia().length > 0) {
       timeoutId = setTimeout(poll, currentInterval);
+      currentInterval = Math.min(currentInterval * 2, MAX_INTERVAL_MS);
     }
   }
 
