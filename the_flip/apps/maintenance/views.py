@@ -680,6 +680,12 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         if action == "delete_media":
             return self.handle_delete_media(request)
 
+        # Reject unrecognized actions (empty string means toggle status from form)
+        if action and action != "toggle_status":
+            return JsonResponse(
+                {"success": False, "error": f"Unknown action: {action}"}, status=400
+            )
+
         # Toggle status (wrapped in transaction so status + log entry are atomic)
         if self.report.status == ProblemReport.STATUS_OPEN:
             self.report.status = ProblemReport.STATUS_CLOSED

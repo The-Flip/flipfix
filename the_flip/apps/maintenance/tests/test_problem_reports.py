@@ -182,6 +182,32 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertEqual(len(messages), 1)
         self.assertIn("re-opened", str(messages[0]))
 
+    def test_unrecognized_action_does_not_toggle_status(self):
+        """POST with unrecognized action should NOT toggle status.
+
+        This is a regression test for a bug where any POST with an unrecognized
+        action would fall through to the status toggle code, inadvertently
+        changing the problem report status.
+        """
+        initial_status = self.report.status
+        initial_log_count = LogEntry.objects.count()
+
+        self.client.force_login(self.staff_user)
+        response = self.client.post(
+            self.detail_url,
+            {"action": "invalid_action_xyz"},
+        )
+
+        # Status should NOT have changed
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, initial_status)
+
+        # No new log entry should have been created
+        self.assertEqual(LogEntry.objects.count(), initial_log_count)
+
+        # Should return 400 Bad Request for unrecognized action
+        self.assertEqual(response.status_code, 400)
+
     def test_detail_view_search_filters_log_entries_by_text(self):
         """Search should filter log entries by text on the detail page."""
         create_log_entry(
