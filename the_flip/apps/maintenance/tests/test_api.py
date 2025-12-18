@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 
 from the_flip.apps.core.test_utils import (
+    MINIMAL_PNG,
     SuppressRequestLogsMixin,
     TemporaryMediaMixin,
     TestDataMixin,
@@ -365,14 +366,7 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         super().setUp()
         self.client.force_login(self.staff_user)
         self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
-        # Minimal valid PNG (1x1 transparent)
-        png_data = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
-            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
-        original = SimpleUploadedFile("photo.png", png_data, content_type="image/png")
+        original = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
         converted = resize_image_file(original)
         thumb = resize_image_file(converted)
         self.media = LogEntryMedia.objects.create(

@@ -35,6 +35,14 @@ UserModel = cast("type[User]", get_user_model())
 # Default password for all test users - centralized to avoid secret detection warnings
 TEST_PASSWORD = "testpass123"  # noqa: S105
 
+# Minimal valid PNG (1x1 transparent pixel) for tests that need valid image data
+MINIMAL_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+    b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+    b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+    b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
 
 def _unique_suffix() -> str:
     """Return a short unique suffix for test data."""
