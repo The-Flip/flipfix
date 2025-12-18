@@ -377,8 +377,8 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         )
         self.delete_url = reverse("log-detail", kwargs={"pk": self.log_entry.pk})
 
-    def test_deletes_all_media_files(self):
-        """Deleting media removes file, thumbnail, and DB record."""
+    def test_deletes_all_photo_files(self):
+        """Deleting photo media removes everything associated with the photo: the photo file, thumbnail, and DB record."""
         file_name = self.media.file.name
         thumb_name = self.media.thumbnail_file.name
 
@@ -393,7 +393,7 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         self.assertFalse(storage.exists(thumb_name))
 
     def test_deletes_all_video_files(self):
-        """Deleting video media removes original, transcoded, poster, and DB record."""
+        """Deleting video media removes everything associated with the video: the original, transcoded, poster, and DB record."""
         # Create video with all associated files
         original = SimpleUploadedFile("video.mp4", b"original", content_type="video/mp4")
         transcoded = SimpleUploadedFile("transcoded.mp4", b"transcoded", content_type="video/mp4")
