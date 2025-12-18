@@ -206,9 +206,9 @@ urlpatterns = [
         name="api-transcoding-upload",
     ),  # Worker: upload transcoded video and poster
     path(
-        "api/transcode/status/",
+        "api/transcoding/status/",
         TranscodeStatusView.as_view(),
-        name="api-transcode-status",
+        name="api-transcoding-status",
     ),  # AJAX: poll video transcode status
     path(
         "api/maintainers/",

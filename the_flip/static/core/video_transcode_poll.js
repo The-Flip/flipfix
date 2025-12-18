@@ -32,7 +32,7 @@
   const INITIAL_INTERVAL_MS = 2000; // 2 seconds
   const MAX_INTERVAL_MS = 10000; // 10 seconds cap
   const MAX_ATTEMPTS = 20;
-  const API_URL = '/api/transcode/status/';
+  const API_URL = '/api/transcoding/status/';
 
   // State
   let currentInterval = INITIAL_INTERVAL_MS;

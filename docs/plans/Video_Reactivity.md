@@ -35,7 +35,7 @@ This event-based design keeps the modules decoupled - they can be included indep
 
 ## API Endpoint
 
-**URL:** `GET /api/transcode/status/?ids=1,2,3&models=LogEntryMedia,LogEntryMedia,PartRequestMedia`
+**URL:** `GET /api/transcoding/status/?ids=1,2,3&models=LogEntryMedia,LogEntryMedia,PartRequestMedia`
 
 **Response:**
 ```json
@@ -54,7 +54,7 @@ This event-based design keeps the modules decoupled - they can be included indep
 }
 ```
 
-**Authentication:** None required (media IDs are not sensitive, URLs are already public)
+**Authentication:** Requires login (uses Django's `login_required` decorator)
 
 **Implementation:** `TranscodeStatusView` in `the_flip/apps/core/views.py`
 
@@ -118,7 +118,7 @@ Only needs polling script (no upload functionality):
 | File | Purpose |
 |------|---------|
 | `the_flip/apps/core/views.py` | TranscodeStatusView API endpoint |
-| `the_flip/urls.py` | API route: `/api/transcode/status/` |
+| `the_flip/urls.py` | API route: `/api/transcoding/status/` |
 | `the_flip/static/core/video_transcode_poll.js` | Polling logic |
 | `the_flip/static/core/media_grid.js` | Upload/delete with progress counter |
 | `the_flip/static/core/styles.css` | `.media-upload-status` style |
