@@ -3,6 +3,7 @@
         "charliermarsh.ruff",
         "ms-python.mypy-type-checker",
         "ms-python.python",
-        "monosans.djlint"
+        "monosans.djlint",
+        "esbenp.prettier-vscode"
     ]
 }

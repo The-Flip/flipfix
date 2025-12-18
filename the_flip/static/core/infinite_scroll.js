@@ -1,16 +1,16 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("log-container");
-  const list = document.getElementById("log-list");
-  const loading = document.getElementById("log-loading");
-  const pagination = document.getElementById("log-pagination");
-  const sentinel = document.getElementById("log-sentinel");
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('log-container');
+  const list = document.getElementById('log-list');
+  const loading = document.getElementById('log-loading');
+  const pagination = document.getElementById('log-pagination');
+  const sentinel = document.getElementById('log-sentinel');
 
   if (!container || !list || !pagination || !sentinel) return;
 
   const fetchUrl = container.dataset.fetchUrl;
   if (!fetchUrl) return;
 
-  let nextPage = Number(pagination.dataset.nextPage || "0");
+  let nextPage = Number(pagination.dataset.nextPage || '0');
   let isLoading = false;
 
   const observer = new IntersectionObserver(
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     },
-    { rootMargin: "200px" }
+    { rootMargin: '200px' }
   );
 
   if (nextPage > 0) {
@@ -33,25 +33,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function loadMore() {
     if (isLoading || nextPage === 0) return;
     isLoading = true;
-    loading.classList.remove("hidden");
+    loading.classList.remove('hidden');
 
     const params = new URLSearchParams(window.location.search);
-    params.set("page", nextPage);
+    params.set('page', nextPage);
     fetch(`${fetchUrl}?${params.toString()}`, {
-      headers: { "X-Requested-With": "XMLHttpRequest" },
-      credentials: "same-origin",
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.items) {
-          const fragment = document.createElement("div");
+          const fragment = document.createElement('div');
           fragment.innerHTML = data.items;
           Array.from(fragment.children).forEach((node) => {
             list.appendChild(node);
-            const event = new CustomEvent("card:initialize", { detail: node });
+            const event = new CustomEvent('card:initialize', { detail: node });
             document.dispatchEvent(event);
           });
-          if (typeof applySmartDates === "function") {
+          if (typeof applySmartDates === 'function') {
             applySmartDates(list);
           }
         }
@@ -64,11 +64,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
       .catch((error) => {
-        console.error("Failed to load log entries:", error);
+        console.error('Failed to load log entries:', error);
       })
       .finally(() => {
         isLoading = false;
-        loading.classList.add("hidden");
+        loading.classList.add('hidden');
       });
   }
 });

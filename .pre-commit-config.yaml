@@ -14,6 +14,13 @@ repos:
       # Run the formatter
       - id: ruff-format
 
+  # Prettier - JavaScript and CSS formatter
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.4.2
+    hooks:
+      - id: prettier
+        types_or: [javascript, css]
+
   # Prevent commits to main
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

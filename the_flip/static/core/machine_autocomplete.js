@@ -15,9 +15,9 @@
  */
 
 function initMachineAutocomplete(container) {
-  const input = container.querySelector("[data-machine-search]");
-  const hiddenInput = container.querySelector("[data-machine-slug-input]");
-  const dropdown = container.querySelector(".autocomplete__dropdown");
+  const input = container.querySelector('[data-machine-search]');
+  const hiddenInput = container.querySelector('[data-machine-slug-input]');
+  const dropdown = container.querySelector('.autocomplete__dropdown');
   const endpoint = container.dataset.autocompleteUrl;
 
   if (!input || !hiddenInput || !dropdown || !endpoint) return;
@@ -30,7 +30,7 @@ function initMachineAutocomplete(container) {
   const keyboardNav = attachDropdownKeyboard({
     searchInput: input,
     listContainer: dropdown,
-    getSelectableItems: () => dropdown.querySelectorAll("[data-slug]"),
+    getSelectableItems: () => dropdown.querySelectorAll('[data-slug]'),
     onSelect: (item) => {
       const machine = results.find((m) => m.slug === item.dataset.slug);
       if (machine) selectMachine(machine);
@@ -39,14 +39,14 @@ function initMachineAutocomplete(container) {
   });
 
   function hideDropdown() {
-    dropdown.classList.add("hidden");
-    dropdown.innerHTML = "";
+    dropdown.classList.add('hidden');
+    dropdown.innerHTML = '';
   }
 
   function selectMachine(machine) {
     input.value = machine.display_name;
     hiddenInput.value = machine.slug;
-    const errorMessages = container.parentElement?.querySelectorAll(".field-error");
+    const errorMessages = container.parentElement?.querySelectorAll('.field-error');
     if (errorMessages?.length) {
       errorMessages.forEach((el) => el.remove());
     }
@@ -58,22 +58,22 @@ function initMachineAutocomplete(container) {
       hideDropdown();
       return;
     }
-    dropdown.innerHTML = "";
+    dropdown.innerHTML = '';
 
     list.forEach((machine) => {
-      const item = document.createElement("div");
-      item.className = "autocomplete__item";
+      const item = document.createElement('div');
+      item.className = 'autocomplete__item';
       item.dataset.slug = machine.slug;
 
-      const line = document.createElement("div");
-      const nameSpan = document.createElement("span");
+      const line = document.createElement('div');
+      const nameSpan = document.createElement('span');
       nameSpan.textContent = machine.display_name;
       line.appendChild(nameSpan);
 
       if (machine.location) {
-        const separator = document.createTextNode(" · ");
-        const locSpan = document.createElement("span");
-        locSpan.className = "text-muted";
+        const separator = document.createTextNode(' · ');
+        const locSpan = document.createElement('span');
+        locSpan.className = 'text-muted';
         locSpan.textContent = machine.location;
         line.appendChild(separator);
         line.appendChild(locSpan);
@@ -81,7 +81,7 @@ function initMachineAutocomplete(container) {
 
       item.appendChild(line);
 
-      item.addEventListener("mousedown", (event) => {
+      item.addEventListener('mousedown', (event) => {
         event.preventDefault();
         selectMachine(machine);
       });
@@ -89,7 +89,7 @@ function initMachineAutocomplete(container) {
       dropdown.appendChild(item);
     });
 
-    dropdown.classList.remove("hidden");
+    dropdown.classList.remove('hidden');
     keyboardNav.reset();
   }
 
@@ -104,7 +104,7 @@ function initMachineAutocomplete(container) {
       abortController = new AbortController();
       const params = new URLSearchParams();
       if (query) {
-        params.append("q", query);
+        params.append('q', query);
       }
 
       const queryString = params.toString();
@@ -117,29 +117,29 @@ function initMachineAutocomplete(container) {
           renderDropdown(results);
         })
         .catch((error) => {
-          if (error?.name === "AbortError") return;
+          if (error?.name === 'AbortError') return;
           hideDropdown();
         });
     }, 150);
   }
 
-  input.addEventListener("focus", () => {
+  input.addEventListener('focus', () => {
     fetchMachines(input.value.trim());
   });
 
-  input.addEventListener("input", () => {
-    hiddenInput.value = "";
+  input.addEventListener('input', () => {
+    hiddenInput.value = '';
     fetchMachines(input.value.trim());
   });
 
-  document.addEventListener("click", (event) => {
+  document.addEventListener('click', (event) => {
     if (!container.contains(event.target)) {
       hideDropdown();
     }
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const containers = document.querySelectorAll("[data-machine-autocomplete]");
+document.addEventListener('DOMContentLoaded', () => {
+  const containers = document.querySelectorAll('[data-machine-autocomplete]');
   containers.forEach((container) => initMachineAutocomplete(container));
 });

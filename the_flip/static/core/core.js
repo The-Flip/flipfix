@@ -31,7 +31,7 @@ function showMessage(kind, text) {
  * @returns {string} The CSRF token value
  */
 function getCsrfToken() {
-  const match = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+  const match = document.cookie.split('; ').find((row) => row.startsWith('csrftoken='));
   return match ? match.split('=')[1] : '';
 }
 
@@ -147,10 +147,7 @@ function formatRelative(date) {
   const oneDay = 24 * 60 * 60 * 1000;
 
   const sameDay = isSameDay(date, now);
-  const yesterday = isSameDay(
-    date,
-    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
-  );
+  const yesterday = isSameDay(date, new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
 
   if (sameDay) {
     return formatTime(date);
@@ -225,87 +222,92 @@ function updateMachineField(button) {
     headers: {
       'X-Requested-With': 'XMLHttpRequest',
       'X-CSRFToken': getCsrfToken(),
-    }
+    },
   })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === 'noop') {
-      return;
-    } else if (data.status === 'success') {
-      const statusClassMap = {
-        good: { pill: 'pill--status-good', btn: 'btn--status-good' },
-        fixing: { pill: 'pill--status-fixing', btn: 'btn--status-fixing' },
-        broken: { pill: 'pill--status-broken', btn: 'btn--status-broken' },
-        unknown: { pill: 'pill--neutral', btn: 'btn--secondary' }
-      };
-      const iconClassMap = {
-        good: 'fa-check',
-        fixing: 'fa-wrench',
-        broken: 'fa-circle-xmark',
-        unknown: 'fa-circle-question'
-      };
-      if (field === 'operational_status') {
-        // Update sidebar pill
-        const pill = document.getElementById('status-pill');
-        if (pill) {
-          const labelEl = pill.querySelector('.status-label');
-          const iconEl = pill.querySelector('.status-icon');
-          labelEl.textContent = label;
-          pill.className = 'pill ' + (statusClassMap[value]?.pill || 'pill--neutral');
-          iconEl.className = 'fa-solid meta status-icon ' + (iconClassMap[value] || 'fa-circle-question');
-        }
-        // Update mobile dropdown button
-        const mobileBtn = document.querySelector('.status-btn');
-        if (mobileBtn) {
-          const iconEl = mobileBtn.querySelector('.status-icon');
-          mobileBtn.className = 'btn btn--dropdown status-btn ' + (statusClassMap[value]?.btn || 'btn--secondary');
-          iconEl.className = 'fa-solid status-icon ' + (iconClassMap[value] || 'fa-circle-question');
-        }
-        const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
-        const pillHtml = `<span class="pill ${statusClassMap[value]?.pill || 'pill--neutral'}"><i class="fa-solid ${iconClassMap[value] || 'fa-circle-question'} meta"></i> ${label}</span>`;
-        showMessage('success', `Status of ${machineName} set to ${pillHtml}`);
-        // Inject the new log entry into the feed (only on timelines that accept them)
-        if (data.log_entry_html) {
-          const timeline = document.querySelector('.timeline[data-inject-log-entries="true"]');
-          if (timeline) {
-            const timelineLine = timeline.querySelector('.timeline__line');
-            if (timelineLine) {
-              timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
-              applySmartDates(timelineLine.nextElementSibling);
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.status === 'noop') {
+        return;
+      } else if (data.status === 'success') {
+        const statusClassMap = {
+          good: { pill: 'pill--status-good', btn: 'btn--status-good' },
+          fixing: { pill: 'pill--status-fixing', btn: 'btn--status-fixing' },
+          broken: { pill: 'pill--status-broken', btn: 'btn--status-broken' },
+          unknown: { pill: 'pill--neutral', btn: 'btn--secondary' },
+        };
+        const iconClassMap = {
+          good: 'fa-check',
+          fixing: 'fa-wrench',
+          broken: 'fa-circle-xmark',
+          unknown: 'fa-circle-question',
+        };
+        if (field === 'operational_status') {
+          // Update sidebar pill
+          const pill = document.getElementById('status-pill');
+          if (pill) {
+            const labelEl = pill.querySelector('.status-label');
+            const iconEl = pill.querySelector('.status-icon');
+            labelEl.textContent = label;
+            pill.className = 'pill ' + (statusClassMap[value]?.pill || 'pill--neutral');
+            iconEl.className =
+              'fa-solid meta status-icon ' + (iconClassMap[value] || 'fa-circle-question');
+          }
+          // Update mobile dropdown button
+          const mobileBtn = document.querySelector('.status-btn');
+          if (mobileBtn) {
+            const iconEl = mobileBtn.querySelector('.status-icon');
+            mobileBtn.className =
+              'btn btn--dropdown status-btn ' + (statusClassMap[value]?.btn || 'btn--secondary');
+            iconEl.className =
+              'fa-solid status-icon ' + (iconClassMap[value] || 'fa-circle-question');
+          }
+          const machineName =
+            document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
+          const pillHtml = `<span class="pill ${statusClassMap[value]?.pill || 'pill--neutral'}"><i class="fa-solid ${iconClassMap[value] || 'fa-circle-question'} meta"></i> ${label}</span>`;
+          showMessage('success', `Status of ${machineName} set to ${pillHtml}`);
+          // Inject the new log entry into the feed (only on timelines that accept them)
+          if (data.log_entry_html) {
+            const timeline = document.querySelector('.timeline[data-inject-log-entries="true"]');
+            if (timeline) {
+              const timelineLine = timeline.querySelector('.timeline__line');
+              if (timelineLine) {
+                timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
+                applySmartDates(timelineLine.nextElementSibling);
+              }
+            }
+          }
+        } else {
+          const pill = document.getElementById('location-pill');
+          if (pill) {
+            const labelEl = pill.querySelector('.location-label');
+            labelEl.textContent = label;
+          }
+          const machineName =
+            document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
+          const pillHtml = `<span class="pill pill--neutral"><i class="fa-solid fa-location-dot meta"></i> ${label}</span>`;
+          if (data.celebration) {
+            showMessage('success', `🎉🎊 ${machineName} moved to ${pillHtml}! 🎊🎉`);
+            launchConfetti();
+          } else {
+            showMessage('success', `Location of ${machineName} set to ${pillHtml}`);
+          }
+          // Inject the new log entry into the feed (only on timelines that accept them)
+          if (data.log_entry_html) {
+            const timeline = document.querySelector('.timeline[data-inject-log-entries="true"]');
+            if (timeline) {
+              const timelineLine = timeline.querySelector('.timeline__line');
+              if (timelineLine) {
+                timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
+                applySmartDates(timelineLine.nextElementSibling);
+              }
             }
           }
         }
       } else {
-        const pill = document.getElementById('location-pill');
-        if (pill) {
-          const labelEl = pill.querySelector('.location-label');
-          labelEl.textContent = label;
-        }
-        const machineName = document.querySelector('.sidebar__title')?.textContent?.trim() || 'Machine';
-        const pillHtml = `<span class="pill pill--neutral"><i class="fa-solid fa-location-dot meta"></i> ${label}</span>`;
-        if (data.celebration) {
-          showMessage('success', `🎉🎊 ${machineName} moved to ${pillHtml}! 🎊🎉`);
-          launchConfetti();
-        } else {
-          showMessage('success', `Location of ${machineName} set to ${pillHtml}`);
-        }
-        // Inject the new log entry into the feed (only on timelines that accept them)
-        if (data.log_entry_html) {
-          const timeline = document.querySelector('.timeline[data-inject-log-entries="true"]');
-          if (timeline) {
-            const timelineLine = timeline.querySelector('.timeline__line');
-            if (timelineLine) {
-              timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
-              applySmartDates(timelineLine.nextElementSibling);
-            }
-          }
-        }
+        showMessage('error', 'Error saving change');
       }
-    } else {
-      showMessage('error', 'Error saving change');
-    }
-  })
-  .catch(() => showMessage('error', 'Error saving change'));
+    })
+    .catch(() => showMessage('error', 'Error saving change'));
 }
 
 /* ==========================================================================

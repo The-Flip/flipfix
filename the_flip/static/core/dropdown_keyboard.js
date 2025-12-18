@@ -17,8 +17,7 @@
  */
 
 function attachDropdownKeyboard(config) {
-  const { searchInput, listContainer, getSelectableItems, onSelect, onEscape } =
-    config;
+  const { searchInput, listContainer, getSelectableItems, onSelect, onEscape } = config;
 
   let activeIndex = -1;
 
@@ -30,10 +29,10 @@ function attachDropdownKeyboard(config) {
     const items = getItems();
     items.forEach((item, index) => {
       if (index === activeIndex) {
-        item.classList.add("dropdown-active");
-        item.scrollIntoView({ block: "nearest" });
+        item.classList.add('dropdown-active');
+        item.scrollIntoView({ block: 'nearest' });
       } else {
-        item.classList.remove("dropdown-active");
+        item.classList.remove('dropdown-active');
       }
     });
   }
@@ -46,31 +45,31 @@ function attachDropdownKeyboard(config) {
   function handleKeydown(event) {
     const items = getItems();
     if (!items.length) {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         onEscape();
       }
       return;
     }
 
-    if (event.key === "ArrowDown") {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
       activeIndex = Math.min(activeIndex + 1, items.length - 1);
       updateActiveState();
-    } else if (event.key === "ArrowUp") {
+    } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       activeIndex = Math.max(activeIndex - 1, 0);
       updateActiveState();
-    } else if (event.key === "Enter") {
+    } else if (event.key === 'Enter') {
       if (activeIndex >= 0 && activeIndex < items.length) {
         event.preventDefault();
         onSelect(items[activeIndex]);
       }
-    } else if (event.key === "Escape") {
+    } else if (event.key === 'Escape') {
       onEscape();
     }
   }
 
-  searchInput.addEventListener("keydown", handleKeydown);
+  searchInput.addEventListener('keydown', handleKeydown);
 
   return { reset };
 }

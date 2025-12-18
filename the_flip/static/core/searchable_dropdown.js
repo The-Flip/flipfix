@@ -23,10 +23,10 @@
 function createSearchableDropdown(config) {
   const { wrapper, loadData, renderItems, onSelect } = config;
 
-  const editBtns = wrapper.querySelectorAll("[data-edit-btn]");
-  const dropdown = wrapper.querySelector("[data-dropdown]");
-  const searchInput = wrapper.querySelector("[data-search]");
-  const listContainer = wrapper.querySelector("[data-list]");
+  const editBtns = wrapper.querySelectorAll('[data-edit-btn]');
+  const dropdown = wrapper.querySelector('[data-dropdown]');
+  const searchInput = wrapper.querySelector('[data-search]');
+  const listContainer = wrapper.querySelector('[data-list]');
 
   if (!editBtns.length || !dropdown || !searchInput || !listContainer) return null;
 
@@ -37,41 +37,41 @@ function createSearchableDropdown(config) {
   const keyboardNav = attachDropdownKeyboard({
     searchInput,
     listContainer,
-    getSelectableItems: () => listContainer.querySelectorAll("[data-value]"),
+    getSelectableItems: () => listContainer.querySelectorAll('[data-value]'),
     onSelect: (item) => handleSelect(item.dataset.value),
     onEscape: hide,
   });
 
   function hide() {
-    dropdown.classList.add("hidden");
+    dropdown.classList.add('hidden');
     isVisible = false;
   }
 
   function show() {
-    dropdown.classList.remove("hidden");
+    dropdown.classList.remove('hidden');
     isVisible = true;
-    searchInput.value = "";
+    searchInput.value = '';
     searchInput.focus();
     if (data === null) {
       load();
     } else {
-      render("");
+      render('');
     }
   }
 
   async function load() {
     try {
       data = await loadData();
-      render("");
+      render('');
     } catch (error) {
-      console.error("Failed to load data:", error);
+      console.error('Failed to load data:', error);
     }
   }
 
   function render(query) {
     listContainer.innerHTML = renderItems(data, query);
-    listContainer.querySelectorAll("[data-value]").forEach((item) => {
-      item.addEventListener("click", () => handleSelect(item.dataset.value));
+    listContainer.querySelectorAll('[data-value]').forEach((item) => {
+      item.addEventListener('click', () => handleSelect(item.dataset.value));
     });
     keyboardNav.reset();
   }
@@ -84,25 +84,25 @@ function createSearchableDropdown(config) {
         hide();
       }
     } catch (error) {
-      console.error("Selection failed:", error);
-      alert("Operation failed. Please try again.");
+      console.error('Selection failed:', error);
+      alert('Operation failed. Please try again.');
     }
   }
 
   // Event listeners
   editBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       isVisible ? hide() : show();
     });
   });
 
-  searchInput.addEventListener("input", (e) => {
+  searchInput.addEventListener('input', (e) => {
     render(e.target.value);
   });
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener('click', (e) => {
     if (!wrapper.contains(e.target)) {
       hide();
     }

@@ -27,13 +27,13 @@
  * Escape HTML special characters to prevent XSS.
  */
 function escapeHtml(str) {
-  if (str == null) return "";
+  if (str == null) return '';
   return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 /**
@@ -41,20 +41,20 @@ function escapeHtml(str) {
  */
 async function postAction(action, valueKey, value, csrfToken) {
   const formData = new FormData();
-  formData.append("action", action);
+  formData.append('action', action);
   formData.append(valueKey, value);
-  formData.append("csrfmiddlewaretoken", csrfToken);
+  formData.append('csrfmiddlewaretoken', csrfToken);
 
   const response = await fetch(window.location.href, {
-    method: "POST",
+    method: 'POST',
     body: formData,
   });
 
   const data = await response.json();
-  if (data.success && data.status !== "noop") {
+  if (data.success && data.status !== 'noop') {
     window.location.reload();
   } else if (!data.success) {
-    throw new Error(data.error || "Operation failed");
+    throw new Error(data.error || 'Operation failed');
   }
 }
 
@@ -89,7 +89,7 @@ function initSidebarMachineEdit(wrapper) {
 
     renderItems: (machines, query) => {
       const filtered = filterByQuery(machines, query, (m) =>
-        [m.display_name, m.location, m.slug].join(" ")
+        [m.display_name, m.location, m.slug].join(' ')
       );
 
       if (!filtered.length) {
@@ -100,19 +100,19 @@ function initSidebarMachineEdit(wrapper) {
         .map(
           (m) => `
         <button type="button"
-                class="sidebar-card-edit-dropdown__item${m.slug === currentSlug ? " sidebar-card-edit-dropdown__item--selected" : ""}"
+                class="sidebar-card-edit-dropdown__item${m.slug === currentSlug ? ' sidebar-card-edit-dropdown__item--selected' : ''}"
                 data-value="${escapeHtml(m.slug)}">
           <div>${escapeHtml(m.display_name)}</div>
-          ${m.location ? `<div class="sidebar-card-edit-dropdown__meta">${escapeHtml(m.location)}</div>` : ""}
+          ${m.location ? `<div class="sidebar-card-edit-dropdown__meta">${escapeHtml(m.location)}</div>` : ''}
         </button>
       `
         )
-        .join("");
+        .join('');
     },
 
     onSelect: async (slug) => {
       if (slug === currentSlug) return;
-      await postAction("update_machine", "machine_slug", slug, csrfToken);
+      await postAction('update_machine', 'machine_slug', slug, csrfToken);
     },
   });
 }
@@ -124,9 +124,7 @@ function initSidebarMachineEdit(wrapper) {
 function initSidebarProblemEdit(wrapper) {
   const apiUrl = wrapper.dataset.apiUrl;
   const currentId =
-    wrapper.dataset.currentId === "null"
-      ? null
-      : parseInt(wrapper.dataset.currentId, 10);
+    wrapper.dataset.currentId === 'null' ? null : parseInt(wrapper.dataset.currentId, 10);
   const currentMachineSlug = wrapper.dataset.currentMachineSlug;
   const csrfToken = wrapper.dataset.csrfToken;
 
@@ -138,7 +136,7 @@ function initSidebarProblemEdit(wrapper) {
     loadData: async () => {
       const url = new URL(apiUrl, window.location.origin);
       if (currentMachineSlug) {
-        url.searchParams.set("current_machine", currentMachineSlug);
+        url.searchParams.set('current_machine', currentMachineSlug);
       }
       const response = await fetch(url);
       const json = await response.json();
@@ -146,12 +144,12 @@ function initSidebarProblemEdit(wrapper) {
     },
 
     renderItems: (groups, query) => {
-      let html = "";
+      let html = '';
 
       // Always show "None" option first
       html += `
         <button type="button"
-                class="sidebar-card-edit-dropdown__item sidebar-card-edit-dropdown__item--none${currentId === null ? " sidebar-card-edit-dropdown__item--selected" : ""}"
+                class="sidebar-card-edit-dropdown__item sidebar-card-edit-dropdown__item--none${currentId === null ? ' sidebar-card-edit-dropdown__item--selected' : ''}"
                 data-value="none">
           None (unlink from problem)
         </button>
@@ -160,7 +158,7 @@ function initSidebarProblemEdit(wrapper) {
       // Filter and render groups
       for (const group of groups) {
         const filteredReports = filterByQuery(group.reports, query, (r) =>
-          [r.summary, r.machine_name, String(r.id)].join(" ")
+          [r.summary, r.machine_name, String(r.id)].join(' ')
         );
 
         if (filteredReports.length === 0) continue;
@@ -171,7 +169,7 @@ function initSidebarProblemEdit(wrapper) {
           const isSelected = report.id === currentId;
           html += `
             <button type="button"
-                    class="sidebar-card-edit-dropdown__item${isSelected ? " sidebar-card-edit-dropdown__item--selected" : ""}"
+                    class="sidebar-card-edit-dropdown__item${isSelected ? ' sidebar-card-edit-dropdown__item--selected' : ''}"
                     data-value="${report.id}">
               <div>#${report.id}: ${escapeHtml(report.summary)}</div>
             </button>
@@ -183,12 +181,7 @@ function initSidebarProblemEdit(wrapper) {
     },
 
     onSelect: async (idOrNone) => {
-      await postAction(
-        "update_problem_report",
-        "problem_report_id",
-        idOrNone,
-        csrfToken
-      );
+      await postAction('update_problem_report', 'problem_report_id', idOrNone, csrfToken);
     },
   });
 }
@@ -197,11 +190,7 @@ function initSidebarProblemEdit(wrapper) {
 // Auto-initialization
 // ============================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  document
-    .querySelectorAll("[data-sidebar-machine-edit]")
-    .forEach(initSidebarMachineEdit);
-  document
-    .querySelectorAll("[data-sidebar-problem-edit]")
-    .forEach(initSidebarProblemEdit);
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-sidebar-machine-edit]').forEach(initSidebarMachineEdit);
+  document.querySelectorAll('[data-sidebar-problem-edit]').forEach(initSidebarProblemEdit);
 });
