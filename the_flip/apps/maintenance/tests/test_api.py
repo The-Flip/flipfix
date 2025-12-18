@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 
 from the_flip.apps.core.test_utils import (
+    MINIMAL_PNG,
     SuppressRequestLogsMixin,
     TemporaryMediaMixin,
     TestDataMixin,
@@ -365,14 +366,7 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         super().setUp()
         self.client.force_login(self.staff_user)
         self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
-        # Minimal valid PNG (1x1 transparent)
-        png_data = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
-            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
-        original = SimpleUploadedFile("photo.png", png_data, content_type="image/png")
+        original = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
         converted = resize_image_file(original)
         thumb = resize_image_file(converted)
         self.media = LogEntryMedia.objects.create(
@@ -383,8 +377,8 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         )
         self.delete_url = reverse("log-detail", kwargs={"pk": self.log_entry.pk})
 
-    def test_deletes_all_media_files(self):
-        """Deleting media removes file, thumbnail, and DB record."""
+    def test_deletes_all_photo_files(self):
+        """Deleting photo media removes everything associated with the photo: the photo file, thumbnail, and DB record."""
         file_name = self.media.file.name
         thumb_name = self.media.thumbnail_file.name
 
@@ -397,3 +391,34 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         storage = self.media.file.storage
         self.assertFalse(storage.exists(file_name))
         self.assertFalse(storage.exists(thumb_name))
+
+    def test_deletes_all_video_files(self):
+        """Deleting video media removes everything associated with the video: the original, transcoded, poster, and DB record."""
+        # Create video with all associated files
+        original = SimpleUploadedFile("video.mp4", b"original", content_type="video/mp4")
+        transcoded = SimpleUploadedFile("transcoded.mp4", b"transcoded", content_type="video/mp4")
+        poster = SimpleUploadedFile("poster.jpg", b"poster", content_type="image/jpeg")
+
+        video_media = LogEntryMedia.objects.create(
+            log_entry=self.log_entry,
+            media_type=LogEntryMedia.TYPE_VIDEO,
+            file=original,
+            transcoded_file=transcoded,
+            poster_file=poster,
+            transcode_status=LogEntryMedia.STATUS_READY,
+        )
+
+        original_name = video_media.file.name
+        transcoded_name = video_media.transcoded_file.name
+        poster_name = video_media.poster_file.name
+        storage = video_media.file.storage
+
+        response = self.client.post(
+            self.delete_url, {"action": "delete_media", "media_id": video_media.id}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(LogEntryMedia.objects.filter(id=video_media.id).exists())
+        self.assertFalse(storage.exists(original_name))
+        self.assertFalse(storage.exists(transcoded_name))
+        self.assertFalse(storage.exists(poster_name))

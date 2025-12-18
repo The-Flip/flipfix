@@ -3,6 +3,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, tag
 
+from the_flip.apps.core.test_utils import MINIMAL_PNG
 from the_flip.apps.maintenance.forms import LogEntryQuickForm
 
 
@@ -65,14 +66,7 @@ class LogEntryQuickFormMediaValidationTests(TestCase):
 
     def test_accepts_valid_image(self):
         """Form should accept valid image files."""
-        # Minimal valid PNG (1x1 transparent pixel)
-        png_data = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
-            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
-        png_file = SimpleUploadedFile("photo.png", png_data, content_type="image/png")
+        png_file = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
         data, files = self._form_data(png_file)
         form = LogEntryQuickForm(data=data, files=files)
 
@@ -88,13 +82,7 @@ class LogEntryQuickFormMediaValidationTests(TestCase):
 
     def test_accepts_multiple_files(self):
         """Form should accept multiple files at once."""
-        png_data = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-            b"\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-            b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
-            b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
-        )
-        png_file = SimpleUploadedFile("photo.png", png_data, content_type="image/png")
+        png_file = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
         video_file = SimpleUploadedFile("clip.mp4", b"fake video content", content_type="video/mp4")
 
         data, files = self._form_data([png_file, video_file])
