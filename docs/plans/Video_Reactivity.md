@@ -121,7 +121,7 @@ Only needs polling script (no upload functionality):
 | `the_flip/urls.py` | API route: `/api/transcoding/status/` |
 | `the_flip/static/core/video_transcode_poll.js` | Polling logic |
 | `the_flip/static/core/media_grid.js` | Upload/delete with progress counter |
-| `the_flip/static/core/styles.css` | `.media-upload-status` style |
+| `the_flip/static/core/styles.css` | `.media-grid__status` styles |
 | `templates/core/partials/media_card_editable.html` | Poll attributes on processing videos |
 | `templates/core/partials/media_grid_readonly.html` | Poll attributes for list views |
 
