@@ -83,10 +83,14 @@ class TranscodeStatusView(View):
         """Get transcode status for a single media item."""
         try:
             media_model = get_media_model(model_name)
-            media = media_model.objects.get(id=media_id)
-            return self._build_status_result(media, media_model)
         except ValueError:
             return {"status": "failed", "message": "Unknown media type"}
+
+        try:
+            media = media_model.objects.get(id=media_id)
+            return self._build_status_result(media, media_model)
+        except (ValueError, TypeError):
+            return {"status": "failed", "message": "Invalid media ID"}
         except ObjectDoesNotExist:
             return {"status": "failed", "message": "Media not found"}
 
