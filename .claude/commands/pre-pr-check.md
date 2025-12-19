@@ -2,7 +2,7 @@
 description: Run comprehensive pre-PR quality checklist for Flipfix
 ---
 
-<!-- Adapted from https://github.com/matsengrp/plugins -->
+<!-- Adapted from https://github.com/matsengrp/plugins (MIT License) -->
 
 # Pre-PR Quality Checklist
 
