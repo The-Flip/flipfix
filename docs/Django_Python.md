@@ -19,6 +19,23 @@ Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focus
 
 ## Documentation
 
-- Include docstrings summarizing intent on classes and complex functions
+### Docstrings
+
+Add docstrings to:
+- All public classes (models, views, forms)
+- Public methods that aren't self-explanatory from the name
+- Template tags and filters (these are a public API)
+
+Skip docstrings for:
+- Private methods (prefixed with `_`)
+- Django framework methods with obvious purpose (`get_queryset`, `clean`, `save`)
+- Simple properties where the name says it all
+
+When modifying code, verify existing docstrings are still accurate. Misleading documentation is worse than no documentation.
+
+**Format**: Use simple descriptive docstrings. Type hints provide parameter and return types, so `Args:` and `Returns:` sections (Google/NumPy/Sphinx style) are unnecessary.
+
+### General
+
 - Update docs when behavior changes
 - Use explicit TODO comments with rationale for unfinished work

@@ -1,0 +1,8 @@
+# CodeRabbit configuration
+# https://docs.coderabbit.ai/reference/configuration
+
+reviews:
+  pre_merge_checks:
+    docstrings:
+      threshold: 60
+      mode: warning

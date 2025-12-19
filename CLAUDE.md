@@ -123,6 +123,10 @@ Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-librar
 - Configuring Railway hosting and deployment
 - Answering questions about library APIs or best practices
 
+GitHub access:
+- Use the GitHub MCP server for read-only operations (listing/viewing issues, PRs, commits, files) so results stay structured for reasoning.
+- Use the `gh` CLI for any writes or auth-required actions (creating/updating/commenting/merging/labeling) since MCP may lack flags and will fail without auth.
+
 ## Repository
 This project is in this GitHub repo: <https://github.com/deanmoses/the_flip>
 - Repository owner=`deanmoses`, repo=`the_flip`
