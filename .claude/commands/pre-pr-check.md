@@ -2,6 +2,8 @@
 description: Run comprehensive pre-PR quality checklist for Flipfix
 ---
 
+<!-- Adapted from https://github.com/matsengrp/plugins -->
+
 # Pre-PR Quality Checklist
 
 You are helping the user prepare code for a pull request by guiding them through a comprehensive quality checklist.
@@ -30,16 +32,16 @@ Guide the user through each step of the checklist systematically. For each step:
 - Report any files that were modified or errors found
 - If errors, STOP and require fixes before proceeding
 
-**Documentation Check:**
-- Review the project docs referenced in CLAUDE.md:
-  - `docs/HTML_CSS.md` for templates/CSS
-  - `docs/Forms.md` for form patterns
-  - `docs/Datamodel.md` for models
-  - `docs/Testing.md` for test patterns
-  - `docs/Django_Python.md` for Django conventions
-- Flag any code that doesn't follow documented patterns
+### 3. Documentation, Architecture, and Implementation Reviews
 
-### 3. Architecture and Implementation Review
+**Documentation Review:**
+- Use the Task tool with subagent_type="documentation-reviewer" on all new/modified code
+- Check: pattern compliance against `docs/*.md`, documentation gaps, clarity issues, update recommendations
+- Report findings and wait for user to address before continuing
+
+**Design Compliance:**
+- Ask user to confirm implementation matches intended design
+- If design document exists, cross-reference it
 
 **Antipattern Scan:**
 - Use the Task tool with subagent_type="antipattern-scanner" on all new/modified code
@@ -55,6 +57,7 @@ Guide the user through each step of the checklist systematically. For each step:
 - Use the Task tool with subagent_type="code-smell-detector" on all new/modified code
 - Identify maintainability hints and readability improvements
 - Report findings for user consideration
+
 
 ### 4. Test Quality Validation
 
