@@ -568,3 +568,92 @@ class MachineActivitySearchTests(TestCase):
         response = self.client.get(self.detail_url, {"q": self.maintainer_user.first_name})
 
         self.assertContains(response, "Fixed the flipper")
+
+
+@tag("views", "public")
+class PublicViewTests(TestCase):
+    """Tests for public-facing catalog views."""
+
+    def setUp(self):
+        """Set up test data for public views."""
+        self.machine = create_machine(slug="public-machine")
+        self.list_url = reverse("public-machine-list")
+        self.detail_url = reverse("public-machine-detail", kwargs={"slug": self.machine.slug})
+
+    def test_public_list_view_accessible(self):
+        """Public list view should be accessible to anonymous users."""
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/machine_list_public.html")
+
+    def test_public_list_view_displays_machine(self):
+        """Public list view should display visible machines."""
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.machine.display_name)
+
+    def test_public_detail_view_accessible(self):
+        """Public detail view should be accessible to anonymous users."""
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/machine_detail_public.html")
+
+    def test_public_detail_view_displays_machine_details(self):
+        """Public detail view should display machine-specific details."""
+        response = self.client.get(self.detail_url)
+        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.model.manufacturer)
+
+
+@tag("models")
+class MachineModelTests(TestCase):
+    """Tests for the MachineModel model."""
+
+    def test_slug_generation_on_create(self):
+        """Should generate a slug from the name when a new model is created."""
+        model = MachineModel.objects.create(name="Test Machine")
+        self.assertEqual(model.slug, "test-machine")
+
+    def test_slug_uniqueness(self):
+        """Should ensure that generated slugs are unique."""
+        # Create two models with names that slugify to the same value
+        model1 = MachineModel.objects.create(name="My Machine")
+        model2 = MachineModel.objects.create(name="My Machine--")
+        self.assertEqual(model1.slug, "my-machine")
+        self.assertNotEqual(model1.slug, model2.slug)
+        self.assertEqual(model2.slug, "my-machine-2")
+
+
+@tag("models")
+class MachineInstanceModelTests(TestCase):
+    """Tests for the MachineInstance model."""
+
+    def setUp(self):
+        """Set up a model for instance tests."""
+        self.model = create_machine_model(name="Test Model")
+
+    def test_display_name_property(self):
+        """display_name property should return name_override if set, otherwise model name."""
+        instance_with_override = MachineInstance.objects.create(
+            model=self.model, name_override="Custom Name"
+        )
+        instance_without_override = MachineInstance.objects.create(model=self.model)
+
+        self.assertEqual(instance_with_override.display_name, "Custom Name")
+        self.assertEqual(instance_without_override.display_name, "Test Model")
+
+    def test_slug_generation_on_create(self):
+        """Should generate a slug from the display_name."""
+        instance = MachineInstance.objects.create(model=self.model)
+        self.assertEqual(instance.slug, "test-model")
+
+    def test_slug_generation_with_name_override(self):
+        """Should use the name_override for the slug if it exists."""
+        instance = MachineInstance.objects.create(model=self.model, name_override="My Custom Game")
+        self.assertEqual(instance.slug, "my-custom-game")
+
+    def test_slug_uniqueness(self):
+        """Should ensure slugs are unique for machine instances."""
+        instance1 = MachineInstance.objects.create(model=self.model)
+        instance2 = MachineInstance.objects.create(model=self.model)
+        self.assertNotEqual(instance1.slug, instance2.slug)
+        self.assertEqual(instance2.slug, "test-model-2")
