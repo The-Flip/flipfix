@@ -757,6 +757,8 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
 
 
 class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
+    """View all log entries for a specific machine."""
+
     template_name = "maintenance/machine_log.html"
 
     def dispatch(self, request, *args, **kwargs):
@@ -800,6 +802,8 @@ class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
 
 
 class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
+    """Create a new log entry for a machine or problem report."""
+
     template_name = "maintenance/log_entry_new.html"
     form_class = LogEntryQuickForm
 
@@ -964,6 +968,8 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
 
 
 class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
+    """AJAX endpoint for infinite scrolling in machine log view."""
+
     template_name = "maintenance/partials/log_entry.html"
 
     def get(self, request, *args, **kwargs):
@@ -1056,6 +1062,8 @@ class LogListPartialView(CanAccessMaintainerPortalMixin, View):
 
 
 class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, DetailView):
+    """Detail page for a single log entry with media upload support."""
+
     model = LogEntry
     template_name = "maintenance/log_entry_detail.html"
     context_object_name = "entry"

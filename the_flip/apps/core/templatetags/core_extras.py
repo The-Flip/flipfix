@@ -98,6 +98,7 @@ def render_markdown(text):
 
 @register.filter
 def smart_date(value):
+    """Render a datetime as a <time> element for client-side formatting."""
     if not value:
         return ""
     if timezone.is_naive(value):

@@ -130,6 +130,8 @@ def get_activity_page(machine, page_num, page_size=10, search_query=None):
 
 
 class MachineListViewForPublic(ListView):
+    """Public machine list showing status and open problems, sorted by priority."""
+
     template_name = "catalog/machine_list_public.html"
     context_object_name = "machines"
 
@@ -182,6 +184,8 @@ class MachineListViewForPublic(ListView):
 
 
 class MachineListView(CanAccessMaintainerPortalMixin, MachineListViewForPublic):
+    """Maintainer machine list with location stats in the sidebar."""
+
     template_name = "catalog/machine_list_for_maintainers.html"
 
     def get_context_data(self, **kwargs):
@@ -207,6 +211,8 @@ class MachineListView(CanAccessMaintainerPortalMixin, MachineListViewForPublic):
 
 
 class MachineDetailViewForPublic(DetailView):
+    """Public machine detail page with problem report form."""
+
     template_name = "catalog/machine_detail_public.html"
     queryset = MachineInstance.objects.visible()
     slug_field = "slug"
@@ -247,13 +253,17 @@ class MachineDetailViewForMaintainers(CanAccessMaintainerPortalMixin, MachineDet
 
         # Create a simple page_obj-like object for template compatibility
         class SimplePage:
+            """Lightweight page stub providing has_next()/next_page_number() for templates."""
+
             def __init__(self, has_next):
                 self._has_next = has_next
 
             def has_next(self):
+                """Return whether more pages exist."""
                 return self._has_next
 
             def next_page_number(self):
+                """Return the next page number (always 2 for first page)."""
                 return 2
 
         context["page_obj"] = SimplePage(has_next)

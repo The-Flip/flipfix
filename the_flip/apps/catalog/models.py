@@ -41,6 +41,8 @@ class MachineModel(TimeStampedMixin):
     """Represents a pinball machine model."""
 
     class Era(models.TextChoices):
+        """Technology era classification for pinball machines."""
+
         PM = "PM", "Pure Mechanical"
         EM = "EM", "Electromechanical"
         SS = "SS", "Solid State"
@@ -140,6 +142,7 @@ class MachineModel(TimeStampedMixin):
         return self.name
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this model's Django admin change history."""
         return reverse("admin:catalog_machinemodel_history", args=[self.pk])
 
     def save(self, *args, **kwargs):
@@ -155,7 +158,10 @@ class MachineModel(TimeStampedMixin):
 
 
 class MachineInstanceQuerySet(models.QuerySet):
+    """Custom queryset for MachineInstance with common filters."""
+
     def visible(self):
+        """Return machines with related model and location pre-fetched."""
         return self.select_related("model", "location")
 
     def active_for_matching(self):
@@ -177,6 +183,8 @@ class MachineInstance(TimeStampedMixin):
     """Physical machine owned by the museum."""
 
     class OperationalStatus(models.TextChoices):
+        """Current working condition of a physical machine."""
+
         GOOD = "good", "Good"
         FIXING = "fixing", "Fixing"
         BROKEN = "broken", "Broken"
@@ -250,16 +258,20 @@ class MachineInstance(TimeStampedMixin):
 
     @property
     def display_name(self) -> str:
+        """Return custom name if set, otherwise the model name."""
         return self.name_override or self.model.name
 
     @property
     def ownership_display(self) -> str:
+        """Return ownership credit or default collection name."""
         return self.ownership_credit or "The Flip Collection"
 
     def get_absolute_url(self):
+        """Return the public-facing URL for this machine."""
         return reverse("public-machine-detail", args=[self.slug])
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this instance's Django admin change history."""
         return reverse("admin:catalog_machineinstance_history", args=[self.pk])
 
     def save(self, *args, **kwargs):

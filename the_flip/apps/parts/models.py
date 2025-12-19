@@ -28,6 +28,8 @@ class PartRequest(TimeStampedMixin):
     """A request for a part needed for maintenance."""
 
     class Status(models.TextChoices):
+        """Lifecycle state of a part request."""
+
         REQUESTED = "requested", "Requested"
         ORDERED = "ordered", "Ordered"
         RECEIVED = "received", "Received"

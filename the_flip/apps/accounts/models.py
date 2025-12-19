@@ -9,6 +9,8 @@ from the_flip.apps.core.models import TimeStampedMixin
 
 
 class Maintainer(TimeStampedMixin):
+    """Profile extending Django User for museum maintainers."""
+
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     is_shared_account = models.BooleanField(
         default=False,
@@ -26,6 +28,7 @@ class Maintainer(TimeStampedMixin):
 
     @property
     def display_name(self) -> str:
+        """Return full name if available, otherwise username."""
         full_name = self.user.get_full_name()
         return full_name or self.user.get_username()
 

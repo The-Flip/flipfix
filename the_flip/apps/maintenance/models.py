@@ -17,7 +17,10 @@ from the_flip.apps.core.models import AbstractMedia, TimeStampedMixin
 
 
 class ProblemReportQuerySet(models.QuerySet):
+    """Custom queryset for ProblemReport with common filters."""
+
     def open(self):
+        """Return only open problem reports."""
         return self.filter(status=ProblemReport.Status.OPEN)
 
 
@@ -25,10 +28,14 @@ class ProblemReport(TimeStampedMixin):
     """Visitor-submitted problem report about a machine."""
 
     class Status(models.TextChoices):
+        """Whether a problem report is still active or resolved."""
+
         OPEN = "open", "Open"
         CLOSED = "closed", "Closed"
 
     class ProblemType(models.TextChoices):
+        """Categories of problems visitors can report."""
+
         STUCK_BALL = "stuck_ball", "Stuck Ball"
         NO_CREDITS = "no_credits", "No Credits"
         OTHER = "other", "Other"
@@ -77,10 +84,12 @@ class ProblemReport(TimeStampedMixin):
         return f"{self.machine.display_name} – {self.get_problem_type_display()}"
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this report's Django admin change history."""
         return reverse("admin:maintenance_problemreport_history", args=[self.pk])
 
     @property
     def reporter_display(self) -> str:
+        """Return the best available name for who reported this problem."""
         # Prefer typed-in name (e.g., from shared terminal account)
         if self.reported_by_name:
             return self.reported_by_name
@@ -138,6 +147,7 @@ class LogEntry(TimeStampedMixin):
         return f"Log entry for {self.machine.display_name}"
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this entry's Django admin change history."""
         return reverse("admin:maintenance_logentry_history", args=[self.pk])
 
     def clean(self):
@@ -157,6 +167,7 @@ class LogEntry(TimeStampedMixin):
 
 
 def log_media_upload_to(instance: LogEntryMedia, filename: str) -> str:
+    """Generate upload path for log entry media files."""
     return f"log_entries/{instance.log_entry_id}/{uuid4()}-{filename}"
 
 
@@ -186,10 +197,12 @@ class LogEntryMedia(AbstractMedia):
         return f"{self.get_media_type_display()} for log entry {self.log_entry_id}"
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this media's Django admin change history."""
         return reverse("admin:maintenance_logentrymedia_history", args=[self.pk])
 
 
 def problem_report_media_upload_to(instance: ProblemReportMedia, filename: str) -> str:
+    """Generate upload path for problem report media files."""
     return f"problem_reports/{instance.problem_report_id}/{uuid4()}-{filename}"
 
 
@@ -221,4 +234,5 @@ class ProblemReportMedia(AbstractMedia):
         return f"{self.get_media_type_display()} for problem report {self.problem_report_id}"
 
     def get_admin_history_url(self) -> str:
+        """Return URL to this media's Django admin change history."""
         return reverse("admin:maintenance_problemreportmedia_history", args=[self.pk])

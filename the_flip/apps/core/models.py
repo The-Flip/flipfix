@@ -155,10 +155,14 @@ class AbstractMedia(TimeStampedMixin):
     parent_field_name: ClassVar[str]
 
     class MediaType(models.TextChoices):
+        """Type of media attachment."""
+
         PHOTO = "photo", "Photo"
         VIDEO = "video", "Video"
 
     class TranscodeStatus(models.TextChoices):
+        """Status of video transcoding for web playback."""
+
         PENDING = "pending", "Pending"
         PROCESSING = "processing", "Processing"
         READY = "ready", "Ready"

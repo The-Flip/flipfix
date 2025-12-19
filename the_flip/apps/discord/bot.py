@@ -44,20 +44,24 @@ class WizardState:
 
     @property
     def current_suggestion(self) -> RecordSuggestion | None:
+        """Return the suggestion currently being reviewed, or None if complete."""
         if 0 <= self.current_index < len(self.suggestions):
             return self.suggestions[self.current_index]
         return None
 
     @property
     def is_complete(self) -> bool:
+        """Return True if all suggestions have been processed."""
         return self.current_index >= len(self.suggestions)
 
     @property
     def total_count(self) -> int:
+        """Return the total number of suggestions in this wizard session."""
         return len(self.suggestions)
 
     @property
     def step_number(self) -> int:
+        """Return the 1-indexed step number for display."""
         return self.current_index + 1
 
     def record_result(self, action: str, url: str | None = None):
@@ -74,10 +78,12 @@ class WizardState:
 
     @property
     def created_count(self) -> int:
+        """Return how many suggestions were created as records."""
         return sum(1 for r in self.results if r.action == "created")
 
     @property
     def skipped_count(self) -> int:
+        """Return how many suggestions were skipped by the user."""
         return sum(1 for r in self.results if r.action == "skipped")
 
 

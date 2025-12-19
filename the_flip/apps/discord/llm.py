@@ -44,14 +44,17 @@ class AnalysisResult:
 
     @property
     def is_error(self) -> bool:
+        """Return True if analysis failed."""
         return self.error is not None
 
     @classmethod
     def success(cls, suggestions: list[RecordSuggestion]) -> AnalysisResult:
+        """Create a successful result with suggestions."""
         return cls(suggestions=suggestions, error=None)
 
     @classmethod
     def failure(cls, error: str) -> AnalysisResult:
+        """Create a failed result with an error message."""
         return cls(suggestions=[], error=error)
 
 
