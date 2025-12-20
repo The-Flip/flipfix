@@ -26,7 +26,7 @@ requests==2.32.5
 
 # Markdown Rendering
 Markdown==3.10
-nh3==0.2.18
+nh3==0.3.2
 linkify-it-py==2.0.3
 
 # Audit Logging
@@ -36,7 +36,7 @@ django-simple-history==3.11.0
 django-ipware==7.0.1
 
 # Discord Bot
-discord.py==2.4.0
+discord.py==2.6.4
 audioop-lts==0.2.1  # Python 3.13 compatibility for discord.py
 httpx==0.28.1
 anthropic
