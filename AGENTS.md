@@ -78,7 +78,9 @@ For any change, identify and run the smallest meaningful test set. Expect new/up
 
 Before creating a pull request:
 
-Run `/pre-pr-check` to execute the full pre-PR quality checklist.
+Run quality checks before submitting:
+1. `make quality` - format, lint, typecheck
+2. `make test` - run test suite
 
 Address findings before submitting.
 
@@ -117,44 +119,16 @@ Run a single test:
 DJANGO_SETTINGS_MODULE=the_flip.settings.test .venv/bin/python manage.py test the_flip.apps.maintenance.tests.TestClassName.test_method_name
 ```
 
-### Claude Code for the Web
-
-When running on Claude Code for the web (no .venv), use these commands instead:
-
-```bash
-# Testing
-DJANGO_SETTINGS_MODULE=the_flip.settings.test python3 manage.py test --keepdb
-
-# Code Quality (run all three before committing)
-ruff format .                    # Format code
-ruff check .                     # Lint code
-djlint templates/ --check        # Lint templates
-/usr/local/bin/mypy the_flip     # Type check (MUST use full path - see note below)
-
-# Database
-DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py migrate
-DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py makemigrations
-
-# Django commands
-DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py shell
-DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py check
-```
-
-The SessionStart hook in `.claude/settings.json` automatically installs dependencies (ffmpeg, Python packages) and runs migrations.
-
-**Important: mypy path issue** - An older mypy exists at `/root/.local/bin/mypy` which shadows the pip-installed version. This older version lacks access to django-stubs, causing "No module named 'mypy_django_plugin'" errors. Always use `/usr/local/bin/mypy` or `python3 -m mypy`.
-
 ## Tool Usage
 
-Use Context7 (`mcp__context7__resolve-library-id` and `mcp__context7__get-library-docs`) to look up current documentation when:
+Use web search or official documentation to look up current API references when:
 - Implementing Django features (models, views, forms, admin, etc.)
 - Working with Python standard library or third-party packages
 - Configuring Railway hosting and deployment
 - Answering questions about library APIs or best practices
 
 GitHub access:
-- Use the GitHub MCP server for read-only operations (listing/viewing issues, PRs, commits, files) so results stay structured for reasoning.
-- Use the `gh` CLI for any writes or auth-required actions (creating/updating/commenting/merging/labeling) since MCP may lack flags and will fail without auth.
+- Use the `gh` CLI for GitHub operations (listing/viewing/creating issues, PRs, commits, files).
 
 ## Repository
 This project is in this GitHub repo: <https://github.com/deanmoses/the_flip>

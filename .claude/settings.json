@@ -2,16 +2,20 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "command -v ffmpeg || (apt-get update -qq 2>/dev/null && apt-get install -y -qq libheif1 libheif-dev ffmpeg 2>/dev/null) || (sudo apt-get update -qq && sudo apt-get install -y -qq libheif1 libheif-dev ffmpeg)"
-      },
-      {
-        "type": "command",
-        "command": "pip3 install -q -r requirements.dev.txt 2>/dev/null"
-      },
-      {
-        "type": "command",
-        "command": "DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py migrate --no-input 2>/dev/null || true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v ffmpeg || (apt-get update -qq 2>/dev/null && apt-get install -y -qq libheif1 libheif-dev ffmpeg 2>/dev/null) || (sudo apt-get update -qq && sudo apt-get install -y -qq libheif1 libheif-dev ffmpeg)"
+          },
+          {
+            "type": "command",
+            "command": "pip3 install -q -r requirements.dev.txt 2>/dev/null"
+          },
+          {
+            "type": "command",
+            "command": "DJANGO_SETTINGS_MODULE=the_flip.settings.dev python3 manage.py migrate --no-input 2>/dev/null || true"
+          }
+        ]
       }
     ]
   }

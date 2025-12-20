@@ -30,6 +30,9 @@ help:
 	@echo "  make superuser      - Create superuser"
 	@echo "  make sample-data    - Create sample data (dev only)"
 	@echo ""
+	@echo "Documentation:"
+	@echo "  make agent-docs     - Regenerate CLAUDE.md and AGENTS.md from source"
+	@echo ""
 
 .PHONY: test
 test:
@@ -116,3 +119,7 @@ quality: format lint typecheck
 precommit:
 	@echo "Running pre-commit checks..."
 	.venv/bin/pre-commit run --all-files
+
+.PHONY: agent-docs
+agent-docs:
+	python scripts/build_agent_docs.py
