@@ -171,7 +171,7 @@ Settings split by environment: `the_flip/settings/{base,dev,test,prod}.py`. Set 
 
 ## Project Structure
 
-```
+```text
 the_flip/
 ├── templates/              # Django templates organized by app
 └── the_flip/
