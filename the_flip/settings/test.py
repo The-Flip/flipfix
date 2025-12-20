@@ -1,4 +1,10 @@
+import os
+
 import dj_database_url
+
+# Set SECRET_KEY before importing base settings (which requires it)
+# Not a real secret - tests don't need cryptographic security
+os.environ.setdefault("SECRET_KEY", "test-key-not-secret")  # pragma: allowlist secret
 
 from .base import *  # noqa
 
