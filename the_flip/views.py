@@ -27,8 +27,4 @@ def serve_media(request, path: str):
     content_type, _ = mimetypes.guess_type(str(full_path))
     response = FileResponse(full_path.open("rb"), content_type=content_type)
     response["Content-Length"] = full_path.stat().st_size
-
-    # Filenames include UUIDs, so they're immutable. Cache for 1 year.
-    response["Cache-Control"] = "public, max-age=31536000, immutable"
-
     return response

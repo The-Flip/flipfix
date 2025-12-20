@@ -31,9 +31,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      # Not a real secret - CI tests don't need cryptographic security
-      SECRET_KEY: ci-test-key-not-secret  # pragma: allowlist secret
 
     services:
       postgres:
