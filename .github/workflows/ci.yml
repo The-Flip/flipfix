@@ -31,6 +31,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Required by Django settings (mypy loads dev.py which imports base.py)
+      SECRET_KEY: ci-test-key  # pragma: allowlist secret
 
     services:
       postgres:
