@@ -302,8 +302,8 @@ urlpatterns = [
 ]
 
 # Serve user-uploaded media files
-media_url = settings.MEDIA_URL.lstrip("/")
-if media_url:
+media_url_prefix = settings.MEDIA_URL.lstrip("/")
+if media_url_prefix:
     urlpatterns += [
-        re_path(rf"^{media_url}(?P<path>.*)$", serve_media, name="media"),
+        re_path(rf"^{media_url_prefix}(?P<path>.*)$", serve_media, name="media"),
     ]
