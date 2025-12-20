@@ -6,7 +6,7 @@
 repos:
   # Ruff - Fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.14.10
     hooks:
       # Run the linter
       - id: ruff
@@ -23,14 +23,14 @@ repos:
 
   # Prevent commits to main
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: no-commit-to-branch
         args: ['--branch', 'main']
 
   # Security checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: detect-private-key
 
@@ -42,7 +42,7 @@ repos:
 
   # Basic file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: '\.csv$|\.md$'

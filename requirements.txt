@@ -7,7 +7,7 @@ django-constance[database]==4.3.4
 
 # Database
 psycopg2-binary==2.9.11
-dj-database-url==2.3.0
+dj-database-url==3.0.1
 
 # Production Server
 gunicorn==23.0.0
@@ -17,8 +17,8 @@ whitenoise==6.11.0
 
 # QR Code Generation
 qrcode[pil]==8.2
-Pillow==11.0.0
-pillow-heif==0.18.0
+Pillow==12.0.0
+pillow-heif==1.1.1
 django-q2==1.9.0
 
 # HTTP Requests (for worker → web service transfer)
@@ -26,7 +26,7 @@ requests==2.32.5
 
 # Markdown Rendering
 Markdown==3.10
-nh3==0.2.18
+nh3==0.3.2
 linkify-it-py==2.0.3
 
 # Audit Logging
@@ -36,7 +36,7 @@ django-simple-history==3.11.0
 django-ipware==7.0.1
 
 # Discord Bot
-discord.py==2.4.0
+discord.py==2.6.4
 audioop-lts==0.2.1  # Python 3.13 compatibility for discord.py
 httpx==0.28.1
 anthropic
