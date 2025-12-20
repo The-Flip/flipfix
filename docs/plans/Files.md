@@ -106,7 +106,7 @@ After evaluating multiple approaches, we chose **HTTP transfer between services 
    - All media access goes through Django (no direct storage access)
 
 
-## Media Serving Architecture
+## File-Serving Architecture
 
 This section documents how static files and user-uploaded media are served to browsers.
 
@@ -147,7 +147,7 @@ Django's `static()` URL helper (used with `DEBUG=True`) can serve media files, b
 - Only works when `DEBUG=True` (not in production)
 - Redundant when we already have `serve_media`
 
-**Why not a CDN?**
+**Why not make use of a CDN?**
 
 A CDN caches content at edge locations, but only helps when the same asset is requested multiple times within the cache TTL. For this application:
 
@@ -168,13 +168,6 @@ response["Cache-Control"] = "public, max-age=31536000, immutable"
 
 This tells browsers to cache media for 1 year without revalidation.
 
-### Implementation
-
-**Files involved:**
-- `the_flip/views.py` - `serve_media()` function
-- `the_flip/urls.py` - URL pattern for `/media/`
-- `the_flip/settings/dev.py` - WhiteNoise configuration (static files only)
-- `the_flip/settings/web.py` - WhiteNoise configuration (static files only)
 
 ### Alternatives Considered
 
