@@ -108,14 +108,14 @@ def main() -> None:
     claude_content = clean_empty_lines(claude_content)
     claude_final = HEADER_TEMPLATE + claude_content
     CLAUDE_OUTPUT.write_text(claude_final)
-    print(f"Generated: {CLAUDE_OUTPUT}")  # noqa: T201 - CLI feedback
+    print(f"Generated: {CLAUDE_OUTPUT}")
 
     # Generate AGENTS.md
     agents_content = generate_output(source_lines, "AGENTS")
     agents_content = clean_empty_lines(agents_content)
     agents_final = HEADER_TEMPLATE + agents_content
     AGENTS_OUTPUT.write_text(agents_final)
-    print(f"Generated: {AGENTS_OUTPUT}")  # noqa: T201 - CLI feedback
+    print(f"Generated: {AGENTS_OUTPUT}")
 
 
 if __name__ == "__main__":
