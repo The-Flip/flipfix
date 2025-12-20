@@ -11,8 +11,8 @@ from decouple import Csv, config
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 BASE_DIR = REPO_ROOT
 
-SECRET_KEY = config("SECRET_KEY", default="dev-secret-key")
-DEBUG = config("DEBUG", default=True, cast=bool)
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 # Base absolute URL for external systems following links into this system,
