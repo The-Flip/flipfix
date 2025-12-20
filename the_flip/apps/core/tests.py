@@ -10,6 +10,7 @@ from the_flip.apps.core.templatetags.core_extras import (
     display_name_with_username,
     render_markdown,
 )
+from the_flip.apps.core.test_utils import create_user
 
 
 class RenderMarkdownFilterTests(TestCase):
@@ -117,43 +118,23 @@ class DisplayNameWithUsernameFilterTests(TestCase):
 
     def test_username_only(self):
         """User with no name returns just username."""
-
-        class MockUser:
-            first_name = ""
-            last_name = ""
-            username = "jsmith"
-
-        self.assertEqual(display_name_with_username(MockUser()), "jsmith")
+        user = create_user(username="jsmith")
+        self.assertEqual(display_name_with_username(user), "jsmith")
 
     def test_first_name_only(self):
         """User with only first name returns 'First (username)'."""
-
-        class MockUser:
-            first_name = "John"
-            last_name = ""
-            username = "jsmith"
-
-        self.assertEqual(display_name_with_username(MockUser()), "John (jsmith)")
+        user = create_user(username="jsmith", first_name="John")
+        self.assertEqual(display_name_with_username(user), "John (jsmith)")
 
     def test_last_name_only(self):
         """User with only last name returns 'Last (username)'."""
-
-        class MockUser:
-            first_name = ""
-            last_name = "Smith"
-            username = "jsmith"
-
-        self.assertEqual(display_name_with_username(MockUser()), "Smith (jsmith)")
+        user = create_user(username="jsmith", last_name="Smith")
+        self.assertEqual(display_name_with_username(user), "Smith (jsmith)")
 
     def test_full_name(self):
         """User with full name returns 'First Last (username)'."""
-
-        class MockUser:
-            first_name = "John"
-            last_name = "Smith"
-            username = "jsmith"
-
-        self.assertEqual(display_name_with_username(MockUser()), "John Smith (jsmith)")
+        user = create_user(username="jsmith", first_name="John", last_name="Smith")
+        self.assertEqual(display_name_with_username(user), "John Smith (jsmith)")
 
 
 @tag("views")
