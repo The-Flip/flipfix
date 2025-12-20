@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
@@ -302,12 +301,9 @@ urlpatterns = [
     ),  # Part request update detail page
 ]
 
-if settings.DEBUG:
-    media_url = settings.MEDIA_URL.lstrip("/")
-    if media_url:
-        urlpatterns += [
-            re_path(rf"^{media_url}(?P<path>.*)$", serve_media, name="media"),  # Serve media files
-        ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve user-uploaded media files
+media_url = settings.MEDIA_URL.lstrip("/")
+if media_url:
+    urlpatterns += [
+        re_path(rf"^{media_url}(?P<path>.*)$", serve_media, name="media"),
+    ]
