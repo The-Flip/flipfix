@@ -42,6 +42,8 @@ Railway runs these services:
 
 ### Web Application
 - Serves the website and handles user requests
+- **Static files** (CSS, JS, app images): Served by [WhiteNoise](https://whitenoise.readthedocs.io/), which indexes files at startup and serves them with caching headers
+- **Media files** (user-uploaded photos and videos): Served by a custom Django view (`serve_media`) that reads from `MEDIA_ROOT`. WhiteNoise can't serve these because WhiteNoise only indexes files at startup, not dynamically uploaded content. See [docs/plans/Files.md](plans/Files.md#media-serving-architecture) for detailed rationale.
 
 ### Background Worker
 - Handles async tasks, like video transcoding and webhook delivery

@@ -11,9 +11,9 @@ LOGGING = deepcopy(BASE_LOGGING)
 
 DEBUG = True
 
-# Whitenoise for static/media file serving
+# Whitenoise for serving the app's static files (CSS, JS, etc)
 INSTALLED_APPS = ["whitenoise.runserver_nostatic", *INSTALLED_APPS]  # noqa: F405
-MIDDLEWARE.insert(1, "the_flip.middleware.MediaWhiteNoiseMiddleware")  # noqa: F405
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Development logging - more verbose, human-readable format with extras
