@@ -28,6 +28,8 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 if TYPE_CHECKING:
+    from io import BytesIO
+
     from django.contrib.auth.models import User
 
 UserModel = cast("type[User]", get_user_model())
@@ -42,6 +44,37 @@ MINIMAL_PNG = (
     b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
     b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 )
+
+
+def create_uploaded_image(
+    name: str = "test.jpg",
+    size: tuple[int, int] = (100, 100),
+    color: str = "red",
+) -> BytesIO:
+    """Create a JPEG image file for testing uploads.
+
+    Returns a BytesIO with a .name attribute, suitable for Django form/view testing.
+    Uses PIL to create a proper RGB image that exercises the real upload pipeline
+    (which converts most images to JPEG).
+
+    Args:
+        name: Filename for the uploaded file (default: test.jpg)
+        size: Image dimensions as (width, height) tuple
+        color: PIL color name or hex code
+
+    Returns:
+        BytesIO file-like object with .name attribute
+    """
+    from io import BytesIO
+
+    from PIL import Image
+
+    img = Image.new("RGB", size, color=color)
+    img_io = BytesIO()
+    img.save(img_io, format="JPEG", quality=85)
+    img_io.seek(0)
+    img_io.name = name
+    return img_io
 
 
 def _unique_suffix() -> str:
