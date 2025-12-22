@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from datetime import timezone as dt_timezone
-from functools import partial
+from functools import partial, wraps
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import (
@@ -22,7 +23,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Lower
-from django.http import FileResponse, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -42,7 +43,7 @@ from the_flip.apps.core.mixins import (
     MediaUploadMixin,
     can_access_maintainer_portal,
 )
-from the_flip.apps.core.models import get_media_model
+from the_flip.apps.core.models import AbstractMedia, get_media_model
 from the_flip.apps.core.qr import QR_BOX_SIZE_BULK, generate_qr_code_base64
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
@@ -57,6 +58,8 @@ from the_flip.apps.maintenance.models import (
     ProblemReport,
     ProblemReportMedia,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_problem_report_queryset(search_query: str = ""):
@@ -1374,30 +1377,105 @@ class MachineBulkQRCodeView(CanAccessMaintainerPortalMixin, TemplateView):
         return context
 
 
-def _validate_transcoding_auth(request) -> JsonResponse | None:
+class _AuthenticationError(Exception):
+    """Raised when API authentication fails."""
+
+    def __init__(self, message: str, status: int = 401):
+        self.message = message
+        self.status = status
+        super().__init__(message)
+
+
+def _json_api_view(view_method):
+    """
+    Decorator that converts exceptions to JSON error responses.
+
+    Handles:
+    - _AuthenticationError → 401/403 with error message
+    - ValidationError → 400 with error message
+    - Http404 → 404 with error message
+    - OSError → 500 with "File storage error" message (logged)
+    - Other exceptions → 500 with generic message (logged)
+    """
+
+    @wraps(view_method)
+    def wrapper(self, request, *args, **kwargs):
+        try:
+            return view_method(self, request, *args, **kwargs)
+        except _AuthenticationError as e:
+            return JsonResponse({"success": False, "error": e.message}, status=e.status)
+        except ValidationError as e:
+            return JsonResponse({"success": False, "error": str(e.message)}, status=400)
+        except Http404 as e:
+            return JsonResponse({"success": False, "error": str(e) or "Not found"}, status=404)
+        except OSError as e:
+            logger.exception("File storage error in %s", view_method.__name__)
+            return JsonResponse({"success": False, "error": f"File storage error: {e}"}, status=500)
+        except Exception:
+            logger.exception("Unexpected error in %s", view_method.__name__)
+            return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
+
+    return wrapper
+
+
+def _validate_transcoding_auth(request) -> None:
     """
     Validate Bearer token authentication for transcoding API endpoints.
 
-    Returns None if authentication is valid, or a JsonResponse with error details.
-    Uses constant-time comparison to prevent timing attacks.
+    Raises:
+        _AuthenticationError: If authentication fails.
     """
     auth_header = request.META.get("HTTP_AUTHORIZATION", "")
     if not auth_header.startswith("Bearer "):
-        return JsonResponse(
-            {"success": False, "error": "Missing or invalid Authorization header"}, status=401
-        )
+        raise _AuthenticationError("Missing or invalid Authorization header", status=401)
 
     token = auth_header[7:]  # Remove "Bearer " prefix
     if not settings.TRANSCODING_UPLOAD_TOKEN:
-        return JsonResponse(
-            {"success": False, "error": "Server not configured for transcoding"},
-            status=500,
-        )
+        raise _AuthenticationError("Server not configured for transcoding", status=500)
 
     if not constant_time_compare(token, settings.TRANSCODING_UPLOAD_TOKEN):
-        return JsonResponse({"success": False, "error": "Invalid authentication token"}, status=403)
+        raise _AuthenticationError("Invalid authentication token", status=403)
 
-    return None
+
+def _get_media_record(model_name: str, media_id: int) -> tuple[type, AbstractMedia]:
+    """
+    Look up a media record by model name and ID.
+
+    Raises:
+        ValidationError: If model_name is invalid.
+        Http404: If media record not found.
+    """
+    try:
+        media_model = get_media_model(model_name)
+    except ValueError as e:
+        raise ValidationError(str(e)) from e
+
+    try:
+        media = media_model.objects.get(id=media_id)
+    except media_model.DoesNotExist as e:
+        raise Http404(f"{model_name} with id {media_id} not found") from e
+
+    return media_model, media
+
+
+def _validate_upload_files(video_file, poster_file) -> None:
+    """
+    Validate uploaded video and poster files.
+
+    Raises:
+        ValidationError: If files are missing or have invalid types.
+    """
+    if not video_file:
+        raise ValidationError("Missing video_file")
+
+    video_content_type = (getattr(video_file, "content_type", "") or "").lower()
+    if not video_content_type.startswith("video/"):
+        raise ValidationError(f"Invalid video file type: {video_content_type}")
+
+    if poster_file:
+        poster_content_type = (getattr(poster_file, "content_type", "") or "").lower()
+        if not poster_content_type.startswith("image/"):
+            raise ValidationError(f"Invalid poster file type: {poster_content_type}")
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -1413,89 +1491,46 @@ class ReceiveTranscodedMediaView(View):
     - Authorization header: Bearer <token>
     """
 
+    @_json_api_view
     def post(self, request, model_name: str, media_id: int):
-        # Validate authentication token
-        auth_error = _validate_transcoding_auth(request)
-        if auth_error:
-            return auth_error
+        _validate_transcoding_auth(request)
 
         video_file = request.FILES.get("video_file")
         poster_file = request.FILES.get("poster_file")
+        _validate_upload_files(video_file, poster_file)
 
-        if not video_file:
-            return JsonResponse({"success": False, "error": "Missing video_file"}, status=400)
+        media_model, media = _get_media_record(model_name, media_id)
 
-        # Validate file types
-        video_content_type = (getattr(video_file, "content_type", "") or "").lower()
-        if not video_content_type.startswith("video/"):
-            return JsonResponse(
-                {"success": False, "error": f"Invalid video file type: {video_content_type}"},
-                status=400,
-            )
+        return self._save_transcoded_files(media, media_model, video_file, poster_file)
 
-        if poster_file:
-            poster_content_type = (getattr(poster_file, "content_type", "") or "").lower()
-            if not poster_content_type.startswith("image/"):
-                return JsonResponse(
-                    {"success": False, "error": f"Invalid poster file type: {poster_content_type}"},
-                    status=400,
-                )
+    def _save_transcoded_files(self, media, media_model, video_file, poster_file) -> JsonResponse:
+        """Save transcoded video and poster files to the media record."""
+        original_file_name = media.file.name if media.file else None
 
-        # Get media record using appropriate model
-        try:
-            media_model = get_media_model(model_name)
-            media = media_model.objects.get(id=media_id)
-        except ValueError as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
-        except media_model.DoesNotExist:
-            return JsonResponse(
-                {"success": False, "error": f"{model_name} with id {media_id} not found"},
-                status=404,
-            )
+        with transaction.atomic():
+            if media.file:
+                media.file = None
 
-        # Save transcoded files and update record
-        try:
-            # Capture original file reference for deferred deletion
-            original_file_name = media.file.name if media.file else None
+            media.transcoded_file = video_file
+            if poster_file:
+                media.poster_file = poster_file
+            media.transcode_status = media_model.TranscodeStatus.READY
+            media.save()
 
-            with transaction.atomic():
-                # Clear original file reference (but don't delete yet)
-                if media.file:
-                    media.file = None
+        # Delete original file only after transaction commits successfully
+        if original_file_name:
+            storage = media.transcoded_file.storage
+            transaction.on_commit(partial(storage.delete, name=original_file_name))
 
-                # Save transcoded video
-                media.transcoded_file = video_file
-
-                # Save poster if provided
-                if poster_file:
-                    media.poster_file = poster_file
-
-                # Update status
-                media.transcode_status = media_model.TranscodeStatus.READY
-
-                media.save()
-
-            # Delete original file only after transaction commits successfully
-            # This prevents data loss if save() fails
-            if original_file_name:
-                storage = media.transcoded_file.storage
-                transaction.on_commit(partial(storage.delete, name=original_file_name))
-
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": "Transcoded media uploaded successfully",
-                    "media_id": media.id,
-                    "transcoded_url": media.transcoded_file.url,
-                    "poster_url": media.poster_file.url if media.poster_file else None,
-                }
-            )
-
-        except Exception as e:
-            return JsonResponse(
-                {"success": False, "error": f"Failed to save transcoded media: {str(e)}"},
-                status=500,
-            )
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Transcoded media uploaded successfully",
+                "media_id": media.id,
+                "transcoded_url": media.transcoded_file.url,
+                "poster_url": media.poster_file.url if media.poster_file else None,
+            }
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -1509,29 +1544,14 @@ class ServeSourceMediaView(View):
     Returns the source file as a streaming response.
     """
 
+    @_json_api_view
     def get(self, request, model_name: str, media_id: int):
-        # Validate authentication token
-        auth_error = _validate_transcoding_auth(request)
-        if auth_error:
-            return auth_error
+        _validate_transcoding_auth(request)
+        _media_model, media = _get_media_record(model_name, media_id)
 
-        # Get media record
-        try:
-            media_model = get_media_model(model_name)
-            media = media_model.objects.get(id=media_id)
-        except ValueError as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
-        except media_model.DoesNotExist:
-            return JsonResponse(
-                {"success": False, "error": f"{model_name} with id {media_id} not found"},
-                status=404,
-            )
-
-        # Check that file exists
         if not media.file:
-            return JsonResponse({"success": False, "error": "Media has no source file"}, status=404)
+            raise Http404("Media has no source file")
 
-        # Stream the file
         return FileResponse(
             media.file.open("rb"),
             as_attachment=True,
