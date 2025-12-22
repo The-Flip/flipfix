@@ -14,6 +14,7 @@ Usage:
 
 from __future__ import annotations
 
+import secrets
 import shutil
 import tempfile
 import uuid
@@ -28,12 +29,17 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 if TYPE_CHECKING:
+    from io import BytesIO
+
     from django.contrib.auth.models import User
 
 UserModel = cast("type[User]", get_user_model())
 
-# Default password for all test users - centralized to avoid secret detection warnings
-TEST_PASSWORD = "testpass123"  # noqa: S105
+
+def _generate_test_password() -> str:
+    """Generate a random password for test users."""
+    return f"Test{secrets.token_hex(8)}!"
+
 
 # Minimal valid PNG (1x1 transparent pixel) for tests that need valid image data
 MINIMAL_PNG = (
@@ -42,6 +48,37 @@ MINIMAL_PNG = (
     b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
     b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 )
+
+
+def create_uploaded_image(
+    name: str = "test.jpg",
+    size: tuple[int, int] = (100, 100),
+    color: str = "red",
+) -> BytesIO:
+    """Create a JPEG image file for testing uploads.
+
+    Returns a BytesIO with a .name attribute, suitable for Django form/view testing.
+    Uses PIL to create a proper RGB image that exercises the real upload pipeline
+    (which converts most images to JPEG).
+
+    Args:
+        name: Filename for the uploaded file (default: test.jpg)
+        size: Image dimensions as (width, height) tuple
+        color: PIL color name or hex code
+
+    Returns:
+        BytesIO file-like object with .name attribute
+    """
+    from io import BytesIO
+
+    from PIL import Image
+
+    img = Image.new("RGB", size, color=color)
+    img_io = BytesIO()
+    img.save(img_io, format="JPEG", quality=85)
+    img_io.seek(0)
+    img_io.name = name
+    return img_io
 
 
 def _unique_suffix() -> str:
@@ -56,7 +93,7 @@ def _unique_suffix() -> str:
 
 def create_user(
     username: str | None = None,
-    password: str = TEST_PASSWORD,
+    password: str | None = None,
     is_staff: bool = False,
     is_superuser: bool = False,
     first_name: str = "",
@@ -68,7 +105,7 @@ def create_user(
 
     Args:
         username: Username (auto-generated if not provided)
-        password: Password (defaults to 'testpass123')
+        password: Password (auto-generated if not provided)
         is_staff: Whether user is staff (maintainer)
         is_superuser: Whether user is superuser (admin)
         first_name: User's first name
@@ -83,6 +120,8 @@ def create_user(
         username = f"testuser-{_unique_suffix()}"
     if email is None:
         email = f"{username}@example.com"
+    if password is None:
+        password = _generate_test_password()
 
     if is_superuser:
         return UserModel.objects.create_superuser(
