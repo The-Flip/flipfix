@@ -91,7 +91,7 @@ repos:
       # Block direct edits to generated agent docs (unless source or script also changed)
       - id: agent-docs-no-direct-edit
         name: agent-docs-no-direct-edit
-        entry: 'bash -c "git diff --cached --name-only | grep -qE \"(docs/AGENTS.src.md|scripts/build_agent_docs.py)\" && exit 0; echo Error: CLAUDE.md and AGENTS.md are auto-generated. && echo Edit docs/AGENTS.src.md instead, then run: make agent-docs && exit 1"'
+        entry: scripts/check_agent_docs_edit.sh
         language: system
         files: ^(CLAUDE|AGENTS)\.md$
         exclude: ^docs/
