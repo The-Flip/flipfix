@@ -1408,9 +1408,9 @@ def _json_api_view(view_method):
             return JsonResponse({"success": False, "error": "; ".join(e.messages)}, status=400)
         except Http404 as e:
             return JsonResponse({"success": False, "error": str(e) or "Not found"}, status=404)
-        except OSError as e:
+        except OSError:
             logger.exception("File storage error in %s", view_method.__name__)
-            return JsonResponse({"success": False, "error": f"File storage error: {e}"}, status=500)
+            return JsonResponse({"success": False, "error": "File storage error"}, status=500)
         except Exception:
             logger.exception("Unexpected error in %s", view_method.__name__)
             return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
