@@ -655,7 +655,6 @@ body {
 }
 
 .pill__remove:hover {
-  background-color: var(--color-gray-300);
   color: var(--color-gray-700);
 }
 
