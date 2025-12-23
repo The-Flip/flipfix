@@ -3,7 +3,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, tag
 
-from the_flip.apps.core.test_utils import MINIMAL_PNG
+from the_flip.apps.core.test_utils import DATETIME_INPUT_FORMAT, MINIMAL_PNG
 from the_flip.apps.maintenance.forms import LogEntryQuickForm
 
 
@@ -16,7 +16,7 @@ class LogEntryQuickFormMediaValidationTests(TestCase):
         from django.utils import timezone
 
         data = {
-            "work_date": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
             "submitter_name": "Test User",
             "text": "Test description",
         }
