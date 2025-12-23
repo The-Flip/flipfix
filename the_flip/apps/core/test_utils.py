@@ -512,3 +512,39 @@ class TestDataMixin:
         self.maintainer_user = create_maintainer_user()
         self.regular_user = create_user()
         self.superuser = create_superuser()
+
+
+class SharedAccountTestMixin:
+    """Mixin for testing shared/terminal account behavior.
+
+    Provides test data for scenarios where a shared terminal (e.g., workshop kiosk)
+    is used by maintainers who identify themselves via a name field.
+
+    Provides:
+        - self.shared_user: User for the shared terminal account
+        - self.shared_maintainer: Maintainer with is_shared_account=True
+        - self.identifying_user: A second maintainer user (the person using the terminal)
+        - self.identifying_maintainer: Maintainer instance for identifying_user
+
+    Usage:
+        class MySharedAccountTests(SharedAccountTestMixin, TestDataMixin, TestCase):
+            def setUp(self):
+                super().setUp()
+                # Now use self.shared_user, self.identifying_maintainer, etc.
+
+    Note: Place before TestDataMixin in the inheritance chain to ensure
+    proper MRO (Method Resolution Order).
+    """
+
+    def setUp(self):
+        """Set up shared account test data."""
+        super().setUp()
+        # Create a shared terminal account (e.g., a workshop kiosk)
+        self.shared_user = create_maintainer_user(username="terminal")
+        self.shared_maintainer = Maintainer.objects.get(user=self.shared_user)
+        self.shared_maintainer.is_shared_account = True
+        self.shared_maintainer.save()
+
+        # Second maintainer - the person using the terminal who identifies themselves
+        self.identifying_user = create_maintainer_user(username="identifying-user")
+        self.identifying_maintainer = Maintainer.objects.get(user=self.identifying_user)
