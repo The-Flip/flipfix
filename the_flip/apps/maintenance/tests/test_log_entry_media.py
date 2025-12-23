@@ -22,7 +22,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
 
     def _create_log_entry_and_get_detail_url(self):
         """Create a log entry via POST and return its detail URL."""
-        self.client.post(
+        response = self.client.post(
             self.create_url,
             {
                 "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
@@ -30,7 +30,8 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
                 "text": "Test entry",
             },
         )
-        log_entry = LogEntry.objects.first()
+        self.assertEqual(response.status_code, 302, "Log entry creation should redirect on success")
+        log_entry = LogEntry.objects.get()  # Fails if != 1 entry exists
         return reverse("log-detail", kwargs={"pk": log_entry.pk})
 
     @patch("the_flip.apps.core.mixins.enqueue_transcode")
