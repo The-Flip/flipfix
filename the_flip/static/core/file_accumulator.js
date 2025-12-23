@@ -7,24 +7,21 @@
  * Auto-initializes on DOMContentLoaded for elements with [data-file-accumulator].
  *
  * Expected DOM structure:
- *   <div data-file-accumulator data-max-files="10">
+ *   <div data-file-accumulator>
  *     <input type="file" data-file-input multiple>
  *     <a href="#" data-file-trigger>Add photos and videos</a>
  *     <div data-file-preview></div>
  *   </div>
  *
  * The component:
- * - Accumulates files across multiple selections (up to max-files limit)
+ * - Accumulates files across multiple selections
  * - Prevents duplicates (by name + size + lastModified)
  * - Renders preview pills with remove buttons
  * - Syncs accumulated files back to the input via DataTransfer API
- * - Shows a warning when max file limit is reached
  */
 
 (function () {
   'use strict';
-
-  const DEFAULT_MAX_FILES = 10;
 
   /**
    * Check if two files are duplicates.
@@ -88,33 +85,16 @@
   }
 
   /**
-   * Create a validation-style warning message for max file limit.
-   * @param {number} maxFiles - The maximum number of files allowed
-   * @returns {HTMLElement} The warning message element
-   */
-  function createMaxFilesWarning(maxFiles) {
-    const warning = document.createElement('p');
-    warning.className = 'text-problem body-small';
-    warning.textContent = `Maximum ${maxFiles} files allowed.`;
-    return warning;
-  }
-
-  /**
-   * Render all preview pills and optional max-files warning.
+   * Render all preview pills.
    * @param {HTMLElement} container - The preview container
    * @param {File[]} files - Array of accumulated files
-   * @param {number} maxFiles - Maximum files allowed
-   * @param {boolean} showWarning - Whether to show the max files warning
    * @param {Function} onRemove - Callback when remove button is clicked
    */
-  function renderPreviews(container, files, maxFiles, showWarning, onRemove) {
+  function renderPreviews(container, files, onRemove) {
     container.innerHTML = '';
     files.forEach((file, index) => {
       container.appendChild(createPreviewPill(file, index, onRemove));
     });
-    if (showWarning) {
-      container.appendChild(createMaxFilesWarning(maxFiles));
-    }
   }
 
   /**
@@ -137,16 +117,7 @@
       return;
     }
 
-    const maxFiles = parseInt(container.dataset.maxFiles, 10) || DEFAULT_MAX_FILES;
     let accumulatedFiles = [];
-
-    /**
-     * Check if the file limit has been reached.
-     * @returns {boolean} True if at or over the max file limit
-     */
-    function isAtMax() {
-      return accumulatedFiles.length >= maxFiles;
-    }
 
     /**
      * Remove a file by index and re-render.
@@ -155,19 +126,15 @@
     function removeFile(index) {
       accumulatedFiles.splice(index, 1);
       syncFilesToInput(fileInput, accumulatedFiles);
-      renderPreviews(previewContainer, accumulatedFiles, maxFiles, isAtMax(), removeFile);
+      renderPreviews(previewContainer, accumulatedFiles, removeFile);
     }
 
     /**
-     * Add new files, filtering duplicates and enforcing max limit.
+     * Add new files, filtering duplicates.
      * @param {FileList} newFiles - Files from the input
      */
     function addFiles(newFiles) {
       for (const file of newFiles) {
-        if (isAtMax()) {
-          break;
-        }
-
         // Check for duplicates
         const isDuplicateFile = accumulatedFiles.some((existing) => isDuplicate(existing, file));
         if (!isDuplicateFile) {
@@ -176,7 +143,7 @@
       }
 
       syncFilesToInput(fileInput, accumulatedFiles);
-      renderPreviews(previewContainer, accumulatedFiles, maxFiles, isAtMax(), removeFile);
+      renderPreviews(previewContainer, accumulatedFiles, removeFile);
     }
 
     // Trigger file picker when link is clicked

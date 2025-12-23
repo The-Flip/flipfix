@@ -80,9 +80,7 @@
         {{ form.text }}
         {% field_errors form.text %}
         <!-- File upload (accumulates across multiple selections) -->
-        <div class="form-hint space-above-sm"
-             data-file-accumulator
-             data-max-files="10">
+        <div class="form-hint space-above-sm" data-file-accumulator>
           <input type="file"
                  name="{{ form.media_file.html_name }}"
                  class="hidden"
