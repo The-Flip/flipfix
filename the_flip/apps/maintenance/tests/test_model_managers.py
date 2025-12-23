@@ -5,6 +5,8 @@ from django.test import TestCase, tag
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
     create_log_entry,
+    create_machine,
+    create_machine_model,
     create_maintainer_user,
     create_problem_report,
 )
@@ -52,11 +54,8 @@ class ProblemReportSearchTests(TestDataMixin, TestCase):
 
     def test_search_matches_machine_model_name(self):
         """Search matches machine model name."""
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
         # Create a machine with a unique model name
-        unique_model = MachineModel.objects.create(name="Unique Pinball 3000")
+        unique_model = create_machine_model(name="Unique Pinball 3000")
         unique_machine = create_machine(slug="unique", model=unique_model)
         matching = create_problem_report(machine=unique_machine, description="Some issue")
 
@@ -200,11 +199,8 @@ class LogEntrySearchTests(TestDataMixin, TestCase):
 
     def test_search_matches_machine_model_name(self):
         """Search matches machine model name."""
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
         # Create a machine with a unique model name
-        unique_model = MachineModel.objects.create(name="Special Pinball 2000")
+        unique_model = create_machine_model(name="Special Pinball 2000")
         unique_machine = create_machine(slug="special", model=unique_model)
         matching = create_log_entry(machine=unique_machine, text="Fixed it")
 
@@ -309,10 +305,7 @@ class ProblemReportScopedSearchTests(TestDataMixin, TestCase):
 
     def test_search_for_machine_excludes_machine_name(self):
         """Machine-scoped search does NOT match machine model name."""
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
-        unique_model = MachineModel.objects.create(name="Attack from Mars 1995")
+        unique_model = create_machine_model(name="Attack from Mars 1995")
         unique_machine = create_machine(slug="attack-mars", model=unique_model)
         report = create_problem_report(machine=unique_machine, description="Flipper weak")
 
@@ -392,10 +385,7 @@ class LogEntryScopedSearchTests(TestDataMixin, TestCase):
 
     def test_search_for_machine_excludes_machine_name(self):
         """Machine-scoped search does NOT match machine model name."""
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
-        unique_model = MachineModel.objects.create(name="Twilight Zone 1993")
+        unique_model = create_machine_model(name="Twilight Zone 1993")
         unique_machine = create_machine(slug="twilight", model=unique_model)
         entry = create_log_entry(machine=unique_machine, text="Replaced flipper")
 
@@ -475,10 +465,7 @@ class LogEntryScopedSearchTests(TestDataMixin, TestCase):
 
     def test_search_for_problem_report_excludes_machine_name(self):
         """Problem-report-scoped search does NOT match machine name."""
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
-        unique_model = MachineModel.objects.create(name="Medieval Madness 1997")
+        unique_model = create_machine_model(name="Medieval Madness 1997")
         unique_machine = create_machine(slug="medieval", model=unique_model)
         report = create_problem_report(machine=unique_machine, description="Issue")
         entry = create_log_entry(machine=unique_machine, text="Fixed it", problem_report=report)

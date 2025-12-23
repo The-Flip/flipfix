@@ -7,6 +7,8 @@ from the_flip.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
     create_log_entry,
+    create_machine,
+    create_machine_model,
     create_maintainer_user,
     create_problem_report,
 )
@@ -233,11 +235,8 @@ class MachineProblemReportListViewTests(TestDataMixin, TestCase):
         searching for the machine name would be redundant and confusing - it would
         match all reports on that machine rather than filtering by content.
         """
-        from the_flip.apps.catalog.models import MachineModel
-        from the_flip.apps.core.test_utils import create_machine
-
         # Create a machine with a distinctive name
-        unique_model = MachineModel.objects.create(name="Medieval Madness 1997")
+        unique_model = create_machine_model(name="Medieval Madness 1997")
         unique_machine = create_machine(slug="medieval-madness", model=unique_model)
 
         # Create problem reports on this machine
