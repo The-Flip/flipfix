@@ -49,6 +49,12 @@ MINIMAL_PNG = (
     b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
 )
 
+# Date format constants for tests
+# HTML5 datetime-local input format (for form submission)
+DATETIME_INPUT_FORMAT = "%Y-%m-%dT%H:%M"
+# Display format for comparison (minute precision, space separator)
+DATETIME_DISPLAY_FORMAT = "%Y-%m-%d %H:%M"
+
 
 def create_uploaded_image(
     name: str = "test.jpg",
