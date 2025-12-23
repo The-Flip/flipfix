@@ -7,6 +7,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
@@ -22,6 +23,36 @@ class ProblemReportQuerySet(models.QuerySet):
     def open(self):
         """Return only open problem reports."""
         return self.filter(status=ProblemReport.Status.OPEN)
+
+    def search(self, query: str = ""):
+        """
+        Filter by search query across multiple fields.
+
+        Searches: description, machine name, reporter name/username,
+        and linked log entry text/maintainers.
+
+        Returns all reports (ordered by status then date) if query is empty.
+        """
+        query = (query or "").strip()
+        queryset = self.order_by("-status", "-created_at")
+
+        if not query:
+            return queryset
+
+        return queryset.filter(
+            Q(description__icontains=query)
+            | Q(machine__model__name__icontains=query)
+            | Q(machine__name_override__icontains=query)
+            | Q(log_entries__text__icontains=query)
+            | Q(log_entries__maintainers__user__username__icontains=query)
+            | Q(log_entries__maintainers__user__first_name__icontains=query)
+            | Q(log_entries__maintainers__user__last_name__icontains=query)
+            | Q(log_entries__maintainer_names__icontains=query)
+            | Q(reported_by_name__icontains=query)
+            | Q(reported_by_user__username__icontains=query)
+            | Q(reported_by_user__first_name__icontains=query)
+            | Q(reported_by_user__last_name__icontains=query)
+        ).distinct()
 
 
 class ProblemReport(TimeStampedMixin):
@@ -100,6 +131,36 @@ class ProblemReport(TimeStampedMixin):
         return "Anonymous"
 
 
+class LogEntryQuerySet(models.QuerySet):
+    """Custom queryset for LogEntry with common filters."""
+
+    def search(self, query: str = ""):
+        """
+        Filter by search query across multiple fields.
+
+        Searches: text, machine name, maintainer names/usernames,
+        and linked problem report description.
+
+        Returns all entries (ordered by work_date desc) if query is empty.
+        """
+        query = (query or "").strip()
+        queryset = self.order_by("-work_date")
+
+        if not query:
+            return queryset
+
+        return queryset.filter(
+            Q(text__icontains=query)
+            | Q(machine__model__name__icontains=query)
+            | Q(machine__name_override__icontains=query)
+            | Q(maintainers__user__username__icontains=query)
+            | Q(maintainers__user__first_name__icontains=query)
+            | Q(maintainers__user__last_name__icontains=query)
+            | Q(maintainer_names__icontains=query)
+            | Q(problem_report__description__icontains=query)
+        ).distinct()
+
+
 class LogEntry(TimeStampedMixin):
     """Maintainer log entry documenting work on a machine."""
 
@@ -136,6 +197,7 @@ class LogEntry(TimeStampedMixin):
         help_text="The user who created this log entry (for audit trail).",
     )
 
+    objects = LogEntryQuerySet.as_manager()
     history = HistoricalRecords()
 
     class Meta:

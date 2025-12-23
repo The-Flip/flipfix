@@ -7,14 +7,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 from the_flip.apps.core.tasks import enqueue_transcode
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
     from django.db import models
+    from django.db.models import QuerySet
     from django.http import HttpRequest
 
 
@@ -169,3 +172,58 @@ class MediaUploadMixin:
 
         except media_model.DoesNotExist:
             return JsonResponse({"success": False, "error": "Media not found"}, status=404)
+
+
+class InfiniteScrollMixin:
+    """
+    Mixin for views that return paginated JSON for infinite scroll.
+
+    Provides a standard get() implementation that:
+    1. Calls get_queryset() to get items
+    2. Paginates using page_size and page_param
+    3. Renders each item using item_template
+    4. Returns JSON with items HTML, has_next, and next_page
+
+    Subclasses must set:
+        - item_template: Template path for rendering each item
+
+    Subclasses must implement:
+        - get_queryset(): Return the queryset to paginate
+
+    Subclasses may override:
+        - get_item_context(item): Return context dict for each item (default: {"entry": item})
+        - page_size: Items per page (default: 10)
+        - page_param: Query param for page number (default: "page")
+    """
+
+    item_template: str
+    page_size: int = 10
+    page_param: str = "page"
+    request: HttpRequest  # Provided by View
+
+    def get_queryset(self) -> QuerySet:
+        """Return the queryset to paginate."""
+        raise NotImplementedError("Subclasses must implement get_queryset()")
+
+    def get_item_context(self, item: Any) -> dict[str, Any]:
+        """Return template context for a single item."""
+        return {"entry": item}
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+        """Handle GET request, returning paginated JSON."""
+        queryset = self.get_queryset()
+        paginator = Paginator(queryset, self.page_size)
+        page_obj = paginator.get_page(request.GET.get(self.page_param))
+
+        items_html = "".join(
+            render_to_string(self.item_template, self.get_item_context(item), request=request)
+            for item in page_obj.object_list
+        )
+
+        return JsonResponse(
+            {
+                "items": items_html,
+                "has_next": page_obj.has_next(),
+                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
+            }
+        )

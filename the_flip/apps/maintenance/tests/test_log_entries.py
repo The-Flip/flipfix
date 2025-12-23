@@ -885,7 +885,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
         media = LogEntryMedia.objects.first()
         mock_enqueue.assert_called_once_with(media_id=media.id, model_name="LogEntryMedia")
 
-    @patch("the_flip.apps.maintenance.views.enqueue_transcode")
+    @patch("the_flip.apps.maintenance.views.log_entries.enqueue_transcode")
     def test_form_video_upload_enqueues_transcode_with_model_name(self, mock_enqueue):
         """Video uploaded via form submission should call enqueue_transcode correctly.
 

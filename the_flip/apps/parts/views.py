@@ -18,7 +18,11 @@ from django.views.generic import FormView, TemplateView, View
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, MediaUploadMixin
+from the_flip.apps.core.mixins import (
+    CanAccessMaintainerPortalMixin,
+    InfiniteScrollMixin,
+    MediaUploadMixin,
+)
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import SearchForm
 from the_flip.apps.parts.forms import PartRequestForm, PartRequestUpdateForm
@@ -104,27 +108,14 @@ class PartRequestListView(CanAccessMaintainerPortalMixin, TemplateView):
         return context
 
 
-class PartRequestListPartialView(CanAccessMaintainerPortalMixin, View):
+class PartRequestListPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, View):
     """AJAX endpoint for infinite scrolling in the part request list."""
 
-    template_name = "parts/partials/part_list_entry.html"
+    item_template = "parts/partials/part_list_entry.html"
 
-    def get(self, request, *args, **kwargs):
-        search_query = request.GET.get("q", "").strip()
-        parts = get_part_request_queryset(search_query)
-
-        paginator = Paginator(parts, 10)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        items_html = "".join(
-            render_to_string(self.template_name, {"entry": part}) for part in page_obj.object_list
-        )
-        return JsonResponse(
-            {
-                "items": items_html,
-                "has_next": page_obj.has_next(),
-                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
-            }
-        )
+    def get_queryset(self):
+        search_query = self.request.GET.get("q", "").strip()
+        return get_part_request_queryset(search_query)
 
 
 class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):

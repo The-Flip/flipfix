@@ -29,7 +29,33 @@ from the_flip.apps.catalog.views import (
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
 from the_flip.apps.core.admin_views import admin_debug_view
 from the_flip.apps.core.views import HomeView, TranscodeStatusView, healthz
-from the_flip.apps.maintenance import views as maintenance_views
+from the_flip.apps.maintenance.views.autocomplete import (
+    MachineAutocompleteView,
+    MaintainerAutocompleteView,
+    ProblemReportAutocompleteView,
+)
+from the_flip.apps.maintenance.views.log_entries import (
+    LogEntryDetailView,
+    LogListPartialView,
+    LogListView,
+    MachineLogCreateView,
+    MachineLogPartialView,
+    MachineLogView,
+)
+from the_flip.apps.maintenance.views.problem_reports import (
+    MachineProblemReportListView,
+    ProblemReportCreateView,
+    ProblemReportDetailView,
+    ProblemReportListPartialView,
+    ProblemReportListView,
+    ProblemReportLogEntriesPartialView,
+    PublicProblemReportCreateView,
+)
+from the_flip.apps.maintenance.views.qr_codes import MachineBulkQRCodeView, MachineQRView
+from the_flip.apps.maintenance.views.transcoding import (
+    ReceiveTranscodedMediaView,
+    ServeSourceMediaView,
+)
 from the_flip.apps.parts import views as parts_views
 from the_flip.views import serve_media
 
@@ -111,7 +137,7 @@ urlpatterns = [
     ),  # Public machine detail
     path(
         "p/<slug:slug>/",
-        maintenance_views.PublicProblemReportCreateView.as_view(),
+        PublicProblemReportCreateView.as_view(),
         name="public-problem-report-create",
     ),  # Public problem report form (from QR code)
     #
@@ -119,37 +145,37 @@ urlpatterns = [
     #
     path(
         "problem-reports/",
-        maintenance_views.ProblemReportListView.as_view(),
+        ProblemReportListView.as_view(),
         name="problem-report-list",
     ),  # List all problem reports
     path(
         "problem-reports/entries/",
-        maintenance_views.ProblemReportListPartialView.as_view(),
+        ProblemReportListPartialView.as_view(),
         name="problem-report-list-entries",
     ),  # AJAX: infinite scroll for problem report list
     path(
         "problem-reports/new/",
-        maintenance_views.ProblemReportCreateView.as_view(),
+        ProblemReportCreateView.as_view(),
         name="problem-report-create",
     ),  # Create problem report (no machine pre-selected)
     path(
         "machines/<slug:slug>/problem-reports/new/",
-        maintenance_views.ProblemReportCreateView.as_view(),
+        ProblemReportCreateView.as_view(),
         name="problem-report-create-machine",
     ),  # Create problem report for specific machine
     path(
         "problem-reports/<int:pk>/",
-        maintenance_views.ProblemReportDetailView.as_view(),
+        ProblemReportDetailView.as_view(),
         name="problem-report-detail",
     ),  # Problem report detail page
     path(
         "problem-reports/<int:pk>/log-entries/",
-        maintenance_views.ProblemReportLogEntriesPartialView.as_view(),
+        ProblemReportLogEntriesPartialView.as_view(),
         name="problem-report-log-entries",
     ),  # AJAX: infinite scroll for log entries on problem report
     path(
         "problem-reports/<slug:slug>/",
-        maintenance_views.MachineProblemReportListView.as_view(),
+        MachineProblemReportListView.as_view(),
         name="machine-problem-reports",
     ),  # List problem reports for a machine
     #
@@ -174,12 +200,8 @@ urlpatterns = [
     path(
         "machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"
     ),  # Edit machine
-    path(
-        "machines/<slug:slug>/qr/", maintenance_views.MachineQRView.as_view(), name="machine-qr"
-    ),  # QR code page
-    path(
-        "qr_codes/", maintenance_views.MachineBulkQRCodeView.as_view(), name="machine-qr-bulk"
-    ),  # Bulk QR codes
+    path("machines/<slug:slug>/qr/", MachineQRView.as_view(), name="machine-qr"),  # QR code page
+    path("qr_codes/", MachineBulkQRCodeView.as_view(), name="machine-qr-bulk"),  # Bulk QR codes
     path(
         "machines/<slug:slug>/update/",
         MachineInlineUpdateView.as_view(),
@@ -196,12 +218,12 @@ urlpatterns = [
     #
     path(
         "api/transcoding/download/<str:model_name>/<int:media_id>/",
-        maintenance_views.ServeSourceMediaView.as_view(),
+        ServeSourceMediaView.as_view(),
         name="api-transcoding-download",
     ),  # Worker: download source video for transcoding
     path(
         "api/transcoding/upload/<str:model_name>/<int:media_id>/",
-        maintenance_views.ReceiveTranscodedMediaView.as_view(),
+        ReceiveTranscodedMediaView.as_view(),
         name="api-transcoding-upload",
     ),  # Worker: upload transcoded video and poster
     path(
@@ -211,50 +233,48 @@ urlpatterns = [
     ),  # AJAX: poll video transcode status
     path(
         "api/maintainers/",
-        maintenance_views.MaintainerAutocompleteView.as_view(),
+        MaintainerAutocompleteView.as_view(),
         name="api-maintainer-autocomplete",
     ),  # AJAX: maintainer autocomplete for forms
     path(
         "api/machines/",
-        maintenance_views.MachineAutocompleteView.as_view(),
+        MachineAutocompleteView.as_view(),
         name="api-machine-autocomplete",
     ),  # AJAX: machine autocomplete for forms
     path(
         "api/problem-reports/",
-        maintenance_views.ProblemReportAutocompleteView.as_view(),
+        ProblemReportAutocompleteView.as_view(),
         name="api-problem-report-autocomplete",
     ),  # AJAX: problem report autocomplete for log entry reassignment
     #
     # Log entries
     #
-    path("logs/", maintenance_views.LogListView.as_view(), name="log-list"),  # List all log entries
+    path("logs/", LogListView.as_view(), name="log-list"),  # List all log entries
     path(
-        "logs/entries/", maintenance_views.LogListPartialView.as_view(), name="log-list-entries"
+        "logs/entries/", LogListPartialView.as_view(), name="log-list-entries"
     ),  # AJAX: infinite scroll for log list
     path(
-        "logs/new/", maintenance_views.MachineLogCreateView.as_view(), name="log-create-global"
+        "logs/new/", MachineLogCreateView.as_view(), name="log-create-global"
     ),  # Create log entry (no machine pre-selected)
     path(
-        "logs/<int:pk>/", maintenance_views.LogEntryDetailView.as_view(), name="log-detail"
+        "logs/<int:pk>/", LogEntryDetailView.as_view(), name="log-detail"
     ),  # Log entry detail page
     path(
         "logs/new/<slug:slug>/",
-        maintenance_views.MachineLogCreateView.as_view(),
+        MachineLogCreateView.as_view(),
         name="log-create-machine",
     ),  # Create log entry for specific machine
     path(
         "logs/new/problem-report/<int:pk>/",
-        maintenance_views.MachineLogCreateView.as_view(),
+        MachineLogCreateView.as_view(),
         name="log-create-problem-report",
     ),  # Create log entry linked to problem report
     path(
         "logs/<slug:slug>/entries/",
-        maintenance_views.MachineLogPartialView.as_view(),
+        MachineLogPartialView.as_view(),
         name="log-entries",
     ),  # AJAX: infinite scroll for machine log page
-    path(
-        "logs/<slug:slug>/", maintenance_views.MachineLogView.as_view(), name="log-machine"
-    ),  # Machine log page
+    path("logs/<slug:slug>/", MachineLogView.as_view(), name="log-machine"),  # Machine log page
     #
     # Parts requests
     #

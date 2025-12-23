@@ -114,7 +114,7 @@ List views use infinite scroll instead of traditional pagination:
 Use `select_related` for ForeignKey/OneToOne (single JOIN) and `prefetch_related` for reverse/ManyToMany (separate query):
 
 ```python
-# From maintenance/views.py - actual project usage
+# From maintenance/views/log_entries.py - actual project usage
 LogEntry.objects.filter(machine=self.machine)
     .select_related("machine", "problem_report")
     .prefetch_related("maintainers__user", "media")
@@ -122,3 +122,15 @@ LogEntry.objects.filter(machine=self.machine)
 ```
 
 Add these in views or QuerySet methods where queries are built, not in model methods.
+
+## File Organization
+
+Keep views in a single `views.py` until it exceeds ~500 lines (per [Django_Python.md](Django_Python.md)). When splitting:
+
+1. **Extract shared patterns first** - Move duplicated logic to mixins or model managers *before* splitting. Otherwise each new file inherits its own copy of the duplication.
+
+2. **Convert to a `views/` package** - Create `views/__init__.py` with just a docstring (no re-exports).
+
+3. **Split by domain, not technical layer** - Group views by feature area (e.g., `problem_reports.py`, `log_entries.py`), not by response format (e.g., `ajax_views.py`). Technical splits cause shotgun surgery—changing a feature touches multiple files.
+
+4. **Update imports in urls.py** - Import directly from specific modules.
