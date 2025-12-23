@@ -40,7 +40,7 @@ class MachineBulkQRCodeView(CanAccessMaintainerPortalMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        machines = MachineInstance.objects.visible().select_related("model", "location")
+        machines = MachineInstance.objects.visible()
         qr_entries = []
 
         for machine in machines:
