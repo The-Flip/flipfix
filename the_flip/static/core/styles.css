@@ -1025,41 +1025,6 @@ body {
   margin-top: var(--space-2);
 }
 
-.file-preview {
-  position: relative;
-}
-
-.file-preview__thumb {
-  width: 3.5rem;
-  height: 3.5rem;
-  background-color: var(--color-gray-200);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.file-preview__remove {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  width: 1rem;
-  height: 1rem;
-  background-color: var(--color-problem);
-  color: white;
-  border-radius: var(--radius-full);
-  font-size: 0.625rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.file-preview:hover .file-preview__remove {
-  opacity: 1;
-}
-
 /* Sidebar cards (for related content: machines, problems, parts requests) */
 .sidebar-card {
   display: block;
@@ -1460,21 +1425,6 @@ body {
   font-size: var(--text-xs);
 }
 
-/* Snippet row (linked problem/log preview) */
-.snippet-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding-top: var(--space-2);
-  margin-top: var(--space-1);
-  border-top: 1px solid var(--color-border-soft);
-  font-size: var(--text-sm);
-  line-height: 1.3;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
 .snippet-label {
   font-weight: var(--font-semibold);
   display: inline-flex;
@@ -1684,13 +1634,6 @@ body {
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
   margin: 0;
-}
-
-/* --- Log Entry List (for problem report detail) --- */
-.log-entry-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 .log-entry-meta {
@@ -1969,18 +1912,6 @@ body {
   display: none !important;
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* Text sizes */
 .text-xs {
   font-size: var(--text-xs);
@@ -2005,14 +1936,6 @@ body {
 
 .text-center {
   text-align: center;
-}
-
-.text-danger {
-  color: var(--color-problem);
-}
-
-.text-success {
-  color: var(--color-success);
 }
 
 /* Username availability status (register page) */
@@ -2046,40 +1969,6 @@ body {
   align-items: center;
 }
 
-.items-start {
-  align-items: flex-start;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.shrink-0 {
-  flex-shrink: 0;
-}
-
-/* Border */
-.border-t {
-  border-top: 1px solid var(--color-gray-200);
-}
-
-/* Line clamp */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 /* Semantic helpers */
 .meta {
   font-size: var(--text-xs);
@@ -2087,12 +1976,6 @@ body {
 
 .body-small {
   font-size: var(--text-sm);
-}
-
-.pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
 .stack-tight {
