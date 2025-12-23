@@ -3,11 +3,11 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.catalog.models import MachineModel
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
     create_log_entry,
     create_machine,
+    create_machine_model,
     create_problem_report,
 )
 
@@ -90,7 +90,7 @@ class MachineLogSearchTests(TestDataMixin, TestCase):
         all logs on that machine rather than filtering by content.
         """
         # Create a machine with a distinctive name
-        unique_model = MachineModel.objects.create(name="Twilight Zone 1993")
+        unique_model = create_machine_model(name="Twilight Zone 1993")
         unique_machine = create_machine(slug="twilight-zone", model=unique_model)
 
         # Create log entries on this machine
