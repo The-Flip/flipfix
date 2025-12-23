@@ -66,9 +66,9 @@ class MachineLogCreateViewWorkDateTests(TestDataMixin, TestCase):
         self.assertEqual(LogEntry.objects.count(), 0)
 
 
-@tag("models")
+@tag("views")
 class LogEntryCreatedByTests(TestDataMixin, TestCase):
-    """Tests for LogEntry created_by field."""
+    """Tests for LogEntry created_by field via view."""
 
     def setUp(self):
         super().setUp()
