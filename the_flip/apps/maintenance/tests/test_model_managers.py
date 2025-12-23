@@ -297,3 +297,244 @@ class LogEntrySearchTests(TestDataMixin, TestCase):
 
         self.assertEqual(results.count(), 1)
         self.assertEqual(results.first(), log1)
+
+
+@tag("models")
+class ProblemReportScopedSearchTests(TestDataMixin, TestCase):
+    """Tests for ProblemReport context-scoped search methods.
+
+    These methods exclude fields that would be redundant in specific contexts:
+    - search_for_machine(): excludes machine name (already viewing that machine)
+    """
+
+    def test_search_for_machine_excludes_machine_name(self):
+        """Machine-scoped search does NOT match machine model name."""
+        from the_flip.apps.catalog.models import MachineModel
+        from the_flip.apps.core.test_utils import create_machine
+
+        unique_model = MachineModel.objects.create(name="Attack from Mars 1995")
+        unique_machine = create_machine(slug="attack-mars", model=unique_model)
+        report = create_problem_report(machine=unique_machine, description="Flipper weak")
+
+        # Global search finds it by machine name
+        global_results = list(ProblemReport.objects.search("Attack from Mars"))
+        self.assertIn(report, global_results)
+
+        # Machine-scoped search does NOT find by machine name
+        scoped_results = list(
+            ProblemReport.objects.filter(machine=unique_machine).search_for_machine(
+                "Attack from Mars"
+            )
+        )
+        self.assertEqual(len(scoped_results), 0)
+
+    def test_search_for_machine_matches_description(self):
+        """Machine-scoped search still matches description."""
+        report = create_problem_report(machine=self.machine, description="Flipper is broken")
+        create_problem_report(machine=self.machine, description="Display issue")
+
+        results = list(
+            ProblemReport.objects.filter(machine=self.machine).search_for_machine("flipper")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], report)
+
+    def test_search_for_machine_matches_reporter_name(self):
+        """Machine-scoped search matches reported_by_name field."""
+        report = create_problem_report(
+            machine=self.machine,
+            description="Issue",
+            reported_by_name="Visiting Victor",
+        )
+        create_problem_report(machine=self.machine, description="Other")
+
+        results = list(
+            ProblemReport.objects.filter(machine=self.machine).search_for_machine("Victor")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], report)
+
+    def test_search_for_machine_matches_log_entry_text(self):
+        """Machine-scoped search matches linked log entry text."""
+        report = create_problem_report(machine=self.machine, description="Ball stuck")
+        create_log_entry(machine=self.machine, text="Replaced coil stop", problem_report=report)
+        create_problem_report(machine=self.machine, description="Other")
+
+        results = list(
+            ProblemReport.objects.filter(machine=self.machine).search_for_machine("coil stop")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], report)
+
+    def test_search_for_machine_empty_query_returns_all(self):
+        """Empty query returns unfiltered queryset."""
+        report1 = create_problem_report(machine=self.machine, description="First")
+        report2 = create_problem_report(machine=self.machine, description="Second")
+
+        results = list(ProblemReport.objects.filter(machine=self.machine).search_for_machine(""))
+
+        self.assertEqual(len(results), 2)
+        self.assertIn(report1, results)
+        self.assertIn(report2, results)
+
+
+@tag("models")
+class LogEntryScopedSearchTests(TestDataMixin, TestCase):
+    """Tests for LogEntry context-scoped search methods.
+
+    These methods exclude fields that would be redundant in specific contexts:
+    - search_for_machine(): excludes machine name, includes problem report fields
+    - search_for_problem_report(): excludes machine AND problem report fields
+    """
+
+    def test_search_for_machine_excludes_machine_name(self):
+        """Machine-scoped search does NOT match machine model name."""
+        from the_flip.apps.catalog.models import MachineModel
+        from the_flip.apps.core.test_utils import create_machine
+
+        unique_model = MachineModel.objects.create(name="Twilight Zone 1993")
+        unique_machine = create_machine(slug="twilight", model=unique_model)
+        entry = create_log_entry(machine=unique_machine, text="Replaced flipper")
+
+        # Global search finds it by machine name
+        global_results = list(LogEntry.objects.search("Twilight Zone"))
+        self.assertIn(entry, global_results)
+
+        # Machine-scoped search does NOT find by machine name
+        scoped_results = list(
+            LogEntry.objects.filter(machine=unique_machine).search_for_machine("Twilight Zone")
+        )
+        self.assertEqual(len(scoped_results), 0)
+
+    def test_search_for_machine_matches_text(self):
+        """Machine-scoped search matches log entry text."""
+        entry = create_log_entry(machine=self.machine, text="Replaced flipper coil")
+        create_log_entry(machine=self.machine, text="Adjusted targets")
+
+        results = list(LogEntry.objects.filter(machine=self.machine).search_for_machine("flipper"))
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], entry)
+
+    def test_search_for_machine_matches_problem_report_description(self):
+        """Machine-scoped search matches linked problem report description."""
+        report = create_problem_report(machine=self.machine, description="Coil stop broken")
+        entry = create_log_entry(machine=self.machine, text="Fixed it", problem_report=report)
+        create_log_entry(machine=self.machine, text="Unrelated work")
+
+        results = list(
+            LogEntry.objects.filter(machine=self.machine).search_for_machine("coil stop")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], entry)
+
+    def test_search_for_machine_matches_problem_report_reporter_name(self):
+        """Machine-scoped search matches linked problem report's reporter name."""
+        report = create_problem_report(
+            machine=self.machine,
+            description="Issue",
+            reported_by_name="Visiting Victor",
+        )
+        entry = create_log_entry(machine=self.machine, text="Fixed it", problem_report=report)
+        create_log_entry(machine=self.machine, text="Unrelated work")
+
+        results = list(LogEntry.objects.filter(machine=self.machine).search_for_machine("Victor"))
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], entry)
+
+    def test_search_for_machine_empty_query_returns_all(self):
+        """Empty query returns unfiltered queryset."""
+        entry1 = create_log_entry(machine=self.machine, text="First")
+        entry2 = create_log_entry(machine=self.machine, text="Second")
+
+        results = list(LogEntry.objects.filter(machine=self.machine).search_for_machine(""))
+
+        self.assertEqual(len(results), 2)
+        self.assertIn(entry1, results)
+        self.assertIn(entry2, results)
+
+    def test_search_for_problem_report_excludes_problem_report_description(self):
+        """Problem-report-scoped search does NOT match problem report description."""
+        report = create_problem_report(machine=self.machine, description="Coil stop broken")
+        entry = create_log_entry(machine=self.machine, text="Fixed it", problem_report=report)
+
+        # Global search finds it by problem report description
+        global_results = list(LogEntry.objects.search("coil stop"))
+        self.assertIn(entry, global_results)
+
+        # Problem-report-scoped search does NOT find by problem report description
+        scoped_results = list(
+            LogEntry.objects.filter(problem_report=report).search_for_problem_report("coil stop")
+        )
+        self.assertEqual(len(scoped_results), 0)
+
+    def test_search_for_problem_report_excludes_machine_name(self):
+        """Problem-report-scoped search does NOT match machine name."""
+        from the_flip.apps.catalog.models import MachineModel
+        from the_flip.apps.core.test_utils import create_machine
+
+        unique_model = MachineModel.objects.create(name="Medieval Madness 1997")
+        unique_machine = create_machine(slug="medieval", model=unique_model)
+        report = create_problem_report(machine=unique_machine, description="Issue")
+        entry = create_log_entry(machine=unique_machine, text="Fixed it", problem_report=report)
+
+        # Global search finds it by machine name
+        global_results = list(LogEntry.objects.search("Medieval Madness"))
+        self.assertIn(entry, global_results)
+
+        # Problem-report-scoped search does NOT find by machine name
+        scoped_results = list(
+            LogEntry.objects.filter(problem_report=report).search_for_problem_report(
+                "Medieval Madness"
+            )
+        )
+        self.assertEqual(len(scoped_results), 0)
+
+    def test_search_for_problem_report_matches_text(self):
+        """Problem-report-scoped search matches log entry text."""
+        report = create_problem_report(machine=self.machine, description="Issue")
+        entry = create_log_entry(
+            machine=self.machine, text="Replaced flipper coil", problem_report=report
+        )
+        create_log_entry(machine=self.machine, text="Adjusted targets", problem_report=report)
+
+        results = list(
+            LogEntry.objects.filter(problem_report=report).search_for_problem_report("flipper")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], entry)
+
+    def test_search_for_problem_report_matches_maintainer_name(self):
+        """Problem-report-scoped search matches maintainer names."""
+        maintainer_user = create_maintainer_user(
+            username="techguy", first_name="Tech", last_name="Guy"
+        )
+        report = create_problem_report(machine=self.machine, description="Issue")
+        entry = create_log_entry(machine=self.machine, text="Fixed it", problem_report=report)
+        entry.maintainers.add(maintainer_user.maintainer)
+        create_log_entry(machine=self.machine, text="Other work", problem_report=report)
+
+        results = list(
+            LogEntry.objects.filter(problem_report=report).search_for_problem_report("Tech")
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], entry)
+
+    def test_search_for_problem_report_empty_query_returns_all(self):
+        """Empty query returns unfiltered queryset."""
+        report = create_problem_report(machine=self.machine, description="Issue")
+        entry1 = create_log_entry(machine=self.machine, text="First", problem_report=report)
+        entry2 = create_log_entry(machine=self.machine, text="Second", problem_report=report)
+
+        results = list(LogEntry.objects.filter(problem_report=report).search_for_problem_report(""))
+
+        self.assertEqual(len(results), 2)
+        self.assertIn(entry1, results)
+        self.assertIn(entry2, results)
