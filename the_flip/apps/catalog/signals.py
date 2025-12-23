@@ -4,7 +4,9 @@ from django.contrib import messages
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
-from the_flip.apps.catalog.models import MachineInstance, MachineModel
+from the_flip.apps.accounts.models import Maintainer
+from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
+from the_flip.apps.maintenance.models import LogEntry
 
 
 @receiver(pre_save, sender=MachineInstance)
@@ -29,19 +31,18 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
 
     Set instance._skip_auto_log = True to prevent auto log entry creation.
     """
-    from the_flip.apps.maintenance.models import LogEntry
-
     # Allow skipping auto-log creation (useful for tests and bulk imports)
     if getattr(instance, "_skip_auto_log", False):
         return
 
     # New machine created
     if created:
-        LogEntry.objects.create(
+        log_entry = LogEntry.objects.create(
             machine=instance,
             text=f"New machine added: {instance.display_name}",
             created_by=instance.created_by,
         )
+        _add_maintainer_if_exists(log_entry, instance.created_by)
         return
 
     # Check for status change
@@ -62,8 +63,6 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
     # Check for location change
     original_location_id = getattr(instance, "_original_location_id", None)
     if original_location_id != instance.location_id:
-        from the_flip.apps.catalog.models import Location
-
         old_location = None
         if original_location_id:
             try:
@@ -90,14 +89,17 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
 
 
 def _add_maintainer_if_exists(log_entry, user):
-    """Add the user as a maintainer on the log entry if they have a Maintainer profile."""
+    """Add the user as a maintainer on the log entry if they have a Maintainer profile.
+
+    Skips shared terminal accounts since they don't represent a specific person.
+    """
     if user is None:
         return
-    from the_flip.apps.accounts.models import Maintainer
 
     try:
         maintainer = Maintainer.objects.get(user=user)
-        log_entry.maintainers.add(maintainer)
+        if not maintainer.is_shared_account:
+            log_entry.maintainers.add(maintainer)
     except Maintainer.DoesNotExist:
         pass
 
