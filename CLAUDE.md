@@ -58,7 +58,8 @@ STOP and read the relevant doc before writing code.  Code that doesn't follow do
 
 | Task | Read First |
 |------|------------|
-| Templates, HTML, CSS, Javascript | [`docs/HTML_CSS.md`](docs/HTML_CSS.md) |
+| Templates, HTML, CSS | [`docs/HTML_CSS.md`](docs/HTML_CSS.md) |
+| JavaScript patterns & components | [`docs/Javascript.md`](docs/Javascript.md) |
 | Views, CBVs, query optimization | [`docs/Views.md`](docs/Views.md) |
 | Forms & inputs | [`docs/Forms.md`](docs/Forms.md) |
 | Defining models or querysets | [`docs/Models.md`](docs/Models.md) |

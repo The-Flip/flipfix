@@ -8,7 +8,8 @@ The development documentation for The Flip maintenance system.
 - **[Datamodel.md](Datamodel.md)** - Catalog of the project's data models
 - **[Models.md](Models.md)** - Data model patterns, custom querysets, database field conventions
 - **[Views.md](Views.md)** - View patterns, CBVs, query optimization, access control
-- **[HTML_CSS.md](HTML_CSS.md)** - HTML templates, CSS styling, page layouts, JavaScript patterns, component conventions
+- **[HTML_CSS.md](HTML_CSS.md)** - HTML templates, CSS styling, page layouts, CSS component conventions
+- **[Javascript.md](Javascript.md)** - JavaScript patterns, JS component catalog, custom events
 - **[Forms.md](Forms.md)** - Form rendering, markup patterns, optional field marking, CSS classes
 - **[Django_Python.md](Django_Python.md)** - Python coding rules (mixins, secrets, linting, file organization)
 - **[Testing.md](Testing.md)** - Test patterns, utilities, tagging, runner configuration

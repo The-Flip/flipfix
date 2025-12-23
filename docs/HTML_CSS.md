@@ -64,69 +64,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 
 ## JavaScript
 
-### Module Pattern
-
-This project uses vanilla JavaScript with IIFEs (Immediately Invoked Function Expressions) rather than ES modules:
-
-```javascript
-(function () {
-  'use strict';
-  // Module code here - all variables are scoped to this function
-})();
-```
-
-**Why IIFEs instead of ES modules:**
-- No bundler required - works with Django's `collectstatic`
-- Simple `<script defer>` loading without `type="module"` complexity
-- No import path management (ES modules require full URLs, not bare specifiers)
-- Works everywhere without CORS considerations
-
-For a low-JS project like this, IIFEs are the pragmatic choice. If the project grows to need significant JS sharing between modules, consider adding a bundler (esbuild) and switching to ES modules.
-
-### Script Loading
-
-Always use `defer` when including scripts:
-
-```html
-<script src="{% static 'core/my_script.js' %}" defer></script>
-```
-
-### Cross-Module Communication
-
-When JS modules need to communicate, use custom DOM events rather than globals:
-
-```javascript
-// Dispatch event on a specific element (preferred) or document
-container.dispatchEvent(new CustomEvent('maintainer:selected', {
-  detail: { maintainer, input }
-}));
-
-// Listen for event
-container.addEventListener('maintainer:selected', (e) => {
-  console.log(e.detail.maintainer);
-});
-```
-
-**Do not use global callbacks** like `window.onSomething = function() {...}` or `data-on-select="globalFunctionName"`. These pollute the global namespace and create hidden coupling between modules. Custom events are explicit, discoverable, and don't require the listener to exist when the event is dispatched.
-
-### Visibility Pattern
-
-When toggling element visibility with JavaScript, use the `.hidden` class instead of `style.display`:
-
-```html
-<!-- In template -->
-<div id="my-element" class="hidden">...</div>
-```
-
-```javascript
-// In JavaScript - show element
-element.classList.remove('hidden');
-
-// Hide element
-element.classList.add('hidden');
-```
-
-This keeps styling in CSS and makes the pattern consistent across the codebase.
+See [Javascript.md](Javascript.md) for JavaScript patterns and component documentation.
 
 ## CSS Class Naming
 
