@@ -50,6 +50,7 @@ def get_log_entry_queryset(search_query: str = ""):
         .select_related("machine", "machine__model", "problem_report")
         .prefetch_related("maintainers__user", "media")
         .search(search_query)
+        .order_by("-work_date")
     )
 
     return queryset
