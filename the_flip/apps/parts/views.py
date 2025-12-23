@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from pathlib import Path
 
 from django.contrib import messages
@@ -237,9 +238,12 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    media_id = media.id
                     transaction.on_commit(
-                        lambda mid=media_id: enqueue_transcode(mid, model_name="PartRequestMedia")
+                        partial(
+                            enqueue_transcode,
+                            media_id=media.id,
+                            model_name="PartRequestMedia",
+                        )
                     )
 
         messages.success(
@@ -426,10 +430,11 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
 
                 if is_video:
-                    media_id = media.id
                     transaction.on_commit(
-                        lambda mid=media_id: enqueue_transcode(
-                            mid, model_name="PartRequestUpdateMedia"
+                        partial(
+                            enqueue_transcode,
+                            media_id=media.id,
+                            model_name="PartRequestUpdateMedia",
                         )
                     )
 

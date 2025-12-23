@@ -1,5 +1,7 @@
 """Django signals for Discord webhook triggers."""
 
+from functools import partial
+
 from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -20,7 +22,8 @@ def problem_report_saved(sender, instance, created, **kwargs):
     # which trigger log_entry_created webhooks. No separate events needed.
     if created:
         transaction.on_commit(
-            lambda: dispatch_webhook(
+            partial(
+                dispatch_webhook,
                 event_type="problem_report_created",
                 object_id=instance.pk,
                 model_name="ProblemReport",
@@ -38,7 +41,8 @@ def log_entry_created(sender, instance, created, **kwargs):
     """
     if created:
         transaction.on_commit(
-            lambda: dispatch_webhook(
+            partial(
+                dispatch_webhook,
                 event_type="log_entry_created",
                 object_id=instance.pk,
                 model_name="LogEntry",
@@ -55,7 +59,8 @@ def part_request_saved(sender, instance, created, **kwargs):
     """
     if created:
         transaction.on_commit(
-            lambda: dispatch_webhook(
+            partial(
+                dispatch_webhook,
                 event_type="part_request_created",
                 object_id=instance.pk,
                 model_name="PartRequest",
@@ -86,7 +91,8 @@ def part_request_status_changed(sender, instance, created, **kwargs):
         old_status = getattr(instance, "_old_status", None)
         if old_status and old_status != instance.status:
             transaction.on_commit(
-                lambda: dispatch_webhook(
+                partial(
+                    dispatch_webhook,
                     event_type="part_request_status_changed",
                     object_id=instance.pk,
                     model_name="PartRequest",
@@ -103,7 +109,8 @@ def part_request_update_created(sender, instance, created, **kwargs):
     """
     if created:
         transaction.on_commit(
-            lambda: dispatch_webhook(
+            partial(
+                dispatch_webhook,
                 event_type="part_request_update_created",
                 object_id=instance.pk,
                 model_name="PartRequestUpdate",
