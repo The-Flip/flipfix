@@ -28,7 +28,7 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_work_date_ajax(self):
         """AJAX endpoint updates work_date successfully."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         new_date = timezone.now() - timedelta(days=7)
         response = self.client.post(
@@ -51,7 +51,7 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_work_date_rejects_future(self):
         """AJAX endpoint rejects future dates."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         future_date = timezone.now() + timedelta(days=5)
         response = self.client.post(
@@ -69,7 +69,7 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_work_date_rejects_invalid_format(self):
         """AJAX endpoint rejects invalid date formats."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -83,7 +83,7 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_work_date_rejects_empty(self):
         """AJAX endpoint rejects empty date values."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url, {"action": "update_work_date", "work_date": ""}
@@ -105,7 +105,7 @@ class LogEntryDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_update_text_success(self):
         """AJAX endpoint updates text successfully."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -118,7 +118,7 @@ class LogEntryDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_update_text_empty(self):
         """AJAX endpoint allows empty text."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -174,7 +174,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
     def test_update_problem_report_success(self):
         """Successfully update log entry's problem report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -193,7 +193,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
     def test_update_problem_report_changes_machine(self):
         """Updating problem report also changes the machine to match."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         self.client.post(
             self.detail_url,
@@ -208,7 +208,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
     def test_unlink_from_problem_report(self):
         """Setting problem_report_id to 'none' unlinks the log entry."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -235,7 +235,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
         )
         detail_url = reverse("log-detail", kwargs={"pk": orphan_entry.pk})
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(
             detail_url,
             {
@@ -251,7 +251,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
     def test_update_problem_report_noop_when_same(self):
         """Selecting the same problem report returns noop status."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -268,7 +268,7 @@ class LogEntryProblemReportUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
     def test_update_problem_report_invalid_id(self):
         """Invalid problem report ID returns 404 error."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -312,7 +312,7 @@ class LogEntryMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_update_machine_success(self):
         """Successfully update orphan log entry's machine."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -331,7 +331,7 @@ class LogEntryMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_update_machine_noop_when_same(self):
         """Selecting the same machine returns noop status."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -348,7 +348,7 @@ class LogEntryMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_update_machine_invalid_slug(self):
         """Invalid machine slug returns 404 error."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -371,7 +371,7 @@ class LogEntryMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         )
         detail_url = reverse("log-detail", kwargs={"pk": linked_entry.pk})
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(
             detail_url,
             {

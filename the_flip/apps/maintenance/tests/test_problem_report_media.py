@@ -28,7 +28,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
 
     def test_create_with_media_upload(self):
         """Maintainer can upload media when creating a problem report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         data = {
             "description": "Problem with media",
@@ -47,7 +47,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
 
     def test_create_without_media(self):
         """Problem report can be created without media."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         data = {
             "description": "No media attached",
@@ -98,7 +98,7 @@ class ProblemReportMediaUploadTests(
 
     def test_upload_media_success(self):
         """Staff can upload media via AJAX."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         data = {
             "action": "upload_media",
@@ -124,7 +124,7 @@ class ProblemReportMediaUploadTests(
         This test verifies that when a video is uploaded via AJAX to a problem report,
         the view correctly calls enqueue_transcode with model_name="ProblemReportMedia".
         """
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
 
@@ -182,7 +182,7 @@ class ProblemReportMediaDeleteTests(
 
     def test_delete_media_success(self):
         """Staff can delete media via AJAX."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         data = {
             "action": "delete_media",
@@ -209,7 +209,7 @@ class ProblemReportMediaDeleteTests(
             file=SimpleUploadedFile("other.jpg", img_file.read(), content_type="image/jpeg"),
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         # Try to delete other_media from this report's detail page
         data = {
@@ -237,7 +237,7 @@ class ProblemReportDetailMediaDisplayTests(TemporaryMediaMixin, TestDataMixin, T
 
     def test_detail_shows_media_section(self):
         """Detail page should show Media section."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Media")
@@ -245,7 +245,7 @@ class ProblemReportDetailMediaDisplayTests(TemporaryMediaMixin, TestDataMixin, T
 
     def test_detail_shows_no_media_message(self):
         """Detail page should show 'No media' when there are no uploads."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "No media.")
@@ -259,7 +259,7 @@ class ProblemReportDetailMediaDisplayTests(TemporaryMediaMixin, TestDataMixin, T
             file=SimpleUploadedFile("test.jpg", img_file.read(), content_type="image/jpeg"),
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "media-grid__item")

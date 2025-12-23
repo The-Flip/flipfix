@@ -364,7 +364,7 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
         original = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
         converted = resize_image_file(original)

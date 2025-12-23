@@ -35,14 +35,14 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_list_view_accessible_to_staff(self):
         """Staff users should be able to access the list page."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "maintenance/problem_report_list.html")
 
     def test_list_view_contains_link_to_detail(self):
         """List view should contain links to detail pages."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url)
 
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
@@ -50,7 +50,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_list_view_pagination(self):
         """List view should paginate results."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         for i in range(15):
             create_problem_report(machine=self.machine, description=f"Problem {i}")
 
@@ -61,7 +61,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_list_view_search_by_description(self):
         """List view should filter by description text."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         create_problem_report(machine=self.machine, description="Unique flippers broken")
 
         response = self.client.get(self.list_url, {"q": "flippers"})
@@ -71,14 +71,14 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def test_list_view_search_by_machine_name(self):
         """List view should filter by machine model name."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Test Machine"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["reports"]), 1)
 
     def test_list_view_search_no_results(self):
         """List view should show empty message when search has no results."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "nonexistent"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context["reports"]), 0)
@@ -90,7 +90,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         other_report = create_problem_report(machine=self.machine, description="Other issue")
         create_log_entry(machine=self.machine, problem_report=other_report, text="Different work")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "coil stop"})
 
         self.assertContains(response, self.report.description)
@@ -106,7 +106,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         )
         create_problem_report(machine=self.machine, description="Other issue")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Wandering"})
 
         self.assertContains(response, "Flickering lights")
@@ -126,7 +126,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         )
         create_problem_report(machine=self.machine, description="Other issue")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Wandering"})
 
         self.assertContains(response, "Flickering lights")
@@ -143,7 +143,7 @@ class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_partial_view_returns_json(self):
         """AJAX endpoint should return JSON response."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         create_problem_report(machine=self.machine, description="Test problem")
 
         response = self.client.get(self.entries_url)
@@ -157,7 +157,7 @@ class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_partial_view_pagination(self):
         """AJAX endpoint should paginate and return correct metadata."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         for i in range(15):
             create_problem_report(machine=self.machine, description=f"Problem {i}")
 
@@ -173,7 +173,7 @@ class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_partial_view_search(self):
         """AJAX endpoint should respect search query."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         create_problem_report(machine=self.machine, description="Flipper issue")
         create_problem_report(machine=self.machine, description="Display broken")
 
@@ -184,7 +184,7 @@ class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin,
 
     def test_partial_view_search_matches_log_entry_text(self):
         """AJAX endpoint search should include attached log entry text."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         report_with_match = create_problem_report(machine=self.machine, description="Has match")
         create_log_entry(
             machine=self.machine, problem_report=report_with_match, text="Investigated coil stop"
@@ -220,7 +220,7 @@ class MachineProblemReportListViewTests(TestDataMixin, TestCase):
 
     def test_machine_list_view_contains_link_to_detail(self):
         """Machine-specific list view should contain links to detail pages."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.machine_list_url)
 
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
@@ -244,7 +244,7 @@ class MachineProblemReportListViewTests(TestDataMixin, TestCase):
         create_problem_report(machine=unique_machine, description="Flipper issue")
         create_problem_report(machine=unique_machine, description="Display problem")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         list_url = reverse("machine-problem-reports", kwargs={"slug": unique_machine.slug})
 
         # Search for machine name should NOT return results
@@ -277,7 +277,7 @@ class ProblemReportListSearchTests(TestDataMixin, TestCase):
             reported_by_user=submitter,
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Submitting"})
 
         self.assertContains(response, "Flipper not working")

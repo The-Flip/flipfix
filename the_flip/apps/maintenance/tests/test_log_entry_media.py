@@ -44,7 +44,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
         """
         from django.core.files.uploadedfile import SimpleUploadedFile
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         detail_url = self._create_log_entry_and_get_detail_url()
 
         # Upload a video via AJAX (must have video content_type for detection)
@@ -79,7 +79,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
         """
         from django.core.files.uploadedfile import SimpleUploadedFile
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
 
@@ -104,7 +104,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
     @patch("the_flip.apps.core.mixins.enqueue_transcode")
     def test_ajax_photo_upload_does_not_enqueue_transcode(self, mock_enqueue):
         """AJAX photo upload should NOT trigger video transcoding."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         detail_url = self._create_log_entry_and_get_detail_url()
 
         # Create a real image file

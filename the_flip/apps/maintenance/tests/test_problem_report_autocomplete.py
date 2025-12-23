@@ -41,7 +41,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
 
     def test_returns_json_response(self):
         """API returns JSON with groups structure."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.api_url)
 
         self.assertEqual(response.status_code, 200)
@@ -53,7 +53,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
 
     def test_groups_by_machine(self):
         """Reports are grouped by machine."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.api_url)
 
         data = response.json()
@@ -63,7 +63,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
 
     def test_current_machine_appears_first(self):
         """When current_machine is specified, that machine's group appears first."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.api_url, {"current_machine": self.other_machine.slug})
 
         data = response.json()
@@ -74,7 +74,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
 
     def test_includes_report_details(self):
         """Each report includes id, summary, and machine_name."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.api_url)
 
         data = response.json()
@@ -97,7 +97,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
         self.report1.status = ProblemReport.Status.CLOSED
         self.report1.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.api_url)
 
         data = response.json()

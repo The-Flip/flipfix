@@ -27,7 +27,7 @@ class MachineLogCreateViewWorkDateTests(TestDataMixin, TestCase):
 
     def test_create_log_entry_with_work_date(self):
         """Creating a log entry saves the specified work_date."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         work_date = timezone.now() - timedelta(days=3)
         response = self.client.post(
@@ -50,7 +50,7 @@ class MachineLogCreateViewWorkDateTests(TestDataMixin, TestCase):
 
     def test_create_log_entry_rejects_future_date(self):
         """View rejects log entries with future work dates."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         future_date = timezone.now() + timedelta(days=5)
         response = self.client.post(
@@ -76,7 +76,7 @@ class LogEntryCreatedByTests(TestDataMixin, TestCase):
 
     def test_created_by_set_when_creating_log_entry(self):
         """Creating a log entry should set the created_by field."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -91,13 +91,13 @@ class LogEntryCreatedByTests(TestDataMixin, TestCase):
         self.assertEqual(LogEntry.objects.count(), 1)
 
         log_entry = LogEntry.objects.first()
-        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertEqual(log_entry.created_by, self.maintainer_user)
 
     def test_created_by_can_differ_from_maintainer(self):
         """created_by (who entered data) can differ from maintainers (who did work)."""
         work_doer = create_maintainer_user(username="workdoer", first_name="Work", last_name="Doer")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -111,7 +111,7 @@ class LogEntryCreatedByTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         log_entry = LogEntry.objects.first()
 
-        self.assertEqual(log_entry.created_by, self.staff_user)
+        self.assertEqual(log_entry.created_by, self.maintainer_user)
         self.assertIn(Maintainer.objects.get(user=work_doer), log_entry.maintainers.all())
 
 
@@ -132,14 +132,14 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_create_view_accessible_to_staff(self):
         """Staff users should be able to access the log entry create form from problem report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "maintenance/log_entry_new.html")
 
     def test_create_view_shows_problem_report_context(self):
         """Create form should show the problem report context."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
 
         # Sidebar shows "Problem" label with linked problem card
@@ -148,7 +148,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_create_log_entry_inherits_machine_from_problem_report(self):
         """Log entry created from problem report should inherit the machine."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -167,7 +167,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_create_log_entry_links_to_problem_report(self):
         """Log entry created from problem report should be linked to the problem report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -184,7 +184,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_create_log_entry_redirects_to_problem_report(self):
         """After creating log entry from problem report, should redirect back to problem report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
@@ -200,7 +200,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_regular_log_entry_has_no_problem_report(self):
         """Log entries created from machine context should not have a problem_report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         regular_url = reverse("log-create-machine", kwargs={"slug": self.machine.slug})
 
         response = self.client.post(
@@ -218,7 +218,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_close_problem_checkbox_closes_problem_report(self):
         """Checking 'close the problem report' should close it when creating log entry."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.assertEqual(self.problem_report.status, ProblemReport.Status.OPEN)
 
         response = self.client.post(
@@ -237,7 +237,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
     def test_without_close_problem_checkbox_leaves_problem_open(self):
         """Not checking 'close the problem report' should leave it open."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.assertEqual(self.problem_report.status, ProblemReport.Status.OPEN)
 
         response = self.client.post(

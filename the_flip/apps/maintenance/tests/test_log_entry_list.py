@@ -30,7 +30,7 @@ class LogListSearchTests(TestDataMixin, TestCase):
         )
         create_log_entry(machine=self.machine, text="Adjusted flipper alignment")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "coil stop"})
 
         self.assertContains(response, log_with_report.text)
@@ -47,7 +47,7 @@ class LogListSearchTests(TestDataMixin, TestCase):
         )
         create_log_entry(machine=self.machine, text="Adjusted flipper alignment")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Wandering"})
 
         self.assertContains(response, log_with_name.text)
@@ -76,7 +76,7 @@ class MachineLogSearchTests(TestDataMixin, TestCase):
         )
         create_log_entry(machine=self.machine, text="Adjusted flipper alignment")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url, {"q": "Visiting"})
 
         self.assertContains(response, log_with_report.text)
@@ -97,7 +97,7 @@ class MachineLogSearchTests(TestDataMixin, TestCase):
         create_log_entry(machine=unique_machine, text="Replaced flipper coil")
         create_log_entry(machine=unique_machine, text="Adjusted targets")
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         list_url = reverse("log-machine", kwargs={"slug": unique_machine.slug})
 
         # Search for machine name should NOT return results

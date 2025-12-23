@@ -46,14 +46,14 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
     def test_detail_view_accessible_to_staff(self):
         """Staff users should be able to access the detail page."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "maintenance/problem_report_detail.html")
 
     def test_detail_view_displays_report_information(self):
         """Detail page should display core report information with reporter when available."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, self.machine.display_name)
@@ -71,7 +71,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.report.reported_by_name = ""  # Clear so reported_by_user is used
         self.report.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "by Report Submitter")
@@ -88,14 +88,14 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.report.ip_address = None
         self.report.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "by Anonymous")
 
     def test_detail_view_shows_close_button_for_open_report(self):
         """Detail page should show 'Close Problem' button for open reports."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Close Problem")
@@ -106,7 +106,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.report.status = ProblemReport.Status.CLOSED
         self.report.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Re-Open Problem")
@@ -123,7 +123,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
     def test_status_toggle_from_open_to_closed(self):
         """Staff users should be able to close an open report."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(self.detail_url)
 
         self.assertEqual(response.status_code, 302)
@@ -135,15 +135,15 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertEqual(log_entry.text, "Closed problem report")
         self.assertEqual(log_entry.problem_report, self.report)
         self.assertEqual(log_entry.machine, self.machine)
-        self.assertEqual(log_entry.created_by, self.staff_user)
-        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
+        self.assertEqual(log_entry.created_by, self.maintainer_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.maintainer_user).exists())
 
     def test_status_toggle_from_closed_to_open(self):
         """Staff users should be able to re-open a closed report."""
         self.report.status = ProblemReport.Status.CLOSED
         self.report.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(self.detail_url)
 
         self.assertEqual(response.status_code, 302)
@@ -153,12 +153,12 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertEqual(log_entry.text, "Re-opened problem report")
         self.assertEqual(log_entry.problem_report, self.report)
         self.assertEqual(log_entry.machine, self.machine)
-        self.assertEqual(log_entry.created_by, self.staff_user)
-        self.assertTrue(log_entry.maintainers.filter(user=self.staff_user).exists())
+        self.assertEqual(log_entry.created_by, self.maintainer_user)
+        self.assertTrue(log_entry.maintainers.filter(user=self.maintainer_user).exists())
 
     def test_status_toggle_shows_close_message(self):
         """Closing a report should show appropriate success message."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(self.detail_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -170,7 +170,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.report.status = ProblemReport.Status.CLOSED
         self.report.save()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(self.detail_url, follow=True)
 
         messages = list(response.context["messages"])
@@ -187,7 +187,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         initial_status = self.report.status
         initial_log_count = LogEntry.objects.count()
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.post(
             self.detail_url,
             {"action": "invalid_action_xyz"},
@@ -216,7 +216,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
             text="Adjusted flipper alignment",
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url, {"q": "coil"})
 
         self.assertContains(response, "Investigated coil stop issue")
@@ -242,7 +242,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         log_with_tech.maintainers.add(Maintainer.objects.get(user=tech))
         log_with_other.maintainers.add(Maintainer.objects.get(user=other))
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url, {"q": "Tech"})
 
         self.assertContains(response, "Investigated coil stop issue")
@@ -268,7 +268,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
             text="Replaced a component",
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         # Search for the problem report's description text
         response = self.client.get(self.detail_url, {"q": "stuck in the upper playfield"})
@@ -293,7 +293,7 @@ class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataM
 
     def test_update_text_success(self):
         """AJAX endpoint updates description successfully."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -306,7 +306,7 @@ class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataM
 
     def test_update_text_empty(self):
         """AJAX endpoint allows empty description."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -353,7 +353,7 @@ class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_machine_success(self):
         """Successfully update problem report machine."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -378,7 +378,7 @@ class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, T
             text="Linked log entry",
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         self.client.post(
             self.detail_url,
             {
@@ -392,7 +392,7 @@ class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_machine_noop_when_same(self):
         """Selecting the same machine returns noop status."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -409,7 +409,7 @@ class ProblemReportMachineUpdateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
     def test_update_machine_invalid_slug(self):
         """Invalid machine slug returns 404 error."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
@@ -465,7 +465,7 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
 
     def test_detail_page_shows_add_log_entry_button(self):
         """Problem report detail should have Add Log button."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Add Log")
@@ -480,14 +480,14 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
             text="Investigated the issue",
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "Investigated the issue")
 
     def test_detail_page_shows_no_log_entries_message(self):
         """Problem report detail should show message when no log entries exist."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
         self.assertContains(response, "No log entries yet")
@@ -510,7 +510,7 @@ class ProblemReportLogEntriesPartialViewTests(SuppressRequestLogsMixin, TestData
 
     def test_returns_json(self):
         """AJAX endpoint should return JSON response."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         create_log_entry(
             machine=self.machine,
             problem_report=self.problem_report,
@@ -538,7 +538,7 @@ class ProblemReportLogEntriesPartialViewTests(SuppressRequestLogsMixin, TestData
             text="Unlinked entry",
         )
 
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         response = self.client.get(self.entries_url)
 
         data = response.json()
@@ -547,7 +547,7 @@ class ProblemReportLogEntriesPartialViewTests(SuppressRequestLogsMixin, TestData
 
     def test_pagination(self):
         """AJAX endpoint should paginate results."""
-        self.client.force_login(self.staff_user)
+        self.client.force_login(self.maintainer_user)
         for i in range(15):
             create_log_entry(
                 machine=self.machine,

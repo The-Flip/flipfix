@@ -88,11 +88,11 @@ class ProblemReportSearchTests(TestDataMixin, TestCase):
         matching = create_problem_report(
             machine=self.machine,
             description="Issue",
-            reported_by_user=self.staff_user,
+            reported_by_user=self.maintainer_user,
         )
         create_problem_report(machine=self.machine, description="Other issue")
 
-        results = list(ProblemReport.objects.search(self.staff_user.username))
+        results = list(ProblemReport.objects.search(self.maintainer_user.username))
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], matching)
