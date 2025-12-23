@@ -114,7 +114,7 @@ Mixins provide reusable test fixtures and behaviors.
 
 | Mixin | When to Use |
 |-------|-------------|
-| `TestDataMixin` | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.regular_user`, `self.superuser` |
+| `TestDataMixin` | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser` |
 | `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise. |
 | `SharedAccountTestMixin` | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer` |
 | `TemporaryMediaMixin` | Media upload tests. Isolates MEDIA_ROOT per test. |

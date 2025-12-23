@@ -491,6 +491,7 @@ class TestDataMixin:
         - self.machine_model: A MachineModel instance
         - self.machine: A MachineInstance instance
         - self.maintainer_user: A User with maintainer portal access
+        - self.maintainer: The Maintainer profile for maintainer_user
         - self.regular_user: A User without special permissions
         - self.superuser: A superuser (admin)
 
@@ -510,6 +511,7 @@ class TestDataMixin:
             slug="test-machine",
         )
         self.maintainer_user = create_maintainer_user()
+        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.regular_user = create_user()
         self.superuser = create_superuser()
 

@@ -3,7 +3,6 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     SharedAccountTestMixin,
     SuppressRequestLogsMixin,
@@ -19,7 +18,6 @@ class PartRequestUpdateViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def setUp(self):
         super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.part_request = create_part_request(requested_by=self.maintainer)
 
     def test_create_update(self):

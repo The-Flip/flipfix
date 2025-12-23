@@ -3,7 +3,6 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
@@ -15,10 +14,6 @@ from the_flip.apps.core.test_utils import (
 @tag("views")
 class PartRequestDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for part request detail view."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_detail_view_requires_staff(self):
         """Detail view requires staff permission."""
@@ -45,7 +40,6 @@ class PartRequestDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMix
 
     def setUp(self):
         super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.part_request = create_part_request(
             text="Original text",
             requested_by=self.maintainer,
@@ -105,7 +99,6 @@ class PartRequestUpdateDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestD
 
     def setUp(self):
         super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.part_request = create_part_request(requested_by=self.maintainer)
         self.update = create_part_request_update(
             part_request=self.part_request,

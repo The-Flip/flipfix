@@ -4,7 +4,6 @@ from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
     create_part_request,
@@ -14,10 +13,6 @@ from the_flip.apps.core.test_utils import (
 @tag("feature_flags")
 class PartsFeatureFlagTests(TestDataMixin, TestCase):
     """Tests for the PARTS_ENABLED feature flag."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_nav_link_hidden_when_disabled(self):
         """Parts nav link is hidden when PARTS_ENABLED is False."""

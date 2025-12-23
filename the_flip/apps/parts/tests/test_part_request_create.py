@@ -3,7 +3,6 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     SharedAccountTestMixin,
     SuppressRequestLogsMixin,
@@ -15,10 +14,6 @@ from the_flip.apps.parts.models import PartRequest
 @tag("views")
 class PartRequestCreateViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for part request create view."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_create_view_requires_staff(self):
         """Create view requires staff permission."""

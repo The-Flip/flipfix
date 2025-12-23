@@ -3,7 +3,6 @@
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
@@ -18,10 +17,6 @@ from the_flip.apps.parts.models import (
 @tag("views")
 class PartRequestListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for part request list view access."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_list_view_requires_authentication(self):
         """Anonymous users should be redirected to login."""
@@ -60,7 +55,6 @@ class PartRequestListFilterTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
     def setUp(self):
         super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
         # Create part requests with different statuses
         self.requested = create_part_request(
@@ -116,10 +110,6 @@ class PartRequestListFilterTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 @tag("views")
 class PartRequestSearchFreeTextNameTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for searching part requests by free-text name fields."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_search_by_requested_by_name(self):
         """Can find part requests by free-text requester name."""

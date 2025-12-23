@@ -2,7 +2,6 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
     create_part_request,
@@ -17,10 +16,6 @@ from the_flip.apps.parts.models import (
 @tag("models")
 class PartRequestModelTests(TestDataMixin, TestCase):
     """Tests for the PartRequest model."""
-
-    def setUp(self):
-        super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
 
     def test_create_part_request(self):
         """Can create a part request."""
@@ -111,7 +106,6 @@ class PartRequestUpdateModelTests(TestDataMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.maintainer = Maintainer.objects.get(user=self.maintainer_user)
         self.part_request = create_part_request(requested_by=self.maintainer)
 
     def test_create_update(self):
