@@ -18,6 +18,7 @@
  * - Prevents duplicates (by name + size + lastModified)
  * - Renders preview pills with remove buttons
  * - Syncs accumulated files back to the input via DataTransfer API
+ * - Shows a warning when max file limit is reached
  */
 
 (function () {
@@ -87,16 +88,33 @@
   }
 
   /**
-   * Render all preview pills.
+   * Create a validation-style warning message for max file limit.
+   * @param {number} maxFiles - The maximum number of files allowed
+   * @returns {HTMLElement} The warning message element
+   */
+  function createMaxFilesWarning(maxFiles) {
+    const warning = document.createElement('p');
+    warning.className = 'text-problem body-small';
+    warning.textContent = `Maximum ${maxFiles} files allowed.`;
+    return warning;
+  }
+
+  /**
+   * Render all preview pills and optional max-files warning.
    * @param {HTMLElement} container - The preview container
    * @param {File[]} files - Array of accumulated files
+   * @param {number} maxFiles - Maximum files allowed
+   * @param {boolean} showWarning - Whether to show the max files warning
    * @param {Function} onRemove - Callback when remove button is clicked
    */
-  function renderPreviews(container, files, onRemove) {
+  function renderPreviews(container, files, maxFiles, showWarning, onRemove) {
     container.innerHTML = '';
     files.forEach((file, index) => {
       container.appendChild(createPreviewPill(file, index, onRemove));
     });
+    if (showWarning) {
+      container.appendChild(createMaxFilesWarning(maxFiles));
+    }
   }
 
   /**
@@ -104,6 +122,12 @@
    * @param {HTMLElement} container - The [data-file-accumulator] element
    */
   function initFileAccumulator(container) {
+    // Prevent double-initialization (e.g., in SPA contexts or dynamic DOM updates)
+    if (container.dataset.fileAccumulatorInitialized) {
+      return;
+    }
+    container.dataset.fileAccumulatorInitialized = 'true';
+
     const fileInput = container.querySelector('[data-file-input]');
     const trigger = container.querySelector('[data-file-trigger]');
     const previewContainer = container.querySelector('[data-file-preview]');
@@ -117,13 +141,21 @@
     let accumulatedFiles = [];
 
     /**
+     * Check if the file limit has been reached.
+     * @returns {boolean} True if at or over the max file limit
+     */
+    function isAtMax() {
+      return accumulatedFiles.length >= maxFiles;
+    }
+
+    /**
      * Remove a file by index and re-render.
      * @param {number} index - Index of file to remove
      */
     function removeFile(index) {
       accumulatedFiles.splice(index, 1);
       syncFilesToInput(fileInput, accumulatedFiles);
-      renderPreviews(previewContainer, accumulatedFiles, removeFile);
+      renderPreviews(previewContainer, accumulatedFiles, maxFiles, isAtMax(), removeFile);
     }
 
     /**
@@ -132,20 +164,19 @@
      */
     function addFiles(newFiles) {
       for (const file of newFiles) {
-        // Check max limit
-        if (accumulatedFiles.length >= maxFiles) {
+        if (isAtMax()) {
           break;
         }
 
         // Check for duplicates
-        const isDupe = accumulatedFiles.some((existing) => isDuplicate(existing, file));
-        if (!isDupe) {
+        const isDuplicateFile = accumulatedFiles.some((existing) => isDuplicate(existing, file));
+        if (!isDuplicateFile) {
           accumulatedFiles.push(file);
         }
       }
 
       syncFilesToInput(fileInput, accumulatedFiles);
-      renderPreviews(previewContainer, accumulatedFiles, removeFile);
+      renderPreviews(previewContainer, accumulatedFiles, maxFiles, isAtMax(), removeFile);
     }
 
     // Trigger file picker when link is clicked
