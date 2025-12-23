@@ -248,6 +248,36 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertContains(response, "Investigated coil stop issue")
         self.assertNotContains(response, "Adjusted flipper alignment")
 
+    def test_detail_view_search_does_not_match_problem_report_description(self):
+        """Problem-report-scoped log entry search should NOT match the report's description.
+
+        Since the user is already viewing a specific problem report's log entries,
+        searching for the report's description would be redundant and confusing -
+        it would match all log entries linked to this report rather than filtering
+        by log entry content.
+        """
+        # Report already has description "Ball is stuck in the upper playfield"
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Investigated the issue",
+        )
+        create_log_entry(
+            machine=self.machine,
+            problem_report=self.report,
+            text="Replaced a component",
+        )
+
+        self.client.force_login(self.staff_user)
+
+        # Search for the problem report's description text
+        response = self.client.get(self.detail_url, {"q": "stuck in the upper playfield"})
+
+        # Neither log entry should appear because problem report description
+        # is not a search field in this scoped context
+        self.assertNotContains(response, "Investigated the issue")
+        self.assertNotContains(response, "Replaced a component")
+
 
 @tag("views", "ajax")
 class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):

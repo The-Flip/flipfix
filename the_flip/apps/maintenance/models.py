@@ -24,34 +24,73 @@ class ProblemReportQuerySet(models.QuerySet):
         """Return only open problem reports."""
         return self.filter(status=ProblemReport.Status.OPEN)
 
-    def search(self, query: str = ""):
+    def _build_description_and_reporter_q(self, query: str) -> Q:
+        """Build Q object for searching description and reporter fields.
+
+        This is the core search pattern shared across all problem report search
+        contexts. It matches:
+        - Problem description
+        - Reporter name (free-text field)
+        - Reporter user's username, first name, last name (via FK)
         """
-        Filter by search query across multiple fields.
-
-        Searches: description, machine name, reporter name/username,
-        and linked log entry text/maintainers.
-
-        Returns all reports (ordered by status then date) if query is empty.
-        """
-        query = (query or "").strip()
-        queryset = self.order_by("-status", "-created_at")
-
-        if not query:
-            return queryset
-
-        return queryset.filter(
+        return (
             Q(description__icontains=query)
-            | Q(machine__model__name__icontains=query)
-            | Q(machine__name_override__icontains=query)
-            | Q(log_entries__text__icontains=query)
-            | Q(log_entries__maintainers__user__username__icontains=query)
-            | Q(log_entries__maintainers__user__first_name__icontains=query)
-            | Q(log_entries__maintainers__user__last_name__icontains=query)
-            | Q(log_entries__maintainer_names__icontains=query)
             | Q(reported_by_name__icontains=query)
             | Q(reported_by_user__username__icontains=query)
             | Q(reported_by_user__first_name__icontains=query)
             | Q(reported_by_user__last_name__icontains=query)
+        )
+
+    def _build_log_entry_q(self, query: str) -> Q:
+        """Build Q object for searching linked log entry fields.
+
+        Matches log entry text and maintainer names.
+        """
+        return (
+            Q(log_entries__text__icontains=query)
+            | Q(log_entries__maintainers__user__username__icontains=query)
+            | Q(log_entries__maintainers__user__first_name__icontains=query)
+            | Q(log_entries__maintainers__user__last_name__icontains=query)
+            | Q(log_entries__maintainer_names__icontains=query)
+        )
+
+    def search(self, query: str = ""):
+        """
+        Global search across multiple fields.
+
+        Searches: description, machine name, reporter name/username,
+        and linked log entry text/maintainers.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        return self.filter(
+            self._build_description_and_reporter_q(query)
+            | Q(machine__model__name__icontains=query)
+            | Q(machine__name_override__icontains=query)
+            | self._build_log_entry_q(query)
+        ).distinct()
+
+    def search_for_machine(self, query: str = ""):
+        """
+        Machine-scoped search: excludes machine name.
+
+        When viewing a specific machine's problem reports, machine name is
+        redundant to search.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        return self.filter(
+            self._build_description_and_reporter_q(query) | self._build_log_entry_q(query)
         ).distinct()
 
 
@@ -134,31 +173,80 @@ class ProblemReport(TimeStampedMixin):
 class LogEntryQuerySet(models.QuerySet):
     """Custom queryset for LogEntry with common filters."""
 
-    def search(self, query: str = ""):
+    def _build_text_and_maintainer_q(self, query: str) -> Q:
+        """Build Q object for searching text and maintainer fields.
+
+        This is the core search pattern shared across all log entry search
+        contexts. It matches:
+        - Log entry text
+        - Maintainer usernames, first names, last names (via FK)
+        - Free-text maintainer_names field
         """
-        Filter by search query across multiple fields.
-
-        Searches: text, machine name, maintainer names/usernames,
-        and linked problem report description.
-
-        Returns all entries (ordered by work_date desc) if query is empty.
-        """
-        query = (query or "").strip()
-        queryset = self.order_by("-work_date")
-
-        if not query:
-            return queryset
-
-        return queryset.filter(
+        return (
             Q(text__icontains=query)
-            | Q(machine__model__name__icontains=query)
-            | Q(machine__name_override__icontains=query)
             | Q(maintainers__user__username__icontains=query)
             | Q(maintainers__user__first_name__icontains=query)
             | Q(maintainers__user__last_name__icontains=query)
             | Q(maintainer_names__icontains=query)
+        )
+
+    def search(self, query: str = ""):
+        """
+        Global search across multiple fields.
+
+        Searches: text, machine name, maintainer names/usernames,
+        and linked problem report description.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        return self.filter(
+            self._build_text_and_maintainer_q(query)
+            | Q(machine__model__name__icontains=query)
+            | Q(machine__name_override__icontains=query)
             | Q(problem_report__description__icontains=query)
         ).distinct()
+
+    def search_for_machine(self, query: str = ""):
+        """
+        Machine-scoped search: excludes machine name, includes problem report fields.
+
+        When viewing a specific machine's logs, machine name is redundant to search.
+        But we do want to find logs by their linked problem report's description
+        or reporter name.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        return self.filter(
+            self._build_text_and_maintainer_q(query)
+            | Q(problem_report__description__icontains=query)
+            | Q(problem_report__reported_by_name__icontains=query)
+        ).distinct()
+
+    def search_for_problem_report(self, query: str = ""):
+        """
+        Problem-report-scoped search: only text and maintainers.
+
+        When viewing a specific problem report's logs, both the machine name
+        and the problem report's own fields are redundant to search.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        return self.filter(self._build_text_and_maintainer_q(query)).distinct()
 
 
 class LogEntry(TimeStampedMixin):

@@ -11,7 +11,6 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -67,24 +66,14 @@ class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        search_query = self.request.GET.get("q", "").strip()
         logs = (
             LogEntry.objects.filter(machine=self.machine)
+            .search_for_machine(search_query)
             .select_related("machine", "problem_report")
             .prefetch_related("maintainers__user", "media")
             .order_by("-work_date")
         )
-
-        search_query = self.request.GET.get("q", "").strip()
-        if search_query:
-            logs = logs.filter(
-                Q(text__icontains=search_query)
-                | Q(maintainers__user__username__icontains=search_query)
-                | Q(maintainers__user__first_name__icontains=search_query)
-                | Q(maintainers__user__last_name__icontains=search_query)
-                | Q(maintainer_names__icontains=search_query)
-                | Q(problem_report__description__icontains=search_query)
-                | Q(problem_report__reported_by_name__icontains=search_query)
-            ).distinct()
 
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(self.request.GET.get("page"))
@@ -276,22 +265,11 @@ class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
         machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
         logs = (
             LogEntry.objects.filter(machine=machine)
+            .search_for_machine(request.GET.get("q", ""))
             .select_related("machine", "problem_report")
             .prefetch_related("maintainers__user", "media")
             .order_by("-work_date")
         )
-
-        search_query = request.GET.get("q", "").strip()
-        if search_query:
-            logs = logs.filter(
-                Q(text__icontains=search_query)
-                | Q(maintainers__user__username__icontains=search_query)
-                | Q(maintainers__user__first_name__icontains=search_query)
-                | Q(maintainers__user__last_name__icontains=search_query)
-                | Q(maintainer_names__icontains=search_query)
-                | Q(problem_report__description__icontains=search_query)
-                | Q(problem_report__reported_by_name__icontains=search_query)
-            ).distinct()
 
         paginator = Paginator(logs, 10)
         page_obj = paginator.get_page(request.GET.get("page"))

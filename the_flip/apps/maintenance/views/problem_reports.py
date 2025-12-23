@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -56,6 +56,7 @@ def get_problem_report_queryset(search_query: str = ""):
         ProblemReport.objects.select_related("machine", "machine__model")
         .prefetch_related(latest_log_prefetch, "media")
         .search(search_query)
+        .order_by("-status", "-created_at")
     )
 
     return queryset
@@ -114,22 +115,12 @@ class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
 
     def get(self, request, *args, **kwargs):
         problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
-        log_entries = LogEntry.objects.filter(problem_report=problem_report).select_related(
-            "machine"
-        )
-
-        search_query = request.GET.get("q", "").strip()
-        if search_query:
-            log_entries = log_entries.filter(
-                Q(text__icontains=search_query)
-                | Q(maintainers__user__username__icontains=search_query)
-                | Q(maintainers__user__first_name__icontains=search_query)
-                | Q(maintainers__user__last_name__icontains=search_query)
-                | Q(maintainer_names__icontains=search_query)
-            ).distinct()
-
-        log_entries = log_entries.prefetch_related("maintainers__user", "media").order_by(
-            "-created_at"
+        log_entries = (
+            LogEntry.objects.filter(problem_report=problem_report)
+            .search_for_problem_report(request.GET.get("q", ""))
+            .select_related("machine")
+            .prefetch_related("maintainers__user", "media")
+            .order_by("-created_at")
         )
 
         paginator = Paginator(log_entries, 10)
@@ -164,28 +155,14 @@ class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
             queryset=LogEntry.objects.order_by("-created_at"),
             to_attr="prefetched_log_entries",
         )
+        search_query = self.request.GET.get("q", "")
         queryset = (
             ProblemReport.objects.filter(machine=self.machine)
+            .search_for_machine(search_query)
             .select_related("reported_by_user")
             .prefetch_related(latest_log_prefetch, "media")
             .order_by("-status", "-created_at")
         )
-
-        # Search by description text if provided
-        search_query = self.request.GET.get("q", "").strip()
-        if search_query:
-            queryset = queryset.filter(
-                Q(description__icontains=search_query)
-                | Q(log_entries__text__icontains=search_query)
-                | Q(log_entries__maintainers__user__username__icontains=search_query)
-                | Q(log_entries__maintainers__user__first_name__icontains=search_query)
-                | Q(log_entries__maintainers__user__last_name__icontains=search_query)
-                | Q(log_entries__maintainer_names__icontains=search_query)
-                | Q(reported_by_name__icontains=search_query)
-                | Q(reported_by_user__username__icontains=search_query)
-                | Q(reported_by_user__first_name__icontains=search_query)
-                | Q(reported_by_user__last_name__icontains=search_query)
-            ).distinct()
 
         return queryset
 
@@ -474,20 +451,13 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
 
     def render_response(self, request, report):
         # Get log entries for this problem report with pagination
-        log_entries = LogEntry.objects.filter(problem_report=report).select_related("machine")
-
-        search_query = request.GET.get("q", "").strip()
-        if search_query:
-            log_entries = log_entries.filter(
-                Q(text__icontains=search_query)
-                | Q(maintainers__user__username__icontains=search_query)
-                | Q(maintainers__user__first_name__icontains=search_query)
-                | Q(maintainers__user__last_name__icontains=search_query)
-                | Q(maintainer_names__icontains=search_query)
-            ).distinct()
-
-        log_entries = log_entries.prefetch_related("maintainers__user", "media").order_by(
-            "-created_at"
+        search_query = request.GET.get("q", "")
+        log_entries = (
+            LogEntry.objects.filter(problem_report=report)
+            .search_for_problem_report(search_query)
+            .select_related("machine")
+            .prefetch_related("maintainers__user", "media")
+            .order_by("-created_at")
         )
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))

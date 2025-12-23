@@ -226,6 +226,34 @@ class MachineProblemReportListViewTests(TestDataMixin, TestCase):
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
         self.assertContains(response, detail_url)
 
+    def test_machine_list_search_does_not_match_machine_name(self):
+        """Machine-scoped problem report search should NOT match the machine name.
+
+        Since the user is already viewing a specific machine's problem reports,
+        searching for the machine name would be redundant and confusing - it would
+        match all reports on that machine rather than filtering by content.
+        """
+        from the_flip.apps.catalog.models import MachineModel
+        from the_flip.apps.core.test_utils import create_machine
+
+        # Create a machine with a distinctive name
+        unique_model = MachineModel.objects.create(name="Medieval Madness 1997")
+        unique_machine = create_machine(slug="medieval-madness", model=unique_model)
+
+        # Create problem reports on this machine
+        create_problem_report(machine=unique_machine, description="Flipper issue")
+        create_problem_report(machine=unique_machine, description="Display problem")
+
+        self.client.force_login(self.staff_user)
+        list_url = reverse("machine-problem-reports", kwargs={"slug": unique_machine.slug})
+
+        # Search for machine name should NOT return results
+        response = self.client.get(list_url, {"q": "Medieval Madness"})
+
+        # Neither report should appear because machine name is not a search field
+        self.assertNotContains(response, "Flipper issue")
+        self.assertNotContains(response, "Display problem")
+
 
 @tag("views")
 class ProblemReportListSearchTests(TestDataMixin, TestCase):

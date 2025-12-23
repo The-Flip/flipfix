@@ -809,6 +809,44 @@ class PartRequestSearchFreeTextNameTests(TestCase):
 
         self.assertContains(response, "Ordered from Marco")
 
+    def test_search_updates_does_not_match_parent_request_text(self):
+        """Part request detail update search should NOT match the request's text.
+
+        Since the user is already viewing a specific part request's updates,
+        searching for the request's text would be redundant and confusing -
+        it would match all updates on this request rather than filtering
+        by update content.
+        """
+        # Create part request with distinctive text
+        part_request = PartRequest.objects.create(
+            text="Need special flipper coil assembly",
+            requested_by=self.maintainer,
+        )
+        # Create updates with different text
+        PartRequestUpdate.objects.create(
+            part_request=part_request,
+            text="Checking inventory",
+            posted_by=self.maintainer,
+        )
+        PartRequestUpdate.objects.create(
+            part_request=part_request,
+            text="Placed order",
+            posted_by=self.maintainer,
+        )
+
+        self.client.force_login(self.maintainer_user)
+
+        # Search for the parent part request's text
+        response = self.client.get(
+            reverse("part-request-detail", kwargs={"pk": part_request.pk})
+            + "?q=flipper coil assembly"
+        )
+
+        # Neither update should appear because parent request text
+        # is not a search field in this scoped context
+        self.assertNotContains(response, "Checking inventory")
+        self.assertNotContains(response, "Placed order")
+
 
 @tag("views")
 class PartRequestFormReRenderTests(TestCase):

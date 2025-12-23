@@ -791,6 +791,34 @@ class MachineLogSearchTests(TestDataMixin, TestCase):
         self.assertContains(response, log_with_report.text)
         self.assertNotContains(response, "Adjusted flipper alignment")
 
+    def test_search_does_not_match_machine_name(self):
+        """Machine-scoped search should NOT match the machine name.
+
+        Since the user is already viewing a specific machine's logs, searching
+        for the machine name would be redundant and confusing - it would match
+        all logs on that machine rather than filtering by content.
+        """
+        from the_flip.apps.catalog.models import MachineModel
+        from the_flip.apps.core.test_utils import create_machine
+
+        # Create a machine with a distinctive name
+        unique_model = MachineModel.objects.create(name="Twilight Zone 1993")
+        unique_machine = create_machine(slug="twilight-zone", model=unique_model)
+
+        # Create log entries on this machine
+        create_log_entry(machine=unique_machine, text="Replaced flipper coil")
+        create_log_entry(machine=unique_machine, text="Adjusted targets")
+
+        self.client.force_login(self.staff_user)
+        list_url = reverse("log-machine", kwargs={"slug": unique_machine.slug})
+
+        # Search for machine name should NOT return results
+        response = self.client.get(list_url, {"q": "Twilight Zone"})
+
+        # Neither log entry should appear because machine name is not a search field
+        self.assertNotContains(response, "Replaced flipper coil")
+        self.assertNotContains(response, "Adjusted targets")
+
 
 @tag("views", "access-control")
 class MachineBulkQRCodeViewAccessTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
