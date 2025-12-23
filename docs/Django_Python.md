@@ -15,7 +15,7 @@
 
 ## File Organization
 
-Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focused on its domain. Split into packages (e.g., `models/task.py`) when modules exceed ~500 lines.
+Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focused on its domain. Split into packages (e.g., `models/task.py`) when modules exceed ~500 lines. See [Views.md](Views.md#file-organization) for guidance on splitting large view files.
 
 ## Documentation
 
