@@ -29,8 +29,10 @@ def reverse_noop(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    """Normalize data after null=True is added, before unique constraint."""
+
     dependencies = [
-        ("catalog", "0005_historicalmachineinstance_historicalmachinemodel"),
+        ("catalog", "0006_allow_null_name_override"),
     ]
 
     operations = [
