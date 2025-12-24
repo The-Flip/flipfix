@@ -738,6 +738,79 @@ class MachineInstanceModelTests(TestCase):
 
         self.assertEqual(instance.name_override, "Padded Name")
 
+    # short_name tests
+
+    def test_short_display_name_returns_short_name_if_set(self):
+        """short_display_name should return short_name if set."""
+        instance = MachineInstance.objects.create(model=self.model, short_name="Short")
+        self.assertEqual(instance.short_display_name, "Short")
+
+    def test_short_display_name_returns_display_name_if_no_short_name(self):
+        """short_display_name should return display_name if short_name is not set."""
+        instance = MachineInstance.objects.create(model=self.model)
+        self.assertEqual(instance.short_display_name, instance.display_name)
+
+    def test_short_display_name_uses_name_override_when_set_without_short_name(self):
+        """short_display_name should return name_override if short_name is not set."""
+        instance = MachineInstance.objects.create(model=self.model, name_override="Custom Name")
+        self.assertEqual(instance.short_display_name, "Custom Name")
+
+    def test_short_name_duplicate_raises_validation_error(self):
+        """Duplicate short_name should raise ValidationError from clean()."""
+        from django.core.exceptions import ValidationError
+
+        MachineInstance.objects.create(model=self.model, short_name="Duplicate")
+        duplicate = MachineInstance(model=self.model, short_name="Duplicate")
+
+        with self.assertRaises(ValidationError) as context:
+            duplicate.full_clean()
+
+        self.assertIn("short_name", context.exception.message_dict)
+        self.assertEqual(
+            context.exception.message_dict["short_name"],
+            ["A machine with this short name already exists."],
+        )
+
+    def test_short_name_empty_string_converted_to_null(self):
+        """Empty string short_name should be converted to NULL on save."""
+        instance = MachineInstance.objects.create(model=self.model, short_name="")
+
+        instance.refresh_from_db()
+        self.assertIsNone(instance.short_name)
+
+    def test_short_name_whitespace_only_converted_to_null_via_clean(self):
+        """Whitespace-only short_name should be converted to NULL via clean()."""
+        instance = MachineInstance(model=self.model, short_name="   ")
+        instance.full_clean()
+
+        self.assertIsNone(instance.short_name)
+
+    def test_short_name_whitespace_only_converted_to_null_via_save(self):
+        """Whitespace-only short_name should be converted to NULL on save (without clean)."""
+        instance = MachineInstance.objects.create(model=self.model, short_name="   ")
+
+        instance.refresh_from_db()
+        self.assertIsNone(instance.short_name)
+
+    def test_short_name_null_allows_multiple_machines(self):
+        """Multiple machines with NULL short_name should be allowed."""
+        instance1 = MachineInstance.objects.create(model=self.model, short_name=None)
+        instance2 = MachineInstance.objects.create(model=self.model, short_name=None)
+        instance3 = MachineInstance.objects.create(model=self.model, short_name="")
+
+        self.assertEqual(MachineInstance.objects.count(), 3)
+        self.assertIsNone(instance1.short_name)
+        self.assertIsNone(instance2.short_name)
+        instance3.refresh_from_db()
+        self.assertIsNone(instance3.short_name)
+
+    def test_short_name_stripped_on_clean(self):
+        """short_name should be stripped of leading/trailing whitespace."""
+        instance = MachineInstance(model=self.model, short_name="  Padded  ")
+        instance.full_clean()
+
+        self.assertEqual(instance.short_name, "Padded")
+
     def test_slug_generation_on_create(self):
         """Should generate a slug from the display_name."""
         instance = MachineInstance.objects.create(model=self.model)
