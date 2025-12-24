@@ -70,6 +70,30 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'name="media_file"')
 
+    @patch("the_flip.apps.maintenance.views.problem_reports.enqueue_transcode")
+    def test_form_video_upload_enqueues_transcode(self, mock_enqueue):
+        """Video uploaded via form submission triggers transcoding."""
+        self.client.force_login(self.maintainer_user)
+
+        video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.create_url,
+                {
+                    "description": "Problem with video",
+                    "media_file": video_file,
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+
+        media = ProblemReportMedia.objects.first()
+        self.assertIsNotNone(media)
+        self.assertEqual(media.media_type, ProblemReportMedia.MediaType.VIDEO)
+        self.assertEqual(media.transcode_status, ProblemReportMedia.TranscodeStatus.PENDING)
+        mock_enqueue.assert_called_once_with(media_id=media.id, model_name="ProblemReportMedia")
+
 
 @tag("views", "ajax", "media")
 class ProblemReportMediaUploadTests(
