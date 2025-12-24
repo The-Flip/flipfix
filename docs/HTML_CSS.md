@@ -98,16 +98,46 @@ The site must be optimized for mobile, tablet, and desktop. Breakpoints are defi
 
 ### Icon Accessibility
 
-Decorative icons (icons with adjacent text labels) must include `aria-hidden="true"` to prevent screen readers from announcing redundant information:
+**Always use the `{% icon %}` template tag** instead of raw `<i>` elements. The tag automatically handles accessibility by adding `aria-hidden="true"` to all icons.
 
-```html
-<button><i class="fa-solid fa-check" aria-hidden="true"></i> Save</button>
+```django
+{# Basic usage - decorative icon (aria-hidden added automatically) #}
+{% icon "check" %}
+
+{# With extra CSS classes #}
+{% icon "check" class="meta" %}
+
+{# Multiple classes #}
+{% icon "bug" class="meta space-right-sm" %}
+
+{# For icons that convey meaning, add a screen reader label #}
+{% icon "bug" label="Problem" %}
+
+{# For brand icons (Discord, GitHub, etc.) #}
+{% icon "discord" style="brands" %}
 ```
 
-For icons that convey meaning without adjacent text, provide screen reader text using the `.visually-hidden` class:
-
+The tag outputs:
 ```html
-<span><i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span> #123</span>
+<!-- Basic -->
+<i class="fa-solid fa-check" aria-hidden="true"></i>
+
+<!-- With label (for meaningful icons) -->
+<i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span>
+```
+
+#### When to use the `label` parameter
+
+Most icons are decorative (they appear next to text that describes their meaning). These should NOT have a label:
+```django
+{# Decorative - the button text "Save" describes the action #}
+<button>{% icon "floppy-disk" class="meta" %} Save</button>
+```
+
+Use `label` only when the icon conveys meaning not expressed elsewhere:
+```django
+{# Meaningful - the bug icon identifies this as a problem report #}
+{% icon "bug" label="Problem" %} #123
 ```
 
 

@@ -24,8 +24,8 @@
                 aria-label="Change status"
                 title="Status: {{ machine.get_operational_status_display }}"
                 onclick="toggleDropdown(this)">
-          <i class="fa-solid {{ machine.operational_status|machine_status_icon }} status-icon"></i>
-          <i class="fa-solid fa-caret-down btn__caret"></i>
+          {% icon machine.operational_status|machine_status_icon class="status-icon" %}
+          {% icon "caret-down" class="btn__caret" %}
         </button>
         <div class="dropdown__menu dropdown__menu--left hidden">
           {% for value, label in machine.OperationalStatus.choices %}
@@ -46,8 +46,8 @@
                 aria-label="Change location"
                 title="Location: {% if machine.location %}{{ machine.location.name }}{% else %}None{% endif %}"
                 onclick="toggleDropdown(this)">
-          <i class="fa-solid fa-location-dot"></i>
-          <i class="fa-solid fa-caret-down btn__caret"></i>
+          {% icon "location-dot" %}
+          {% icon "caret-down" class="btn__caret" %}
         </button>
         <div class="dropdown__menu dropdown__menu--left hidden">
           {% if locations %}
@@ -71,19 +71,17 @@
       <a href="{% url 'machine-edit' machine.slug %}"
          class="btn btn--icon-only btn--secondary"
          aria-label="Edit machine"
-         title="Edit machine">
-        <i class="fa-solid fa-pencil"></i>
-      </a>
+         title="Edit machine">{% icon "pencil" %}</a>
       <a href="{% url 'problem-report-create-machine' machine.slug %}"
          class="btn btn--report"
          title="Report a problem">
-        <i class="fa-solid fa-bug meta"></i>
+        {% icon "bug" class="meta" %}
         Report
       </a>
       <a href="{% url 'log-create-machine' machine.slug %}"
          class="btn btn--log"
          title="Log maintenance work">
-        <i class="fa-solid fa-screwdriver-wrench meta"></i>
+        {% icon "screwdriver-wrench" class="meta" %}
         Log
       </a>
     </div>
@@ -108,9 +106,9 @@
                       aria-haspopup="true"
                       aria-expanded="false"
                       onclick="toggleDropdown(this)">
-                <i class="fa-solid {{ machine.operational_status|machine_status_icon }} meta status-icon"></i>
+                {% icon machine.operational_status|machine_status_icon class="meta status-icon" %}
                 <span class="status-label">{{ machine.get_operational_status_display }}</span>
-                <i class="fa-solid fa-caret-down meta"></i>
+                {% icon "caret-down" class="meta" %}
               </button>
               <div class="dropdown__menu dropdown__menu--left hidden">
                 {% for value, label in machine.OperationalStatus.choices %}
@@ -130,7 +128,7 @@
                       aria-haspopup="true"
                       aria-expanded="false"
                       onclick="toggleDropdown(this)">
-                <i class="fa-solid fa-location-dot meta"></i>
+                {% icon "location-dot" class="meta" %}
                 <span class="location-label">
                   {% if machine.location %}
                     {{ machine.location.name }}
@@ -138,7 +136,7 @@
                     No Location
                   {% endif %}
                 </span>
-                <i class="fa-solid fa-caret-down meta"></i>
+                {% icon "caret-down" class="meta" %}
               </button>
               <div class="dropdown__menu dropdown__menu--left hidden">
                 {% if locations %}
@@ -167,24 +165,24 @@
           <div class="flex stack-tight stack-column">
             <a href="{% url 'machine-edit' machine.slug %}"
                class="btn btn--secondary btn--full">
-              <i class="fa-solid fa-pencil meta"></i>
+              {% icon "pencil" class="meta" %}
               Edit Machine
             </a>
             {% if config.PARTS_ENABLED %}
               <a href="{% url 'part-request-create-machine' machine.slug %}"
                  class="btn btn--secondary btn--full">
-                <i class="fa-solid fa-box-open meta"></i>
+                {% icon "box-open" class="meta" %}
                 Request Parts
               </a>
             {% endif %}
             <a href="{% url 'problem-report-create-machine' machine.slug %}"
                class="btn btn--report btn--full">
-              <i class="fa-solid fa-bug meta"></i>
+              {% icon "bug" class="meta" %}
               Report Problem
             </a>
             <a href="{% url 'log-create-machine' machine.slug %}"
                class="btn btn--log btn--full">
-              <i class="fa-solid fa-screwdriver-wrench meta"></i>
+              {% icon "screwdriver-wrench" class="meta" %}
               Log Work
             </a>
           </div>
@@ -199,15 +197,15 @@
         <div class="filter-bar__filters">
           <a href="{% url 'maintainer-machine-detail' machine.slug %}"
              class="pill pill--filter {% if active_filter == 'all' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-list"></i> All Activity
+            {% icon "list" %} All Activity
           </a>
           <a href="{% url 'log-machine' machine.slug %}"
              class="pill pill--filter {% if active_filter == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-screwdriver-wrench"></i> Logs Only
+            {% icon "screwdriver-wrench" %} Logs Only
           </a>
           <a href="{% url 'machine-problem-reports' machine.slug %}"
              class="pill pill--filter {% if active_filter == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            <i class="fa-solid fa-bug"></i> Problems Only
+            {% icon "bug" %} Problems Only
           </a>
         </div>
         <!-- Search Box -->
@@ -218,7 +216,7 @@
                    placeholder="Search..."
                    value="{{ search_form.q.value|default:'' }}"
                    class="filter-bar__search-input">
-            <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+            {% icon "magnifying-glass" class="filter-bar__search-icon" %}
           </form>
         </div>
       </div>

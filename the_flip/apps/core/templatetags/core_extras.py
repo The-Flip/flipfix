@@ -244,9 +244,9 @@ _MACHINE_STATUS_CSS_CLASSES = {
 }
 
 _MACHINE_STATUS_ICONS = {
-    "good": "fa-check",
-    "fixing": "fa-wrench",
-    "broken": "fa-circle-xmark",
+    "good": "check",
+    "fixing": "wrench",
+    "broken": "circle-xmark",
 }
 
 _MACHINE_STATUS_BTN_CLASSES = {
@@ -273,7 +273,7 @@ def machine_status_icon(status):
     Usage:
         {{ machine.operational_status|machine_status_icon }}
     """
-    return _MACHINE_STATUS_ICONS.get(status, "fa-circle-question")
+    return _MACHINE_STATUS_ICONS.get(status, "circle-question")
 
 
 @register.filter
@@ -289,6 +289,59 @@ def machine_status_btn_class(status):
 # -----------------------------------------------------------------------------
 # UI Component template tags
 # -----------------------------------------------------------------------------
+
+# Whitelist of valid Font Awesome styles with their CSS class prefixes
+ICON_STYLES = {
+    "solid": "fa-solid",
+    "brands": "fa-brands",
+    "regular": "fa-regular",
+}
+
+
+@register.simple_tag
+def icon(name: str, style: str = "solid", label: str | None = None, **kwargs: str) -> str:
+    """Render a Font Awesome icon with proper accessibility.
+
+    All icons include aria-hidden="true" by default since they are decorative.
+    For icons that convey meaning, use the label parameter to add screen reader text.
+
+    Usage:
+        {% icon "check" %}
+        {% icon "check" class="meta" %}
+        {% icon "bug" label="Problem" %}
+        {% icon "discord" style="brands" %}
+
+    Args:
+        name: Icon name without fa- prefix (e.g., "check", "bug")
+        style: "solid" (default), "brands", or "regular"
+        label: Screen reader text (adds visually-hidden span)
+        class: Additional CSS classes (via kwargs to avoid Python keyword)
+
+    Returns:
+        Safe HTML string with the icon element
+
+    Raises:
+        ValueError: If style is not in ICON_STYLES whitelist
+    """
+    if style not in ICON_STYLES:
+        valid = ", ".join(sorted(ICON_STYLES.keys()))
+        raise ValueError(f"Invalid icon style '{style}'. Must be one of: {valid}")
+
+    style_class = ICON_STYLES[style]
+    extra_class = kwargs.get("class", "")
+    classes = f"{style_class} fa-{name}"
+    if extra_class:
+        classes = f"{classes} {extra_class}"
+
+    icon_html = format_html('<i class="{}" aria-hidden="true"></i>', classes)
+
+    if label:
+        return format_html(
+            '{}<span class="visually-hidden">{}</span>',
+            icon_html,
+            label,
+        )
+    return icon_html
 
 
 @register.inclusion_tag("components/stat_grid.html")
@@ -582,17 +635,21 @@ def editable_sidebar_card(
             label = "Change problem report" if current_value else "Link to problem report"
         placeholder = placeholder or "Search problem reports..."
 
+    # Use icon() for accessible icon rendering
+    pencil_icon = icon("pencil")
+    xmark_icon = icon("xmark")
+
     return format_html(
         '<div class="sidebar-card-wrapper" {data_attr} data-api-url="{api_url}" {value_attrs} data-csrf-token="{csrf_token}">\n'
         '  <button type="button" class="sidebar-card__edit" data-edit-btn aria-label="{label}" title="{label}">\n'
-        '    <i class="fa-solid fa-pencil"></i>\n'
+        "    {pencil_icon}\n"
         "  </button>\n"
         "  {content}\n"
         '  <div class="sidebar-card-edit-dropdown hidden" data-dropdown>\n'
         '    <div class="sidebar-card-edit-dropdown__header">\n'
         '      <span class="sidebar-card-edit-dropdown__title">{label}</span>\n'
         '      <button type="button" class="sidebar-card-edit-dropdown__close" data-edit-btn aria-label="Close">\n'
-        '        <i class="fa-solid fa-xmark"></i>\n'
+        "        {xmark_icon}\n"
         "      </button>\n"
         "    </div>\n"
         '    <div class="sidebar-card-edit-dropdown__search">\n'
@@ -608,6 +665,8 @@ def editable_sidebar_card(
         label=label,
         content=content,
         placeholder=placeholder,
+        pencil_icon=pencil_icon,
+        xmark_icon=xmark_icon,
     )
 
 
@@ -647,7 +706,7 @@ def timeline(content, id="", inject_log_entries=True):
 
 
 @register.simple_block_tag
-def timeline_entry(content, icon, variant="log"):
+def timeline_entry(content, icon: str, variant="log"):
     """Wrap content in a timeline entry with icon.
 
     Usage:
@@ -661,12 +720,21 @@ def timeline_entry(content, icon, variant="log"):
         content: The card content (captured between tags)
         icon: FontAwesome icon name (e.g., "comment", "screwdriver-wrench", "bug")
         variant: "log" or "problem" for color styling
+
+    Note:
+        The parameter is named 'icon' to match template usage (icon="..."),
+        which shadows the icon() function in this module. We use globals()
+        to access the function.
     """
+    # Use the icon() function for single source of truth
+    # We need globals() because the parameter name shadows the function
+    icon_func = globals()["icon"]
+    icon_html = icon_func(icon)
     return format_html(
         '<div class="timeline__entry">\n'
         '  <div class="timeline__entry-inner">\n'
         '    <div class="timeline__icon timeline__icon--{}">\n'
-        '      <i class="fa-solid fa-{}"></i>\n'
+        "      {}\n"
         "    </div>\n"
         '    <div class="timeline__content">\n'
         "{}"
@@ -674,6 +742,6 @@ def timeline_entry(content, icon, variant="log"):
         "  </div>\n"
         "</div>",
         variant,
-        icon,
+        icon_html,
         content,
     )

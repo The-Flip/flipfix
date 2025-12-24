@@ -10,12 +10,12 @@
   </p>
   <div class="sidebar-card__badges">
     <span class="pill {{ machine.operational_status|machine_status_css_class }}">
-      <i class="fa-solid {{ machine.operational_status|machine_status_icon }} meta"></i>
+      {% icon machine.operational_status|machine_status_icon class="meta" %}
       {{ machine.get_operational_status_display }}
     </span>
     {% if machine.location %}
       <span class="pill pill--neutral">
-        <i class="fa-solid fa-location-dot meta"></i>
+        {% icon "location-dot" class="meta" %}
         {{ machine.location.name }}
       </span>
     {% endif %}

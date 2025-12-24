@@ -43,11 +43,11 @@
       {% endfor %}
       <div class="form-actions">
         <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-          <i class="fa-solid fa-circle-xmark meta"></i>
+          {% icon "circle-xmark" class="meta" %}
           Cancel
         </a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-floppy-disk meta"></i>
+          {% icon "floppy-disk" class="meta" %}
           Save Changes
         </button>
       </div>

@@ -72,7 +72,7 @@
                  accept="image/*,video/*,.heic,.heif"
                  data-file-input>
           <a href="#" class="file-upload-link" data-file-trigger>
-            <i class="fa-solid fa-paperclip space-right-xs"></i>Add photos and videos
+            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
           </a>
           {% field_errors form.media_file %}
           <!-- Uploaded files preview -->
@@ -94,7 +94,7 @@
         <a href="{% if is_global %}{% url 'log-list' %}{% elif problem_report %}{% url 'problem-report-detail' problem_report.pk %}{% else %}{% url 'log-machine' machine.slug %}{% endif %}"
            class="btn btn--secondary">Cancel</a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-check meta"></i>
+          {% icon "check" class="meta" %}
           Log It
         </button>
       </div>

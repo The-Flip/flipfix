@@ -88,7 +88,7 @@
         <a href="{% block cancel_url %}{% if machine %}{% url 'machine-problem-reports' machine.slug %}{% else %}{% url 'problem-report-list' %}{% endif %}{% endblock %}"
            class="btn btn--secondary">Cancel</a>
         <button type="submit" class="btn btn--report">
-          <i class="fa-solid fa-bug meta"></i>
+          {% icon "bug" class="meta" %}
           {% block submit_label %}Report Problem{% endblock %}
         </button>
       </div>

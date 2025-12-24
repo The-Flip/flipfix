@@ -6,12 +6,12 @@
     <span class="machine-card__title">{{ machine.display_name }}</span>
     <div class="machine-card__pills">
       <span class="pill {{ machine.operational_status|machine_status_css_class }}">
-        <i class="fa-solid {{ machine.operational_status|machine_status_icon }} meta"></i>
+        {% icon machine.operational_status|machine_status_icon class="meta" %}
         {{ machine.get_operational_status_display }}
       </span>
       {% if machine.location %}
         <span class="pill pill--neutral">
-          <i class="fa-solid fa-location-dot meta"></i>
+          {% icon "location-dot" class="meta" %}
           {{ machine.location.name }}
         </span>
       {% endif %}
@@ -21,14 +21,14 @@
     <a href="{% url 'problem-report-create-machine' machine.slug %}"
        class="btn btn--secondary btn--sm"
        title="Report a problem">
-      <i class="fa-solid fa-bug"></i>
+      {% icon "bug" %}
       <span class="machine-card__btn-text--short">Report</span>
       <span class="machine-card__btn-text--long">Report Problem</span>
     </a>
     <a href="{% url 'log-create-machine' machine.slug %}"
        class="btn btn--secondary btn--sm"
        title="Log maintenance work">
-      <i class="fa-solid fa-screwdriver-wrench"></i>
+      {% icon "screwdriver-wrench" %}
       <span class="machine-card__btn-text--short">Log</span>
       <span class="machine-card__btn-text--long">Log Work</span>
     </a>
@@ -36,9 +36,7 @@
   {% if machine.latest_open_report %}
     <a href="{% url 'problem-report-detail' machine.latest_open_report.0.pk %}"
        class="machine-card__problem">
-      <span class="snippet-label text-problem">
-        <i class="fa-solid fa-bug"></i>Problem:
-      </span>
+      <span class="snippet-label text-problem">{% icon "bug" %}Problem:</span>
       <span class="snippet-text">{{ machine.latest_open_report.0|problem_report_summary }}</span>
     </a>
   {% endif %}

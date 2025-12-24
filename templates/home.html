@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load core_extras %}
 {% block title %}Home · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="flex stack-column stack-tight">
@@ -20,7 +21,7 @@
         <p class="text-muted space-above-sm">During beta you can register yourself.</p>
         <div class="flex stack-tight space-above-sm">
           <a href="{% url 'self-register' %}" class="btn btn--log">
-            <i class="fa-solid fa-user-plus meta"></i>
+            {% icon "user-plus" class="meta" %}
             Register
           </a>
         </div>
@@ -35,7 +36,7 @@
            class="btn btn--secondary"
            target="_blank"
            rel="noopener">
-          <i class="fa-brands fa-discord meta"></i>
+          {% icon "discord" style="brands" class="meta" %}
           Post to Discord
         </a>
         or
@@ -43,7 +44,7 @@
            class="btn btn--secondary"
            target="_blank"
            rel="noopener">
-          <i class="fa-brands fa-github meta"></i>
+          {% icon "github" style="brands" class="meta" %}
           Open a GitHub Issue
         </a>
         <em>GitHub requires an account</em>

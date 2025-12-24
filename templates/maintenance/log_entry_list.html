@@ -3,7 +3,7 @@
 {% block list_title %}Logs{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'log-create-global' %}" class="btn btn--log">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     New Log
   </a>
 {% endblock %}
@@ -22,7 +22,7 @@
 {% endblock %}
 {% block sidebar_actions %}
   <a href="{% url 'log-create-global' %}" class="btn btn--log btn--full">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     New Log Entry
   </a>
 {% endblock %}

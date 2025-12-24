@@ -26,9 +26,7 @@
     {% with latest_update=entry.prefetched_updates.0 %}
       <a href="{% url 'part-request-update-detail' latest_update.pk %}"
          class="timeline__snippet-link">
-        <span class="snippet-label text-log">
-          <i class="fa-solid fa-comment space-right-xs"></i>Latest:
-        </span>
+        <span class="snippet-label text-log">{% icon "comment" class="space-right-xs" %}Latest:</span>
         <span class="snippet-text">{{ latest_update.text|truncatewords:15 }}</span>
       </a>
     {% endwith %}

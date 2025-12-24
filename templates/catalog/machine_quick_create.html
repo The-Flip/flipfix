@@ -7,7 +7,7 @@
 {% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-    <i class="fa-solid fa-arrow-left meta"></i>
+    {% icon "arrow-left" class="meta" %}
     Back to Machines
   </a>
 {% endblock %}
@@ -18,7 +18,7 @@
 {% sidebar_section %}
 <a href="{% url 'maintainer-machine-list' %}"
    class="btn btn--secondary btn--full">
-  <i class="fa-solid fa-arrow-left meta"></i>
+  {% icon "arrow-left" class="meta" %}
   Back to Machines
 </a>
 {% endsidebar_section %}
@@ -38,11 +38,11 @@
       </fieldset>
       <div class="form-actions">
         <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-          <i class="fa-solid fa-circle-xmark meta"></i>
+          {% icon "circle-xmark" class="meta" %}
           Cancel
         </a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-plus meta"></i>
+          {% icon "plus" class="meta" %}
           Create Machine
         </button>
       </div>

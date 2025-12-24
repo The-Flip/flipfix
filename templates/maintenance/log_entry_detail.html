@@ -5,11 +5,11 @@
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
   <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}">{{ entry.machine.short_display_name }}</a>
   {% if entry.problem_report %}
-    <a href="{% url 'problem-report-detail' entry.problem_report.pk %}"><i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span> #{{ entry.problem_report.pk }}</a>
+    <a href="{% url 'problem-report-detail' entry.problem_report.pk %}">{% icon "bug" label="Problem" %} #{{ entry.problem_report.pk }}</a>
   {% else %}
     <a href="{% url 'log-machine' entry.machine.slug %}">Logs</a>
   {% endif %}
-  <span>Log Entry <i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i></span>
+  <span>Log Entry {% icon "screwdriver-wrench" %}</span>
 {% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=entry.get_admin_history_url %}

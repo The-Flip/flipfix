@@ -24,9 +24,7 @@
     {% with latest_log=entry.prefetched_log_entries.0 %}
       <a href="{% url 'log-detail' latest_log.pk %}"
          class="timeline__snippet-link">
-        <span class="snippet-label text-log">
-          <i class="fa-solid fa-screwdriver-wrench"></i>Latest:
-        </span>
+        <span class="snippet-label text-log">{% icon "screwdriver-wrench" %}Latest:</span>
         <span class="snippet-text">{{ latest_log.text|truncatewords:15 }}</span>
       </a>
     {% endwith %}

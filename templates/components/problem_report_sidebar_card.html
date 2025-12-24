@@ -4,7 +4,7 @@
   <a href="{% url 'problem-report-detail' problem_report.pk %}"
      class="sidebar-card sidebar-card--problem">
     <div class="sidebar-card__header sidebar-card__header--problem">
-      <i class="fa-solid fa-bug"></i>
+      {% icon "bug" %}
       <span>#{{ problem_report.pk }}</span>
     </div>
     <p class="sidebar-card__text">{{ problem_report|problem_report_summary }}</p>
@@ -13,7 +13,7 @@
 {% else %}
   <div class="sidebar-card sidebar-card--neutral">
     <div class="sidebar-card__header text-muted">
-      <i class="fa-solid fa-bug"></i>
+      {% icon "bug" %}
       <span>None</span>
     </div>
     <p class="sidebar-card__meta">Not linked to a problem report</p>

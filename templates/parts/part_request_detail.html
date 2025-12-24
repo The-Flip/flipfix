@@ -3,13 +3,11 @@
 {% block title %}Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'part-request-list' %}">Parts</a>
-  <span><i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}</span>
+  <span>{% icon "box-open" %} #{{ part_request.pk }}</span>
 {% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Parts Request" %}
-  <div class="sidebar__title">
-    <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}
-  </div>
+  <div class="sidebar__title">{% icon "box-open" %} #{{ part_request.pk }}</div>
   <div class="flex flex-wrap stack-tight space-above-sm">
     <div class="dropdown"
          data-update-url="{% url 'part-request-status-update' part_request.pk %}">
@@ -20,7 +18,7 @@
               aria-expanded="false"
               onclick="toggleDropdown(this)">
         <span class="status-label">{{ part_request.get_status_display }}</span>
-        <i class="fa-solid fa-caret-down meta"></i>
+        {% icon "caret-down" class="meta" %}
       </button>
       <div class="dropdown__menu dropdown__menu--left hidden">
         {% for value, label in part_request.Status.choices %}
@@ -54,7 +52,7 @@
       <h3 class="section-header__title">Updates</h3>
       <a href="{% url 'part-request-update-create' part_request.pk %}"
          class="btn btn--log btn--sm">
-        <i class="fa-solid fa-plus meta"></i>
+        {% icon "plus" class="meta" %}
         Add Update
       </a>
     </div>

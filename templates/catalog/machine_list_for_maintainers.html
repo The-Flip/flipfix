@@ -4,7 +4,7 @@
 {% block mobile_actions %}
   {% if user.is_superuser %}
     <a href="{% url 'machine-quick-create' %}" class="btn btn--secondary">
-      <i class="fa-solid fa-plus meta"></i>
+      {% icon "plus" class="meta" %}
       New Machine
     </a>
   {% endif %}
@@ -17,7 +17,7 @@
 {% if user.is_superuser %}
   <a href="{% url 'machine-quick-create' %}"
      class="btn btn--secondary btn--full">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     New Machine
   </a>
 {% endif %}
@@ -31,7 +31,7 @@
              id="machine-search"
              placeholder="Search machines..."
              class="filter-bar__search-input">
-      <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+      {% icon "magnifying-glass" class="filter-bar__search-icon" %}
     </div>
   </div>
   <!-- MACHINE LIST -->

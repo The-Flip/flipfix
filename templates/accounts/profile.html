@@ -5,7 +5,7 @@
 {% block mobile_actions %}
   <a href="{% url 'password_change' %}"
      class="btn btn--secondary btn--full">
-    <i class="fa-solid fa-key meta"></i>
+    {% icon "key" class="meta" %}
     Change Password
   </a>
 {% endblock %}
@@ -16,7 +16,7 @@
 {% sidebar_section %}
 <a href="{% url 'password_change' %}"
    class="btn btn--secondary btn--full">
-  <i class="fa-solid fa-key meta"></i>
+  {% icon "key" class="meta" %}
   Change Password
 </a>
 {% endsidebar_section %}
@@ -29,11 +29,11 @@
       {% form_fields form %}
       <div class="form-actions">
         <a href="{% url 'home' %}" class="btn btn--secondary">
-          <i class="fa-solid fa-circle-xmark meta"></i>
+          {% icon "circle-xmark" class="meta" %}
           Cancel
         </a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-floppy-disk meta"></i>
+          {% icon "floppy-disk" class="meta" %}
           Save Changes
         </button>
       </div>

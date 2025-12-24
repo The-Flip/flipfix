@@ -15,9 +15,7 @@
   {% if entry.problem_report %}
     <a href="{% url 'problem-report-detail' entry.problem_report.pk %}"
        class="timeline__snippet-link">
-      <span class="snippet-label text-problem">
-        <i class="fa-solid fa-bug"></i>Problem:
-      </span>
+      <span class="snippet-label text-problem">{% icon "bug" %}Problem:</span>
       <span class="snippet-text">{{ entry.problem_report|problem_report_summary }}</span>
     </a>
   {% endif %}

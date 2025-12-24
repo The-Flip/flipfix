@@ -4,14 +4,12 @@
 {% block breadcrumbs %}
   <a href="{% url 'part-request-list' %}">Parts</a>
   <a href="{% url 'part-request-detail' part_request.pk %}">#{{ part_request.pk }}</a>
-  <span><i class="fa-solid fa-comment"></i> Update</span>
+  <span>{% icon "comment" %} Update</span>
 {% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Parts Request" %}
   <a href="{% url 'part-request-detail' part_request.pk %}"
-     class="sidebar__title sidebar__link">
-    <i class="fa-solid fa-box-open"></i> #{{ part_request.pk }}
-  </a>
+     class="sidebar__title sidebar__link">{% icon "box-open" %} #{{ part_request.pk }}</a>
   <div class="flex flex-wrap stack-tight space-above-sm">
     <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
   </div>

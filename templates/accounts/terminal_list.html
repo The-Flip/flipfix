@@ -4,7 +4,7 @@
 {% block breadcrumbs %}<span>Shared Terminal Accounts</span>{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'terminal-add' %}" class="btn btn--secondary">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     Add Terminal
   </a>
 {% endblock %}
@@ -17,7 +17,7 @@
 {% endsidebar_section %}
 {% sidebar_section %}
 <a href="{% url 'terminal-add' %}" class="btn btn--secondary btn--full">
-  <i class="fa-solid fa-plus meta"></i>
+  {% icon "plus" class="meta" %}
   Add Terminal
 </a>
 {% endsidebar_section %}

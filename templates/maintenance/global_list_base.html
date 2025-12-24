@@ -22,7 +22,7 @@
                placeholder="Search..."
                value="{{ search_form.q.value|default:'' }}"
                class="filter-bar__search-input">
-        <i class="fa-solid fa-magnifying-glass filter-bar__search-icon"></i>
+        {% icon "magnifying-glass" class="filter-bar__search-icon" %}
       </form>
     </div>
   </div>

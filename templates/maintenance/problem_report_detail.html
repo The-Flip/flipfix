@@ -5,14 +5,14 @@
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
   <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
   <a href="{% url 'machine-problem-reports' machine.slug %}">Problems</a>
-  <span><i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span> #{{ report.pk }}</span>
+  <span>{% icon "bug" label="Problem" %} #{{ report.pk }}</span>
 {% endblock %}
 {% block mobile_actions %}
   {% if report.status == report.Status.OPEN %}
     <form method="post">
       {% csrf_token %}
       <button type="submit" class="btn btn--log btn--full">
-        <i class="fa-solid fa-check meta"></i>
+        {% icon "check" class="meta" %}
         Close Problem
       </button>
     </form>
@@ -20,7 +20,7 @@
     <form method="post">
       {% csrf_token %}
       <button type="submit" class="btn btn--report btn--full">
-        <i class="fa-solid fa-rotate-left meta"></i>
+        {% icon "rotate-left" class="meta" %}
         Re-Open Problem
       </button>
     </form>
@@ -29,15 +29,13 @@
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=report.get_admin_history_url %}
   {% sidebar_section label="Problem Report" %}
-  <div class="sidebar__title">
-    <i class="fa-solid fa-bug"></i> #{{ report.pk }}
-  </div>
+  <div class="sidebar__title">{% icon "bug" %} #{{ report.pk }}</div>
   <div class="flex flex-wrap stack-tight space-above-sm">
     <span class="pill {% if report.status == report.Status.OPEN %}pill--status-broken{% else %}pill--status-good{% endif %}">
       {% if report.status == report.Status.OPEN %}
-        <i class="fa-solid fa-circle-exclamation meta"></i>
+        {% icon "circle-exclamation" class="meta" %}
       {% else %}
-        <i class="fa-solid fa-check meta"></i>
+        {% icon "check" class="meta" %}
       {% endif %}
       {{ report.get_status_display }}
     </span>
@@ -55,7 +53,7 @@
   <form method="post">
     {% csrf_token %}
     <button type="submit" class="btn btn--log btn--full">
-      <i class="fa-solid fa-check meta"></i>
+      {% icon "check" class="meta" %}
       Close Problem
     </button>
   </form>
@@ -63,7 +61,7 @@
   <form method="post">
     {% csrf_token %}
     <button type="submit" class="btn btn--report btn--full">
-      <i class="fa-solid fa-rotate-left meta"></i>
+      {% icon "rotate-left" class="meta" %}
       Re-Open Problem
     </button>
   </form>
@@ -81,7 +79,7 @@
       <h3 class="section-header__title">Log Entries</h3>
       <a href="{% url 'log-create-problem-report' report.pk %}"
          class="btn btn--log btn--sm">
-        <i class="fa-solid fa-plus meta"></i>
+        {% icon "plus" class="meta" %}
         Add Log
       </a>
     </div>

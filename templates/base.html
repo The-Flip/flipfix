@@ -49,27 +49,15 @@
                     class="nav-link dropdown__toggle"
                     aria-haspopup="true"
                     aria-expanded="false"
-                    onclick="toggleDropdown(this)">
-              Admin <i class="fa-solid fa-caret-down meta"></i>
-            </button>
+                    onclick="toggleDropdown(this)">Admin {% icon "caret-down" class="meta" %}</button>
             <div class="dropdown__menu dropdown__menu--left hidden">
-              <a href="{% url 'terminal-list' %}" class="dropdown__item">
-                <i class="fa-solid fa-display space-right-sm"></i> Terminals
-              </a>
+              <a href="{% url 'terminal-list' %}" class="dropdown__item">{% icon "display" class="space-right-sm" %} Terminals</a>
               <a href="{% url 'admin:catalog_location_changelist' %}"
-                 class="dropdown__item">
-                <i class="fa-solid fa-location-dot space-right-sm"></i> Locations
-              </a>
+                 class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
               <a href="{% url 'admin:accounts_invitation_add' %}"
-                 class="dropdown__item">
-                <i class="fa-solid fa-user-plus space-right-sm"></i> Users
-              </a>
-              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">
-                <i class="fa-solid fa-qrcode space-right-sm"></i> QR Codes
-              </a>
-              <a href="{% url 'admin:index' %}" class="dropdown__item">
-                <i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin
-              </a>
+                 class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
+              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
+              <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
             </div>
           </div>
         {% endif %}
@@ -79,28 +67,20 @@
         <a href="{% url 'maintainer-machine-list' %}"
            class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' or request.resolver_match.url_name == 'log-machine' or request.resolver_match.url_name == 'machine-problem-reports' %}nav-icon--active{% endif %}"
            aria-label="Machines"
-           title="Machines">
-          <i class="fa-solid fa-list"></i>
-        </a>
+           title="Machines">{% icon "list" %}</a>
         <a href="{% url 'problem-report-list' %}"
            class="nav-icon {% if 'problem' in request.resolver_match.url_name and request.resolver_match.url_name != 'machine-problem-reports' %}nav-icon--active{% endif %}"
            aria-label="Problems"
-           title="Problems">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </a>
+           title="Problems">{% icon "triangle-exclamation" %}</a>
         <a href="{% url 'log-list' %}"
            class="nav-icon {% if 'log' in request.resolver_match.url_name and request.resolver_match.url_name != 'log-machine' %}nav-icon--active{% endif %}"
            aria-label="Logs"
-           title="Logs">
-          <i class="fa-solid fa-screwdriver-wrench"></i>
-        </a>
+           title="Logs">{% icon "screwdriver-wrench" %}</a>
         {% if config.PARTS_ENABLED %}
           <a href="{% url 'part-request-list' %}"
              class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
              aria-label="Parts"
-             title="Parts">
-            <i class="fa-solid fa-box-open"></i>
-          </a>
+             title="Parts">{% icon "box-open" %}</a>
         {% endif %}
         {% if user.is_superuser %}
           <div class="dropdown">
@@ -110,27 +90,15 @@
                     aria-expanded="false"
                     aria-label="Admin"
                     title="Admin"
-                    onclick="toggleDropdown(this)">
-              <i class="fa-solid fa-users"></i>
-            </button>
+                    onclick="toggleDropdown(this)">{% icon "users" %}</button>
             <div class="dropdown__menu hidden">
-              <a href="{% url 'terminal-list' %}" class="dropdown__item">
-                <i class="fa-solid fa-display space-right-sm"></i> Terminals
-              </a>
+              <a href="{% url 'terminal-list' %}" class="dropdown__item">{% icon "display" class="space-right-sm" %} Terminals</a>
               <a href="{% url 'admin:catalog_location_changelist' %}"
-                 class="dropdown__item">
-                <i class="fa-solid fa-location-dot space-right-sm"></i> Locations
-              </a>
+                 class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
               <a href="{% url 'admin:accounts_invitation_add' %}"
-                 class="dropdown__item">
-                <i class="fa-solid fa-user-plus space-right-sm"></i> Users
-              </a>
-              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">
-                <i class="fa-solid fa-qrcode space-right-sm"></i> QR Codes
-              </a>
-              <a href="{% url 'admin:index' %}" class="dropdown__item">
-                <i class="fa-solid fa-toolbox space-right-sm"></i> Django Admin
-              </a>
+                 class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
+              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
+              <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
             </div>
           </div>
         {% endif %}
@@ -153,13 +121,11 @@
           </button>
           <div class="dropdown__menu dropdown__menu--narrow hidden">
             <p class="body-small text-muted space-below-sm">{{ user.username }}</p>
-            <a href="{% url 'profile' %}" class="dropdown__item">
-              <i class="fa-solid fa-gear space-right-sm"></i> Account
-            </a>
+            <a href="{% url 'profile' %}" class="dropdown__item">{% icon "gear" class="space-right-sm" %} Account</a>
             <form method="post" action="{% url 'logout' %}">
               {% csrf_token %}
               <button type="submit" class="dropdown__item dropdown__item--danger">
-                <i class="fa-solid fa-right-from-bracket space-right-sm"></i> Logout
+                {% icon "right-from-bracket" class="space-right-sm" %} Logout
               </button>
             </form>
           </div>
@@ -177,7 +143,6 @@
       {% block content %}{% endblock %}
     </main>
     <script src="{% static 'core/core.js' %}" defer></script>
-    {% block extra_scripts %}
-    {% endblock %}
+    {% block extra_scripts %}{% endblock %}
   </body>
 </html>

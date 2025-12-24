@@ -3,7 +3,7 @@
 {% block list_title %}Problem Reports{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'problem-report-create' %}" class="btn btn--report">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     New Report
   </a>
 {% endblock %}
@@ -14,7 +14,7 @@
 {% block sidebar_actions %}
   <a href="{% url 'problem-report-create' %}"
      class="btn btn--report btn--full">
-    <i class="fa-solid fa-plus meta"></i>
+    {% icon "plus" class="meta" %}
     New Problem Report
   </a>
 {% endblock %}

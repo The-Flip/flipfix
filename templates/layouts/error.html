@@ -1,11 +1,12 @@
 {% extends "layouts/minimal_centered.html" %}
+{% load core_extras %}
 {% block title %}
   {% block error_title %}Error{% endblock %}
   · The Flip
 {% endblock %}
 {% block centered_content %}
   <div class="text-center">
-    <i class="fa-solid fa-triangle-exclamation fa-3x text-muted"></i>
+    {% icon "triangle-exclamation" class="fa-3x text-muted" %}
     <h1 class="space-above-md">
       {% block error_heading %}Error{% endblock %}
     </h1>

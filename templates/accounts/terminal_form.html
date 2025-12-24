@@ -24,7 +24,7 @@
       <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn--danger btn--full">
-          <i class="fa-solid fa-ban meta"></i>
+          {% icon "ban" class="meta" %}
           Deactivate
         </button>
       </form>
@@ -32,7 +32,7 @@
       <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn--success btn--full">
-          <i class="fa-solid fa-rotate-left meta"></i>
+          {% icon "rotate-left" class="meta" %}
           Reactivate
         </button>
       </form>
@@ -53,7 +53,7 @@
     <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
       {% csrf_token %}
       <button type="submit" class="btn btn--danger btn--full">
-        <i class="fa-solid fa-ban meta"></i>
+        {% icon "ban" class="meta" %}
         Deactivate
       </button>
     </form>
@@ -61,7 +61,7 @@
     <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
       {% csrf_token %}
       <button type="submit" class="btn btn--success btn--full">
-        <i class="fa-solid fa-rotate-left meta"></i>
+        {% icon "rotate-left" class="meta" %}
         Reactivate
       </button>
     </form>
@@ -77,11 +77,11 @@
       {% form_fields form %}
       <div class="form-actions">
         <a href="{% url 'terminal-list' %}" class="btn btn--secondary">
-          <i class="fa-solid fa-circle-xmark meta"></i>
+          {% icon "circle-xmark" class="meta" %}
           Cancel
         </a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-floppy-disk meta"></i>
+          {% icon "floppy-disk" class="meta" %}
           {% if is_create %}
             Create Terminal
           {% else %}

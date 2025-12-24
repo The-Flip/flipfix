@@ -88,7 +88,7 @@
                  accept="image/*,video/*,.heic,.heif"
                  data-file-input>
           <a href="#" class="file-upload-link" data-file-trigger>
-            <i class="fa-solid fa-paperclip space-right-xs"></i>Add photos and videos
+            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
           </a>
           {% field_errors form.media_file %}
           <!-- Uploaded files preview -->
@@ -100,7 +100,7 @@
         <a href="{% if is_edit %}{% url 'part-request-detail' part_request.pk %}{% else %}{% url 'part-request-list' %}{% endif %}"
            class="btn btn--secondary">Cancel</a>
         <button type="submit" class="btn btn--log">
-          <i class="fa-solid fa-box-open meta"></i>
+          {% icon "box-open" class="meta" %}
           {% if is_edit %}
             Save Changes
           {% else %}
