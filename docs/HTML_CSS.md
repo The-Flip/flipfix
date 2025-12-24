@@ -52,6 +52,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 
 ### Utility Classes
 - `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
+- `.visually-hidden` - Hide visually but keep accessible to screen readers (see [Icon Accessibility](#icon-accessibility))
 - `.text-muted` - Muted text color
 - `.text-center` - Center-align text
 - `.text-xs` - Extra small text
@@ -94,6 +95,20 @@ The site must be optimized for mobile, tablet, and desktop. Breakpoints are defi
 - Do not remove focus outlines without providing explicit `:focus-visible` styles with equal or better visibility.
 - Buttons and links should have hover + active states distinct from focus.
 - Respect `@media (prefers-reduced-motion: reduce)` by disabling transitions.
+
+### Icon Accessibility
+
+Decorative icons (icons with adjacent text labels) must include `aria-hidden="true"` to prevent screen readers from announcing redundant information:
+
+```html
+<button><i class="fa-solid fa-check" aria-hidden="true"></i> Save</button>
+```
+
+For icons that convey meaning without adjacent text, provide screen reader text using the `.visually-hidden` class:
+
+```html
+<span><i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span> #123</span>
+```
 
 
 ## XSS Protection
