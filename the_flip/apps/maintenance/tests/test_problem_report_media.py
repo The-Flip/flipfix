@@ -44,6 +44,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
         self.assertEqual(report.media.count(), 1)
         media = report.media.first()
         self.assertEqual(media.media_type, ProblemReportMedia.MediaType.PHOTO)
+        self.assertEqual(media.transcode_status, "")
 
     def test_create_without_media(self):
         """Problem report can be created without media."""
@@ -69,6 +70,30 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'name="media_file"')
 
+    @patch("the_flip.apps.maintenance.views.problem_reports.enqueue_transcode")
+    def test_form_video_upload_enqueues_transcode(self, mock_enqueue):
+        """Video uploaded via form submission triggers transcoding."""
+        self.client.force_login(self.maintainer_user)
+
+        video_file = SimpleUploadedFile("test.mp4", b"fake video content", content_type="video/mp4")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.create_url,
+                {
+                    "description": "Problem with video",
+                    "media_file": video_file,
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+
+        media = ProblemReportMedia.objects.first()
+        self.assertIsNotNone(media)
+        self.assertEqual(media.media_type, ProblemReportMedia.MediaType.VIDEO)
+        self.assertEqual(media.transcode_status, ProblemReportMedia.TranscodeStatus.PENDING)
+        mock_enqueue.assert_called_once_with(media_id=media.id, model_name="ProblemReportMedia")
+
 
 @tag("views", "ajax", "media")
 class ProblemReportMediaUploadTests(
@@ -84,6 +109,16 @@ class ProblemReportMediaUploadTests(
         )
         self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
 
+    def test_upload_media_requires_auth(self):
+        """Unauthenticated users are redirected to login."""
+        data = {
+            "action": "upload_media",
+            "media_file": create_uploaded_image(),
+        }
+        response = self.client.post(self.detail_url, data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ProblemReportMedia.objects.count(), 0)
+
     def test_upload_media_requires_staff(self):
         """Non-staff users cannot upload media."""
         self.client.force_login(self.regular_user)
@@ -95,6 +130,18 @@ class ProblemReportMediaUploadTests(
         response = self.client.post(self.detail_url, data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(ProblemReportMedia.objects.count(), 0)
+
+    def test_upload_media_missing_file(self):
+        """Missing media_file returns 400."""
+        self.client.force_login(self.maintainer_user)
+
+        data = {
+            "action": "upload_media",
+        }
+        response = self.client.post(self.detail_url, data)
+        self.assertEqual(response.status_code, 400)
+        json_data = response.json()
+        self.assertFalse(json_data["success"])
 
     def test_upload_media_success(self):
         """Staff can upload media via AJAX."""
@@ -168,6 +215,16 @@ class ProblemReportMediaDeleteTests(
             file=SimpleUploadedFile("test.jpg", img_file.read(), content_type="image/jpeg"),
         )
 
+    def test_delete_media_requires_auth(self):
+        """Unauthenticated users are redirected to login."""
+        data = {
+            "action": "delete_media",
+            "media_id": self.media.id,
+        }
+        response = self.client.post(self.detail_url, data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ProblemReportMedia.objects.count(), 1)
+
     def test_delete_media_requires_staff(self):
         """Non-staff users cannot delete media."""
         self.client.force_login(self.regular_user)
@@ -179,6 +236,18 @@ class ProblemReportMediaDeleteTests(
         response = self.client.post(self.detail_url, data)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(ProblemReportMedia.objects.count(), 1)
+
+    def test_delete_media_missing_id(self):
+        """Missing media_id returns 400."""
+        self.client.force_login(self.maintainer_user)
+
+        data = {
+            "action": "delete_media",
+        }
+        response = self.client.post(self.detail_url, data)
+        self.assertEqual(response.status_code, 400)
+        json_data = response.json()
+        self.assertFalse(json_data["success"])
 
     def test_delete_media_success(self):
         """Staff can delete media via AJAX."""
