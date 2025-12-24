@@ -5,7 +5,7 @@
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive no-print">
     <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+    <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
     <span>QR Code</span>
   </nav>
   <!-- TWO COLUMN LAYOUT -->

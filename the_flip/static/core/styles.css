@@ -1945,6 +1945,24 @@ body {
   display: none !important;
 }
 
+/* Visually hidden but accessible to screen readers.
+   Use for text that provides context to assistive technology
+   but would be redundant visually (e.g., icon labels).
+   This "clip pattern" is the standard accessibility technique
+   used by Bootstrap, Tailwind, and recommended by WebAIM. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Text sizes */
 .text-xs {
   font-size: var(--text-xs);

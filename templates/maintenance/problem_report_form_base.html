@@ -10,7 +10,7 @@
     {% block breadcrumbs %}
       {% if machine %}
         <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-        <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.display_name }}</a>
+        <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
         <a href="{% url 'machine-problem-reports' machine.slug %}">Problems</a>
       {% else %}
         <a href="{% url 'problem-report-list' %}">Problem Reports</a>

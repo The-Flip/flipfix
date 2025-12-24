@@ -3,7 +3,7 @@
 {% block title %}Edit {{ object.display_name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-  <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.display_name }}</a>
+  <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.short_display_name }}</a>
   <span>Edit</span>
 {% endblock %}
 {% block mobile_actions %}

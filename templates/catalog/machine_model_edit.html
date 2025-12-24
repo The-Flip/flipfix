@@ -4,7 +4,7 @@
 {% block breadcrumbs %}
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
   {% if machine_instance %}
-    <a href="{% url 'maintainer-machine-detail' machine_instance.slug %}">{{ machine_instance.display_name }}</a>
+    <a href="{% url 'maintainer-machine-detail' machine_instance.slug %}">{{ machine_instance.short_display_name }}</a>
     <a href="{% url 'machine-edit' machine_instance.slug %}">Edit</a>
   {% endif %}
   <span>Model</span>
