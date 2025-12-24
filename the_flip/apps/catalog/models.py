@@ -203,7 +203,15 @@ class MachineInstance(TimeStampedMixin):
         unique=True,
         null=True,
         verbose_name="Name Override",
-        help_text="Give this machine a name other than the machine's model name",
+        help_text="Custom name instead of model name (e.g., 'Eight Ball Deluxe Limited Edition #2')",
+    )
+    short_name = models.CharField(
+        max_length=30,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name="Short Name",
+        help_text="Short name for notifications and mobile (e.g., 'Eight Ball 2')",
     )
     serial_number = models.CharField(
         max_length=100,
@@ -265,6 +273,11 @@ class MachineInstance(TimeStampedMixin):
         return self.name_override or self.model.name
 
     @property
+    def short_display_name(self) -> str:
+        """Return short_name if set, otherwise display_name."""
+        return self.short_name or self.display_name
+
+    @property
     def ownership_display(self) -> str:
         """Return ownership credit or default collection name."""
         return self.ownership_credit or "The Flip Collection"
@@ -278,7 +291,7 @@ class MachineInstance(TimeStampedMixin):
         return reverse("admin:catalog_machineinstance_history", args=[self.pk])
 
     def clean(self):
-        """Validate name_override uniqueness with friendly error message."""
+        """Validate name_override and short_name uniqueness with friendly error messages."""
         super().clean()
         if self.name_override:
             self.name_override = self.name_override.strip()
@@ -291,10 +304,25 @@ class MachineInstance(TimeStampedMixin):
             ):
                 raise ValidationError({"name_override": "A machine with this name already exists."})
 
+        if self.short_name:
+            self.short_name = self.short_name.strip()
+            if not self.short_name:
+                self.short_name = None
+            elif (
+                MachineInstance.objects.filter(short_name=self.short_name)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
+                raise ValidationError(
+                    {"short_name": "A machine with this short name already exists."}
+                )
+
     def save(self, *args, **kwargs):
-        # Normalize empty/whitespace-only name_override to NULL for unique constraint
+        # Normalize empty/whitespace-only name_override and short_name to NULL for unique constraint
         if self.name_override is not None:
             self.name_override = self.name_override.strip() or None
+        if self.short_name is not None:
+            self.short_name = self.short_name.strip() or None
         if not self.slug:
             base_slug = slugify(self.display_name) or "machine"
             slug = base_slug
