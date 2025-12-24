@@ -676,6 +676,68 @@ class MachineInstanceModelTests(TestCase):
         self.assertEqual(instance_with_override.display_name, "Custom Name")
         self.assertEqual(instance_without_override.display_name, "Test Model")
 
+    # name_override uniqueness tests
+
+    def test_name_override_duplicate_raises_validation_error(self):
+        """Duplicate name_override should raise ValidationError from clean()."""
+        from django.core.exceptions import ValidationError
+
+        MachineInstance.objects.create(model=self.model, name_override="Duplicate Name")
+        duplicate = MachineInstance(model=self.model, name_override="Duplicate Name")
+
+        with self.assertRaises(ValidationError) as context:
+            duplicate.full_clean()
+
+        self.assertIn("name_override", context.exception.message_dict)
+        self.assertEqual(
+            context.exception.message_dict["name_override"],
+            ["A machine with this name already exists."],
+        )
+
+    def test_name_override_empty_string_converted_to_null(self):
+        """Empty string name_override should be converted to NULL on save."""
+        instance = MachineInstance.objects.create(model=self.model, name_override="")
+
+        # Refresh from database to verify
+        instance.refresh_from_db()
+        self.assertIsNone(instance.name_override)
+
+    def test_name_override_whitespace_only_converted_to_null_via_clean(self):
+        """Whitespace-only name_override should be converted to NULL via clean()."""
+        instance = MachineInstance(model=self.model, name_override="   ")
+        instance.full_clean()
+
+        self.assertIsNone(instance.name_override)
+
+    def test_name_override_whitespace_only_converted_to_null_via_save(self):
+        """Whitespace-only name_override should be converted to NULL on save (without clean)."""
+        # This tests programmatic saves that bypass full_clean()
+        instance = MachineInstance.objects.create(model=self.model, name_override="   ")
+
+        instance.refresh_from_db()
+        self.assertIsNone(instance.name_override)
+
+    def test_name_override_null_allows_multiple_machines(self):
+        """Multiple machines with NULL name_override should be allowed."""
+        # This tests that the unique constraint doesn't conflict on NULLs
+        instance1 = MachineInstance.objects.create(model=self.model, name_override=None)
+        instance2 = MachineInstance.objects.create(model=self.model, name_override=None)
+        instance3 = MachineInstance.objects.create(model=self.model, name_override="")
+
+        # All should exist without error
+        self.assertEqual(MachineInstance.objects.count(), 3)
+        self.assertIsNone(instance1.name_override)
+        self.assertIsNone(instance2.name_override)
+        instance3.refresh_from_db()
+        self.assertIsNone(instance3.name_override)
+
+    def test_name_override_stripped_on_clean(self):
+        """name_override should be stripped of leading/trailing whitespace."""
+        instance = MachineInstance(model=self.model, name_override="  Padded Name  ")
+        instance.full_clean()
+
+        self.assertEqual(instance.name_override, "Padded Name")
+
     def test_slug_generation_on_create(self):
         """Should generate a slug from the display_name."""
         instance = MachineInstance.objects.create(model=self.model)

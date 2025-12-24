@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.urls import reverse
@@ -199,6 +200,8 @@ class MachineInstance(TimeStampedMixin):
     name_override = models.CharField(
         max_length=200,
         blank=True,
+        unique=True,
+        null=True,
         verbose_name="Name Override",
         help_text="Give this machine a name other than the machine's model name",
     )
@@ -274,7 +277,24 @@ class MachineInstance(TimeStampedMixin):
         """Return URL to this instance's Django admin change history."""
         return reverse("admin:catalog_machineinstance_history", args=[self.pk])
 
+    def clean(self):
+        """Validate name_override uniqueness with friendly error message."""
+        super().clean()
+        if self.name_override:
+            self.name_override = self.name_override.strip()
+            if not self.name_override:
+                self.name_override = None
+            elif (
+                MachineInstance.objects.filter(name_override=self.name_override)
+                .exclude(pk=self.pk)
+                .exists()
+            ):
+                raise ValidationError({"name_override": "A machine with this name already exists."})
+
     def save(self, *args, **kwargs):
+        # Normalize empty/whitespace-only name_override to NULL for unique constraint
+        if self.name_override is not None:
+            self.name_override = self.name_override.strip() or None
         if not self.slug:
             base_slug = slugify(self.display_name) or "machine"
             slug = base_slug
