@@ -49,7 +49,9 @@ python manage.py test --exclude-tag=integration  # Skip slow tests
 2. Add `@tag` decorators for selective execution
 3. Use factory functions instead of manual object creation
 4. Keep tests independent — each test sets up its own data
-5. Use descriptive test names AND one-line docstrings; docstrings clarify intent and appear in test failure output
+5. Use descriptive test names with docstrings:
+   - **One-line docstrings** for straightforward tests: `"""Staff can upload media."""`
+   - **Multi-line docstrings** for regression tests or tests needing context to explain *why* they exist
 
 For mocking patterns (subprocess, HTTP, settings, time), see `maintenance/tests/test_tasks.py`.
 
@@ -117,7 +119,7 @@ Mixins provide reusable test fixtures and behaviors.
 | `TestDataMixin` | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser` |
 | `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise. |
 | `SharedAccountTestMixin` | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer` |
-| `TemporaryMediaMixin` | Media upload tests. Isolates MEDIA_ROOT per test. |
+| `TemporaryMediaMixin` | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations. |
 
 #### Put Mixins Before TestCase
 When combining multiple mixins, **order matters** due to Python's MRO. Always put mixins before `TestCase`:
@@ -139,4 +141,15 @@ import secrets
 
 def setUp(self):
     self.test_token = secrets.token_hex(16)
+```
+
+## Testing on_commit Callbacks
+
+Code that uses `transaction.on_commit()` (like video transcoding enqueue) won't execute callbacks during tests because `TestCase` wraps each test in a transaction that never commits. Use `captureOnCommitCallbacks`:
+
+```python
+with self.captureOnCommitCallbacks(execute=True):
+    response = self.client.post(url, data)
+# Callbacks have now executed, can assert on their side effects
+mock_enqueue.assert_called_once_with(media_id=media.id, model_name="LogEntryMedia")
 ```
