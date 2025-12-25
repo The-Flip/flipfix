@@ -278,7 +278,41 @@ class MachineCreateModelExistsViewTests(AccessControlTestCase):
         # Should stay on form page with error
         self.assertEqual(response.status_code, 200)
         self.assertIn("instance_name", response.context["form"].errors)
-        self.assertContains(response, "same as the model name")
+        self.assertContains(response, "matches an existing model name")
+
+    def test_validation_error_name_matches_different_model(self):
+        """Should reject instance name that matches a DIFFERENT model's name.
+
+        Edge case: Model "Godzilla" and Model "Godzilla (Premium)" both exist.
+        User creates instance of "Godzilla (Premium)" and names it "Godzilla".
+        This would create two machines with display_name "Godzilla".
+        """
+        # Create another model with a different name
+        other_model = create_machine_model(
+            name="Other Model",
+            manufacturer="Bally",
+            year=1980,
+            era=MachineModel.Era.EM,
+        )
+
+        self.client.force_login(self.maintainer_user)
+
+        # Try to name our instance after the other model
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": "Other Model"},  # Matches a different model's name
+        )
+
+        # Should stay on form page with error
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("instance_name", response.context["form"].errors)
+        self.assertContains(response, "matches an existing model name")
+
+        # Verify no instance was created
+        self.assertFalse(MachineInstance.objects.filter(name_override="Other Model").exists())
+
+        # Cleanup
+        other_model.delete()
 
     def test_validation_error_duplicate_name_override(self):
         """Should reject instance name that matches an existing machine's name."""

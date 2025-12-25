@@ -150,13 +150,15 @@ class MachineCreateModelExistsForm(StyledFormMixin, forms.Form):
         self.fields["instance_name"].widget.attrs["placeholder"] = f"e.g., {suggested_name}"
 
     def clean_instance_name(self):
-        """Validate the instance name is unique and not the same as the model name."""
+        """Validate the instance name is unique and won't create duplicate display names."""
         name = self.cleaned_data["instance_name"].strip()
 
-        # Check if name matches the model name (would create duplicate display_name)
-        if self.model_name and name.lower() == self.model_name.lower():
+        # Check if name matches any model name (would create duplicate display_name)
+        # This catches both the current model and other models (e.g., naming a
+        # "Godzilla (Premium)" instance as "Godzilla" when a "Godzilla" model exists)
+        if MachineModel.objects.filter(name__iexact=name).exists():
             raise ValidationError(
-                f"This name is the same as the model name. Please use a unique name "
+                "This name matches an existing model name. Please use a different name "
                 f"like '{self.model_name} #2' to distinguish this machine."
             )
 
