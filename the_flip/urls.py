@@ -18,12 +18,14 @@ from the_flip.apps.accounts.views import (
 )
 from the_flip.apps.catalog.views import (
     MachineActivityPartialView,
+    MachineCreateLandingView,
+    MachineCreateModelDoesNotExistView,
+    MachineCreateModelExistsView,
     MachineDetailViewForMaintainers,
     MachineDetailViewForPublic,
     MachineListView,
     MachineListViewForPublic,
     MachineModelUpdateView,
-    MachineQuickCreateView,
     MachineUpdateView,
 )
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
@@ -185,8 +187,18 @@ urlpatterns = [
         "machines/", MachineListView.as_view(), name="maintainer-machine-list"
     ),  # List all machines
     path(
-        "machines/new/", MachineQuickCreateView.as_view(), name="machine-quick-create"
-    ),  # Quick create machine
+        "machines/new/", MachineCreateLandingView.as_view(), name="machine-create-landing"
+    ),  # Landing page: select model
+    path(
+        "machines/new/model-does-not-exist/",
+        MachineCreateModelDoesNotExistView.as_view(),
+        name="machine-create-model-does-not-exist",
+    ),  # Create new model + instance
+    path(
+        "machines/new/<slug:model_slug>/",
+        MachineCreateModelExistsView.as_view(),
+        name="machine-create-model-exists",
+    ),  # Add instance of existing model
     path(
         "machines/<slug:slug>/",
         MachineDetailViewForMaintainers.as_view(),

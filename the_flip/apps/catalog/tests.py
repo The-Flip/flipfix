@@ -71,57 +71,268 @@ class MaintainerMachineViewsAccessTests(AccessControlTestCase):
 
 
 @tag("views")
-class MachineQuickCreateViewTests(AccessControlTestCase):
-    """Tests for the machine quick create view."""
+class MachineCreateLandingViewTests(AccessControlTestCase):
+    """Tests for the machine create landing page (model selection)."""
 
     def setUp(self):
-        """Set up test data for quick create view tests."""
-        # Create an existing machine model for testing instance creation
+        """Set up test data for landing view tests."""
         self.existing_model = create_machine_model(
             name="Existing Machine",
             manufacturer="Williams",
             year=1995,
             era=MachineModel.Era.SS,
         )
-
-        # Create maintainer user
         self.maintainer_user = create_maintainer_user()
-
-        # Create regular user (non-staff)
         self.regular_user = create_user()
+        self.landing_url = reverse("machine-create-landing")
 
-        self.create_url = reverse("machine-quick-create")
+    def test_landing_view_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
 
-    def test_create_view_requires_authentication(self):
+    def test_landing_view_requires_maintainer_access(self):
+        """Non-maintainer users should be denied access (403)."""
+        self.client.force_login(self.regular_user)
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_landing_view_accessible_to_maintainer(self):
+        """Maintainer users should be able to access the landing page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/machine_create_landing.html")
+
+    def test_landing_view_shows_existing_models_in_dropdown(self):
+        """Landing page should show existing models in dropdown."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.landing_url)
+
+        self.assertContains(response, "Existing Machine")
+        self.assertContains(response, "Williams")
+
+    def test_landing_view_has_create_new_model_as_default(self):
+        """Landing page should have 'Create a new model' as the default option."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.landing_url)
+
+        self.assertContains(response, "Create a new model")
+        self.assertContains(response, 'value="new"')
+
+    def test_landing_form_redirects_to_new_model(self):
+        """Selecting 'new' should redirect to create new model page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.post(self.landing_url, {"model_slug": "new"})
+
+        self.assertRedirects(response, reverse("machine-create-model-does-not-exist"))
+
+    def test_landing_form_redirects_to_existing_model(self):
+        """Selecting an existing model should redirect to that model's page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.post(self.landing_url, {"model_slug": self.existing_model.slug})
+
+        expected_url = reverse(
+            "machine-create-model-exists", kwargs={"model_slug": self.existing_model.slug}
+        )
+        self.assertRedirects(response, expected_url)
+
+    def test_landing_form_404_for_invalid_slug(self):
+        """Submitting an invalid slug should return 404."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.post(self.landing_url, {"model_slug": "nonexistent"})
+
+        self.assertEqual(response.status_code, 404)
+
+
+@tag("views")
+class MachineCreateModelExistsViewTests(AccessControlTestCase):
+    """Tests for creating an instance of an existing model."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.existing_model = create_machine_model(
+            name="Existing Machine",
+            manufacturer="Williams",
+            year=1995,
+            era=MachineModel.Era.SS,
+        )
+        self.maintainer_user = create_maintainer_user()
+        self.regular_user = create_user()
+        self.create_url = reverse(
+            "machine-create-model-exists", kwargs={"model_slug": self.existing_model.slug}
+        )
+
+    def test_view_requires_authentication(self):
         """Anonymous users should be redirected to login."""
         response = self.client.get(self.create_url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
 
-    def test_create_view_requires_staff_permission(self):
-        """Non-staff users should be denied access (403)."""
+    def test_view_requires_maintainer_access(self):
+        """Non-maintainer users should be denied access (403)."""
         self.client.force_login(self.regular_user)
         response = self.client.get(self.create_url)
         self.assertEqual(response.status_code, 403)
 
-    def test_create_view_accessible_to_staff(self):
-        """Staff users should be able to access the create page."""
+    def test_view_accessible_to_maintainer(self):
+        """Maintainer users should be able to access the page."""
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "catalog/machine_quick_create.html")
+        self.assertTemplateUsed(response, "catalog/machine_create_model_exists.html")
 
-    def test_create_view_shows_existing_models_in_dropdown(self):
-        """Create page should show existing models in dropdown."""
+    def test_view_shows_selected_model(self):
+        """Page should show the selected model name."""
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.create_url)
 
-        # Should contain the existing model in the dropdown
         self.assertContains(response, "Existing Machine")
         self.assertContains(response, "Williams")
 
+    def test_view_404_for_invalid_model_slug(self):
+        """Should return 404 for non-existent model slug."""
+        self.client.force_login(self.maintainer_user)
+        url = reverse("machine-create-model-exists", kwargs={"model_slug": "nonexistent"})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_create_instance_of_existing_model(self):
+        """Should create an instance of the selected model."""
+        self.client.force_login(self.maintainer_user)
+
+        initial_model_count = MachineModel.objects.count()
+        initial_instance_count = MachineInstance.objects.count()
+
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": "Machine #2"},
+        )
+
+        # Should redirect to machine detail page
+        self.assertEqual(response.status_code, 302)
+
+        # Should NOT create new model, only instance
+        self.assertEqual(MachineModel.objects.count(), initial_model_count)
+        self.assertEqual(MachineInstance.objects.count(), initial_instance_count + 1)
+
+        # Verify the instance was created correctly
+        new_instance = MachineInstance.objects.get(name_override="Machine #2")
+        self.assertEqual(new_instance.model, self.existing_model)
+        self.assertEqual(new_instance.operational_status, MachineInstance.OperationalStatus.UNKNOWN)
+        self.assertIsNone(new_instance.location)
+        self.assertEqual(new_instance.created_by, self.maintainer_user)
+        self.assertEqual(new_instance.updated_by, self.maintainer_user)
+
+    def test_validation_error_empty_instance_name(self):
+        """Should require instance_name."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": ""},
+        )
+
+        # Should stay on form page
+        self.assertEqual(response.status_code, 200)
+        # Check that form has errors
+        self.assertTrue(response.context["form"].errors)
+
+    def test_redirect_to_machine_detail(self):
+        """Should redirect to the new machine's detail page."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": "Redirect Test Instance"},
+        )
+
+        new_instance = MachineInstance.objects.get(name_override="Redirect Test Instance")
+        expected_url = reverse("maintainer-machine-detail", kwargs={"slug": new_instance.slug})
+        self.assertRedirects(response, expected_url)
+
+    def test_shows_existing_instances_in_sidebar(self):
+        """Should show existing instances of the model in the sidebar."""
+        # Create an existing instance
+        MachineInstance.objects.create(
+            model=self.existing_model,
+            name_override="First Instance",
+            created_by=self.maintainer_user,
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.create_url)
+
+        self.assertContains(response, "First Instance")
+
+    def test_validation_error_name_same_as_model(self):
+        """Should reject instance name that matches the model name."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": "Existing Machine"},  # Same as model name
+        )
+
+        # Should stay on form page with error
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("instance_name", response.context["form"].errors)
+        self.assertContains(response, "same as the model name")
+
+    def test_validation_error_duplicate_name_override(self):
+        """Should reject instance name that matches an existing machine's name."""
+        # Create an existing instance with a specific name
+        MachineInstance.objects.create(
+            model=self.existing_model,
+            name_override="Already Taken",
+            created_by=self.maintainer_user,
+        )
+
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.create_url,
+            {"instance_name": "Already Taken"},
+        )
+
+        # Should stay on form page with error
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("instance_name", response.context["form"].errors)
+        self.assertContains(response, "already exists")
+
+
+@tag("views")
+class MachineCreateModelDoesNotExistViewTests(AccessControlTestCase):
+    """Tests for creating a new model and instance."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.maintainer_user = create_maintainer_user()
+        self.regular_user = create_user()
+        self.create_url = reverse("machine-create-model-does-not-exist")
+
+    def test_view_requires_authentication(self):
+        """Anonymous users should be redirected to login."""
+        response = self.client.get(self.create_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_view_requires_maintainer_access(self):
+        """Non-maintainer users should be denied access (403)."""
+        self.client.force_login(self.regular_user)
+        response = self.client.get(self.create_url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_view_accessible_to_maintainer(self):
+        """Maintainer users should be able to access the page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.create_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/machine_create_model_does_not_exist.html")
+
     def test_create_new_model_and_instance(self):
-        """Should create both a new model and instance when model_name is provided."""
+        """Should create both a new model and instance."""
         self.client.force_login(self.maintainer_user)
 
         initial_model_count = MachineModel.objects.count()
@@ -130,11 +341,9 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         response = self.client.post(
             self.create_url,
             {
-                "model": "",  # Empty = create new model
-                "model_name": "New Test Machine",
+                "name": "New Test Machine",
                 "manufacturer": "Stern",
                 "year": 2023,
-                "name_override": "",
             },
         )
 
@@ -149,6 +358,7 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         new_model = MachineModel.objects.get(name="New Test Machine")
         self.assertEqual(new_model.manufacturer, "Stern")
         self.assertEqual(new_model.year, 2023)
+        self.assertEqual(new_model.era, "")  # Era is optional, defaults to empty
         self.assertEqual(new_model.created_by, self.maintainer_user)
         self.assertEqual(new_model.updated_by, self.maintainer_user)
 
@@ -166,11 +376,9 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         response = self.client.post(
             self.create_url,
             {
-                "model": "",
-                "model_name": "Minimal Machine",
+                "name": "Minimal Machine",
                 "manufacturer": "",
                 "year": "",
-                "name_override": "",
             },
         )
 
@@ -181,86 +389,40 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         self.assertEqual(new_model.manufacturer, "")
         self.assertIsNone(new_model.year)
 
-    def test_create_instance_of_existing_model(self):
-        """Should create an instance of an existing model with name_override."""
-        self.client.force_login(self.maintainer_user)
-
-        initial_model_count = MachineModel.objects.count()
-        initial_instance_count = MachineInstance.objects.count()
-
-        response = self.client.post(
-            self.create_url,
-            {
-                "model": self.existing_model.pk,
-                "model_name": "",
-                "manufacturer": "",
-                "year": "",
-                "name_override": "Machine #2",
-            },
-        )
-
-        # Should redirect to machine detail page
-        self.assertEqual(response.status_code, 302)
-
-        # Should NOT create new model, only instance
-        self.assertEqual(MachineModel.objects.count(), initial_model_count)
-        self.assertEqual(MachineInstance.objects.count(), initial_instance_count + 1)
-
-        # Verify the instance was created with the existing model
-        new_instance = MachineInstance.objects.get(name_override="Machine #2")
-        self.assertEqual(new_instance.model, self.existing_model)
-        self.assertEqual(new_instance.operational_status, MachineInstance.OperationalStatus.UNKNOWN)
-        self.assertIsNone(new_instance.location)
-
-    def test_validation_error_no_model_or_model_name(self):
-        """Should show validation error if neither model nor model_name provided."""
+    def test_validation_error_empty_name(self):
+        """Should require model name."""
         self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
             {
-                "model": "",
-                "model_name": "",
-                "manufacturer": "",
-                "year": "",
-                "name_override": "",
+                "name": "",
+                "manufacturer": "Stern",
+                "year": 2023,
             },
         )
 
         # Should stay on form page
         self.assertEqual(response.status_code, 200)
+        # Check that form has errors
+        self.assertTrue(response.context["form"].errors)
 
-        # Should show validation error
-        self.assertFormError(
-            response.context["form"],
-            None,
-            "Please either select an existing model or provide a name for a new model.",
-        )
-
-    def test_validation_error_existing_model_without_name_override(self):
-        """Should require name_override when selecting an existing model."""
+    def test_redirect_to_machine_detail(self):
+        """Should redirect to the new machine's detail page."""
         self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
             {
-                "model": self.existing_model.pk,
-                "model_name": "",
-                "manufacturer": "",
-                "year": "",
-                "name_override": "",  # Missing required name_override
+                "name": "Redirect Test Model",
+                "manufacturer": "Test",
+                "year": 2024,
             },
         )
 
-        # Should stay on form page
-        self.assertEqual(response.status_code, 200)
-
-        # Should show validation error
-        self.assertFormError(
-            response.context["form"],
-            None,
-            "When selecting an existing model, you must provide a unique name for this specific machine.",
-        )
+        new_instance = MachineInstance.objects.get(model__name="Redirect Test Model")
+        expected_url = reverse("maintainer-machine-detail", kwargs={"slug": new_instance.slug})
+        self.assertRedirects(response, expected_url)
 
     def test_success_message_displayed(self):
         """Should show success message after creating a machine."""
@@ -269,11 +431,9 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         response = self.client.post(
             self.create_url,
             {
-                "model": "",
-                "model_name": "Success Test Machine",
+                "name": "Success Test Machine",
                 "manufacturer": "Test Mfg",
                 "year": 2024,
-                "name_override": "",
             },
             follow=True,
         )
@@ -282,30 +442,32 @@ class MachineQuickCreateViewTests(AccessControlTestCase):
         messages = list(response.context["messages"])
         self.assertEqual(len(messages), 1)
         self.assertIn("Machine created!", str(messages[0]))
-        self.assertIn("edit the machine", str(messages[0]))
-        self.assertIn("edit the model", str(messages[0]))
 
-    def test_redirect_to_machine_detail(self):
-        """Should redirect to the new machine's detail page after creation."""
+    def test_validation_error_duplicate_model_name(self):
+        """Should reject model name that already exists."""
+        # Create an existing model
+        create_machine_model(
+            name="Already Exists",
+            manufacturer="Williams",
+            year=1990,
+            era=MachineModel.Era.SS,
+        )
+
         self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.create_url,
             {
-                "model": "",
-                "model_name": "Redirect Test",
-                "manufacturer": "Test",
+                "name": "Already Exists",
+                "manufacturer": "Stern",
                 "year": 2024,
-                "name_override": "",
             },
         )
 
-        # Get the created instance
-        new_instance = MachineInstance.objects.get(model__name="Redirect Test")
-        expected_url = reverse("maintainer-machine-detail", kwargs={"slug": new_instance.slug})
-
-        # Should redirect to the instance detail page
-        self.assertRedirects(response, expected_url)
+        # Should stay on form page with error
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("name", response.context["form"].errors)
+        self.assertContains(response, "already exists")
 
 
 @tag("views")

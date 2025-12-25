@@ -3,7 +3,7 @@
 {% block title %}Machines · {{ block.super }}{% endblock %}
 {% block mobile_actions %}
   {% if user.is_superuser %}
-    <a href="{% url 'machine-quick-create' %}" class="btn btn--secondary">
+    <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
       {% icon "plus" class="meta" %}
       New Machine
     </a>
@@ -15,7 +15,7 @@
 {% endsidebar_section %}
 {% sidebar_section %}
 {% if user.is_superuser %}
-  <a href="{% url 'machine-quick-create' %}"
+  <a href="{% url 'machine-create-landing' %}"
      class="btn btn--secondary btn--full">
     {% icon "plus" class="meta" %}
     New Machine

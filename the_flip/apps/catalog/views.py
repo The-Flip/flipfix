@@ -4,17 +4,19 @@ from django.db import transaction
 from django.db.models import Case, CharField, Count, F, Max, Prefetch, Q, Value, When
 from django.db.models.functions import Lower
 from django.http import JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView, UpdateView
 
 from the_flip.apps.catalog.forms import (
+    MachineCreateModelDoesNotExistForm,
+    MachineCreateModelExistsForm,
     MachineInstanceForm,
     MachineModelForm,
-    MachineQuickCreateForm,
 )
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, can_access_maintainer_portal
@@ -405,57 +407,97 @@ class MachineModelUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
         return reverse("machine-model-edit", kwargs={"slug": self.object.slug})
 
 
-class MachineQuickCreateView(CanAccessMaintainerPortalMixin, FormView):
-    """Quick create view for adding a new machine instance and optionally a new model.
+class MachineCreateLandingView(CanAccessMaintainerPortalMixin, View):
+    """Landing page for adding a new machine - select model first."""
 
-    This view provides a streamlined interface for maintainers to quickly add machines
-    to the catalog. It supports two workflows:
-    1. Creating a new model with basic info and then creating an instance
-    2. Creating an instance of an existing model with a unique name override
-    """
+    template_name = "catalog/machine_create_landing.html"
 
-    template_name = "catalog/machine_quick_create.html"
-    form_class = MachineQuickCreateForm
+    def get(self, request):
+        context = {"models": MachineModel.objects.all().order_by("name")}
+        return TemplateResponse(request, self.template_name, context)
+
+    def post(self, request):
+        """Handle form submission - redirect to selected model page."""
+        selected_slug = request.POST.get("model_slug", "")
+
+        if selected_slug == "new":
+            return redirect("machine-create-model-does-not-exist")
+
+        # Validate the slug exists
+        model = get_object_or_404(MachineModel, slug=selected_slug)
+        return redirect("machine-create-model-exists", model_slug=model.slug)
+
+
+class MachineCreateModelExistsView(CanAccessMaintainerPortalMixin, FormView):
+    """Add an instance of a specific machine model."""
+
+    template_name = "catalog/machine_create_model_exists.html"
+    form_class = MachineCreateModelExistsForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.machine_model = get_object_or_404(MachineModel, slug=kwargs["model_slug"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["machine_model"] = self.machine_model
+        context["existing_instances"] = self.machine_model.instances.all()
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["model_name"] = self.machine_model.name
+        kwargs["instance_count"] = self.machine_model.instances.count()
+        return kwargs
 
     def form_valid(self, form):
-        """Create the model (if needed) and instance, then redirect to the detail page."""
+        instance = MachineInstance.objects.create(
+            model=self.machine_model,
+            name_override=form.cleaned_data["instance_name"],
+            operational_status=MachineInstance.OperationalStatus.UNKNOWN,
+            created_by=self.request.user,
+            updated_by=self.request.user,
+        )
+        messages.success(
+            self.request,
+            format_html(
+                'Machine created! You can now <a href="{}">edit the machine</a> or <a href="{}">edit the model</a>.',
+                reverse("machine-edit", kwargs={"slug": instance.slug}),
+                reverse("machine-model-edit", kwargs={"slug": self.machine_model.slug}),
+            ),
+        )
+        return redirect("maintainer-machine-detail", slug=instance.slug)
+
+
+class MachineCreateModelDoesNotExistView(CanAccessMaintainerPortalMixin, FormView):
+    """Create a new machine model and first instance."""
+
+    template_name = "catalog/machine_create_model_does_not_exist.html"
+    form_class = MachineCreateModelDoesNotExistForm
+
+    def form_valid(self, form):
         cleaned_data = form.cleaned_data
-        model = cleaned_data.get("model")
-        model_name = cleaned_data.get("model_name")
-        manufacturer = cleaned_data.get("manufacturer")
-        year = cleaned_data.get("year")
-        name_override = cleaned_data.get("name_override")
-
         with transaction.atomic():
-            # If no existing model selected, create a new one
-            if not model:
-                model = MachineModel.objects.create(
-                    name=model_name,
-                    manufacturer=manufacturer or "",
-                    year=year,
-                    created_by=self.request.user,
-                    updated_by=self.request.user,
-                )
-
-            # Create the machine instance
-            instance = MachineInstance.objects.create(
-                model=model,
-                name_override=name_override or "",
-                operational_status=MachineInstance.OperationalStatus.UNKNOWN,
-                location=None,  # No location set initially
+            model = MachineModel.objects.create(
+                name=cleaned_data["name"],
+                manufacturer=cleaned_data.get("manufacturer") or "",
+                year=cleaned_data.get("year"),
                 created_by=self.request.user,
                 updated_by=self.request.user,
             )
-
-        # Add success message with links
+            instance = MachineInstance.objects.create(
+                model=model,
+                name_override="",  # First instance uses model name
+                operational_status=MachineInstance.OperationalStatus.UNKNOWN,
+                created_by=self.request.user,
+                updated_by=self.request.user,
+            )
         messages.success(
             self.request,
             format_html(
                 'Machine created! You can now <a href="{}">edit the machine</a> and <a href="{}">edit the model</a>.',
                 reverse("machine-edit", kwargs={"slug": instance.slug}),
-                reverse("machine-model-edit", kwargs={"slug": instance.model.slug}),
+                reverse("machine-model-edit", kwargs={"slug": model.slug}),
             ),
         )
-
-        # Redirect to the machine detail page
         return redirect("maintainer-machine-detail", slug=instance.slug)
