@@ -878,6 +878,21 @@ class MachineInstanceModelTests(TestCase):
             ["A machine with this name already exists."],
         )
 
+    def test_name_duplicate_case_insensitive(self):
+        """Name uniqueness should be case-insensitive.
+
+        "Godzilla" and "godzilla" should be treated as the same name.
+        """
+        from django.core.exceptions import ValidationError
+
+        MachineInstance.objects.create(model=self.model, name="Godzilla")
+        duplicate = MachineInstance(model=self.model, name="godzilla")
+
+        with self.assertRaises(ValidationError) as context:
+            duplicate.full_clean()
+
+        self.assertIn("name", context.exception.message_dict)
+
     def test_name_stripped_on_clean(self):
         """name should be stripped of leading/trailing whitespace."""
         instance = MachineInstance(model=self.model, name="  Padded Name  ")

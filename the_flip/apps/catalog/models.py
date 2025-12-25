@@ -293,7 +293,7 @@ class MachineInstance(TimeStampedMixin):
         # After stripping, check if name is empty (whitespace-only input)
         if not self.name:
             raise ValidationError({"name": "This field is required."})
-        if MachineInstance.objects.filter(name=self.name).exclude(pk=self.pk).exists():
+        if MachineInstance.objects.filter(name__iexact=self.name).exclude(pk=self.pk).exists():
             raise ValidationError({"name": "A machine with this name already exists."})
 
         if self.short_name:

@@ -151,7 +151,10 @@ class MachineCreateModelExistsForm(StyledFormMixin, forms.Form):
         """Validate the instance name is unique."""
         name = self.cleaned_data["instance_name"].strip()
 
-        # Check if name matches any existing machine's name
+        if not name:
+            raise ValidationError("This field is required.")
+
+        # Check if name matches any existing machine's name (case-insensitive)
         if MachineInstance.objects.filter(name__iexact=name).exists():
             raise ValidationError("A machine with this name already exists.")
 
