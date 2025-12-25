@@ -56,7 +56,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
-        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.name)
         self.assertContains(response, "Stuck Ball")
         self.assertContains(response, "Ball is stuck in the upper playfield")
         self.assertContains(response, "by John Doe")

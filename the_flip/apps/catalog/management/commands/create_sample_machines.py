@@ -70,9 +70,11 @@ class Command(BaseCommand):
                     self.stdout.write(f"Created location: {location_name}")
             instance_data["location"] = locations_map.get(location_name)
 
+            # Default name to model name if not specified
+            instance_data.setdefault("name", model.name)
             instance = MachineInstance(model=model, **instance_data)
             instance._skip_auto_log = True  # Don't create log entries for sample data
             instance.save()
-            self.stdout.write(f"Created instance: {instance.display_name}")
+            self.stdout.write(f"Created instance: {instance.name}")
 
         self.stdout.write(self.style.SUCCESS("Sample machine data created."))

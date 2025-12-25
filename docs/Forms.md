@@ -38,7 +38,7 @@ Import from `the_flip.apps.core.forms`. Place `StyledFormMixin` first in the inh
 class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = MachineInstance
-        fields = ["name_override", "serial_number"]
+        fields = ["name", "serial_number"]
 
 # Form: Custom creation flow (view handles object creation)
 class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
@@ -166,7 +166,8 @@ Use HTML5 `required` attribute on inputs for browser validation.
 | `.form-input` | Text inputs, selects, and textareas |
 | `.form-input--width-4` | Narrow width (4em) for single-digit inputs |
 | `.form-input--width-6` | Narrow width (6em) for small numbers |
-| `.form-input--width-8` | Narrow width (8em) for years |
+| `.form-input--width-8` | Narrow width (8em) for IDs |
+| `.form-input--width-10` | Narrow width (10em) for years |
 | `.form-input--width-20` | Medium width (20em) for short text |
 | `.form-textarea` | Multi-line text input (extends `.form-input`) |
 | `.form-hint` | Help text below inputs |

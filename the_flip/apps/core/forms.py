@@ -56,8 +56,12 @@ class StyledFormMixin:
             for widget_type, css_class in WIDGET_CSS_CLASSES.items():
                 if isinstance(widget, widget_type):
                     existing = widget.attrs.get("class", "")
-                    if css_class not in existing:
-                        widget.attrs["class"] = f"{existing} {css_class}".strip()
+                    # Check for exact class match (word boundary), not substring
+                    existing_classes = existing.split()
+                    for cls in css_class.split():
+                        if cls not in existing_classes:
+                            existing_classes.append(cls)
+                    widget.attrs["class"] = " ".join(existing_classes)
                     break
 
 

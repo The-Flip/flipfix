@@ -1,9 +1,9 @@
 {% extends "base_public_minimal.html" %}
 {% load core_extras %}
-{% block title %}Report a Problem with {{ machine.display_name }} · {{ block.super }}{% endblock %}
+{% block title %}Report a Problem with {{ machine.name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="card card--padded">
-    <h2 class="space-below-md">Report a Problem with {{ machine.display_name }}</h2>
+    <h2 class="space-below-md">Report a Problem with {{ machine.name }}</h2>
     <form method="post" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}

@@ -46,7 +46,7 @@
                    autocomplete="off"
                    data-machine-search
                    required
-                   value="{% if selected_machine %}{{ selected_machine.display_name }}{% endif %}">
+                   value="{% if selected_machine %}{{ selected_machine.name }}{% endif %}">
             <input type="hidden"
                    name="{{ form.machine_slug.html_name }}"
                    id="{{ form.machine_slug.id_for_label }}"

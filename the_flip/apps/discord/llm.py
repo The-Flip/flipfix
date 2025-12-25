@@ -224,7 +224,7 @@ def _call_anthropic(api_key: str, user_message: str) -> anthropic.types.Message:
 def _get_machines_for_prompt() -> list[dict]:
     """Get list of machines for the LLM prompt."""
     machines = MachineInstance.objects.all()
-    return [{"slug": m.slug, "name": m.display_name} for m in machines]
+    return [{"slug": m.slug, "name": m.name} for m in machines]
 
 
 def _build_user_message(context: MessageContext, machines: list[dict]) -> str:

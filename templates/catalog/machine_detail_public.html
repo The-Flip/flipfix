@@ -1,9 +1,9 @@
 {% extends "base_public_minimal.html" %}
 {% load core_extras %}
 {% load humanize %}
-{% block title %}{{ object.display_name }} · {{ block.super }}{% endblock %}
+{% block title %}{{ object.name }} · {{ block.super }}{% endblock %}
 {% block content %}
-  <h1 class="centered">{{ object.display_name }}</h1>
+  <h1 class="centered">{{ object.name }}</h1>
   {% if object.model.manufacturer or object.model.year %}
     <p class="text-muted subtitle centered">
       {{ object.model.manufacturer }}

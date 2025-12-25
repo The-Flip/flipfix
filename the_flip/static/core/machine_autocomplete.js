@@ -44,7 +44,7 @@ function initMachineAutocomplete(container) {
   }
 
   function selectMachine(machine) {
-    input.value = machine.display_name;
+    input.value = machine.name;
     hiddenInput.value = machine.slug;
     const errorMessages = container.parentElement?.querySelectorAll('.field-error');
     if (errorMessages?.length) {
@@ -67,7 +67,7 @@ function initMachineAutocomplete(container) {
 
       const line = document.createElement('div');
       const nameSpan = document.createElement('span');
-      nameSpan.textContent = machine.display_name;
+      nameSpan.textContent = machine.name;
       line.appendChild(nameSpan);
 
       if (machine.location) {

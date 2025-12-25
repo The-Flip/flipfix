@@ -7,7 +7,7 @@
       <div class="flex items-center stack-tight">
         <span class="timeline__title">
           {% if entry.machine %}
-            {{ entry.machine.display_name }} – Parts Request #{{ entry.pk }}
+            {{ entry.machine.name }} – Parts Request #{{ entry.pk }}
           {% else %}
             Parts Request #{{ entry.pk }}
           {% endif %}

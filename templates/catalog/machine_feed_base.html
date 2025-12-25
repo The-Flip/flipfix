@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static core_extras %}
 {% block title %}
-  {{ machine.display_name }}
+  {{ machine.name }}
   {% block feed_title %}{% endblock %}
   · {{ block.super }}
 {% endblock %}
@@ -9,7 +9,7 @@
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive">
     <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-    <span>{{ machine.display_name }}</span>
+    <span>{{ machine.name }}</span>
   </nav>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">
@@ -91,7 +91,7 @@
         {% include "components/history_link.html" with history_url=machine.get_admin_history_url %}
         <!-- MACHINE INFO -->
         <div class="sidebar__section">
-          <div class="sidebar__title">{{ machine.display_name }}</div>
+          <div class="sidebar__title">{{ machine.name }}</div>
           <div class="sidebar__subtitle">
             {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
             {% if machine.model.manufacturer and machine.model.year %}·{% endif %}

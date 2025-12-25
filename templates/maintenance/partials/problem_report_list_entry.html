@@ -4,10 +4,10 @@
            data-url="{% url 'problem-report-detail' report.pk %}"
            tabindex="0"
            role="button"
-           aria-label="View problem report for {{ report.machine.display_name }}">
+           aria-label="View problem report for {{ report.machine.name }}">
     <div class="flip-card__top">
       <div class="flip-card__top-left">
-        <span class="flip-card__title">{{ report.machine.display_name }}</span>
+        <span class="flip-card__title">{{ report.machine.name }}</span>
       </div>
       <div class="flip-card__top-right log-entry-meta">
         {{ report|problem_report_meta }}

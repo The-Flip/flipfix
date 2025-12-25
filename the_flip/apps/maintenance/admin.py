@@ -61,7 +61,7 @@ class ProblemReportAdmin(SimpleHistoryAdmin):
         "description",
         "reported_by_name",
         "reported_by_contact",
-        "machine__name_override",
+        "machine__name",
         "machine__model__name",
     )
     autocomplete_fields = ("machine", "reported_by_user")
@@ -83,7 +83,7 @@ class LogEntryAdmin(SimpleHistoryAdmin):
         "maintainers__user__username",
         "maintainers__user__first_name",
         "maintainers__user__last_name",
-        "machine__name_override",
+        "machine__name",
         "machine__model__name",
         "problem_report__description",
     )
@@ -111,7 +111,7 @@ class LogEntryMediaAdmin(SimpleHistoryAdmin):
     list_display = ("log_entry", "media_type", "transcode_status", "created_at")
     list_filter = ("media_type", "transcode_status")
     search_fields = (
-        "log_entry__machine__name_override",
+        "log_entry__machine__name",
         "log_entry__machine__model__name",
         "log_entry__text",
     )
@@ -124,7 +124,7 @@ class ProblemReportMediaAdmin(SimpleHistoryAdmin):
     list_display = ("problem_report", "media_type", "transcode_status", "created_at")
     list_filter = ("media_type", "transcode_status")
     search_fields = (
-        "problem_report__machine__name_override",
+        "problem_report__machine__name",
         "problem_report__machine__model__name",
         "problem_report__description",
     )

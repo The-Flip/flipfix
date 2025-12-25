@@ -217,6 +217,7 @@ def create_machine_model(
 
 def create_machine(
     model: MachineModel | None = None,
+    name: str | None = None,
     slug: str | None = None,
     operational_status: str = MachineInstance.OperationalStatus.GOOD,
     skip_auto_log: bool = True,
@@ -226,6 +227,7 @@ def create_machine(
 
     Args:
         model: MachineModel (created if not provided)
+        name: Instance name (defaults to model.name if not provided)
         slug: URL slug (auto-generated from model name if not provided)
         operational_status: Machine status (defaults to 'good')
         skip_auto_log: Skip auto log entry creation (defaults to True for tests)
@@ -236,11 +238,14 @@ def create_machine(
     """
     if model is None:
         model = create_machine_model()
+    if name is None:
+        name = model.name
     if slug is None:
         slug = f"test-machine-{_unique_suffix()}"
 
     instance = MachineInstance(
         model=model,
+        name=name,
         slug=slug,
         operational_status=operational_status,
         **kwargs,

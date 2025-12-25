@@ -11,22 +11,20 @@ class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
     """Form for editing machine instance details."""
 
     fieldsets = [
-        ("Identification", ["name_override", "serial_number"]),
+        ("Identification", ["name", "serial_number"]),
         ("Provenance", ["ownership_credit", "acquisition_notes"]),
     ]
 
     class Meta:
         model = MachineInstance
         fields = [
-            "name_override",
+            "name",
             "serial_number",
             "ownership_credit",
             "acquisition_notes",
         ]
         widgets = {
-            "name_override": forms.TextInput(
-                attrs={"placeholder": "Leave blank to use the machine's model name"}
-            ),
+            "name": forms.TextInput(attrs={"placeholder": "e.g., Eight Ball Deluxe #2"}),
             "serial_number": forms.TextInput(attrs={"placeholder": "e.g., 12345"}),
             "acquisition_notes": forms.Textarea(
                 attrs={
@@ -90,7 +88,7 @@ class MachineModelForm(StyledFormMixin, forms.ModelForm):
                 attrs={"placeholder": "1-12", "class": "form-input--width-6"}
             ),
             "year": forms.NumberInput(
-                attrs={"placeholder": "e.g., 1979", "class": "form-input--width-8"}
+                attrs={"placeholder": "e.g., 1979", "class": "form-input--width-10"}
             ),
             "system": forms.TextInput(attrs={"placeholder": "e.g., WPC-95, System 11"}),
             "scoring": forms.TextInput(attrs={"placeholder": "e.g., Reel, 5 Digit, 7 Digit"}),
@@ -146,24 +144,18 @@ class MachineCreateModelExistsForm(StyledFormMixin, forms.Form):
             suggested_name = f"{model_name} #{next_number}"
         else:
             suggested_name = f"Machine #{next_number}"
-        # Update placeholder on existing widget (don't replace it, or we lose CSS classes)
-        self.fields["instance_name"].widget.attrs["placeholder"] = f"e.g., {suggested_name}"
+        # Pre-fill the value so user can just submit or edit
+        self.fields["instance_name"].initial = suggested_name
 
     def clean_instance_name(self):
-        """Validate the instance name is unique and won't create duplicate display names."""
+        """Validate the instance name is unique."""
         name = self.cleaned_data["instance_name"].strip()
 
-        # Check if name matches any model name (would create duplicate display_name)
-        # This catches both the current model and other models (e.g., naming a
-        # "Godzilla (Premium)" instance as "Godzilla" when a "Godzilla" model exists)
-        if MachineModel.objects.filter(name__iexact=name).exists():
-            raise ValidationError(
-                "This name matches an existing model name. Please use a different name "
-                f"like '{self.model_name} #2' to distinguish this machine."
-            )
+        if not name:
+            raise ValidationError("This field is required.")
 
-        # Check if name matches any existing machine's name_override
-        if MachineInstance.objects.filter(name_override__iexact=name).exists():
+        # Check if name matches any existing machine's name (case-insensitive)
+        if MachineInstance.objects.filter(name__iexact=name).exists():
             raise ValidationError("A machine with this name already exists.")
 
         return name
@@ -192,7 +184,7 @@ class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
         required=False,
         label="Year",
         widget=forms.NumberInput(
-            attrs={"placeholder": "e.g., 1979", "class": "form-input--width-8"}
+            attrs={"placeholder": "e.g., 1979", "class": "form-input--width-10"}
         ),
         help_text="The year this model was manufactured",
     )

@@ -9,12 +9,12 @@
             data-url="{% url 'public-machine-detail' machine.slug %}"
             tabindex="0"
             role="button"
-            aria-label="View {{ machine.display_name }}">
+            aria-label="View {{ machine.name }}">
           <article class="flip-card flip-card--clickable">
             <div class="flip-card__top">
               <div class="flip-card__top-left">
                 <span class="flip-card__title">
-                  {{ machine.display_name }}
+                  {{ machine.name }}
                   <span class="text-muted">・{{ machine.model.year }} {{ machine.model.manufacturer }}</span>
                 </span>
               </div>

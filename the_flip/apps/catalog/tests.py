@@ -218,7 +218,7 @@ class MachineCreateModelExistsViewTests(AccessControlTestCase):
         self.assertEqual(MachineInstance.objects.count(), initial_instance_count + 1)
 
         # Verify the instance was created correctly
-        new_instance = MachineInstance.objects.get(name_override="Machine #2")
+        new_instance = MachineInstance.objects.get(name="Machine #2")
         self.assertEqual(new_instance.model, self.existing_model)
         self.assertEqual(new_instance.operational_status, MachineInstance.OperationalStatus.UNKNOWN)
         self.assertIsNone(new_instance.location)
@@ -248,7 +248,7 @@ class MachineCreateModelExistsViewTests(AccessControlTestCase):
             {"instance_name": "Redirect Test Instance"},
         )
 
-        new_instance = MachineInstance.objects.get(name_override="Redirect Test Instance")
+        new_instance = MachineInstance.objects.get(name="Redirect Test Instance")
         expected_url = reverse("maintainer-machine-detail", kwargs={"slug": new_instance.slug})
         self.assertRedirects(response, expected_url)
 
@@ -257,7 +257,7 @@ class MachineCreateModelExistsViewTests(AccessControlTestCase):
         # Create an existing instance
         MachineInstance.objects.create(
             model=self.existing_model,
-            name_override="First Instance",
+            name="First Instance",
             created_by=self.maintainer_user,
         )
 
@@ -266,60 +266,12 @@ class MachineCreateModelExistsViewTests(AccessControlTestCase):
 
         self.assertContains(response, "First Instance")
 
-    def test_validation_error_name_same_as_model(self):
-        """Should reject instance name that matches the model name."""
-        self.client.force_login(self.maintainer_user)
-
-        response = self.client.post(
-            self.create_url,
-            {"instance_name": "Existing Machine"},  # Same as model name
-        )
-
-        # Should stay on form page with error
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("instance_name", response.context["form"].errors)
-        self.assertContains(response, "matches an existing model name")
-
-    def test_validation_error_name_matches_different_model(self):
-        """Should reject instance name that matches a DIFFERENT model's name.
-
-        Edge case: Model "Godzilla" and Model "Godzilla (Premium)" both exist.
-        User creates instance of "Godzilla (Premium)" and names it "Godzilla".
-        This would create two machines with display_name "Godzilla".
-        """
-        # Create another model with a different name
-        other_model = create_machine_model(
-            name="Other Model",
-            manufacturer="Bally",
-            year=1980,
-            era=MachineModel.Era.EM,
-        )
-
-        self.client.force_login(self.maintainer_user)
-
-        # Try to name our instance after the other model
-        response = self.client.post(
-            self.create_url,
-            {"instance_name": "Other Model"},  # Matches a different model's name
-        )
-
-        # Should stay on form page with error
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("instance_name", response.context["form"].errors)
-        self.assertContains(response, "matches an existing model name")
-
-        # Verify no instance was created
-        self.assertFalse(MachineInstance.objects.filter(name_override="Other Model").exists())
-
-        # Cleanup
-        other_model.delete()
-
-    def test_validation_error_duplicate_name_override(self):
+    def test_validation_error_duplicate_name(self):
         """Should reject instance name that matches an existing machine's name."""
         # Create an existing instance with a specific name
         MachineInstance.objects.create(
             model=self.existing_model,
-            name_override="Already Taken",
+            name="Already Taken",
             created_by=self.maintainer_user,
         )
 
@@ -820,7 +772,7 @@ class PublicViewTests(TestCase):
     def test_public_list_view_displays_machine(self):
         """Public list view should display visible machines."""
         response = self.client.get(self.list_url)
-        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.name)
 
     def test_public_detail_view_accessible(self):
         """Public detail view should be accessible to anonymous users."""
@@ -831,7 +783,7 @@ class PublicViewTests(TestCase):
     def test_public_detail_view_displays_machine_details(self):
         """Public detail view should display machine-specific details."""
         response = self.client.get(self.detail_url)
-        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.name)
         self.assertContains(response, self.machine.model.manufacturer)
 
 
@@ -862,101 +814,112 @@ class MachineInstanceModelTests(TestCase):
         """Set up a model for instance tests."""
         self.model = create_machine_model(name="Test Model")
 
-    def test_display_name_property(self):
-        """display_name property should return name_override if set, otherwise model name."""
-        instance_with_override = MachineInstance.objects.create(
-            model=self.model, name_override="Custom Name"
-        )
-        instance_without_override = MachineInstance.objects.create(model=self.model)
+    # name field tests
 
-        self.assertEqual(instance_with_override.display_name, "Custom Name")
-        self.assertEqual(instance_without_override.display_name, "Test Model")
-
-    # name_override uniqueness tests
-
-    def test_name_override_duplicate_raises_validation_error(self):
-        """Duplicate name_override should raise ValidationError from clean()."""
+    def test_name_required(self):
+        """name field should be required."""
         from django.core.exceptions import ValidationError
 
-        MachineInstance.objects.create(model=self.model, name_override="Duplicate Name")
-        duplicate = MachineInstance(model=self.model, name_override="Duplicate Name")
+        instance = MachineInstance(model=self.model, name="")
+
+        with self.assertRaises(ValidationError) as context:
+            instance.full_clean()
+
+        self.assertIn("name", context.exception.message_dict)
+
+    def test_name_whitespace_only_raises_validation_error(self):
+        """Whitespace-only name should raise ValidationError.
+
+        Bug: clean() strips name but doesn't check if result is empty.
+        Submitting "   " becomes "" after stripping but passes validation.
+        """
+        from django.core.exceptions import ValidationError
+
+        instance = MachineInstance(model=self.model, name="   ")
+
+        with self.assertRaises(ValidationError) as context:
+            instance.full_clean()
+
+        self.assertIn("name", context.exception.message_dict)
+
+    def test_name_collision_with_different_model_raises_validation_error(self):
+        """Name collision across different models should raise ValidationError.
+
+        Instance names must be unique globally, not just per-model.
+        """
+        from django.core.exceptions import ValidationError
+
+        # Create existing machine with name "Godzilla"
+        existing_model = MachineModel.objects.create(name="Existing Model")
+        MachineInstance.objects.create(model=existing_model, name="Godzilla")
+
+        # Try to create new instance with same name (but different model)
+        new_model = MachineModel.objects.create(name="Godzilla")
+        instance = MachineInstance(model=new_model, name="Godzilla")
+
+        with self.assertRaises(ValidationError) as context:
+            instance.full_clean()
+
+        self.assertIn("name", context.exception.message_dict)
+
+    def test_name_duplicate_raises_validation_error(self):
+        """Duplicate name should raise ValidationError from clean()."""
+        from django.core.exceptions import ValidationError
+
+        MachineInstance.objects.create(model=self.model, name="Duplicate Name")
+        duplicate = MachineInstance(model=self.model, name="Duplicate Name")
 
         with self.assertRaises(ValidationError) as context:
             duplicate.full_clean()
 
-        self.assertIn("name_override", context.exception.message_dict)
+        self.assertIn("name", context.exception.message_dict)
         self.assertEqual(
-            context.exception.message_dict["name_override"],
+            context.exception.message_dict["name"],
             ["A machine with this name already exists."],
         )
 
-    def test_name_override_empty_string_converted_to_null(self):
-        """Empty string name_override should be converted to NULL on save."""
-        instance = MachineInstance.objects.create(model=self.model, name_override="")
+    def test_name_duplicate_case_insensitive(self):
+        """Name uniqueness should be case-insensitive.
 
-        # Refresh from database to verify
-        instance.refresh_from_db()
-        self.assertIsNone(instance.name_override)
+        "Godzilla" and "godzilla" should be treated as the same name.
+        """
+        from django.core.exceptions import ValidationError
 
-    def test_name_override_whitespace_only_converted_to_null_via_clean(self):
-        """Whitespace-only name_override should be converted to NULL via clean()."""
-        instance = MachineInstance(model=self.model, name_override="   ")
+        MachineInstance.objects.create(model=self.model, name="Godzilla")
+        duplicate = MachineInstance(model=self.model, name="godzilla")
+
+        with self.assertRaises(ValidationError) as context:
+            duplicate.full_clean()
+
+        self.assertIn("name", context.exception.message_dict)
+
+    def test_name_stripped_on_clean(self):
+        """name should be stripped of leading/trailing whitespace."""
+        instance = MachineInstance(model=self.model, name="  Padded Name  ")
         instance.full_clean()
 
-        self.assertIsNone(instance.name_override)
-
-    def test_name_override_whitespace_only_converted_to_null_via_save(self):
-        """Whitespace-only name_override should be converted to NULL on save (without clean)."""
-        # This tests programmatic saves that bypass full_clean()
-        instance = MachineInstance.objects.create(model=self.model, name_override="   ")
-
-        instance.refresh_from_db()
-        self.assertIsNone(instance.name_override)
-
-    def test_name_override_null_allows_multiple_machines(self):
-        """Multiple machines with NULL name_override should be allowed."""
-        # This tests that the unique constraint doesn't conflict on NULLs
-        instance1 = MachineInstance.objects.create(model=self.model, name_override=None)
-        instance2 = MachineInstance.objects.create(model=self.model, name_override=None)
-        instance3 = MachineInstance.objects.create(model=self.model, name_override="")
-
-        # All should exist without error
-        self.assertEqual(MachineInstance.objects.count(), 3)
-        self.assertIsNone(instance1.name_override)
-        self.assertIsNone(instance2.name_override)
-        instance3.refresh_from_db()
-        self.assertIsNone(instance3.name_override)
-
-    def test_name_override_stripped_on_clean(self):
-        """name_override should be stripped of leading/trailing whitespace."""
-        instance = MachineInstance(model=self.model, name_override="  Padded Name  ")
-        instance.full_clean()
-
-        self.assertEqual(instance.name_override, "Padded Name")
+        self.assertEqual(instance.name, "Padded Name")
 
     # short_name tests
 
     def test_short_display_name_returns_short_name_if_set(self):
         """short_display_name should return short_name if set."""
-        instance = MachineInstance.objects.create(model=self.model, short_name="Short")
+        instance = MachineInstance.objects.create(
+            model=self.model, name="Test Machine", short_name="Short"
+        )
         self.assertEqual(instance.short_display_name, "Short")
 
-    def test_short_display_name_returns_display_name_if_no_short_name(self):
-        """short_display_name should return display_name if short_name is not set."""
-        instance = MachineInstance.objects.create(model=self.model)
-        self.assertEqual(instance.short_display_name, instance.display_name)
-
-    def test_short_display_name_uses_name_override_when_set_without_short_name(self):
-        """short_display_name should return name_override if short_name is not set."""
-        instance = MachineInstance.objects.create(model=self.model, name_override="Custom Name")
-        self.assertEqual(instance.short_display_name, "Custom Name")
+    def test_short_display_name_returns_name_if_no_short_name(self):
+        """short_display_name should return name if short_name is not set."""
+        instance = MachineInstance.objects.create(model=self.model, name="Test Machine")
+        self.assertEqual(instance.short_display_name, instance.name)
 
     def test_short_name_duplicate_raises_validation_error(self):
         """Duplicate short_name should raise ValidationError from clean()."""
         from django.core.exceptions import ValidationError
 
-        MachineInstance.objects.create(model=self.model, short_name="Duplicate")
-        duplicate = MachineInstance(model=self.model, short_name="Duplicate")
+        create_machine(model=self.model, name="Machine 1", short_name="Duplicate")
+        duplicate = MachineInstance(model=self.model, name="Machine 2", short_name="Duplicate")
 
         with self.assertRaises(ValidationError) as context:
             duplicate.full_clean()
@@ -969,30 +932,30 @@ class MachineInstanceModelTests(TestCase):
 
     def test_short_name_empty_string_converted_to_null(self):
         """Empty string short_name should be converted to NULL on save."""
-        instance = MachineInstance.objects.create(model=self.model, short_name="")
+        instance = create_machine(model=self.model, short_name="")
 
         instance.refresh_from_db()
         self.assertIsNone(instance.short_name)
 
     def test_short_name_whitespace_only_converted_to_null_via_clean(self):
         """Whitespace-only short_name should be converted to NULL via clean()."""
-        instance = MachineInstance(model=self.model, short_name="   ")
+        instance = MachineInstance(model=self.model, name="Test Machine", short_name="   ")
         instance.full_clean()
 
         self.assertIsNone(instance.short_name)
 
     def test_short_name_whitespace_only_converted_to_null_via_save(self):
         """Whitespace-only short_name should be converted to NULL on save (without clean)."""
-        instance = MachineInstance.objects.create(model=self.model, short_name="   ")
+        instance = create_machine(model=self.model, short_name="   ")
 
         instance.refresh_from_db()
         self.assertIsNone(instance.short_name)
 
     def test_short_name_null_allows_multiple_machines(self):
         """Multiple machines with NULL short_name should be allowed."""
-        instance1 = MachineInstance.objects.create(model=self.model, short_name=None)
-        instance2 = MachineInstance.objects.create(model=self.model, short_name=None)
-        instance3 = MachineInstance.objects.create(model=self.model, short_name="")
+        instance1 = create_machine(model=self.model, name="Machine 1", short_name=None)
+        instance2 = create_machine(model=self.model, name="Machine 2", short_name=None)
+        instance3 = create_machine(model=self.model, name="Machine 3", short_name="")
 
         self.assertEqual(MachineInstance.objects.count(), 3)
         self.assertIsNone(instance1.short_name)
@@ -1002,27 +965,31 @@ class MachineInstanceModelTests(TestCase):
 
     def test_short_name_stripped_on_clean(self):
         """short_name should be stripped of leading/trailing whitespace."""
-        instance = MachineInstance(model=self.model, short_name="  Padded  ")
+        instance = MachineInstance(model=self.model, name="Test Machine", short_name="  Padded  ")
         instance.full_clean()
 
         self.assertEqual(instance.short_name, "Padded")
 
     def test_slug_generation_on_create(self):
-        """Should generate a slug from the display_name."""
-        instance = MachineInstance.objects.create(model=self.model)
-        self.assertEqual(instance.slug, "test-model")
+        """Should generate a slug from the name."""
+        # Use model directly to test auto-generation (create_machine passes explicit slug)
+        instance = MachineInstance.objects.create(model=self.model, name="Slug Test Machine")
+        self.assertEqual(instance.slug, "slug-test-machine")
 
-    def test_slug_generation_with_name_override(self):
-        """Should use the name_override for the slug if it exists."""
-        instance = MachineInstance.objects.create(model=self.model, name_override="My Custom Game")
+    def test_slug_generation_with_custom_name(self):
+        """Should use the name for the slug."""
+        # Use model directly to test auto-generation (create_machine passes explicit slug)
+        instance = MachineInstance.objects.create(model=self.model, name="My Custom Game")
         self.assertEqual(instance.slug, "my-custom-game")
 
     def test_slug_uniqueness(self):
         """Should ensure slugs are unique for machine instances."""
-        instance1 = MachineInstance.objects.create(model=self.model)
-        instance2 = MachineInstance.objects.create(model=self.model)
+        # Use model directly to test auto-generation (create_machine passes explicit slug)
+        instance1 = MachineInstance.objects.create(model=self.model, name="Same Name")
+        instance2 = MachineInstance.objects.create(model=self.model, name="Same Name #2")
         self.assertNotEqual(instance1.slug, instance2.slug)
-        self.assertEqual(instance2.slug, "test-model-2")
+        self.assertEqual(instance1.slug, "same-name")
+        self.assertEqual(instance2.slug, "same-name-2")
 
 
 @tag("models", "signals")
@@ -1038,18 +1005,20 @@ class MachineCreationSignalTests(TestCase):
         """Creating a new machine should create an automatic log entry."""
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="New Signal Machine",
             created_by=self.maintainer_user,
         )
 
         log = LogEntry.objects.filter(machine=instance).first()
         self.assertIsNotNone(log)
         self.assertIn("New machine added", log.text)
-        self.assertIn(instance.display_name, log.text)
+        self.assertIn(instance.name, log.text)
 
     def test_new_machine_log_entry_has_created_by(self):
         """The auto log entry should have created_by set to the machine creator."""
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="Created By Machine",
             created_by=self.maintainer_user,
         )
 
@@ -1062,6 +1031,7 @@ class MachineCreationSignalTests(TestCase):
 
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="Maintainer Profile Machine",
             created_by=self.maintainer_user,
         )
 
@@ -1075,6 +1045,7 @@ class MachineCreationSignalTests(TestCase):
 
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="No Profile Machine",
             created_by=self.maintainer_user,
         )
 
@@ -1086,6 +1057,7 @@ class MachineCreationSignalTests(TestCase):
         """Creating a machine without created_by should still create log entry."""
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="No Creator Machine",
             created_by=None,
         )
 
@@ -1100,6 +1072,7 @@ class MachineCreationSignalTests(TestCase):
 
         instance = MachineInstance.objects.create(
             model=self.model,
+            name="Shared Terminal Machine",
             created_by=shared_terminal.user,
         )
 

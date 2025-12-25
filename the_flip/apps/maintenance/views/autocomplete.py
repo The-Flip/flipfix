@@ -94,7 +94,7 @@ class MachineAutocompleteView(CanAccessMaintainerPortalMixin, View):
 
         if query:
             machines = machines.filter(
-                Q(name_override__icontains=query)
+                Q(name__icontains=query)
                 | Q(model__name__icontains=query)
                 | Q(location__name__icontains=query)
                 | Q(slug__icontains=query)
@@ -108,7 +108,7 @@ class MachineAutocompleteView(CanAccessMaintainerPortalMixin, View):
                 {
                     "id": machine.id,
                     "slug": machine.slug,
-                    "display_name": machine.display_name,
+                    "name": machine.name,
                     "location": machine.location.name if machine.location else "",
                 }
             )
@@ -137,7 +137,7 @@ class ProblemReportAutocompleteView(CanAccessMaintainerPortalMixin, View):
             reports = reports.filter(
                 Q(description__icontains=query)
                 | Q(machine__model__name__icontains=query)
-                | Q(machine__name_override__icontains=query)
+                | Q(machine__name__icontains=query)
             )
 
         reports = reports[:100]
@@ -151,7 +151,7 @@ class ProblemReportAutocompleteView(CanAccessMaintainerPortalMixin, View):
             report_data = {
                 "id": report.id,
                 "machine_slug": machine.slug,
-                "machine_name": machine.display_name,
+                "machine_name": machine.name,
                 "summary": self._get_summary(report),
                 "created_at": report.created_at.isoformat(),
             }
@@ -159,7 +159,7 @@ class ProblemReportAutocompleteView(CanAccessMaintainerPortalMixin, View):
             if machine.slug == current_machine_slug:
                 current_machine_reports.append(report_data)
             else:
-                machine_key = machine.display_name
+                machine_key = machine.name
                 if machine_key not in grouped:
                     grouped[machine_key] = []
                 grouped[machine_key].append(report_data)

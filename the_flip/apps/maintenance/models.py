@@ -71,7 +71,7 @@ class ProblemReportQuerySet(models.QuerySet):
         return self.filter(
             self._build_description_and_reporter_q(query)
             | Q(machine__model__name__icontains=query)
-            | Q(machine__name_override__icontains=query)
+            | Q(machine__name__icontains=query)
             | self._build_log_entry_q(query)
         ).distinct()
 
@@ -151,7 +151,7 @@ class ProblemReport(TimeStampedMixin):
         ]
 
     def __str__(self) -> str:
-        return f"{self.machine.display_name} – {self.get_problem_type_display()}"
+        return f"{self.machine.name} – {self.get_problem_type_display()}"
 
     def get_admin_history_url(self) -> str:
         """Return URL to this report's Django admin change history."""
@@ -207,7 +207,7 @@ class LogEntryQuerySet(models.QuerySet):
         return self.filter(
             self._build_text_and_maintainer_q(query)
             | Q(machine__model__name__icontains=query)
-            | Q(machine__name_override__icontains=query)
+            | Q(machine__name__icontains=query)
             | Q(problem_report__description__icontains=query)
         ).distinct()
 
@@ -294,7 +294,7 @@ class LogEntry(TimeStampedMixin):
         verbose_name_plural = "Log entries"
 
     def __str__(self) -> str:
-        return f"Log entry for {self.machine.display_name}"
+        return f"Log entry for {self.machine.name}"
 
     def get_admin_history_url(self) -> str:
         """Return URL to this entry's Django admin change history."""

@@ -89,7 +89,7 @@ function initSidebarMachineEdit(wrapper) {
 
     renderItems: (machines, query) => {
       const filtered = filterByQuery(machines, query, (m) =>
-        [m.display_name, m.location, m.slug].join(' ')
+        [m.name, m.location, m.slug].join(' ')
       );
 
       if (!filtered.length) {
@@ -102,7 +102,7 @@ function initSidebarMachineEdit(wrapper) {
         <button type="button"
                 class="sidebar-card-edit-dropdown__item${m.slug === currentSlug ? ' sidebar-card-edit-dropdown__item--selected' : ''}"
                 data-value="${escapeHtml(m.slug)}">
-          <div>${escapeHtml(m.display_name)}</div>
+          <div>${escapeHtml(m.name)}</div>
           ${m.location ? `<div class="sidebar-card-edit-dropdown__meta">${escapeHtml(m.location)}</div>` : ''}
         </button>
       `

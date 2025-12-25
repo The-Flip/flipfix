@@ -19,7 +19,7 @@
   <ul class="sidebar__list">
     {% for instance in instances %}
       <li>
-        <a href="{% url 'maintainer-machine-detail' instance.slug %}">{{ instance.display_name }}</a>
+        <a href="{% url 'maintainer-machine-detail' instance.slug %}">{{ instance.name }}</a>
       </li>
     {% endfor %}
   </ul>

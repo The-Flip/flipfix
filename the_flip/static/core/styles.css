@@ -921,6 +921,10 @@ body {
   width: 8em;
 }
 
+.form-input--width-10 {
+  width: 10em;
+}
+
 .form-input--width-20 {
   width: 20em;
 }

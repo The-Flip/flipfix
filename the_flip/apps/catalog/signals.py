@@ -39,7 +39,7 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
     if created:
         log_entry = LogEntry.objects.create(
             machine=instance,
-            text=f"New machine added: {instance.display_name}",
+            text=f"New machine added: {instance.name}",
             created_by=instance.created_by,
         )
         _add_maintainer_if_exists(log_entry, instance.created_by)
@@ -76,7 +76,7 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
         if old_name != new_name:
             # Celebrate moving to the floor!
             if instance.location and instance.location.slug == "floor":
-                text = f"🎉🎊 {instance.display_name} has moved to the floor!"
+                text = f"🎉🎊 {instance.name} has moved to the floor!"
             else:
                 text = f"Location changed: {old_name} → {new_name}"
 

@@ -1,6 +1,6 @@
 {% extends "layouts/two_column.html" %}
 {% load core_extras %}
-{% block title %}Edit {{ object.display_name }} · {{ block.super }}{% endblock %}
+{% block title %}Edit {{ object.name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
   <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.short_display_name }}</a>
@@ -16,7 +16,7 @@
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=object.get_admin_history_url %}
   {% sidebar_section %}
-  <div class="sidebar__title">{{ object.display_name }}</div>
+  <div class="sidebar__title">{{ object.name }}</div>
   <div class="sidebar__subtitle">
     {% if object.model.manufacturer %}{{ object.model.manufacturer }}{% endif %}
     {% if object.model.manufacturer and object.model.year %}·{% endif %}

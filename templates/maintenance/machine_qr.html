@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load core_extras %}
-{% block title %}QR Code: {{ machine.display_name }} · {{ block.super }}{% endblock %}
+{% block title %}QR Code: {{ machine.name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->
   <nav class="breadcrumbs breadcrumbs--responsive no-print">
@@ -24,7 +24,7 @@
       <div class="card card--padded sidebar--sticky">
         <div class="sidebar__section">
           <div class="sidebar__label">QR Code</div>
-          <div class="sidebar__title">{{ machine.display_name }}</div>
+          <div class="sidebar__title">{{ machine.name }}</div>
           <p class="text-muted text-sm space-above-sm">Attach this QR code to the machine so visitors can scan.</p>
         </div>
         <div class="sidebar__section">
@@ -46,9 +46,9 @@
       <div class="card card--padded qr-printable">
         <h2>Report Problem</h2>
         <img src="data:image/png;base64,{{ qr_code_data }}"
-             alt="QR Code for {{ machine.display_name }}"
+             alt="QR Code for {{ machine.name }}"
              class="qr-image">
-        <h2>{{ machine.display_name }}</h2>
+        <h2>{{ machine.name }}</h2>
       </div>
     </div>
   </div>

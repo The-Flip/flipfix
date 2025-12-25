@@ -453,7 +453,7 @@ class MachineCreateModelExistsView(CanAccessMaintainerPortalMixin, FormView):
     def form_valid(self, form):
         instance = MachineInstance.objects.create(
             model=self.machine_model,
-            name_override=form.cleaned_data["instance_name"],
+            name=form.cleaned_data["instance_name"],
             operational_status=MachineInstance.OperationalStatus.UNKNOWN,
             created_by=self.request.user,
             updated_by=self.request.user,
@@ -487,7 +487,7 @@ class MachineCreateModelDoesNotExistView(CanAccessMaintainerPortalMixin, FormVie
             )
             instance = MachineInstance.objects.create(
                 model=model,
-                name_override="",  # First instance uses model name
+                name=cleaned_data["name"],  # First instance uses model name
                 operational_status=MachineInstance.OperationalStatus.UNKNOWN,
                 created_by=self.request.user,
                 updated_by=self.request.user,

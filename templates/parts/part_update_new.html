@@ -17,7 +17,7 @@
 {% if part_request.machine %}
   {% sidebar_section label="Machine" %}
   <a href="{% url 'maintainer-machine-detail' part_request.machine.slug %}"
-     class="sidebar__title sidebar__link">{{ part_request.machine.display_name }}</a>
+     class="sidebar__title sidebar__link">{{ part_request.machine.name }}</a>
 {% endsidebar_section %}
 {% endif %}
 {% if not is_shared_account %}

@@ -2,7 +2,7 @@
 {% editable_sidebar_card editable=editable edit_type="machine" current_value=machine.slug csrf_token=csrf_token %}
 <a href="{% url 'maintainer-machine-detail' machine.slug %}"
    class="sidebar-card sidebar-card--neutral">
-  <div class="sidebar-card__header">{{ machine.display_name }}</div>
+  <div class="sidebar-card__header">{{ machine.name }}</div>
   <p class="sidebar-card__meta">
     {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
     {% if machine.model.manufacturer and machine.model.year %}·{% endif %}

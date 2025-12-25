@@ -12,6 +12,9 @@ from simple_history.models import HistoricalRecords
 
 from the_flip.apps.core.models import TimeStampedMixin
 
+# Cache timeout for machine matching lookups (used by Discord bot)
+MACHINE_MATCHING_CACHE_SECONDS = 300  # 5 minutes
+
 
 class Location(models.Model):
     """Physical location where a machine can be placed."""
@@ -197,13 +200,10 @@ class MachineInstance(TimeStampedMixin):
         related_name="instances",
     )
     slug = models.SlugField(unique=True, blank=True)
-    name_override = models.CharField(
+    name = models.CharField(
         max_length=200,
-        blank=True,
         unique=True,
-        null=True,
-        verbose_name="Name Override",
-        help_text="Custom name instead of model name (e.g., 'Eight Ball Deluxe Limited Edition #2')",
+        help_text="Display name for this machine",
     )
     short_name = models.CharField(
         max_length=30,
@@ -265,17 +265,12 @@ class MachineInstance(TimeStampedMixin):
         ordering = ["model__name", "serial_number"]
 
     def __str__(self) -> str:
-        return self.display_name
-
-    @property
-    def display_name(self) -> str:
-        """Return custom name if set, otherwise the model name."""
-        return self.name_override or self.model.name
+        return self.name
 
     @property
     def short_display_name(self) -> str:
-        """Return short_name if set, otherwise display_name."""
-        return self.short_name or self.display_name
+        """Return short_name if set, otherwise name."""
+        return self.short_name or self.name
 
     @property
     def ownership_display(self) -> str:
@@ -291,18 +286,15 @@ class MachineInstance(TimeStampedMixin):
         return reverse("admin:catalog_machineinstance_history", args=[self.pk])
 
     def clean(self):
-        """Validate name_override and short_name uniqueness with friendly error messages."""
+        """Validate name and short_name uniqueness with friendly error messages."""
         super().clean()
-        if self.name_override:
-            self.name_override = self.name_override.strip()
-            if not self.name_override:
-                self.name_override = None
-            elif (
-                MachineInstance.objects.filter(name_override=self.name_override)
-                .exclude(pk=self.pk)
-                .exists()
-            ):
-                raise ValidationError({"name_override": "A machine with this name already exists."})
+        if self.name:
+            self.name = self.name.strip()
+        # After stripping, check if name is empty (whitespace-only input)
+        if not self.name:
+            raise ValidationError({"name": "This field is required."})
+        if MachineInstance.objects.filter(name__iexact=self.name).exclude(pk=self.pk).exists():
+            raise ValidationError({"name": "A machine with this name already exists."})
 
         if self.short_name:
             self.short_name = self.short_name.strip()
@@ -318,13 +310,13 @@ class MachineInstance(TimeStampedMixin):
                 )
 
     def save(self, *args, **kwargs):
-        # Normalize empty/whitespace-only name_override and short_name to NULL for unique constraint
-        if self.name_override is not None:
-            self.name_override = self.name_override.strip() or None
+        # Strip name and normalize short_name
+        if self.name:
+            self.name = self.name.strip()
         if self.short_name is not None:
             self.short_name = self.short_name.strip() or None
         if not self.slug:
-            base_slug = slugify(self.display_name) or "machine"
+            base_slug = slugify(self.name) or "machine"
             slug = base_slug
             counter = 2
             while MachineInstance.objects.filter(slug=slug).exclude(pk=self.pk).exists():
@@ -347,6 +339,6 @@ def get_machines_for_matching() -> list[MachineInstance]:
 
     if machines is None:
         machines = list(MachineInstance.objects.active_for_matching())
-        cache.set(cache_key, machines, timeout=300)  # 5 minutes
+        cache.set(cache_key, machines, timeout=MACHINE_MATCHING_CACHE_SECONDS)
 
     return machines

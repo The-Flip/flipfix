@@ -78,13 +78,13 @@ class Command(BaseCommand):
             return None
         machines = MachineInstance.objects.all()
         for machine in machines:
-            if self.normalize_name(machine.display_name) == target:
+            if self.normalize_name(machine.name) == target:
                 return machine
         mapped_name = self.machine_name_mapping.get(target)
         if mapped_name:
             mapped_target = self.normalize_name(mapped_name)
             for machine in machines:
-                if self.normalize_name(machine.display_name) == mapped_target:
+                if self.normalize_name(machine.name) == mapped_target:
                     return machine
         return MachineInstance.objects.filter(slug=name).first()
 
@@ -169,7 +169,7 @@ class Command(BaseCommand):
                 )
                 ProblemReport.objects.filter(pk=report.pk).update(created_at=created_at)
                 created += 1
-                self.stdout.write(f"Created problem report for {machine.display_name}")
+                self.stdout.write(f"Created problem report for {machine.name}")
 
         self.stdout.write(
             self.style.SUCCESS(f"Problem reports complete. Created {created}, errors {errors}.")
@@ -222,7 +222,7 @@ class Command(BaseCommand):
                     entry.maintainers.set(matched)
                 LogEntry.objects.filter(pk=entry.pk).update(created_at=date)
                 created += 1
-                self.stdout.write(f"Created log entry for {machine.display_name}")
+                self.stdout.write(f"Created log entry for {machine.name}")
 
         self.stdout.write(
             self.style.SUCCESS(f"Log entries complete. Created {created}, errors {errors}.")

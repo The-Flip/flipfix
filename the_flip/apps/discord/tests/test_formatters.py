@@ -51,7 +51,7 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         self.assertIn("color", embed)
 
         # Title includes machine name
-        self.assertIn(self.machine.display_name, embed["title"])
+        self.assertIn(self.machine.name, embed["title"])
 
         # URL points to the problem report
         self.assertIn(f"/problem-reports/{report.pk}/", embed["url"])
@@ -106,7 +106,7 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         self.assertIn("color", embed)
 
         # Title includes machine name
-        self.assertIn(self.machine.display_name, embed["title"])
+        self.assertIn(self.machine.name, embed["title"])
 
         # Description includes log text
         self.assertIn(log_entry.text, embed["description"])
@@ -223,7 +223,7 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
 
         # Title includes ID and machine name
         self.assertIn(f"#{part_request.pk}", embed["title"])
-        self.assertIn(self.machine.display_name, embed["title"])
+        self.assertIn(self.machine.name, embed["title"])
 
         # Description includes the text
         self.assertIn("flipper rubbers", embed["description"])

@@ -144,7 +144,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
 
         # Sidebar shows "Problem" label with linked problem card
         self.assertContains(response, "sidebar-card--problem")
-        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.name)
 
     def test_create_log_entry_inherits_machine_from_problem_report(self):
         """Log entry created from problem report should inherit the machine."""

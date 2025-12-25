@@ -58,8 +58,8 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
 
         data = response.json()
         machine_names = [g["machine_name"] for g in data["groups"]]
-        self.assertIn(self.machine.display_name, machine_names)
-        self.assertIn(self.other_machine.display_name, machine_names)
+        self.assertIn(self.machine.name, machine_names)
+        self.assertIn(self.other_machine.name, machine_names)
 
     def test_current_machine_appears_first(self):
         """When current_machine is specified, that machine's group appears first."""
@@ -69,7 +69,7 @@ class ProblemReportAutocompleteViewTests(SuppressRequestLogsMixin, TestDataMixin
         data = response.json()
         # Current machine group appears first with "(current)" suffix
         first_group_name = data["groups"][0]["machine_name"]
-        self.assertIn(self.other_machine.display_name, first_group_name)
+        self.assertIn(self.other_machine.name, first_group_name)
         self.assertIn("(current)", first_group_name)
 
     def test_includes_report_details(self):

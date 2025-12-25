@@ -30,7 +30,7 @@
 {% if machine %}
   {% sidebar_section label="Machine" %}
   <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-     class="sidebar__title sidebar__link">{{ machine.display_name }}</a>
+     class="sidebar__title sidebar__link">{{ machine.name }}</a>
 {% endsidebar_section %}
 {% endif %}
 {% if not is_shared_account %}
@@ -63,7 +63,7 @@
                    data-1p-ignore="true"
                    data-lpignore="true"
                    data-machine-search
-                   {% if selected_machine %}value="{{ selected_machine.display_name }}"{% endif %}>
+                   {% if selected_machine %}value="{{ selected_machine.name }}"{% endif %}>
             <input type="hidden"
                    name="{{ form.machine_slug.html_name }}"
                    id="{{ form.machine_slug.id_for_label }}"

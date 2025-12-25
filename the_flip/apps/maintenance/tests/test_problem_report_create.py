@@ -29,9 +29,9 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         self.assertTemplateUsed(response, "maintenance/problem_report_form_public.html")
 
     def test_create_view_shows_correct_machine_name(self):
-        """Problem report form should show the machine's display name."""
+        """Problem report form should show the machine's name."""
         response = self.client.get(self.url)
-        self.assertContains(response, self.machine.display_name)
+        self.assertContains(response, self.machine.name)
 
     def test_create_problem_report_success(self):
         """Successfully creating a problem report should save it with correct data."""

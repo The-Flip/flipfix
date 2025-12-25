@@ -441,7 +441,7 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
                         "success": True,
                         "problem_report_id": None,
                         "machine_slug": self.object.machine.slug,
-                        "machine_name": self.object.machine.display_name,
+                        "machine_name": self.object.machine.name,
                     }
                 )
 
@@ -529,7 +529,7 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
                     "success": True,
                     "problem_report_id": new_report.pk,
                     "machine_slug": new_report.machine.slug,
-                    "machine_name": new_report.machine.display_name,
+                    "machine_name": new_report.machine.name,
                 }
             )
 
@@ -585,7 +585,7 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
                 {
                     "success": True,
                     "new_machine_slug": new_machine.slug,
-                    "new_machine_name": new_machine.display_name,
+                    "new_machine_name": new_machine.name,
                 }
             )
 

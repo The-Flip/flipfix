@@ -38,9 +38,9 @@
         {% for item in qr_entries %}
           <div class="qr-card">
             <img src="data:image/png;base64,{{ item.qr_data }}"
-                 alt="QR for {{ item.machine.display_name }}"
+                 alt="QR for {{ item.machine.name }}"
                  class="qr-card__image">
-            <div class="qr-card__name">{{ item.machine.display_name }}</div>
+            <div class="qr-card__name">{{ item.machine.name }}</div>
           </div>
         {% endfor %}
       </div>

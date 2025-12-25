@@ -398,7 +398,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
                 {
                     "success": True,
                     "new_machine_slug": new_machine.slug,
-                    "new_machine_name": new_machine.display_name,
+                    "new_machine_name": new_machine.name,
                     "log_entries_moved": child_log_count,
                 }
             )
