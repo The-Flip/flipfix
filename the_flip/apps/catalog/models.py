@@ -65,7 +65,7 @@ class MachineModel(TimeStampedMixin):
     )
     year = models.PositiveIntegerField(null=True, blank=True, help_text="Year of manufacture")
     era = models.CharField(
-        max_length=2, choices=Era.choices, help_text="Technology era of the machine"
+        max_length=2, choices=Era.choices, blank=True, help_text="Technology era of the machine"
     )
     system = models.CharField(
         max_length=100, blank=True, help_text="Electronic system type (e.g., WPC-95, System 11)"

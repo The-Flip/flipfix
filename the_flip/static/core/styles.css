@@ -908,6 +908,23 @@ body {
   font-size: var(--text-sm);
 }
 
+/* Width variants for inputs that don't need full width (values in em, scale with font) */
+.form-input--width-4 {
+  width: 4em;
+}
+
+.form-input--width-6 {
+  width: 6em;
+}
+
+.form-input--width-8 {
+  width: 8em;
+}
+
+.form-input--width-20 {
+  width: 20em;
+}
+
 .form-textarea {
   min-height: 200px;
   resize: vertical;

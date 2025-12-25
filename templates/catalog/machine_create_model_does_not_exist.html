@@ -1,0 +1,45 @@
+{% extends "layouts/two_column.html" %}
+{% load core_extras %}
+{% block title %}Create New Model · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+  <a href="{% url 'machine-create-landing' %}">Add Machine</a>
+  <span>New Model</span>
+{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
+    {% icon "arrow-left" class="meta" %}
+    Back
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="New Model" %}
+  <p class="sidebar__subtitle">Create a new pinball machine model and add it to the collection.</p>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'machine-create-landing' %}"
+   class="btn btn--secondary btn--full">
+  {% icon "arrow-left" class="meta" %}
+  Choose Existing Model
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      {% form_non_field_errors form %}
+      {% form_fields form %}
+      <div class="form-actions">
+        <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
+          {% icon "circle-xmark" class="meta" %}
+          Cancel
+        </a>
+        <button type="submit" class="btn btn--log">
+          {% icon "plus" class="meta" %}
+          Create Machine
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

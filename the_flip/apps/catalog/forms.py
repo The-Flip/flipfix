@@ -86,21 +86,25 @@ class MachineModelForm(StyledFormMixin, forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "e.g., Star Trek"}),
             "manufacturer": forms.TextInput(attrs={"placeholder": "e.g., Bally, Williams, Stern"}),
-            "month": forms.NumberInput(attrs={"placeholder": "1-12", "style": "width: 6em;"}),
-            "year": forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 8em;"}),
+            "month": forms.NumberInput(
+                attrs={"placeholder": "1-12", "class": "form-input--width-6"}
+            ),
+            "year": forms.NumberInput(
+                attrs={"placeholder": "e.g., 1979", "class": "form-input--width-8"}
+            ),
             "system": forms.TextInput(attrs={"placeholder": "e.g., WPC-95, System 11"}),
             "scoring": forms.TextInput(attrs={"placeholder": "e.g., Reel, 5 Digit, 7 Digit"}),
             "flipper_count": forms.NumberInput(
-                attrs={"placeholder": "e.g., 2", "style": "width: 4em;"}
+                attrs={"placeholder": "e.g., 2", "class": "form-input--width-4"}
             ),
             "pinside_rating": forms.NumberInput(
-                attrs={"placeholder": "0.00-10.00", "step": "0.01", "style": "width: 6em;"}
+                attrs={"placeholder": "0.00-10.00", "step": "0.01", "class": "form-input--width-6"}
             ),
             "ipdb_id": forms.NumberInput(
-                attrs={"placeholder": "e.g., 2355", "style": "width: 6em;"}
+                attrs={"placeholder": "e.g., 2355", "class": "form-input--width-6"}
             ),
             "production_quantity": forms.TextInput(
-                attrs={"placeholder": "e.g., ~50,000", "style": "width: 20em;"}
+                attrs={"placeholder": "e.g., ~50,000", "class": "form-input--width-20"}
             ),
             "factory_address": forms.TextInput(attrs={"placeholder": "e.g., Chicago, Illinois"}),
             "design_credit": forms.TextInput(attrs={"placeholder": "e.g., Steve Ritchie"}),
@@ -123,27 +127,57 @@ class MachineModelForm(StyledFormMixin, forms.ModelForm):
         }
 
 
-class MachineQuickCreateForm(StyledFormMixin, forms.Form):
-    """Quick create form for adding a new machine instance and optionally a new model.
+class MachineCreateModelExistsForm(StyledFormMixin, forms.Form):
+    """Add an instance of an existing machine model."""
 
-    This form allows maintainers to quickly add a machine by either:
-    1. Selecting an existing model and providing a name_override
-    2. Creating a new model with basic info (name, manufacturer, year)
-    """
-
-    model = forms.ModelChoiceField(
-        queryset=MachineModel.objects.all().order_by("name"),
-        required=False,
-        empty_label="--- Create New Model ---",
-        label="Machine Model",
+    instance_name = forms.CharField(
+        max_length=100,
+        required=True,
+        label="Machine Name",
+        help_text="A unique name to distinguish this machine from others of the same model",
     )
 
-    # Fields for creating a new model (shown when "Create New Model" is selected)
-    model_name = forms.CharField(
+    def __init__(self, *args, model_name=None, instance_count=0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model_name = model_name
+        # Generate suggested name based on model and existing instance count
+        next_number = instance_count + 1
+        if model_name:
+            suggested_name = f"{model_name} #{next_number}"
+        else:
+            suggested_name = f"Machine #{next_number}"
+        # Update placeholder on existing widget (don't replace it, or we lose CSS classes)
+        self.fields["instance_name"].widget.attrs["placeholder"] = f"e.g., {suggested_name}"
+
+    def clean_instance_name(self):
+        """Validate the instance name is unique and won't create duplicate display names."""
+        name = self.cleaned_data["instance_name"].strip()
+
+        # Check if name matches any model name (would create duplicate display_name)
+        # This catches both the current model and other models (e.g., naming a
+        # "Godzilla (Premium)" instance as "Godzilla" when a "Godzilla" model exists)
+        if MachineModel.objects.filter(name__iexact=name).exists():
+            raise ValidationError(
+                "This name matches an existing model name. Please use a different name "
+                f"like '{self.model_name} #2' to distinguish this machine."
+            )
+
+        # Check if name matches any existing machine's name_override
+        if MachineInstance.objects.filter(name_override__iexact=name).exists():
+            raise ValidationError("A machine with this name already exists.")
+
+        return name
+
+
+class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
+    """Create a new machine model (and first instance)."""
+
+    name = forms.CharField(
         max_length=100,
-        required=False,
+        required=True,
         label="Model Name",
-        widget=forms.TextInput(attrs={"placeholder": "e.g., Star Trek"}),
+        widget=forms.TextInput(attrs={"placeholder": "e.g., Space Wizards"}),
+        help_text="The official name of this pinball machine",
     )
 
     manufacturer = forms.CharField(
@@ -151,53 +185,25 @@ class MachineQuickCreateForm(StyledFormMixin, forms.Form):
         required=False,
         label="Manufacturer",
         widget=forms.TextInput(attrs={"placeholder": "e.g., Bally, Williams, Stern"}),
+        help_text="The company that made this machine",
     )
 
     year = forms.IntegerField(
         required=False,
         label="Year",
-        widget=forms.NumberInput(attrs={"placeholder": "e.g., 1979", "style": "width: 9em;"}),
+        widget=forms.NumberInput(
+            attrs={"placeholder": "e.g., 1979", "class": "form-input--width-8"}
+        ),
+        help_text="The year this model was manufactured",
     )
 
-    # Field for naming an instance of an existing model
-    name_override = forms.CharField(
-        max_length=100,
-        required=False,
-        label="Machine Name",
-        widget=forms.TextInput(attrs={"placeholder": "Give this specific machine a unique name"}),
-        help_text="Required when selecting an existing model to distinguish this specific machine",
-    )
+    def clean_name(self):
+        """Validate the model name is unique."""
+        name = self.cleaned_data["name"].strip()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Format model choices to show "Name (Manufacturer, Year)"
-        self.fields["model"].label_from_instance = lambda obj: (
-            f"{obj.name} ({obj.manufacturer}, {obj.year})"
-            if obj.manufacturer and obj.year
-            else f"{obj.name} ({obj.manufacturer or obj.year or 'Unknown'})"
-        )
-
-    def clean(self):
-        """Validate that either an existing model is selected OR new model info is provided."""
-        cleaned_data = super().clean()
-        model = cleaned_data.get("model")
-        model_name = cleaned_data.get("model_name")
-        name_override = cleaned_data.get("name_override")
-
-        # Check if either a model is selected or model_name is provided
-        if not model and not model_name:
+        if MachineModel.objects.filter(name__iexact=name).exists():
             raise ValidationError(
-                "Please either select an existing model or provide a name for a new model."
+                "A model with this name already exists. Please go back and select it from the list."
             )
 
-        # If existing model selected, name_override is required
-        if model and not name_override:
-            raise ValidationError(
-                "When selecting an existing model, you must provide a unique name for this specific machine."
-            )
-
-        # If creating new model, model_name is required
-        if not model and not model_name:
-            raise ValidationError("Please provide a model name when creating a new model.")
-
-        return cleaned_data
+        return name

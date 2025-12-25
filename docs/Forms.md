@@ -2,15 +2,60 @@
 
 This guide covers how to build forms for this project.
 
-## Form Implementation Approaches
+## Creating Form Classes
+
+### Always Use StyledFormMixin
+
+All forms should inherit from `StyledFormMixin` as the **first** parent class. This mixin automatically applies CSS classes to form widgets (`.form-input`, `.form-textarea`, `.checkbox`), ensuring consistent styling without manual widget configuration.
+
+```python
+from django import forms
+from the_flip.apps.core.forms import StyledFormMixin
+
+class MyForm(StyledFormMixin, forms.Form):
+    name = forms.CharField()
+    email = forms.EmailField()
+```
+
+Import from `the_flip.apps.core.forms`. Place `StyledFormMixin` first in the inheritance list so its `__init__` runs after Django's form initialization.
+
+### Form vs ModelForm
+
+| Use Case | Base Class |
+|----------|------------|
+| Editing an existing model instance | `forms.ModelForm` |
+| Creating a model with all/most of its fields | `forms.ModelForm` |
+| Multi-step wizard (collecting partial data) | `forms.Form` |
+| Actions that don't map to a single model | `forms.Form` |
+| Creating multiple related objects at once | `forms.Form` |
+
+**ModelForm** automatically generates fields from the model and provides a `save()` method. Use it when there's a direct 1:1 mapping between form and model.
+
+**Form** gives full control over fields and validation. Use it for multi-step flows, search forms, or when the view needs to create multiple objects or do complex processing.
+
+```python
+# ModelForm: Direct model editing
+class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = MachineInstance
+        fields = ["name_override", "serial_number"]
+
+# Form: Custom creation flow (view handles object creation)
+class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
+    name = forms.CharField(max_length=100)
+    manufacturer = forms.CharField(max_length=100, required=False)
+    year = forms.IntegerField(required=False)
+```
+
+## Rendering Forms in Templates
 
 The project uses two approaches for rendering form fields:
 
-1. **[Form components](#using-form-components-preferred-for-simple-fields)** (`{% form_field %}`, `{% form_fields %}`) - By default, use these form components; most fields don't need custom HTML structure. This handles the label, input, help text and errors.
+1. **[Form components](#using-form-components)** (`{% form_field %}`, `{% form_fields %}`) - Use by default; handles label, input, help text, and errors automatically.
 
-2. **[Custom HTML](#manual-form-markup-for-complex-fields)** - For anything needing special handling, such as autocomplete dropdowns, radio groups, and file uploads with preview.
+2. **[Manual markup](#manual-form-markup)** - For complex fields like autocomplete dropdowns, radio groups, and file uploads with preview.
 
-## Using Form Components
+### Using Form Components
 
 **Render all fields at once:**
 
@@ -45,7 +90,7 @@ The project uses two approaches for rendering form fields:
 </form>
 ```
 
-## Manual Form Markup (For Complex Fields)
+### Manual Form Markup
 
 When `{% form_field %}` doesn't fit your needs (autocomplete, radio groups, file uploads, etc.), prefer helper tags over raw HTML. This keeps behavior consistent and makes future changes easier.
 
@@ -107,9 +152,9 @@ Only use raw `<label>` when you need custom label text that differs from the Dja
 
 ## Required vs Optional Fields
 
-**Do NOT label required fields with asterisks.** Instead, we label optional fields with "(optional)".  This happens automatically when you use `{% form_field %}` or `{% form_label %}`
-- **Browser validation**: Use HTML5 `required` attribute on inputs
+**Do NOT label required fields with asterisks.** Instead, we label optional fields with "(optional)". This happens automatically when you use `{% form_field %}` or `{% form_label %}`.
 
+Use HTML5 `required` attribute on inputs for browser validation.
 
 ## Form CSS Classes
 
@@ -119,6 +164,10 @@ Only use raw `<label>` when you need custom label text that differs from the Dja
 | `.form-field` | Wrapper for label + input + help text + errors |
 | `.form-label` | Field label styling |
 | `.form-input` | Text inputs, selects, and textareas |
+| `.form-input--width-4` | Narrow width (4em) for single-digit inputs |
+| `.form-input--width-6` | Narrow width (6em) for small numbers |
+| `.form-input--width-8` | Narrow width (8em) for years |
+| `.form-input--width-20` | Medium width (20em) for short text |
 | `.form-textarea` | Multi-line text input (extends `.form-input`) |
 | `.form-hint` | Help text below inputs |
 | `.form-actions` | Button container at form bottom (cancel left, submit right) |

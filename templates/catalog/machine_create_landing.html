@@ -1,0 +1,59 @@
+{% extends "layouts/two_column.html" %}
+{% load core_extras %}
+{% block title %}Add Machine · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+  <span>Add Machine</span>
+{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+    {% icon "arrow-left" class="meta" %}
+    Back to Machines
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Add Machine" %}
+  <p class="sidebar__subtitle">Select a model to add, or create a new model if it's not listed.</p>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'maintainer-machine-list' %}"
+   class="btn btn--secondary btn--full">
+  {% icon "arrow-left" class="meta" %}
+  Back to Machines
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="model-select" class="form-label">Machine model</label>
+        <select id="model-select" name="model_slug" class="form-input">
+          <option value="new">— Create a new model —</option>
+          {% for model in models %}
+            <option value="{{ model.slug }}">
+              {{ model.name }}
+              {% if model.manufacturer %}
+                ({{ model.manufacturer }}
+                {% if model.year %}, {{ model.year }}{% endif %}
+                )
+              {% endif %}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">Choose an existing model or create a new one</p>
+      </div>
+      <div class="form-actions">
+        <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
+          {% icon "circle-xmark" class="meta" %}
+          Cancel
+        </a>
+        <button type="submit" class="btn btn--log">
+          {% icon "arrow-right" class="meta" %}
+          Continue
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
