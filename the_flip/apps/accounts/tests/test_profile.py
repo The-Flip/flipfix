@@ -98,7 +98,7 @@ class ProfileViewTests(TestCase):
         self.assertRedirects(response, self.profile_url)
 
 
-@tag("views", "auth")
+@tag("views")
 class PasswordChangeViewTests(TestCase):
     """Tests for the password change view.
 

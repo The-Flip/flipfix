@@ -19,6 +19,7 @@ from the_flip.apps.core.templatetags.core_extras import (
 from the_flip.apps.core.test_utils import create_user
 
 
+@tag("views")
 class RenderMarkdownFilterTests(TestCase):
     """Tests for the render_markdown template filter."""
 
@@ -115,6 +116,7 @@ class RenderMarkdownFilterTests(TestCase):
         self.assertIn("<h2>", result)
 
 
+@tag("views")
 class DisplayNameWithUsernameFilterTests(TestCase):
     """Tests for the display_name_with_username template filter."""
 
@@ -248,7 +250,7 @@ class ServeMediaViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@tag("templatetags")
+@tag("views")
 class MachineStatusFilterTests(TestCase):
     """Tests for MachineInstance.operational_status template filters."""
 
@@ -319,7 +321,7 @@ class MachineStatusFilterTests(TestCase):
         self.assertEqual(machine_status_btn_class(None), "btn--secondary")
 
 
-@tag("templatetags")
+@tag("views")
 class IconTagTests(TestCase):
     """Tests for the {% icon %} template tag."""
 

@@ -16,7 +16,7 @@ from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 TEST_TOKEN = secrets.token_hex(16)
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class GetTranscodingConfigTests(TestCase):
     """Tests for _get_transcoding_config helper."""
 
@@ -75,7 +75,7 @@ class GetTranscodingConfigTests(TestCase):
         self.assertEqual(token, "env-token")
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class SleepWithBackoffTests(TestCase):
     """Tests for _sleep_with_backoff helper."""
 
@@ -112,7 +112,7 @@ class SleepWithBackoffTests(TestCase):
         self.assertIn("connection refused", str(context.exception))
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class UploadTranscodedFilesTests(TestCase):
     """Tests for _upload_transcoded_files helper."""
 
@@ -248,7 +248,7 @@ class UploadTranscodedFilesTests(TestCase):
         self.assertEqual(mock_post.call_count, 3)
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class DownloadSourceFileTests(TestCase):
     """Tests for _download_source_file helper."""
 
@@ -422,7 +422,7 @@ class VideoMediaTestMixin:
         )
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode_video_job task."""
 
@@ -550,7 +550,7 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         self.assertEqual(statuses_during_run[0], LogEntryMedia.TranscodeStatus.PROCESSING)
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode error handling."""
 
@@ -644,7 +644,7 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
         upload.assert_called_once()
 
 
-@tag("tasks", "unit")
+@tag("tasks")
 class EnqueueTranscodeTests(TemporaryMediaMixin, TestCase):
     """Tests for enqueue_transcode helper."""
 

@@ -16,7 +16,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.maintenance.models import LogEntry
 
 
-@tag("views", "access-control")
+@tag("views")
 class MaintainerMachineViewsAccessTests(AccessControlTestCase):
     """Tests for maintainer machine views access control."""
 
@@ -753,7 +753,7 @@ class MachineActivitySearchTests(TestCase):
         self.assertContains(response, "Fixed the flipper")
 
 
-@tag("views", "public")
+@tag("views")
 class PublicViewTests(TestCase):
     """Tests for public-facing catalog views."""
 
@@ -992,7 +992,7 @@ class MachineInstanceModelTests(TestCase):
         self.assertEqual(instance2.slug, "same-name-2")
 
 
-@tag("models", "signals")
+@tag("models")
 class MachineCreationSignalTests(TestCase):
     """Tests for automatic log entry creation when machines are created."""
 

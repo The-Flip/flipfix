@@ -4,12 +4,13 @@ from unittest.mock import MagicMock, patch
 
 import requests
 from constance.test import override_config
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from the_flip.apps.core.test_utils import create_machine, create_problem_report
 from the_flip.apps.discord.tasks import deliver_webhook
 
 
+@tag("tasks")
 class WebhookDeliveryTests(TestCase):
     """Tests for webhook delivery logic."""
 

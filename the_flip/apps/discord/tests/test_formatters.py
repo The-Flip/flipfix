@@ -1,7 +1,7 @@
 """Tests for Discord message formatting."""
 
 from django.core.files.base import ContentFile
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
@@ -23,6 +23,7 @@ from the_flip.apps.maintenance.models import LogEntryMedia
 from the_flip.apps.parts.models import PartRequest
 
 
+@tag("tasks")
 class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
     """Tests for Discord message formatting.
 
@@ -260,6 +261,7 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         self.assertIn("description", embed)
 
 
+@tag("tasks")
 class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
     """Tests for part request Discord webhook formatting."""
 
@@ -497,6 +499,7 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
         self.assertIn("image", message["embeds"][0])
 
 
+@tag("tasks")
 class GetBaseUrlTests(TestCase):
     """Tests for the get_base_url helper function."""
 

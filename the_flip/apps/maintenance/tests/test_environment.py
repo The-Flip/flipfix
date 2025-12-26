@@ -6,7 +6,7 @@ import subprocess
 from django.test import TestCase, tag
 
 
-@tag("integration", "environment")
+@tag("integration")
 class FFmpegAvailabilityTest(TestCase):
     """Tests that verify video transcoding dependencies are available."""
 

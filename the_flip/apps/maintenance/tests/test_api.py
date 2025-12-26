@@ -20,7 +20,7 @@ from the_flip.apps.maintenance.models import LogEntryMedia
 from the_flip.apps.maintenance.utils import resize_image_file
 
 
-@tag("api", "ajax")
+@tag("views")
 class MaintainerAutocompleteViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the maintainer autocomplete API endpoint."""
 
@@ -98,7 +98,7 @@ class MaintainerAutocompleteViewTests(SuppressRequestLogsMixin, TestCase):
         self.assertEqual(display_names, sorted(display_names, key=str.lower))
 
 
-@tag("api")
+@tag("views")
 class ReceiveTranscodedMediaViewTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -260,7 +260,7 @@ class ReceiveTranscodedMediaViewTests(
         self.assertIn("Server not configured", response.json()["error"])
 
 
-@tag("api")
+@tag("views")
 class ServeSourceMediaViewTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -358,7 +358,7 @@ class ServeSourceMediaViewTests(
         self.assertIn("Server not configured", response.json()["error"])
 
 
-@tag("api")
+@tag("views")
 class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
     """Ensure deleting media removes associated files (file and thumbnail)."""
 

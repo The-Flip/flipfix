@@ -21,7 +21,7 @@ User = get_user_model()
 TEST_PASSWORD = f"Test{secrets.token_hex(8)}!"
 
 
-@tag("views", "registration")
+@tag("views")
 class InvitationRegistrationViewTests(AccessControlTestCase):
     """Tests for the invitation registration view."""
 
@@ -145,7 +145,7 @@ class InvitationRegistrationViewTests(AccessControlTestCase):
         self.assertFalse(User.objects.filter(username="newmaintainer").exists())
 
 
-@tag("views", "registration")
+@tag("views")
 class SelfRegistrationViewTests(TestCase):
     """Tests for the self-registration view (beta feature)."""
 
@@ -306,7 +306,7 @@ class SelfRegistrationViewTests(TestCase):
         self.assertContains(response, "already registered")
 
 
-@tag("api", "ajax")
+@tag("views")
 class CheckUsernameViewTests(TestCase):
     """Tests for the check-username AJAX endpoint."""
 

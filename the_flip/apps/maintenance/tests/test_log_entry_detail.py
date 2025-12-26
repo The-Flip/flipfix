@@ -17,7 +17,7 @@ from the_flip.apps.core.test_utils import (
 )
 
 
-@tag("views", "ajax")
+@tag("views")
 class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for LogEntryDetailView AJAX work_date updates."""
 
@@ -94,7 +94,7 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
         self.assertFalse(result["success"])
 
 
-@tag("views", "ajax")
+@tag("views")
 class LogEntryDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for LogEntryDetailView AJAX text updates."""
 

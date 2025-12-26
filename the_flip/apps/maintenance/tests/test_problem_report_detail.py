@@ -279,7 +279,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertNotContains(response, "Replaced a component")
 
 
-@tag("views", "ajax")
+@tag("views")
 class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for ProblemReportDetailView AJAX text updates."""
 
@@ -493,7 +493,7 @@ class ProblemReportDetailLogEntriesTests(TestDataMixin, TestCase):
         self.assertContains(response, "No log entries yet")
 
 
-@tag("views", "ajax")
+@tag("views")
 class ProblemReportLogEntriesPartialViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the log entries AJAX endpoint on problem report detail."""
 

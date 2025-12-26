@@ -10,7 +10,7 @@ from the_flip.apps.core.test_utils import (
 )
 
 
-@tag("feature_flags")
+@tag("views")
 class PartsFeatureFlagTests(TestDataMixin, TestCase):
     """Tests for the PARTS_ENABLED feature flag."""
 

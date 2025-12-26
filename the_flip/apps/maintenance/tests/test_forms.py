@@ -7,7 +7,7 @@ from the_flip.apps.core.test_utils import DATETIME_INPUT_FORMAT, MINIMAL_PNG
 from the_flip.apps.maintenance.forms import LogEntryQuickForm
 
 
-@tag("forms", "security")
+@tag("forms")
 class LogEntryQuickFormMediaValidationTests(TestCase):
     """Tests for media file validation in LogEntryQuickForm."""
 

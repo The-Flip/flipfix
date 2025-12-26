@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 from constance.test import override_config
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
@@ -17,6 +17,7 @@ from the_flip.apps.maintenance.models import ProblemReport
 from the_flip.apps.parts.models import PartRequest
 
 
+@tag("tasks")
 @override_config(DISCORD_WEBHOOKS_ENABLED=True, DISCORD_WEBHOOK_URL="https://test.webhook")
 class WebhookSignalTests(TestCase):
     """Tests for webhook signal triggers."""
@@ -54,6 +55,7 @@ class WebhookSignalTests(TestCase):
         self.assertEqual(calls[0][0][2], log_entry.pk)
 
 
+@tag("tasks")
 @override_config(DISCORD_WEBHOOKS_ENABLED=True, DISCORD_WEBHOOK_URL="https://test.webhook")
 class PartRequestWebhookSignalTests(TestCase):
     """Tests for part request webhook signal triggers."""

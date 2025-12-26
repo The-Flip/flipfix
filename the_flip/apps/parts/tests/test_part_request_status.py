@@ -11,7 +11,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 
-@tag("views", "ajax")
+@tag("views")
 class PartRequestStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for PartRequestStatusUpdateView AJAX endpoint."""
 

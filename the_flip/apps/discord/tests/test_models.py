@@ -1,13 +1,14 @@
 """Tests for Discord models."""
 
 from django.db import IntegrityError
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import create_maintainer_user
 from the_flip.apps.discord.models import DiscordUserLink
 
 
+@tag("models")
 class DiscordUserLinkModelTests(TestCase):
     """Tests for the DiscordUserLink model."""
 

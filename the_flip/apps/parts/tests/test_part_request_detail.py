@@ -34,7 +34,7 @@ class PartRequestDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertContains(response, "Test part request")
 
 
-@tag("views", "ajax")
+@tag("views")
 class PartRequestDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for PartRequestDetailView AJAX text updates."""
 
@@ -93,7 +93,7 @@ class PartRequestDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMix
         self.assertEqual(response.status_code, 403)
 
 
-@tag("views", "ajax")
+@tag("views")
 class PartRequestUpdateDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for PartRequestUpdateDetailView AJAX text updates."""
 

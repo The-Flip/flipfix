@@ -6,7 +6,7 @@ from django.urls import reverse
 from the_flip.apps.core.test_utils import create_user
 
 
-@tag("views", "ui")
+@tag("views")
 class NavigationTests(TestCase):
     """Tests for navigation display based on auth state."""
 

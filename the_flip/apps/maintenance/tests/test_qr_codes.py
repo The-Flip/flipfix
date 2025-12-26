@@ -9,7 +9,7 @@ from the_flip.apps.core.test_utils import (
 )
 
 
-@tag("views", "access-control")
+@tag("views")
 class MachineBulkQRCodeViewAccessTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for MachineBulkQRCodeView access control.
 

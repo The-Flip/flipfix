@@ -20,7 +20,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.maintenance.models import LogEntry, LogEntryMedia
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class LogEntryVideoUploadTests(TestDataMixin, TestCase):
     """Tests for video upload via AJAX on log entry creation."""
 
@@ -136,7 +136,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
         mock_enqueue.assert_not_called()
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class LogEntryMediaUploadTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -203,7 +203,7 @@ class LogEntryMediaUploadTests(
         self.assertEqual(media.media_type, LogEntryMedia.MediaType.PHOTO)
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class LogEntryMediaDeleteTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):

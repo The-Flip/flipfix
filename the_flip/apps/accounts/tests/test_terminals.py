@@ -33,7 +33,7 @@ class TerminalTestMixin(SuppressRequestLogsMixin, TestCase):
         )
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalListViewTests(TerminalTestMixin, TestCase):
     """Tests for the terminal list view."""
 
@@ -83,7 +83,7 @@ class TerminalListViewTests(TerminalTestMixin, TestCase):
         self.assertContains(response, "No shared terminal accounts yet")
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalLoginViewTests(TerminalTestMixin, TestCase):
     """Tests for the terminal login view."""
 
@@ -124,7 +124,7 @@ class TerminalLoginViewTests(TerminalTestMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalCreateViewTests(TestCase):
     """Tests for the terminal create view."""
 
@@ -181,7 +181,7 @@ class TerminalCreateViewTests(TestCase):
         self.assertContains(response, 'data-lpignore="true"')
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
     """Tests for the terminal update view."""
 
@@ -252,7 +252,7 @@ class TerminalUpdateViewTests(TerminalTestMixin, TestCase):
         self.assertContains(response, "Reactivate")
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalDeactivateViewTests(TerminalTestMixin, TestCase):
     """Tests for the terminal deactivate view."""
 
@@ -286,7 +286,7 @@ class TerminalDeactivateViewTests(TerminalTestMixin, TestCase):
         self.assertIn("deactivated", str(messages[0]))
 
 
-@tag("views", "terminals")
+@tag("views")
 class TerminalReactivateViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the terminal reactivate view."""
 

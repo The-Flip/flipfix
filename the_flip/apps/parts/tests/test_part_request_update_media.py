@@ -17,7 +17,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.parts.models import PartRequestUpdate, PartRequestUpdateMedia
 
 
-@tag("views", "media")
+@tag("views")
 class PartRequestUpdateMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase):
     """Tests for media upload on part request update create page."""
 
@@ -89,7 +89,7 @@ class PartRequestUpdateMediaCreateTests(TemporaryMediaMixin, TestDataMixin, Test
         mock_enqueue.assert_called_once_with(media_id=media.id, model_name="PartRequestUpdateMedia")
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class PartRequestUpdateMediaUploadTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -216,7 +216,7 @@ class PartRequestUpdateMediaUploadTests(
         mock_enqueue.assert_not_called()
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class PartRequestUpdateMediaDeleteTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -320,7 +320,7 @@ class PartRequestUpdateMediaDeleteTests(
         self.assertTrue(PartRequestUpdateMedia.objects.filter(pk=other_media.pk).exists())
 
 
-@tag("views", "media")
+@tag("views")
 class PartRequestUpdateDetailMediaDisplayTests(TemporaryMediaMixin, TestDataMixin, TestCase):
     """Tests for media display on part request update detail page."""
 

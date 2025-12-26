@@ -11,7 +11,7 @@ from the_flip.apps.core.test_utils import (
 )
 
 
-@tag("views", "ajax")
+@tag("views")
 class PartRequestUpdatesPartialViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for PartRequestUpdatesPartialView AJAX infinite scroll endpoint."""
 

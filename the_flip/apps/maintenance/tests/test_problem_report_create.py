@@ -14,7 +14,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.maintenance.models import ProblemReport
 
 
-@tag("views", "public")
+@tag("views")
 class ProblemReportCreateViewTests(TestDataMixin, TestCase):
     """Tests for the public problem report submission view."""
 

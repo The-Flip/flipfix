@@ -16,7 +16,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.maintenance.models import ProblemReport, ProblemReportMedia
 
 
-@tag("views", "media")
+@tag("views")
 class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase):
     """Tests for media upload on problem report create page (maintainer)."""
 
@@ -95,7 +95,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
         mock_enqueue.assert_called_once_with(media_id=media.id, model_name="ProblemReportMedia")
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class ProblemReportMediaUploadTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -194,7 +194,7 @@ class ProblemReportMediaUploadTests(
         mock_enqueue.assert_called_once_with(media_id=media.id, model_name="ProblemReportMedia")
 
 
-@tag("views", "ajax", "media")
+@tag("views")
 class ProblemReportMediaDeleteTests(
     TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase
 ):
@@ -292,7 +292,7 @@ class ProblemReportMediaDeleteTests(
         self.assertTrue(ProblemReportMedia.objects.filter(pk=other_media.pk).exists())
 
 
-@tag("views", "media")
+@tag("views")
 class ProblemReportDetailMediaDisplayTests(TemporaryMediaMixin, TestDataMixin, TestCase):
     """Tests for media display on problem report detail page."""
 

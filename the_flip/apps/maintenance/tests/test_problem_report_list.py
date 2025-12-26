@@ -135,7 +135,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertNotContains(response, "Other issue")
 
 
-@tag("views", "ajax")
+@tag("views")
 class ProblemReportListPartialViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for the problem report list AJAX endpoint."""
 

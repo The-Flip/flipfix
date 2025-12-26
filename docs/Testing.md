@@ -16,30 +16,25 @@ make test-models       # Run model tests only
 
 ### Test Tags
 
-| Tag | Use For |
-|-----|---------|
-| `models` | Model unit tests (no HTTP requests) |
-| `views` | View tests that make HTTP requests |
-| `ajax` | AJAX endpoints (combine with `views`: `@tag("views", "ajax")`) |
-| `media` | Media upload, delete, and display tests (combine with `views`: `@tag("views", "media")`) |
-| `forms` | Form validation tests |
-| `api` | External API endpoint tests |
-| `feature_flags` | Tests for `constance` feature flag behavior |
-| `integration` | Tests requiring external services (ffmpeg, S3, etc.) |
-| `environment` | Environment-specific checks |
-| `tasks` | Background task tests |
-| `admin` | Django admin tests |
-| `auth` | Authentication flow tests |
-| `registration` | User registration tests |
-| `public` | Public-facing (non-authenticated) page tests |
+Use these 6 tags to enable selective test execution. Each tag maps to a type of code you're editing:
+
+| Tag | Use For | When to Run |
+|-----|---------|-------------|
+| `models` | Model/queryset logic, signals, managers | Editing models, managers, signals |
+| `views` | HTTP request/response tests | Editing views, templates, URLs |
+| `forms` | Form validation logic | Editing form classes |
+| `tasks` | Background job tests (Django Q) | Editing async tasks |
+| `admin` | Django admin customizations | Editing admin.py |
+| `integration` | Tests requiring external services (ffmpeg, S3) | Exclude for fast local runs |
+
+**Keep it simple.** Don't invent new tags or combine multiple tags. One tag per test class.
 
 ### Running Tests by Tag
 
 ```bash
-python manage.py test --tag=models       # Model unit tests
-python manage.py test --tag=views        # View/HTTP tests
-python manage.py test --tag=api          # API endpoint tests
-python manage.py test --exclude-tag=integration  # Skip slow tests
+python manage.py test --tag=models              # Run model tests
+python manage.py test --tag=views               # Run view tests
+python manage.py test --exclude-tag=integration # Fast local runs
 ```
 
 
