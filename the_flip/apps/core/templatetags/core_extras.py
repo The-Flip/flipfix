@@ -286,6 +286,24 @@ def machine_status_btn_class(status):
     return _MACHINE_STATUS_BTN_CLASSES.get(status, "btn--secondary")
 
 
+@register.filter
+def manufacturer_year(model):
+    """Return 'Manufacturer · Year' string for a machine model.
+
+    Handles cases where manufacturer or year may be missing.
+
+    Usage:
+        {{ machine.model|manufacturer_year }}
+        {{ machine_model|manufacturer_year }}
+    """
+    parts = []
+    if model.manufacturer:
+        parts.append(model.manufacturer)
+    if model.year:
+        parts.append(str(model.year))
+    return " · ".join(parts)
+
+
 # -----------------------------------------------------------------------------
 # UI Component template tags
 # -----------------------------------------------------------------------------

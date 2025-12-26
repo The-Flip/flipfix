@@ -52,7 +52,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 
 ### Utility Classes
 - `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
-- `.visually-hidden` - Hide visually but keep accessible to screen readers (see [Icon Accessibility](#icon-accessibility))
+- `.visually-hidden` - Hide visually but keep accessible to screen readers (see [Icons](#icons))
 - `.text-muted` - Muted text color
 - `.text-center` - Center-align text
 - `.text-xs` - Extra small text
@@ -96,49 +96,17 @@ The site must be optimized for mobile, tablet, and desktop. Breakpoints are defi
 - Buttons and links should have hover + active states distinct from focus.
 - Respect `@media (prefers-reduced-motion: reduce)` by disabling transitions.
 
-### Icon Accessibility
+### Icons
 
-**Always use the `{% icon %}` template tag** instead of raw `<i>` elements. The tag automatically handles accessibility by adding `aria-hidden="true"` to all icons.
+This project uses [Font Awesome](https://fontawesome.com/icons) icons. Always use the `{% icon %}` template tag instead of raw `<i>` elements because the tag handles accessibility automatically.
 
-```django
-{# Basic usage - decorative icon (aria-hidden added automatically) #}
-{% icon "check" %}
+| Usage | Description |
+|-------|-------------|
+| `{% icon "check" %}` | Uses icon `fa-check` from the default Font Awesome collection, Solid  |
+| `{% icon "discord" style="brands" %}` | Uses icon `fa-discord` from the Brands collection |
+| `{% icon "check" class="meta" %}` | Adds `meta` CSS class |
+| `{% icon "check" label="Problem" %}` | Create the label `Problem` for screen readers.  Use only when icon conveys meaning not in adjacent text.  By default, icons are hidden from screen readers. |
 
-{# With extra CSS classes #}
-{% icon "check" class="meta" %}
-
-{# Multiple classes #}
-{% icon "bug" class="meta space-right-sm" %}
-
-{# For icons that convey meaning, add a screen reader label #}
-{% icon "bug" label="Problem" %}
-
-{# For brand icons (Discord, GitHub, etc.) #}
-{% icon "discord" style="brands" %}
-```
-
-The tag outputs:
-```html
-<!-- Basic -->
-<i class="fa-solid fa-check" aria-hidden="true"></i>
-
-<!-- With label (for meaningful icons) -->
-<i class="fa-solid fa-bug" aria-hidden="true"></i><span class="visually-hidden">Problem</span>
-```
-
-#### When to use the `label` parameter
-
-Most icons are decorative (they appear next to text that describes their meaning). These should NOT have a label:
-```django
-{# Decorative - the button text "Save" describes the action #}
-<button>{% icon "floppy-disk" class="meta" %} Save</button>
-```
-
-Use `label` only when the icon conveys meaning not expressed elsewhere:
-```django
-{# Meaningful - the bug icon identifies this as a problem report #}
-{% icon "bug" label="Problem" %} #123
-```
 
 
 ## XSS Protection
@@ -149,6 +117,6 @@ Only use `{{ variable|safe }}` for HTML you control (e.g., markdown rendered ser
 
 ## Performance & Build
 
-- Stick to vanilla CSS compiled once (no external fonts, minimal animations).
-- Use `@layer base, components, utilities;` to control cascade if desired.
-- Gzip production CSS and ensure it is fingerprinted via Django's `collectstatic`.
+- Single vanilla CSS file (`styles.css`) for cacheability
+- Static files are gzipped and fingerprinted via WhiteNoise + `collectstatic`
+- Inter font loaded from Google Fonts with `display=swap`

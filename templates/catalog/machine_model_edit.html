@@ -15,7 +15,7 @@
   <div class="sidebar__title">{{ object.name }}</div>
 {% endsidebar_section %}
 {% if instances %}
-  {% sidebar_section label="Machines" %}
+  {% sidebar_section label="Machines of this Model" %}
   <ul class="sidebar__list">
     {% for instance in instances %}
       <li>

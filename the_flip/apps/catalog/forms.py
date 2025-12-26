@@ -10,17 +10,12 @@ from the_flip.apps.core.forms import StyledFormMixin
 class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
     """Form for editing machine instance details."""
 
-    fieldsets = [
-        ("Identification", ["name", "serial_number"]),
-        ("Provenance", ["ownership_credit", "acquisition_notes"]),
-    ]
-
     class Meta:
         model = MachineInstance
         fields = [
             "name",
+            "short_name",
             "serial_number",
-            "ownership_credit",
             "acquisition_notes",
         ]
         widgets = {
@@ -29,11 +24,8 @@ class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
             "acquisition_notes": forms.Textarea(
                 attrs={
                     "rows": 4,
-                    "placeholder": "Notes about how this machine was acquired, when, and any relevant details",
+                    "placeholder": "Notes about how or when this machine was acquired",
                 }
-            ),
-            "ownership_credit": forms.TextInput(
-                attrs={"placeholder": "e.g., On loan from John Doe"}
             ),
         }
 
@@ -93,7 +85,7 @@ class MachineModelForm(StyledFormMixin, forms.ModelForm):
             "system": forms.TextInput(attrs={"placeholder": "e.g., WPC-95, System 11"}),
             "scoring": forms.TextInput(attrs={"placeholder": "e.g., Reel, 5 Digit, 7 Digit"}),
             "flipper_count": forms.NumberInput(
-                attrs={"placeholder": "e.g., 2", "class": "form-input--width-4"}
+                attrs={"placeholder": "e.g., 2", "class": "form-input--width-8"}
             ),
             "pinside_rating": forms.NumberInput(
                 attrs={"placeholder": "0.00-10.00", "step": "0.01", "class": "form-input--width-6"}

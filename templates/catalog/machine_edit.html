@@ -17,11 +17,7 @@
   {% include "components/history_link.html" with history_url=object.get_admin_history_url %}
   {% sidebar_section %}
   <div class="sidebar__title">{{ object.name }}</div>
-  <div class="sidebar__subtitle">
-    {% if object.model.manufacturer %}{{ object.model.manufacturer }}{% endif %}
-    {% if object.model.manufacturer and object.model.year %}·{% endif %}
-    {% if object.model.year %}{{ object.model.year }}{% endif %}
-  </div>
+  <div class="sidebar__subtitle">{{ object.model|manufacturer_year }}</div>
   <div class="flex flex-wrap stack-tight space-above-sm"
        data-update-url="{% url 'machine-inline-update' object.slug %}">
     <div class="dropdown">
@@ -90,7 +86,6 @@
 </a>
 {% endsidebar_section %}
 {% sidebar_section label="Model" %}
-<div class="sidebar__title">{{ object.model.name }}</div>
 <a href="{% url 'machine-model-edit' object.model.slug %}"
    class="btn btn--secondary btn--full">
   {% icon "pencil" class="meta" %}
@@ -103,16 +98,7 @@
     <form method="post" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}
-      {% for fieldset_title, field_names in form.fieldsets %}
-        <fieldset class="form-section">
-          <legend>{{ fieldset_title }}</legend>
-          {% for field_name in field_names %}
-            {% with field=form|getfield:field_name %}
-              {% form_field field %}
-            {% endwith %}
-          {% endfor %}
-        </fieldset>
-      {% endfor %}
+      {% form_fields form %}
       <div class="form-actions">
         <a href="{% url 'maintainer-machine-detail' object.slug %}"
            class="btn btn--secondary">
