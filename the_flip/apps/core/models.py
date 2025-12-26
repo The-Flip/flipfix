@@ -170,7 +170,7 @@ class AbstractMedia(TimeStampedMixin):
 
     media_type = models.CharField(max_length=20, choices=MediaType.choices)
     file = models.FileField()  # upload_to set by subclass
-    thumbnail_file = models.FileField(blank=True)
+    thumbnail_file = models.FileField(blank=True, null=True)
     transcoded_file = models.FileField(blank=True, null=True)
     poster_file = models.ImageField(blank=True, null=True)
     transcode_status = models.CharField(

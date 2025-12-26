@@ -147,7 +147,7 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
         report.media.filter(media_type=ProblemReportMedia.MediaType.PHOTO)
-        .exclude(thumbnail_file="")
+        .filter(thumbnail_file__gt="")
         .order_by("display_order", "created_at")[:4]
     )
 
@@ -220,7 +220,7 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
         log_entry.media.filter(media_type=LogEntryMedia.MediaType.PHOTO)  # type: ignore[attr-defined]
-        .exclude(thumbnail_file="")
+        .filter(thumbnail_file__gt="")
         .order_by("display_order", "created_at")[:4]
     )
 
@@ -264,7 +264,7 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
         part_request.media.filter(media_type=PartRequestMedia.MediaType.PHOTO)
-        .exclude(thumbnail_file="")
+        .filter(thumbnail_file__gt="")
         .order_by("display_order", "created_at")[:4]
     )
 
@@ -357,7 +357,7 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
         update.media.filter(media_type=PartRequestUpdateMedia.MediaType.PHOTO)
-        .exclude(thumbnail_file="")
+        .filter(thumbnail_file__gt="")
         .order_by("display_order", "created_at")[:4]
     )
 

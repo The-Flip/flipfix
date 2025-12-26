@@ -332,7 +332,7 @@ class LogEntryMedia(AbstractMedia):
         related_name="media",
     )
     file = models.FileField(upload_to=log_media_upload_to)
-    thumbnail_file = models.FileField(upload_to=log_media_upload_to, blank=True)
+    thumbnail_file = models.FileField(upload_to=log_media_upload_to, blank=True, null=True)
     transcoded_file = models.FileField(upload_to=log_media_upload_to, blank=True, null=True)
     poster_file = models.ImageField(upload_to=log_media_upload_to, blank=True, null=True)
 
@@ -367,7 +367,9 @@ class ProblemReportMedia(AbstractMedia):
         related_name="media",
     )
     file = models.FileField(upload_to=problem_report_media_upload_to)
-    thumbnail_file = models.FileField(upload_to=problem_report_media_upload_to, blank=True)
+    thumbnail_file = models.FileField(
+        upload_to=problem_report_media_upload_to, blank=True, null=True
+    )
     transcoded_file = models.FileField(
         upload_to=problem_report_media_upload_to, blank=True, null=True
     )

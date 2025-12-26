@@ -51,8 +51,6 @@ work_date = models.DateTimeField(null=True, blank=True)
 transcoded_file = models.FileField(blank=True, null=True)
 ```
 
-Note: FileField standardization pending [#132](https://github.com/deanmoses/the_flip/issues/132).
-
 ## ForeignKey Relationships
 
 Always specify `related_name` and choose `on_delete` deliberately:
@@ -152,6 +150,20 @@ Create `search_for_X()` methods when fields become redundant in certain view con
 ## Query Optimization
 
 Don't add `select_related`/`prefetch_related` in model methods—add them in views or QuerySet methods where queries are built. See `docs/Views.md` for patterns.
+
+### Querying Optional FileFields
+
+For FileFields with `null=True, blank=True`, use `__gt=""` to exclude both NULL and empty values:
+
+```python
+# Get photos that have thumbnails (excludes both NULL and empty string)
+photos = media.filter(thumbnail_file__gt="")
+
+# NOT this—only catches empty string, misses NULL:
+photos = media.exclude(thumbnail_file="")
+```
+
+The `__gt=""` pattern works because any non-empty path is greater than `""`, while both NULL and `""` fail the comparison.
 
 ## Model Checklist
 

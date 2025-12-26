@@ -113,7 +113,7 @@ class PartRequestMedia(AbstractMedia):
         related_name="media",
     )
     file = models.FileField(upload_to=part_request_media_upload_to)
-    thumbnail_file = models.FileField(upload_to=part_request_media_upload_to, blank=True)
+    thumbnail_file = models.FileField(upload_to=part_request_media_upload_to, blank=True, null=True)
     transcoded_file = models.FileField(
         upload_to=part_request_media_upload_to, blank=True, null=True
     )
@@ -202,7 +202,9 @@ class PartRequestUpdateMedia(AbstractMedia):
         related_name="media",
     )
     file = models.FileField(upload_to=part_request_update_media_upload_to)
-    thumbnail_file = models.FileField(upload_to=part_request_update_media_upload_to, blank=True)
+    thumbnail_file = models.FileField(
+        upload_to=part_request_update_media_upload_to, blank=True, null=True
+    )
     transcoded_file = models.FileField(
         upload_to=part_request_update_media_upload_to, blank=True, null=True
     )

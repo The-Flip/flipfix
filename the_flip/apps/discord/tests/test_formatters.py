@@ -92,6 +92,45 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
             self.assertIn("image", embed)
             self.assertEqual(embed["url"], main_url)
 
+    def test_format_problem_report_excludes_photos_without_thumbnails(self):
+        """Photos without thumbnails are excluded from Discord gallery."""
+        from the_flip.apps.maintenance.models import ProblemReportMedia
+
+        report = create_problem_report(machine=self.machine)
+
+        # Create a photo WITH thumbnail
+        media_with_thumb = ProblemReportMedia(
+            problem_report=report,
+            media_type=ProblemReportMedia.MediaType.PHOTO,
+            display_order=0,
+        )
+        media_with_thumb.file.save("with_thumb.jpg", ContentFile(b"fake"), save=False)
+        media_with_thumb.thumbnail_file.save("thumb.jpg", ContentFile(b"fake"), save=True)
+
+        # Create a photo with NULL thumbnail
+        media_null_thumb = ProblemReportMedia(
+            problem_report=report,
+            media_type=ProblemReportMedia.MediaType.PHOTO,
+            display_order=1,
+            thumbnail_file=None,
+        )
+        media_null_thumb.file.save("null_thumb.jpg", ContentFile(b"fake"), save=True)
+
+        # Create a photo with empty string thumbnail (legacy representation)
+        media_empty_thumb = ProblemReportMedia(
+            problem_report=report,
+            media_type=ProblemReportMedia.MediaType.PHOTO,
+            display_order=2,
+        )
+        media_empty_thumb.file.save("empty_thumb.jpg", ContentFile(b"fake"), save=True)
+        # thumbnail_file defaults to empty string when not set
+
+        message = format_discord_message("problem_report_created", report)
+
+        # Should only have 1 embed (the photo with thumbnail)
+        self.assertEqual(len(message["embeds"]), 1)
+        self.assertIn("image", message["embeds"][0])
+
     def test_format_log_entry_created(self):
         """Format a new log entry message."""
         log_entry = create_log_entry(machine=self.machine, created_by=self.maintainer_user)
@@ -162,6 +201,34 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         for embed in message["embeds"][1:]:
             self.assertIn("image", embed)
             self.assertEqual(embed["url"], main_url)
+
+    def test_format_log_entry_excludes_photos_without_thumbnails(self):
+        """Photos without thumbnails are excluded from Discord gallery."""
+        log_entry = create_log_entry(machine=self.machine, created_by=self.maintainer_user)
+
+        # Create a photo WITH thumbnail
+        media_with_thumb = LogEntryMedia(
+            log_entry=log_entry,
+            media_type=LogEntryMedia.MediaType.PHOTO,
+            display_order=0,
+        )
+        media_with_thumb.file.save("with_thumb.jpg", ContentFile(b"fake"), save=False)
+        media_with_thumb.thumbnail_file.save("thumb.jpg", ContentFile(b"fake"), save=True)
+
+        # Create a photo with NULL thumbnail
+        media_null_thumb = LogEntryMedia(
+            log_entry=log_entry,
+            media_type=LogEntryMedia.MediaType.PHOTO,
+            display_order=1,
+            thumbnail_file=None,
+        )
+        media_null_thumb.file.save("null_thumb.jpg", ContentFile(b"fake"), save=True)
+
+        message = format_discord_message("log_entry_created", log_entry)
+
+        # Should only have 1 embed (the photo with thumbnail)
+        self.assertEqual(len(message["embeds"]), 1)
+        self.assertIn("image", message["embeds"][0])
 
     def test_format_log_entry_uses_discord_name_when_linked(self):
         """Log entry uses Discord display name when maintainer is linked."""
@@ -311,6 +378,40 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
             self.assertIn("image", embed)
             self.assertEqual(embed["url"], main_url)
 
+    def test_format_part_request_excludes_photos_without_thumbnails(self):
+        """Photos without thumbnails are excluded from Discord gallery."""
+        from the_flip.apps.parts.models import PartRequestMedia
+
+        part_request = create_part_request(
+            text="Need new flipper rubbers",
+            requested_by=self.maintainer,
+            machine=self.machine,
+        )
+
+        # Create a photo WITH thumbnail
+        media_with_thumb = PartRequestMedia(
+            part_request=part_request,
+            media_type=PartRequestMedia.MediaType.PHOTO,
+            display_order=0,
+        )
+        media_with_thumb.file.save("with_thumb.jpg", ContentFile(b"fake"), save=False)
+        media_with_thumb.thumbnail_file.save("thumb.jpg", ContentFile(b"fake"), save=True)
+
+        # Create a photo with NULL thumbnail
+        media_null_thumb = PartRequestMedia(
+            part_request=part_request,
+            media_type=PartRequestMedia.MediaType.PHOTO,
+            display_order=1,
+            thumbnail_file=None,
+        )
+        media_null_thumb.file.save("null_thumb.jpg", ContentFile(b"fake"), save=True)
+
+        message = format_discord_message("part_request_created", part_request)
+
+        # Should only have 1 embed (the photo with thumbnail)
+        self.assertEqual(len(message["embeds"]), 1)
+        self.assertIn("image", message["embeds"][0])
+
     def test_format_part_request_update_with_photos(self):
         """Format a part request update with photos creates multiple embeds for gallery."""
         from the_flip.apps.parts.models import PartRequestUpdateMedia
@@ -355,6 +456,45 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
         for embed in message["embeds"][1:]:
             self.assertIn("image", embed)
             self.assertEqual(embed["url"], main_url)
+
+    def test_format_part_request_update_excludes_photos_without_thumbnails(self):
+        """Photos without thumbnails are excluded from Discord gallery."""
+        from the_flip.apps.parts.models import PartRequestUpdateMedia
+
+        part_request = create_part_request(
+            text="Need new flipper rubbers",
+            requested_by=self.maintainer,
+            machine=self.machine,
+        )
+        update = create_part_request_update(
+            part_request=part_request,
+            posted_by=self.maintainer,
+            text="Ordered from Marco Specialties",
+        )
+
+        # Create a photo WITH thumbnail
+        media_with_thumb = PartRequestUpdateMedia(
+            update=update,
+            media_type=PartRequestUpdateMedia.MediaType.PHOTO,
+            display_order=0,
+        )
+        media_with_thumb.file.save("with_thumb.jpg", ContentFile(b"fake"), save=False)
+        media_with_thumb.thumbnail_file.save("thumb.jpg", ContentFile(b"fake"), save=True)
+
+        # Create a photo with NULL thumbnail
+        media_null_thumb = PartRequestUpdateMedia(
+            update=update,
+            media_type=PartRequestUpdateMedia.MediaType.PHOTO,
+            display_order=1,
+            thumbnail_file=None,
+        )
+        media_null_thumb.file.save("null_thumb.jpg", ContentFile(b"fake"), save=True)
+
+        message = format_discord_message("part_request_update_created", update)
+
+        # Should only have 1 embed (the photo with thumbnail)
+        self.assertEqual(len(message["embeds"]), 1)
+        self.assertIn("image", message["embeds"][0])
 
 
 class GetBaseUrlTests(TestCase):
