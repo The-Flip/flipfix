@@ -3,11 +3,7 @@
 <a href="{% url 'maintainer-machine-detail' machine.slug %}"
    class="sidebar-card sidebar-card--neutral">
   <div class="sidebar-card__header">{{ machine.name }}</div>
-  <p class="sidebar-card__meta">
-    {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
-    {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
-    {% if machine.model.year %}{{ machine.model.year }}{% endif %}
-  </p>
+  <p class="sidebar-card__meta">{{ machine.model|manufacturer_year }}</p>
   <div class="sidebar-card__badges">
     <span class="pill {{ machine.operational_status|machine_status_css_class }}">
       {% icon machine.operational_status|machine_status_icon class="meta" %}

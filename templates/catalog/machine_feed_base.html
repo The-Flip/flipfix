@@ -92,11 +92,7 @@
         <!-- MACHINE INFO -->
         <div class="sidebar__section">
           <div class="sidebar__title">{{ machine.name }}</div>
-          <div class="sidebar__subtitle">
-            {% if machine.model.manufacturer %}{{ machine.model.manufacturer }}{% endif %}
-            {% if machine.model.manufacturer and machine.model.year %}·{% endif %}
-            {% if machine.model.year %}{{ machine.model.year }}{% endif %}
-          </div>
+          <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
           <div class="flex flex-wrap stack-tight space-above-sm"
                data-update-url="{% url 'machine-inline-update' machine.slug %}">
             <div class="dropdown">

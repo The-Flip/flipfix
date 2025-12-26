@@ -15,13 +15,7 @@
 {% block sidebar %}
   {% sidebar_section label="Selected Model" %}
   <div class="sidebar__title">{{ machine_model.name }}</div>
-  {% if machine_model.manufacturer or machine_model.year %}
-    <p class="sidebar__subtitle">
-      {% if machine_model.manufacturer %}{{ machine_model.manufacturer }}{% endif %}
-      {% if machine_model.manufacturer and machine_model.year %},{% endif %}
-      {% if machine_model.year %}{{ machine_model.year }}{% endif %}
-    </p>
-  {% endif %}
+  <div class="sidebar__subtitle">{{ machine_model|manufacturer_year }}</div>
 {% endsidebar_section %}
 {% if existing_instances %}
   {% sidebar_section label="Machines of This Model" %}
