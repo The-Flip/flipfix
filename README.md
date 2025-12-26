@@ -57,45 +57,44 @@ It's in Django.
    python manage.py create_sample_data
    ```
 
-8. **Run development server**
-   ```bash
-   python manage.py runserver
-   ```
+## Running the Application
 
-9. **Access the application**
-   - Main site: http://localhost:8000/
-   - Admin panel: http://localhost:8000/admin/
+### Web Server
+This is the main thing you need to run.
+```bash
+make runserver  # or: python manage.py runserver
+```
+- Main site: http://localhost:8000/
+- Admin panel: http://localhost:8000/admin/
+
+### Background Worker
+You only need to run the background task worker if you want to upload video and have the system post to Discord.
+```bash
+make runq  # In a separate terminal
+```
+Requires FFmpeg for video transcoding:
+- macOS: `brew install ffmpeg`
+- Ubuntu/Debian: `apt-get install ffmpeg`
+- Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
+
+See [docs/Discord.md](docs/Discord.md) for how to configure Web Hooks to post to Discord.  It's disabled by default.
+
+### Discord Bot
+You only need to run the Discord bot if you want to right-click in a Discord channel and add those Discord messages to Flipfix.
+```bash
+make runbot  # In a separate terminal
+```
+See [docs/Discord.md](docs/Discord.md) for setup instructions.  It's disabled by default.
 
 ## Development Tools
 
-1. **Install pre-commit hooks** (recommended)
-   ```bash
-   pre-commit install
-   ```
+**Install pre-commit hooks** (recommended):
+```bash
+pre-commit install
+```
 
-   This automatically runs code quality checks before each commit.
-
-2. **Install FFmpeg** (for video transcoding features)
-   - macOS: `brew install ffmpeg`
-   - Ubuntu/Debian: `apt-get install ffmpeg`
-   - Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
-
-3. **Run background worker** (for video transcoding and webhooks)
-   ```bash
-   # In a separate terminal
-   make runq
-   ```
-
-   The background worker handles async tasks like video transcoding and webhook delivery.
+This automatically runs code quality checks before each commit.
 
 ## Developer Documentation
 
-See [docs/README.md](docs/README.md) for detailed guides on:
-- Project structure and architecture
-- Django and Python conventions
-- HTML/CSS patterns
-- Data model documentation
-- Testing strategies
-- Deployment process
-
-AI helpers like Claude and Codex **MUST** read and follow the docs linked at [docs/README.md](docs/README.md) before answering questions or generating assets. Those docs spell out how AI assistants must work with HTML, CSS, Django/Python, the project structure, data model, and testing.
+See [docs/README.md](docs/README.md).
