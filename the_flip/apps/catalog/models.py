@@ -211,7 +211,7 @@ class MachineInstance(TimeStampedMixin):
         unique=True,
         null=True,
         verbose_name="Short Name",
-        help_text="Short display name for notifications and mobile",
+        help_text="Short name for notifications and mobile (e.g., 'Eight Ball 2')",
     )
     serial_number = models.CharField(
         max_length=100,
