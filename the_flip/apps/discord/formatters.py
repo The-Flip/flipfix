@@ -105,8 +105,6 @@ def format_discord_message(event_type: str, obj: Any) -> dict:
         return _format_log_entry_created(obj)
     elif event_type == "part_request_created":
         return _format_part_request_created(obj)
-    elif event_type == "part_request_status_changed":
-        return _format_part_request_status_changed(obj)
     elif event_type == "part_request_update_created":
         return _format_part_request_update_created(obj)
     else:
@@ -271,43 +269,6 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
 
 
-def _format_part_request_status_changed(part_request: PartRequest) -> dict:
-    """Format a part request status change notification."""
-    base_url = get_base_url()
-    url = base_url + reverse("part-request-detail", kwargs={"pk": part_request.pk})
-
-    status_emojis = {
-        "requested": "📦",
-        "ordered": "🛒",
-        "received": "✅",
-        "cancelled": "❌",
-    }
-    emoji = status_emojis.get(part_request.status, "📦")
-    status_display = part_request.get_status_display()
-
-    # Main description
-    description = f"**Status:** {status_display}"
-
-    # Add truncated text
-    text_preview = part_request.text[:200]
-    if len(part_request.text) > 200:
-        text_preview += "..."
-    description += f"\n\n{text_preview}"
-
-    return {
-        "embeds": [
-            {
-                "title": f"{emoji} Parts Request #{part_request.pk} for {part_request.machine.short_display_name}: {status_display}"
-                if part_request.machine
-                else f"{emoji} Parts Request #{part_request.pk}: {status_display}",
-                "description": description,
-                "url": url,
-                "color": 3447003,  # Blue color (same as logs)
-            }
-        ]
-    }
-
-
 def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     """Format a new part request update notification."""
     from the_flip.apps.parts.models import PartRequestUpdateMedia
@@ -370,7 +331,6 @@ def format_test_message(event_type: str) -> dict:
         "problem_report_created": "Problem Report Created",
         "log_entry_created": "Log Entry Created",
         "part_request_created": "Parts Request Created",
-        "part_request_status_changed": "Parts Request Status Changed",
         "part_request_update_created": "Parts Request Update Created",
     }
     label = event_labels.get(event_type, event_type)

@@ -16,7 +16,6 @@ from the_flip.apps.core.test_utils import (
 )
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.maintenance.models import ProblemReport
-from the_flip.apps.parts.models import PartRequest
 
 
 @tag("tasks")
@@ -104,7 +103,9 @@ class PartRequestWebhookSignalTests(TestCase):
 
     @patch("the_flip.apps.discord.tasks.async_task")
     def test_signal_fires_on_status_change_via_update(self, mock_async):
-        """Signal fires when status changes via an update."""
+        """Status change via update only fires update_created (not a separate status event)."""
+        from the_flip.apps.parts.models import PartRequest
+
         with self.captureOnCommitCallbacks(execute=True):
             part_request = create_part_request(requested_by=self.maintainer)
         mock_async.reset_mock()
@@ -118,10 +119,10 @@ class PartRequestWebhookSignalTests(TestCase):
                 new_status=PartRequest.Status.ORDERED,
             )
 
-        # Should fire both update_created and status_changed
+        # Should only fire update_created (status info is included in the update message)
         event_types = [c[0][1] for c in mock_async.call_args_list]
         self.assertIn("part_request_update_created", event_types)
-        self.assertIn("part_request_status_changed", event_types)
+        self.assertNotIn("part_request_status_changed", event_types)
 
 
 @tag("tasks")

@@ -20,7 +20,6 @@ from the_flip.apps.discord.formatters import (
 )
 from the_flip.apps.discord.models import DiscordUserLink
 from the_flip.apps.maintenance.models import LogEntryMedia
-from the_flip.apps.parts.models import PartRequest
 
 
 @tag("tasks")
@@ -299,24 +298,6 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
 
         # URL points to the part request
         self.assertIn(f"/parts/{part_request.pk}/", embed["url"])
-
-    def test_format_part_request_status_changed(self):
-        """Format a status change message."""
-        part_request = create_part_request(
-            text="Need new flipper rubbers",
-            requested_by=self.maintainer,
-            machine=self.machine,
-            status=PartRequest.Status.ORDERED,
-        )
-        message = format_discord_message("part_request_status_changed", part_request)
-
-        embed = message["embeds"][0]
-
-        # Title includes status
-        self.assertIn("Ordered", embed["title"])
-
-        # Description includes status
-        self.assertIn("Status", embed["description"])
 
     def test_format_part_request_update_created(self):
         """Format a part request update message."""
