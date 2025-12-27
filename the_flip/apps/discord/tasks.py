@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import requests
 from django_q.tasks import async_task
 
+from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.logging import bind_log_context, current_log_context, reset_log_context
 
 if TYPE_CHECKING:
@@ -29,6 +30,13 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
 
     if not config.DISCORD_WEBHOOKS_ENABLED or not config.DISCORD_WEBHOOK_URL:
         return
+
+    # Skip creation webhooks for Discord-originated records (avoids echo).
+    # Only suppress *_created events - future update events should still post.
+    if event_type.endswith("_created"):
+        model_class = _get_model_class(model_name)
+        if model_class and DiscordMessageMapping.has_mapping_for(model_class, object_id):
+            return
 
     async_task(
         "the_flip.apps.discord.tasks.deliver_webhook",
@@ -110,20 +118,28 @@ _WEBHOOK_MODEL_REGISTRY: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]]
 }
 
 
-def _get_object(model_name: str, object_id: int):
-    """Fetch the object by model name and ID with optimized related queries."""
+def _get_model_class(model_name: str):
+    """Get the model class for a model name, or None if unknown."""
     if model_name not in _WEBHOOK_MODEL_REGISTRY:
         logger.warning("Unknown webhook model: %s", model_name)
         return None
 
-    import_path, select_related, prefetch_related = _WEBHOOK_MODEL_REGISTRY[model_name]
+    import_path, _, _ = _WEBHOOK_MODEL_REGISTRY[model_name]
 
-    # Lazy import the model class
     from importlib import import_module
 
     module_path, class_name = import_path.rsplit(".", 1)
     module = import_module(module_path)
-    model_class = getattr(module, class_name)
+    return getattr(module, class_name)
+
+
+def _get_object(model_name: str, object_id: int):
+    """Fetch the object by model name and ID with optimized related queries."""
+    model_class = _get_model_class(model_name)
+    if model_class is None:
+        return None
+
+    _, select_related, prefetch_related = _WEBHOOK_MODEL_REGISTRY[model_name]
 
     # Build optimized query
     queryset = model_class.objects.all()

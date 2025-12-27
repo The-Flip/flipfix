@@ -1,6 +1,7 @@
 """Discord integration models."""
 
 from django.db import models
+from django.db.models import Model
 
 from the_flip.apps.core.models import TimeStampedMixin
 
@@ -47,11 +48,12 @@ class DiscordMessageMapping(models.Model):
     """Tracks which Discord messages have been processed to prevent duplicates.
 
     Uses Django's ContentType framework to link to any model type.
+    One Discord message can create multiple records (e.g., Claude suggests
+    problems on different machines), so discord_message_id is not unique.
     """
 
     discord_message_id = models.CharField(
         max_length=50,
-        unique=True,
         help_text="Discord message snowflake ID.",
     )
     content_type = models.ForeignKey(
@@ -66,6 +68,15 @@ class DiscordMessageMapping(models.Model):
         verbose_name_plural = "Discord message mappings"
         indexes = [
             models.Index(fields=["discord_message_id"]),
+            # For was_created_from_discord() lookups
+            models.Index(fields=["content_type", "object_id"]),
+        ]
+        constraints = [
+            # Prevent duplicate mappings for the same record
+            models.UniqueConstraint(
+                fields=["discord_message_id", "content_type", "object_id"],
+                name="unique_discord_message_record",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -77,7 +88,7 @@ class DiscordMessageMapping(models.Model):
         return cls.objects.filter(discord_message_id=str(message_id)).exists()
 
     @classmethod
-    def mark_processed(cls, message_id: str, obj) -> "DiscordMessageMapping":
+    def mark_processed(cls, message_id: str, obj: Model) -> "DiscordMessageMapping":
         """Mark a Discord message as processed, linking to the created object."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -87,3 +98,27 @@ class DiscordMessageMapping(models.Model):
             content_type=content_type,
             object_id=obj.pk,
         )
+
+    @classmethod
+    def was_created_from_discord(cls, obj: Model) -> bool:
+        """Check if a record was created via the Discord bot.
+
+        Used by webhook signals to skip notifying Discord about records
+        that originated from Discord (avoiding redundant notifications).
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(obj)
+        return cls.objects.filter(content_type=content_type, object_id=obj.pk).exists()
+
+    @classmethod
+    def has_mapping_for(cls, model_class: type, object_id: int) -> bool:
+        """Check if a mapping exists without fetching the full object.
+
+        More efficient than was_created_from_discord() when you only have
+        the model class and ID (e.g., in dispatch_webhook before queueing).
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(model_class)
+        return cls.objects.filter(content_type=content_type, object_id=object_id).exists()

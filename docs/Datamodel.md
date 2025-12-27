@@ -50,4 +50,4 @@ Photos/videos attached to part request updates.
 Links a Discord user to a Maintainer account for attribution.
 
 ### Discord Message Mapping ([`DiscordMessageMapping`](../the_flip/apps/discord/models.py))
-Tracks which Discord messages have been processed to prevent duplicates.
+Tracks which Discord messages have been processed and links them to the records they created. This prevents an echo of posting the new records back to Discord, as well as prevents users from attempting to post a Discord message to Flipfix multiple times.
