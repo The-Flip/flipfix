@@ -69,7 +69,7 @@ class MachineActivitySearchTests(TestCase):
     """Tests for machine activity feed search including free-text name fields."""
 
     def setUp(self):
-        self.maintainer_user = create_maintainer_user()
+        self.maintainer_user = create_maintainer_user(first_name="TestFirst")
         self.machine = create_machine(slug="test-machine")
         self.detail_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
 
