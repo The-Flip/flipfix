@@ -207,13 +207,20 @@ def _get_parts_enabled() -> bool:
 
 
 @sync_to_async
-def _call_anthropic(api_key: str, user_message: str) -> anthropic.types.Message:
-    """Call Anthropic API with tool use for structured output."""
+def _call_anthropic(
+    api_key: str,
+    user_message: str,
+    system_prompt: str | None = None,
+) -> anthropic.types.Message:
+    """Call Anthropic API with tool use for structured output.
+
+    If system_prompt is provided, it overrides the default SYSTEM_PROMPT.
+    """
     client = anthropic.Anthropic(api_key=api_key)
     return client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,
-        system=SYSTEM_PROMPT,
+        system=system_prompt if system_prompt is not None else SYSTEM_PROMPT,
         tools=[RECORD_SUGGESTIONS_TOOL],
         tool_choice=TOOL_CHOICE,
         messages=[{"role": "user", "content": user_message}],
