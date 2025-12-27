@@ -76,15 +76,15 @@ the_flip/apps/maintenance/tests/
 
 ### Test Writing Rules
 - Use descriptive test names with docstrings:
-   - **One-line docstrings** for straightforward tests: `"""Staff can upload media."""`
-   - **Multi-line docstrings** for regression tests or tests needing context to explain *why* they exist
+  - **One-line docstrings** for straightforward tests: `"""Staff can upload media."""`
+  - **Multi-line docstrings** for regression tests or tests needing context to explain *why* they exist
 - Tags
-    - Add [`@tag` decorators](#test-tags) for selective execution.
-    - **Keep tags simple:** don't invent new tags or combine multiple tags. One tag per test class.
+  - Add [`@tag` decorators](#test-tags) for selective execution.
+  - **Keep tags simple:** don't invent new tags or combine multiple tags. One tag per test class.
 - Test data
-    - Keep tests independent: each test sets up its own data
-    - Use [factory functions](#factory-functions) instead of manual object creation
-    - For mocking patterns (subprocess, HTTP, settings, time), see `maintenance/tests/test_tasks.py`
+  - Keep tests independent: each test sets up its own data
+  - Use [factory functions](#factory-functions) instead of manual object creation
+  - For mocking patterns (subprocess, HTTP, settings, time), see `maintenance/tests/test_tasks.py`
 
 ## Test Utilities
 
