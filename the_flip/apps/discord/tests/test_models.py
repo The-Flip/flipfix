@@ -97,3 +97,22 @@ class DiscordMessageMappingTests(TestCase):
 
         # is_processed should return True for this message
         self.assertTrue(DiscordMessageMapping.is_processed("same_msg_123"))
+
+    def test_has_mapping_for_returns_true_when_mapping_exists(self):
+        """has_mapping_for() checks by model class and ID without fetching object."""
+        from the_flip.apps.maintenance.models import ProblemReport
+
+        report = create_problem_report(machine=self.machine)
+        DiscordMessageMapping.mark_processed("123456789", report)
+
+        # Should find the mapping using just the model class and ID
+        self.assertTrue(DiscordMessageMapping.has_mapping_for(ProblemReport, report.pk))
+
+    def test_has_mapping_for_returns_false_when_no_mapping(self):
+        """has_mapping_for() returns False when no mapping exists."""
+        from the_flip.apps.maintenance.models import ProblemReport
+
+        report = create_problem_report(machine=self.machine)
+
+        # No mapping created
+        self.assertFalse(DiscordMessageMapping.has_mapping_for(ProblemReport, report.pk))
