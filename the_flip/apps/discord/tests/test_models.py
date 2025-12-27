@@ -75,3 +75,25 @@ class DiscordMessageMappingTests(TestCase):
 
         # No mapping created - this is a web-originated record
         self.assertFalse(DiscordMessageMapping.was_created_from_discord(report))
+
+    def test_multiple_records_from_same_message(self):
+        """One Discord message can create multiple records.
+
+        When Claude analyzes a Discord message, it may suggest multiple records
+        (e.g., problems on different machines). Each should get its own mapping.
+        """
+        from the_flip.apps.core.test_utils import create_log_entry
+
+        report = create_problem_report(machine=self.machine)
+        log_entry = create_log_entry(machine=self.machine)
+
+        # Same Discord message creates both records - should NOT raise IntegrityError
+        DiscordMessageMapping.mark_processed("same_msg_123", report)
+        DiscordMessageMapping.mark_processed("same_msg_123", log_entry)
+
+        # Both should be marked as Discord-originated
+        self.assertTrue(DiscordMessageMapping.was_created_from_discord(report))
+        self.assertTrue(DiscordMessageMapping.was_created_from_discord(log_entry))
+
+        # is_processed should return True for this message
+        self.assertTrue(DiscordMessageMapping.is_processed("same_msg_123"))
