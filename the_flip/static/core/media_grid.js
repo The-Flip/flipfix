@@ -284,6 +284,10 @@
     if (!button) return;
 
     button.addEventListener('click', async () => {
+      if (!confirm('Delete?')) {
+        return;
+      }
+
       const mediaId = button.dataset.mediaId;
 
       const formData = new FormData();
