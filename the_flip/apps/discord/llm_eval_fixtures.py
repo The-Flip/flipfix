@@ -303,6 +303,33 @@ context_still_broken = LLMTestCase(
     ],
 )
 
+context_noisy_conversation = LLMTestCase(
+    description="Fix confirmed amid off-topic chatter - should ignore noise",
+    messages=[
+        _msg(
+            "maintainer1",
+            "Hey Godzilla's right flipper is loose. Do we have any hex drivers to tighten?",
+            "2025-01-15 14:00",
+        ),
+        _msg(
+            "maintainer2",
+            "Yeah, I think the hex drivers are in the bottom drawer of the workshop's filing cabinet.",
+            "2025-01-15 14:05",
+        ),
+        _msg("maintainer1", "Yo guys, pizza's here!", "2025-01-15 14:30"),
+        _msg("maintainer1", "Ok, the hex driver did it.", "2025-01-15 15:00"),
+        _msg(
+            "maintainer1",
+            "Flipper is nice and tight!",
+            "2025-01-15 15:01",
+            target=True,
+        ),
+    ],
+    expected=[
+        ExpectedSuggestion("log_entry", "godzilla-premium"),
+    ],
+)
+
 # =============================================================================
 # Auto-discover all fixtures
 # =============================================================================
