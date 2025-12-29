@@ -14,8 +14,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 
-from asgiref.sync import sync_to_async
-from constance import config
+from decouple import config as decouple_config
 from django.core.management.base import BaseCommand, CommandError
 
 from the_flip.apps.discord.llm import (
@@ -147,16 +146,16 @@ class Command(BaseCommand):
         asyncio.run(self._async_handle(options))
 
     async def _async_handle(self, options):
-        # Check API key
-        api_key = await self._get_api_key()
+        # Check API key (from environment variable, no database dependency)
+        api_key = self._get_api_key()
         if not api_key:
             raise CommandError(
-                "ANTHROPIC_API_KEY not configured in Constance settings.\n"
-                "Set it in Django admin: /admin/constance/config/"
+                "ANTHROPIC_API_KEY environment variable not set.\n"
+                "Export it before running: export ANTHROPIC_API_KEY=sk-..."
             )
 
-        # Check parts enabled
-        parts_enabled = await self._get_parts_enabled()
+        # Parts are always enabled for evals
+        parts_enabled = self._get_parts_enabled()
 
         # Get fixtures
         fixtures = self._get_fixtures(parts_enabled, options.get("fixture"))
@@ -179,13 +178,13 @@ class Command(BaseCommand):
         # Display results
         self._display_results(results)
 
-    @sync_to_async
     def _get_api_key(self) -> str:
-        return config.ANTHROPIC_API_KEY
+        """Get API key from .env file (no database dependency)."""
+        return str(decouple_config("ANTHROPIC_API_KEY", default=""))
 
-    @sync_to_async
     def _get_parts_enabled(self) -> bool:
-        return config.PARTS_ENABLED
+        """Parts are always enabled for eval fixtures."""
+        return True
 
     def _get_fixtures(
         self, parts_enabled: bool, fixture_name: str | None = None

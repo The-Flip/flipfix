@@ -758,6 +758,81 @@ webhook_reply_creates_part_update = LLMTestCase(
 
 
 # =============================================================================
+# Webhook follow-up fixtures (non-reply messages after webhook)
+# =============================================================================
+
+# This fixture replicates a real-world failure where:
+# 1. Problem Report was created via web UI (webhook posted to Discord)
+# 2. User replied with fix suggestion
+# 3. Several standalone messages (NOT replies) discussed the fix
+# 4. User clicked "Yay!" which should create a Log Entry linked to the Problem Report
+#
+# The key insight: the follow-up messages are NOT replies to the webhook,
+# they're standalone messages in the same channel. The LLM needs to understand
+# they're part of the same conversation based on content/timing, not reply_to_id.
+
+_webhook_problem_follow_up = _msg(
+    "Flipfix",  # Webhook uses string, not TestUser
+    "The ball return mechanism is jammed. Balls are not getting fed down the ramp. I tried lubricating the sliders but that didn't help.",
+    author_id=None,  # Webhook messages don't have author_id
+    flipfix_record=FlipfixRecord(
+        record_type=RecordType.PROBLEM_REPORT,
+        record_id=123,
+        machine_id=Machine.gorgar.slug,  # Using Gorgar as stand-in
+    ),
+)
+_reply_to_webhook_fix_suggestion = _msg(
+    User.maintainer1,
+    "I've seen that before on a different machine.  What you have to do is use the needle nose pliers to very slightly bend out the metal tab near the end of the chute.",
+    reply_to_id=_webhook_problem_follow_up.id,
+)
+# These are standalone messages, NOT replies
+_follow_up_question = _msg(
+    User.maintainer2,
+    "Which pliers?",
+)
+_follow_up_answer = _msg(
+    User.maintainer1,
+    "Use the smallest needle nose ones.  I think they're top left in the supply closet?",
+)
+_follow_up_found = _msg(
+    User.maintainer2,
+    "I see them, yeah",
+)
+_follow_up_worked = _msg(
+    User.maintainer2,
+    "Ok, I tried that.  It was a little scary,  I thought I was going to break the metal tab.  But yeah it worked, the balls are returning smoothly.",
+)
+_follow_up_yay = _msg(
+    User.maintainer2,
+    "Yay!",
+    target=True,
+)
+
+webhook_follow_up_not_reply = LLMTestCase(
+    description="Webhook followed by standalone messages (not replies) confirming fix",
+    category="webhook",
+    messages=[
+        _webhook_problem_follow_up,
+        _reply_to_webhook_fix_suggestion,
+        _follow_up_question,
+        _follow_up_answer,
+        _follow_up_found,
+        _follow_up_worked,
+        _follow_up_yay,
+    ],
+    expected=[
+        # Log entry should link to the existing problem report via parent_record_id
+        ExpectedSuggestion(
+            RecordType.LOG_ENTRY,
+            Machine.gorgar.slug,
+            parent_record_id=123,
+        ),
+    ],
+)
+
+
+# =============================================================================
 # Attribution fixtures
 # =============================================================================
 
