@@ -630,6 +630,17 @@ def _parse_webhook_embed(embed: discord.Embed) -> tuple[FlipfixRecord, str, str]
 
     Returns (FlipfixRecord, author, content) or None if not a Flipfix embed.
     """
+    # Debug logging to diagnose webhook parsing issues
+    logger.debug(
+        "discord_parsing_embed",
+        extra={
+            "embed_url": embed.url,
+            "embed_title": embed.title,
+            "embed_description": embed.description[:100] if embed.description else None,
+            "embed_type": embed.type,
+        },
+    )
+
     if not embed.url or not _is_flipfix_url(embed.url):
         return None
 

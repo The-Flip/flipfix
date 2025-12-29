@@ -16,9 +16,17 @@ from the_flip.apps.discord.llm import RecordType, _escape_yaml_string, build_yam
 class MockEmbed:
     """Mock Discord embed for testing."""
 
-    def __init__(self, url: str | None = None, description: str | None = None):
+    def __init__(
+        self,
+        url: str | None = None,
+        description: str | None = None,
+        title: str | None = None,
+        type: str = "rich",
+    ):
         self.url = url
         self.description = description
+        self.title = title
+        self.type = type
 
 
 @tag("tasks")
