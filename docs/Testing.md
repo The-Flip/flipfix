@@ -23,7 +23,7 @@ Use these 6 tags to enable selective test execution. Each tag maps to a type of 
 | `models` | Model/queryset logic, signals, managers | Editing models, managers, signals |
 | `views` | HTTP request/response tests, template filters/tags | Editing views, templates, URLs |
 | `forms` | Form validation logic | Editing form classes |
-| `tasks` | Background job tests (Django Q) | Editing async tasks |
+| `tasks` | Background jobs (Django Q), async utilities, Discord bot logic | Editing async tasks, Discord integration |
 | `admin` | Django admin customizations | Editing admin.py |
 | `integration` | Tests requiring external services (ffmpeg, S3) | Exclude for fast local runs |
 

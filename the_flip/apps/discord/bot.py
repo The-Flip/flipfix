@@ -3,22 +3,30 @@
 from __future__ import annotations
 
 import logging
-import traceback
 from dataclasses import dataclass, field
 
 import discord
+from asgiref.sync import sync_to_async
 from constance import config
 from discord import app_commands
 
+from the_flip.apps.catalog.models import MachineInstance
+from the_flip.apps.discord.context import gather_context
 from the_flip.apps.discord.llm import (
-    MessageContext,
+    FlattenedSuggestion,
     RecordSuggestion,
-    analyze_messages,
+    RecordType,
+    analyze_gathered_context,
+    flatten_suggestions,
 )
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.records import create_record
+from the_flip.apps.discord.types import DiscordUserInfo
 
 logger = logging.getLogger(__name__)
+
+# Wizard timeout in seconds (10 minutes allows time for editing multiple suggestions)
+WIZARD_TIMEOUT_SECONDS = 600
 
 
 @dataclass
@@ -32,49 +40,128 @@ class WizardResult:
 
 @dataclass
 class WizardState:
-    """State for the sequential wizard."""
+    """State for the sequential wizard.
 
-    suggestions: list[RecordSuggestion]
-    discord_user_id: str
+    Handles parent-child relationships: when a parent is created, its record ID
+    is stored so children can reference it. When a parent is skipped, all its
+    children are also skipped automatically.
+    """
+
+    flattened: list[FlattenedSuggestion]  # Flattened suggestions with parent links
+    discord_user: DiscordUserInfo  # The button-clicker (fallback if author not found)
     discord_message_id: int
-    discord_username: str
-    discord_display_name: str
+    author_id_map: dict[str, DiscordUserInfo] = field(default_factory=dict)
     current_index: int = 0
     results: list[WizardResult] = field(default_factory=list)
+    # Maps flattened index -> created record ID (for parent linking)
+    parent_record_ids: dict[int, int] = field(default_factory=dict)
+    # Set of flattened indices that were skipped (including cascaded skips)
+    skipped_indices: set[int] = field(default_factory=set)
+
+    @property
+    def current_flattened(self) -> FlattenedSuggestion | None:
+        """Return the flattened suggestion currently being reviewed."""
+        if 0 <= self.current_index < len(self.flattened):
+            return self.flattened[self.current_index]
+        return None
 
     @property
     def current_suggestion(self) -> RecordSuggestion | None:
         """Return the suggestion currently being reviewed, or None if complete."""
-        if 0 <= self.current_index < len(self.suggestions):
-            return self.suggestions[self.current_index]
-        return None
+        flattened = self.current_flattened
+        return flattened.suggestion if flattened else None
 
     @property
     def is_complete(self) -> bool:
         """Return True if all suggestions have been processed."""
-        return self.current_index >= len(self.suggestions)
+        return self.current_index >= len(self.flattened)
 
     @property
     def total_count(self) -> int:
         """Return the total number of suggestions in this wizard session."""
-        return len(self.suggestions)
+        return len(self.flattened)
 
     @property
     def step_number(self) -> int:
         """Return the 1-indexed step number for display."""
         return self.current_index + 1
 
-    def record_result(self, action: str, url: str | None = None):
-        """Record the result for the current suggestion and advance."""
-        if self.current_suggestion:
+    def record_result(self, action: str, url: str | None = None, record_id: int | None = None):
+        """Record the result for the current suggestion and advance.
+
+        Args:
+            action: "created" or "skipped"
+            url: URL to the created record (for "created" action)
+            record_id: ID of the created record (for parent linking)
+        """
+        suggestion = self.current_suggestion
+        if suggestion:
             self.results.append(
                 WizardResult(
-                    suggestion=self.current_suggestion,
+                    suggestion=suggestion,
                     action=action,
                     url=url,
                 )
             )
+
+            if action == "created" and record_id is not None:
+                # Store record ID for child linking
+                self.parent_record_ids[self.current_index] = record_id
+
+            if action == "skipped":
+                self._cascade_skip()
+
         self.current_index += 1
+        self._skip_cascaded_children()
+
+    def _cascade_skip(self):
+        """Mark all children of the current item as skipped."""
+        parent_idx = self.current_index
+        for i, item in enumerate(self.flattened):
+            if item.parent_index == parent_idx:
+                self.skipped_indices.add(i)
+
+    def _skip_cascaded_children(self):
+        """Auto-skip any items that were marked for cascaded skip."""
+        while self.current_index < len(self.flattened):
+            if self.current_index in self.skipped_indices:
+                # Auto-skip this item
+                suggestion = self.current_suggestion
+                if suggestion:
+                    self.results.append(
+                        WizardResult(
+                            suggestion=suggestion,
+                            action="skipped",
+                            url=None,
+                        )
+                    )
+                self.current_index += 1
+            else:
+                break
+
+    def get_author_for_current(self) -> DiscordUserInfo:
+        """Get the Discord user to attribute the current suggestion to.
+
+        Uses the suggestion's author_id to look up the original message author.
+        Falls back to the button-clicker if author_id is not found in the map.
+        """
+        suggestion = self.current_suggestion
+        if suggestion and suggestion.author_id:
+            author = self.author_id_map.get(suggestion.author_id)
+            if author:
+                return author
+        return self.discord_user
+
+    def get_parent_record_id_for_current(self) -> int | None:
+        """Get the parent record ID for the current child suggestion.
+
+        If the current suggestion is a child (has parent_index), returns the
+        record ID of the parent that was created earlier in this wizard session.
+        """
+        flattened = self.current_flattened
+        if flattened and flattened.parent_index is not None:
+            return self.parent_record_ids.get(flattened.parent_index)
+        return None
 
     @property
     def created_count(self) -> int:
@@ -87,8 +174,8 @@ class WizardState:
         return sum(1 for r in self.results if r.action == "skipped")
 
 
-class EditAndCreateModal(discord.ui.Modal):
-    """Modal for editing description before creating."""
+class SuggestionEditorModal(discord.ui.Modal):
+    """Modal for editing a suggestion's description before creating the record."""
 
     description_input: discord.ui.TextInput[discord.ui.Modal] = discord.ui.TextInput(
         label="Description",
@@ -115,30 +202,32 @@ class EditAndCreateModal(discord.ui.Modal):
                 # Update description with edited value
                 suggestion.description = self.description_input.value
 
+                # Set parent_record_id for child suggestions
+                parent_record_id = state.get_parent_record_id_for_current()
+                if parent_record_id is not None:
+                    suggestion.parent_record_id = parent_record_id
+
                 result = await create_record(
                     suggestion=suggestion,
-                    discord_user_id=state.discord_user_id,
-                    discord_message_id=state.discord_message_id,
-                    discord_username=state.discord_username,
-                    discord_display_name=state.discord_display_name,
+                    discord_user=state.get_author_for_current(),
                 )
-                state.record_result("created", url=result.url)
+                state.record_result("created", url=result.url, record_id=result.record_id)
 
             # Advance to next or show completion
             if state.is_complete:
-                embed, view = self.parent_view.build_completion_view()
+                embed, view = await self.parent_view.build_completion_view()
                 await interaction.response.edit_message(embed=embed, view=view)
             else:
-                embed = self.parent_view.build_step_embed()
+                embed = await self.parent_view.build_step_embed()
                 await interaction.response.edit_message(embed=embed, view=self.parent_view)
 
         except Exception as e:
-            logger.exception("discord_edit_create_modal_error: %s", e)
+            logger.exception("discord_edit_create_modal_error", extra={"error": str(e)})
             await _send_error_response(interaction, "Failed to create record.")
 
 
-class CompletionView(discord.ui.View):
-    """Simple view shown after wizard completes with optional link button."""
+class WizardCompletionView(discord.ui.View):
+    """View shown after wizard completes, with optional link to created record."""
 
     def __init__(self, url: str | None):
         super().__init__(timeout=None)
@@ -154,23 +243,28 @@ class CompletionView(discord.ui.View):
 
 
 class SequentialWizardView(discord.ui.View):
-    """Sequential wizard that steps through each suggestion one at a time."""
+    """Sequential wizard that steps through each suggestion one at a time.
+
+    Handles parent-child relationships: suggestions with children are flattened
+    into separate wizard steps. When a parent is created, its record ID is stored
+    so children can link to it. When a parent is skipped, children are auto-skipped.
+    """
 
     def __init__(
         self,
         suggestions: list[RecordSuggestion],
-        discord_user_id: str,
+        discord_user: DiscordUserInfo,
         discord_message_id: int,
-        discord_username: str,
-        discord_display_name: str,
+        author_id_map: dict[str, DiscordUserInfo] | None = None,
     ):
-        super().__init__(timeout=600)  # 10 minute timeout for wizard
+        super().__init__(timeout=WIZARD_TIMEOUT_SECONDS)
+        # Flatten suggestions to handle parent-child relationships
+        flattened = flatten_suggestions(suggestions)
         self.state = WizardState(
-            suggestions=suggestions,
-            discord_user_id=discord_user_id,
+            flattened=flattened,
+            discord_user=discord_user,
             discord_message_id=discord_message_id,
-            discord_username=discord_username,
-            discord_display_name=discord_display_name,
+            author_id_map=author_id_map or {},
         )
         self._update_buttons()
 
@@ -186,26 +280,33 @@ class SequentialWizardView(discord.ui.View):
                 elif item.label == "Skip" and is_single:
                     self.remove_item(item)
 
-    def build_step_embed(self) -> discord.Embed:
+    async def build_step_embed(self) -> discord.Embed:
         """Build the embed for the current step."""
         suggestion = self.state.current_suggestion
         if not suggestion:
-            return self.build_completion_view()[0]
+            embed, _ = await self.build_completion_view()
+            return embed
 
         record_type_display = _format_record_type(suggestion.record_type)
 
-        # Title varies based on single vs multiple
+        # Look up machine display name (may be None for part requests)
+        machine_name = await _get_machine_name(suggestion.slug)
+
+        # Title varies based on single vs multiple, and whether machine is present
         if self.state.total_count == 1:
-            title = f"{record_type_display} — {suggestion.machine_name}"
+            if machine_name:
+                title = f"{record_type_display} — {machine_name}"
+            else:
+                title = record_type_display
         else:
             title = (
                 f"Item {self.state.step_number} of {self.state.total_count}: {record_type_display}"
             )
 
-        # For multiple: show machine name, then description
+        # For multiple: show machine name (if present), then description
         # For single: just show description (machine name is in title)
-        if self.state.total_count > 1:
-            description = f"**{suggestion.machine_name}**\n\n{suggestion.description}"
+        if self.state.total_count > 1 and machine_name:
+            description = f"**{machine_name}**\n\n{suggestion.description}"
         else:
             description = suggestion.description
 
@@ -217,7 +318,7 @@ class SequentialWizardView(discord.ui.View):
 
         return embed
 
-    def build_completion_view(self) -> tuple[discord.Embed, discord.ui.View]:
+    async def build_completion_view(self) -> tuple[discord.Embed, discord.ui.View]:
         """Build the completion embed and view."""
         created = [r for r in self.state.results if r.action == "created"]
         skipped = [r for r in self.state.results if r.action == "skipped"]
@@ -225,21 +326,17 @@ class SequentialWizardView(discord.ui.View):
         if len(created) == 1:
             # Single record: inline link
             result = created[0]
-            type_display = _format_record_type(result.suggestion.record_type)
-            url = result.url
+            summary = await _format_record_summary(result)
             embed = discord.Embed(
-                description=f"Created a {type_display} on {result.suggestion.machine_name}. [View in Flipfix ➡️]({url})",
+                description=f"Created a {summary}. [View in Flipfix ➡️]({result.url})",
                 color=discord.Color.green(),
             )
         elif created:
             # Multiple records: each with its own link
             lines = []
-            for result in created:
-                type_display = _format_record_type(result.suggestion.record_type)
-                url = result.url
-                lines.append(
-                    f"• {type_display} on {result.suggestion.machine_name} — [View ➡️]({url})"
-                )
+            for r in created:
+                summary = await _format_record_summary(r)
+                lines.append(f"• {summary}")
             embed = discord.Embed(
                 description=f"Created {len(created)} records:\n" + "\n".join(lines),
                 color=discord.Color.green(),
@@ -260,13 +357,10 @@ class SequentialWizardView(discord.ui.View):
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Cancel without creating (single item only)."""
         try:
-            embed = discord.Embed(
-                description="Cancelled.",
-                color=discord.Color.greyple(),
-            )
-            await interaction.response.edit_message(embed=embed, view=CompletionView(None))
+            embed = _create_status_embed("Cancelled.", variant="cancelled")
+            await interaction.response.edit_message(embed=embed, view=WizardCompletionView(None))
         except Exception as e:
-            logger.exception("discord_cancel_error: %s", e)
+            logger.exception("discord_cancel_error", extra={"error": str(e)})
             await _send_error_response(interaction, "Failed to cancel.")
 
     @discord.ui.button(label="Skip", style=discord.ButtonStyle.secondary)
@@ -276,24 +370,24 @@ class SequentialWizardView(discord.ui.View):
             self.state.record_result("skipped")
 
             if self.state.is_complete:
-                embed, view = self.build_completion_view()
+                embed, view = await self.build_completion_view()
                 await interaction.response.edit_message(embed=embed, view=view)
             else:
-                embed = self.build_step_embed()
+                embed = await self.build_step_embed()
                 await interaction.response.edit_message(embed=embed, view=self)
 
         except Exception as e:
-            logger.exception("discord_skip_error: %s", e)
+            logger.exception("discord_skip_error", extra={"error": str(e)})
             await _send_error_response(interaction, "Failed to skip.")
 
     @discord.ui.button(label="Edit", style=discord.ButtonStyle.secondary)
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Open modal to edit, then create on submit."""
         try:
-            modal = EditAndCreateModal(self)
+            modal = SuggestionEditorModal(self)
             await interaction.response.send_modal(modal)
         except Exception as e:
-            logger.exception("discord_edit_error: %s", e)
+            logger.exception("discord_edit_error", extra={"error": str(e)})
             await _send_error_response(interaction, "Failed to open editor.")
 
     @discord.ui.button(label="Create", style=discord.ButtonStyle.green)
@@ -302,24 +396,26 @@ class SequentialWizardView(discord.ui.View):
         try:
             suggestion = self.state.current_suggestion
             if suggestion:
+                # Set parent_record_id for child suggestions
+                parent_record_id = self.state.get_parent_record_id_for_current()
+                if parent_record_id is not None:
+                    suggestion.parent_record_id = parent_record_id
+
                 result = await create_record(
                     suggestion=suggestion,
-                    discord_user_id=self.state.discord_user_id,
-                    discord_message_id=self.state.discord_message_id,
-                    discord_username=self.state.discord_username,
-                    discord_display_name=self.state.discord_display_name,
+                    discord_user=self.state.get_author_for_current(),
                 )
-                self.state.record_result("created", url=result.url)
+                self.state.record_result("created", url=result.url, record_id=result.record_id)
 
             if self.state.is_complete:
-                embed, view = self.build_completion_view()
+                embed, view = await self.build_completion_view()
                 await interaction.response.edit_message(embed=embed, view=view)
             else:
-                embed = self.build_step_embed()
+                embed = await self.build_step_embed()
                 await interaction.response.edit_message(embed=embed, view=self)
 
         except Exception as e:
-            logger.exception("discord_create_error: %s", e)
+            logger.exception("discord_create_error", extra={"error": str(e)})
             await _send_error_response(interaction, "Failed to create record.")
 
 
@@ -343,12 +439,12 @@ class DiscordBot(discord.Client):
         """Global error handler for app commands."""
         original = error.__cause__ if isinstance(error, app_commands.CommandInvokeError) else error
 
+        # logger.exception() automatically includes the full traceback
         logger.exception(
             "discord_command_error",
             extra={
                 "command": interaction.command.name if interaction.command else "unknown",
                 "error": str(original),
-                "traceback": traceback.format_exc(),
             },
         )
 
@@ -400,7 +496,7 @@ class DiscordBot(discord.Client):
                     extra={"registered_commands": [c.name for c in registered]},
                 )
         except Exception as e:
-            logger.exception("discord_setup_hook_error: %s", e)
+            logger.exception("discord_setup_hook_error", extra={"error": str(e)})
 
     async def on_ready(self):
         """Called when the bot has connected to Discord."""
@@ -433,30 +529,33 @@ class DiscordBot(discord.Client):
         try:
             # Check if this message has already been processed
             if await _is_message_processed(str(message.id)):
-                embed = discord.Embed(
+                embed = _create_status_embed(
+                    "This message has already been saved to Flipfix.",
                     title="Already Processed",
-                    description="This message has already been saved to Flipfix.",
-                    color=discord.Color.light_grey(),
+                    variant="info",
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
 
             # Gather context around the clicked message
-            context = await self._gather_context(message)
+            context = await gather_context(message)
 
+            # Count total messages including nested thread messages
+            message_count = sum(1 + len(m.thread) for m in context.messages)
             logger.info(
                 "discord_analyzing_messages",
-                extra={"message_count": len(context.messages), "target_id": message.id},
+                extra={"message_count": message_count, "target_id": message.id},
             )
 
             # Analyze with LLM
-            result = await analyze_messages(context)
+            result = await analyze_gathered_context(context)
 
             if result.is_error:
-                embed = discord.Embed(
+                assert result.error is not None  # Guaranteed by is_error check
+                embed = _create_status_embed(
+                    result.error,
                     title="Analysis Error",
-                    description=result.error,
-                    color=discord.Color.red(),
+                    variant="error",
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
             elif result.suggestions:
@@ -467,84 +566,32 @@ class DiscordBot(discord.Client):
 
                 view = SequentialWizardView(
                     suggestions=result.suggestions,
-                    discord_user_id=str(interaction.user.id),
+                    discord_user=DiscordUserInfo.from_interaction(interaction),
                     discord_message_id=message.id,
-                    discord_username=interaction.user.name,
-                    discord_display_name=interaction.user.display_name,
+                    author_id_map=context.author_id_map,
                 )
-                embed = view.build_step_embed()
+                embed = await view.build_step_embed()
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
             else:
-                embed = discord.Embed(
+                embed = _create_status_embed(
+                    "No maintenance records were identified in these messages.\n\nTry selecting a message that discusses machine repairs, problems, or parts.",
                     title="No Records Found",
-                    description="No maintenance records were identified in these messages.\n\nTry selecting a message that discusses machine repairs, problems, or parts.",
-                    color=discord.Color.light_grey(),
+                    variant="info",
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.exception("discord_add_command_error: %s", e)
-            await interaction.followup.send(
-                embed=discord.Embed(
-                    title="Error",
-                    description="Failed to analyze messages. Please try again.",
-                    color=discord.Color.red(),
-                ),
-                ephemeral=True,
+            logger.exception("discord_add_command_error", extra={"error": str(e)})
+            embed = _create_status_embed(
+                "Failed to analyze messages. Please try again.",
+                title="Error",
+                variant="error",
             )
-
-    async def _gather_context(self, message: discord.Message) -> MessageContext:
-        """Gather context before (and including) the clicked message."""
-        messages = []
-        flipfix_urls = []
-
-        try:
-            # Get messages BEFORE the clicked message (not after)
-            async for msg in message.channel.history(limit=30, before=message):
-                messages.append(msg)
-            # Always include the target message itself
-            messages.append(message)
-        except discord.HTTPException as e:
-            logger.warning(
-                "discord_gather_context_failed",
-                extra={"message_id": message.id, "error": str(e)},
-            )
-
-        messages.sort(key=lambda m: m.created_at)
-
-        # Get IDs of already-processed messages to filter them from context
-        processed_ids = await _get_processed_message_ids([str(m.id) for m in messages])
-
-        message_dicts = []
-        for msg in messages:
-            # Skip already-processed messages (except the target - checked earlier)
-            if str(msg.id) in processed_ids and msg.id != message.id:
-                continue
-
-            # Check for Flipfix URLs in embeds
-            for embed in msg.embeds:
-                if embed.url and _is_flipfix_url(embed.url):
-                    flipfix_urls.append(embed.url)
-
-            message_dicts.append(
-                {
-                    "author": msg.author.display_name,
-                    "content": msg.content,
-                    "timestamp": msg.created_at.strftime("%Y-%m-%d %H:%M"),
-                    "is_target": msg.id == message.id,
-                }
-            )
-
-        return MessageContext(
-            messages=message_dicts,
-            target_message_id=message.id,
-            flipfix_urls=flipfix_urls,
-        )
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
     @staticmethod
     async def _get_guild_id() -> str:
         """Get guild ID from Constance config."""
-        from asgiref.sync import sync_to_async
 
         @sync_to_async
         def get_config():
@@ -553,62 +600,78 @@ class DiscordBot(discord.Client):
         return await get_config()
 
 
-def _format_record_type(record_type: str) -> str:
+def _format_record_type(record_type: RecordType) -> str:
     """Format record type for display."""
     type_labels = {
-        "log_entry": "Log Entry",
-        "problem_report": "Problem Report",
-        "part_request": "Part Request",
+        RecordType.LOG_ENTRY: "Log Entry",
+        RecordType.PROBLEM_REPORT: "Problem Report",
+        RecordType.PART_REQUEST: "Part Request",
+        RecordType.PART_REQUEST_UPDATE: "Part Request Update",
     }
-    return type_labels.get(record_type, record_type.replace("_", " ").title())
+    return type_labels.get(record_type, record_type.value.replace("_", " ").title())
 
 
-def _is_flipfix_url(url: str) -> bool:
-    """Check if a URL is from a valid Flipfix domain."""
-    from urllib.parse import urlparse
+async def _get_machine_name(slug: str | None) -> str | None:
+    """Look up machine display name by slug, falling back to the slug if not found."""
+    if not slug:
+        return None
 
-    from django.conf import settings
+    @sync_to_async
+    def lookup():
+        machine = MachineInstance.objects.filter(slug=slug).first()
+        return machine.name if machine else slug
 
-    valid_domains = getattr(settings, "DISCORD_VALID_DOMAINS", [])
-    try:
-        parsed = urlparse(url)
-        hostname = parsed.hostname or ""
-        return any(
-            hostname == domain or hostname.endswith(f".{domain}") for domain in valid_domains
-        )
-    except Exception:
-        return False
+    return await lookup()
+
+
+async def _format_record_summary(result: WizardResult, include_link: bool = True) -> str:
+    """Format a wizard result for display in completion messages."""
+    type_display = _format_record_type(result.suggestion.record_type)
+    machine_name = await _get_machine_name(result.suggestion.slug)
+
+    if machine_name:
+        base = f"{type_display} on {machine_name}"
+    else:
+        base = type_display
+
+    if include_link and result.url:
+        return f"{base} — [View ➡️]({result.url})"
+    return base
 
 
 async def _is_message_processed(message_id: str) -> bool:
     """Check if a Discord message has already been processed."""
-    from asgiref.sync import sync_to_async
-
     return await sync_to_async(DiscordMessageMapping.is_processed)(message_id)
 
 
-async def _get_processed_message_ids(message_ids: list[str]) -> set[str]:
-    """Get the set of message IDs that have already been processed."""
-    from asgiref.sync import sync_to_async
+def _create_status_embed(
+    description: str,
+    *,
+    title: str | None = None,
+    variant: str = "info",
+) -> discord.Embed:
+    """Create a status embed with consistent styling.
 
-    @sync_to_async
-    def get_processed():
-        return set(
-            DiscordMessageMapping.objects.filter(discord_message_id__in=message_ids).values_list(
-                "discord_message_id", flat=True
-            )
-        )
-
-    return await get_processed()
+    Variants: success (green), error (red), info (grey), cancelled (greyple)
+    """
+    color_map = {
+        "success": discord.Color.green(),
+        "error": discord.Color.red(),
+        "info": discord.Color.light_grey(),
+        "cancelled": discord.Color.greyple(),
+    }
+    embed = discord.Embed(
+        description=description,
+        color=color_map.get(variant, discord.Color.light_grey()),
+    )
+    if title:
+        embed.title = title
+    return embed
 
 
 async def _send_error_response(interaction: discord.Interaction, message: str):
     """Send an error response, handling both deferred and non-deferred states."""
-    embed = discord.Embed(
-        title="Error",
-        description=message,
-        color=discord.Color.red(),
-    )
+    embed = _create_status_embed(message, title="Error", variant="error")
 
     try:
         if interaction.response.is_done():
@@ -616,7 +679,7 @@ async def _send_error_response(interaction: discord.Interaction, message: str):
         else:
             await interaction.response.send_message(embed=embed, ephemeral=True)
     except discord.HTTPException as e:
-        logger.warning("discord_error_response_failed: %s", e)
+        logger.warning("discord_error_response_failed", extra={"error": str(e)})
 
 
 def run_bot():
@@ -637,4 +700,4 @@ def run_bot():
     except discord.LoginFailure:
         logger.error("Invalid Discord bot token")
     except Exception as e:
-        logger.exception("Discord bot error: %s", e)
+        logger.exception("discord_bot_error", extra={"error": str(e)})

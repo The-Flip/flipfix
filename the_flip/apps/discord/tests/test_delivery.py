@@ -23,8 +23,8 @@ class WebhookDeliveryTests(TestCase):
         report = create_problem_report(machine=self.machine)
         result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "skipped")
-        self.assertIn("no webhook URL", result["reason"])
+        self.assertEqual(result.status, "skipped")
+        self.assertIn("no webhook URL", result.reason)
 
     @override_config(
         DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
@@ -35,8 +35,8 @@ class WebhookDeliveryTests(TestCase):
         report = create_problem_report(machine=self.machine)
         result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "skipped")
-        self.assertIn("globally disabled", result["reason"])
+        self.assertEqual(result.status, "skipped")
+        self.assertIn("globally disabled", result.reason)
 
     @override_config(
         DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
@@ -53,7 +53,7 @@ class WebhookDeliveryTests(TestCase):
         report = create_problem_report(machine=self.machine)
         result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "success")
+        self.assertEqual(result.status, "success")
         mock_post.assert_called_once()
 
     @override_config(
@@ -71,5 +71,5 @@ class WebhookDeliveryTests(TestCase):
         with self.assertLogs("the_flip.apps.discord.tasks", level="WARNING"):
             result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
 
-        self.assertEqual(result["status"], "error")
-        self.assertIn("Connection error", result["error"])
+        self.assertEqual(result.status, "error")
+        self.assertIn("Connection error", result.reason)

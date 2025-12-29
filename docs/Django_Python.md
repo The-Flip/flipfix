@@ -39,3 +39,49 @@ When modifying code, verify existing docstrings are still accurate. Misleading d
 
 - Update docs when behavior changes
 - Use explicit TODO comments with rationale for unfinished work
+
+## Logging
+
+Use structured logging with `extra={}` for all log statements:
+
+```python
+logger.info("event_name", extra={"key": value})
+logger.warning("event_name", extra={"error": str(e)})
+logger.exception("event_name", extra={"error": str(e), "context": value})
+```
+
+**Guidelines:**
+- First parameter: snake_case event name describing what happened
+- Use `extra={}` dict for structured data (never f-strings with variables)
+- Always include `"error": str(e)` in the extra dict when logging exceptions
+- `logger.exception()` automatically includes the traceback
+- Event names should be specific and searchable (e.g., `discord_edit_create_modal_error`, not `error`)
+
+## Enums
+
+**For Django model fields:** Use `models.TextChoices` (see [Models.md](Models.md))
+
+**For non-model enums (API schemas, constants, etc.):**
+- Use `StrEnum` when values need to be strings (e.g., for JSON serialization, LLM tool schemas)
+- Use base `Enum` when values can be any type
+
+```python
+from enum import StrEnum
+
+class RecordType(StrEnum):
+    """Valid record types for Discord bot suggestions."""
+    LOG_ENTRY = "log_entry"
+    PROBLEM_REPORT = "problem_report"
+```
+
+## Constants
+
+Extract module-level constants for timeout values, default configuration, prompts, or sets of valid values:
+
+```python
+# Good: named constant with explanation
+WIZARD_TIMEOUT_SECONDS = 600  # 10 minutes allows time for editing
+
+# Bad: magic number buried in code
+super().__init__(timeout=600)
+```

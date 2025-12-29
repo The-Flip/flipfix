@@ -1,6 +1,7 @@
 """Record creation for Discord bot.
 
-Creates LogEntry, ProblemReport, and PartRequest records from Discord suggestions.
+Creates LogEntry, ProblemReport, PartRequest, and PartRequestUpdate records
+from Discord suggestions.
 """
 
 from __future__ import annotations
@@ -15,17 +16,18 @@ from django.urls import reverse
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.discord.llm import RecordSuggestion
+from the_flip.apps.discord.llm import RecordSuggestion, RecordType
 from the_flip.apps.discord.models import DiscordMessageMapping, DiscordUserLink
+from the_flip.apps.discord.types import DiscordUserInfo
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-from the_flip.apps.parts.models import PartRequest
+from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CreatedRecord:
-    """Result of creating a record."""
+class RecordCreationResult:
+    """Result of creating a Flipfix record from a Discord suggestion."""
 
     record_type: str
     record_id: int
@@ -43,98 +45,106 @@ def _get_base_url() -> str:
 @transaction.atomic
 def create_record(
     suggestion: RecordSuggestion,
-    discord_user_id: str,
-    discord_message_id: int,
-    discord_username: str | None = None,
-    discord_display_name: str | None = None,
-) -> CreatedRecord:
-    """Create a record from a suggestion.
+    discord_user: DiscordUserInfo,
+) -> RecordCreationResult:
+    """Create a Flipfix record from a suggestion (atomic transaction)."""
+    # Get the machine (required for log_entry and problem_report, optional for parts)
+    machine: MachineInstance | None = None
+    if suggestion.slug:
+        machine = MachineInstance.objects.filter(slug=suggestion.slug).first()
+        if not machine:
+            raise ValueError(f"Machine not found: {suggestion.slug}")
 
-    This function is atomic - all database operations (record creation,
-    message mapping, user linking) either all succeed or all roll back.
-
-    Args:
-        suggestion: The LLM-generated suggestion
-        discord_user_id: The Discord user ID who initiated the action
-        discord_message_id: The target Discord message ID
-        discord_username: The Discord username (for auto-linking)
-        discord_display_name: The Discord display name (for auto-linking)
-
-    Returns:
-        CreatedRecord with the created record's type, ID, and URL
-    """
-    # Get the machine
-    machine = MachineInstance.objects.filter(slug=suggestion.machine_slug).first()
-    if not machine:
-        raise ValueError(f"Machine not found: {suggestion.machine_slug}")
-
-    # Try to get the maintainer linked to this Discord user (may auto-link)
-    maintainer = _get_maintainer_for_discord_user(
-        discord_user_id, discord_username, discord_display_name
-    )
+    # Resolve Discord user to Flipfix maintainer (auto-links if usernames match)
+    maintainer = _get_or_link_maintainer(discord_user)
 
     base_url = _get_base_url()
-    record_obj: LogEntry | ProblemReport | PartRequest
+    record_obj: LogEntry | ProblemReport | PartRequest | PartRequestUpdate
 
-    if suggestion.record_type == "log_entry":
+    if suggestion.record_type == RecordType.LOG_ENTRY:
+        if not machine:
+            raise ValueError(
+                f"Machine is required for log_entry (slug={suggestion.slug!r} not found)"
+            )
         record_obj = _create_log_entry(
-            machine, suggestion.description, maintainer, discord_display_name
+            machine,
+            suggestion.description,
+            maintainer,
+            discord_user.display_name,
+            suggestion.parent_record_id,
         )
         url = base_url + reverse("log-detail", kwargs={"pk": record_obj.pk})
-        record_id = record_obj.pk
 
-    elif suggestion.record_type == "problem_report":
+    elif suggestion.record_type == RecordType.PROBLEM_REPORT:
+        if not machine:
+            raise ValueError(
+                f"Machine is required for problem_report (slug={suggestion.slug!r} not found)"
+            )
         record_obj = _create_problem_report(
-            machine, suggestion.description, maintainer, discord_display_name
+            machine, suggestion.description, maintainer, discord_user.display_name
         )
         url = base_url + reverse("problem-report-detail", kwargs={"pk": record_obj.pk})
-        record_id = record_obj.pk
 
-    elif suggestion.record_type == "part_request":
+    elif suggestion.record_type == RecordType.PART_REQUEST:
         if not maintainer:
-            raise ValueError("Cannot create part request without a linked maintainer")
+            raise ValueError(
+                f"Cannot create part request without a linked maintainer "
+                f"(discord_user_id={discord_user.user_id!r})"
+            )
         record_obj = _create_part_request(machine, suggestion.description, maintainer)
         url = base_url + reverse("part-request-detail", kwargs={"pk": record_obj.pk})
-        record_id = record_obj.pk
+
+    elif suggestion.record_type == RecordType.PART_REQUEST_UPDATE:
+        if not maintainer:
+            raise ValueError(
+                f"Cannot create part request update without a linked maintainer "
+                f"(discord_user_id={discord_user.user_id!r})"
+            )
+        if not suggestion.parent_record_id:
+            raise ValueError(
+                "part_request_update requires parent_record_id (none provided in suggestion)"
+            )
+        record_obj = _create_part_request_update(
+            suggestion.parent_record_id, suggestion.description, maintainer
+        )
+        # URL points to parent part request (update doesn't have its own page)
+        url = base_url + reverse("part-request-detail", kwargs={"pk": suggestion.parent_record_id})
 
     else:
         raise ValueError(f"Unknown record type: {suggestion.record_type}")
 
-    # Mark the Discord message as processed
-    DiscordMessageMapping.mark_processed(str(discord_message_id), record_obj)
+    # Mark all source messages as processed
+    for message_id in suggestion.source_message_ids:
+        DiscordMessageMapping.mark_processed(str(message_id), record_obj)
 
     logger.info(
         "discord_record_created",
         extra={
             "record_type": suggestion.record_type,
-            "record_id": record_id,
-            "machine_slug": suggestion.machine_slug,
-            "discord_user_id": discord_user_id,
-            "discord_message_id": discord_message_id,
+            "record_id": record_obj.pk,
+            "slug": suggestion.slug,
+            "discord_user_id": discord_user.user_id,
+            "source_message_count": len(suggestion.source_message_ids),
         },
     )
 
-    return CreatedRecord(
+    return RecordCreationResult(
         record_type=suggestion.record_type,
-        record_id=record_id,
+        record_id=record_obj.pk,
         url=url,
     )
 
 
-def _get_maintainer_for_discord_user(
-    discord_user_id: str,
-    discord_username: str | None = None,
-    discord_display_name: str | None = None,
-) -> Maintainer | None:
-    """Get the Maintainer linked to a Discord user.
+def _get_or_link_maintainer(discord_user: DiscordUserInfo) -> Maintainer | None:
+    """Resolve a Discord user to a Flipfix Maintainer, auto-linking if possible.
 
-    If no link exists but we find a maintainer with a matching username,
-    auto-create the link using get_or_create for idempotency.
+    May create a DiscordUserLink record if no link exists but a Maintainer
+    is found with a matching username.
     """
     # First, check for existing link
     link = (
         DiscordUserLink.objects.select_related("maintainer")
-        .filter(discord_user_id=discord_user_id)
+        .filter(discord_user_id=discord_user.user_id)
         .first()
     )
     if link:
@@ -144,21 +154,23 @@ def _get_maintainer_for_discord_user(
     maintainer = None
 
     # First try matching Discord username to Flipfix username
-    if discord_username:
-        maintainer = Maintainer.objects.filter(user__username__iexact=discord_username).first()
+    if discord_user.username:
+        maintainer = Maintainer.objects.filter(user__username__iexact=discord_user.username).first()
 
     # If no match, try matching Discord display name to Flipfix username
-    if not maintainer and discord_display_name:
-        maintainer = Maintainer.objects.filter(user__username__iexact=discord_display_name).first()
+    if not maintainer and discord_user.display_name:
+        maintainer = Maintainer.objects.filter(
+            user__username__iexact=discord_user.display_name
+        ).first()
 
     if maintainer:
         # Auto-create the link using get_or_create for idempotency
         # (handles race conditions where another request creates the link first)
         link, created = DiscordUserLink.objects.get_or_create(
-            discord_user_id=discord_user_id,
+            discord_user_id=discord_user.user_id,
             defaults={
-                "discord_username": discord_username or "",
-                "discord_display_name": discord_display_name or "",
+                "discord_username": discord_user.username or "",
+                "discord_display_name": discord_user.display_name or "",
                 "maintainer": maintainer,
             },
         )
@@ -166,9 +178,9 @@ def _get_maintainer_for_discord_user(
             logger.info(
                 "discord_user_auto_linked",
                 extra={
-                    "discord_user_id": discord_user_id,
-                    "discord_username": discord_username,
-                    "discord_display_name": discord_display_name,
+                    "discord_user_id": discord_user.user_id,
+                    "discord_username": discord_user.username,
+                    "discord_display_name": discord_user.display_name,
                     "maintainer_id": maintainer.id,
                 },
             )
@@ -182,13 +194,26 @@ def _create_log_entry(
     description: str,
     maintainer: Maintainer | None,
     discord_display_name: str | None = None,
+    parent_record_id: int | None = None,
 ) -> LogEntry:
-    """Create a LogEntry record."""
+    """Create a LogEntry record, optionally linking to a parent problem report."""
     fallback_name = discord_display_name or "Discord"
+
+    # Look up parent problem report if specified
+    problem_report = None
+    if parent_record_id:
+        problem_report = ProblemReport.objects.filter(pk=parent_record_id).first()
+        if not problem_report:
+            logger.warning(
+                "discord_parent_problem_report_not_found",
+                extra={"parent_record_id": parent_record_id},
+            )
+
     log_entry = LogEntry.objects.create(
         machine=machine,
         text=description,
         maintainer_names="" if maintainer else fallback_name,
+        problem_report=problem_report,
     )
 
     if maintainer:
@@ -203,7 +228,7 @@ def _create_problem_report(
     maintainer: Maintainer | None,
     discord_display_name: str | None = None,
 ) -> ProblemReport:
-    """Create a ProblemReport record."""
+    """Create a ProblemReport record for a machine."""
     fallback_name = discord_display_name or "Discord"
     return ProblemReport.objects.create(
         machine=machine,
@@ -215,13 +240,30 @@ def _create_problem_report(
 
 
 def _create_part_request(
-    machine: MachineInstance,
+    machine: MachineInstance | None,
     description: str,
     maintainer: Maintainer,
 ) -> PartRequest:
-    """Create a PartRequest record."""
+    """Create a PartRequest record (machine is optional)."""
     return PartRequest.objects.create(
         machine=machine,
         text=description,
         requested_by=maintainer,
+    )
+
+
+def _create_part_request_update(
+    parent_record_id: int,
+    description: str,
+    maintainer: Maintainer,
+) -> PartRequestUpdate:
+    """Create a PartRequestUpdate record. Raises ValueError if parent not found."""
+    part_request = PartRequest.objects.filter(pk=parent_record_id).first()
+    if not part_request:
+        raise ValueError(f"Part request not found: {parent_record_id}")
+
+    return PartRequestUpdate.objects.create(
+        part_request=part_request,
+        text=description,
+        posted_by=maintainer,
     )

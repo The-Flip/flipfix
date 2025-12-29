@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import requests
@@ -13,8 +14,27 @@ from the_flip.logging import bind_log_context, current_log_context, reset_log_co
 
 if TYPE_CHECKING:
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
+    from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class WebhookModelConfig:
+    """Configuration for webhook model queries."""
+
+    import_path: str
+    select_related: tuple[str, ...]
+    prefetch_related: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class WebhookDeliveryResult:
+    """Result of a webhook delivery attempt."""
+
+    status: str  # "success", "error", "skipped"
+    reason: str | None = None  # Why skipped or errored
+    status_code: int | None = None  # HTTP status code on success
 
 
 def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
@@ -50,7 +70,7 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
 
 def deliver_webhook(
     event_type: str, object_id: int, model_name: str, log_context: dict | None = None
-) -> dict:
+) -> WebhookDeliveryResult:
     """Deliver webhook for a given event to the configured Discord webhook URL.
 
     This runs asynchronously via Django Q.
@@ -63,27 +83,31 @@ def deliver_webhook(
         # Check if webhook URL is configured
         webhook_url = config.DISCORD_WEBHOOK_URL
         if not webhook_url:
-            return {"status": "skipped", "reason": "no webhook URL configured"}
+            return WebhookDeliveryResult(status="skipped", reason="no webhook URL configured")
 
         # Check global settings
         if not config.DISCORD_WEBHOOKS_ENABLED:
-            return {"status": "skipped", "reason": "webhooks globally disabled"}
+            return WebhookDeliveryResult(status="skipped", reason="webhooks globally disabled")
 
         # Check per-event-type settings
         if event_type.startswith("problem_report"):
             if not config.DISCORD_WEBHOOKS_PROBLEM_REPORTS:
-                return {"status": "skipped", "reason": "problem report webhooks disabled"}
+                return WebhookDeliveryResult(
+                    status="skipped", reason="problem report webhooks disabled"
+                )
         elif event_type == "log_entry_created":
             if not config.DISCORD_WEBHOOKS_LOG_ENTRIES:
-                return {"status": "skipped", "reason": "log entry webhooks disabled"}
+                return WebhookDeliveryResult(status="skipped", reason="log entry webhooks disabled")
         elif event_type.startswith("part_request"):
             if not config.DISCORD_WEBHOOKS_PARTS:
-                return {"status": "skipped", "reason": "parts webhooks disabled"}
+                return WebhookDeliveryResult(status="skipped", reason="parts webhooks disabled")
 
         # Fetch the object
         obj = _get_object(model_name, object_id)
         if obj is None:
-            return {"status": "error", "reason": f"{model_name} {object_id} not found"}
+            return WebhookDeliveryResult(
+                status="error", reason=f"{model_name} {object_id} not found"
+            )
 
         # Deliver webhook
         return _deliver_to_url(webhook_url, event_type, obj)
@@ -93,42 +117,40 @@ def deliver_webhook(
 
 
 # Registry of webhook models with their optimized query configurations
-# Maps model name -> (import_path, select_related, prefetch_related)
-_WEBHOOK_MODEL_REGISTRY: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
-    "ProblemReport": (
-        "the_flip.apps.maintenance.models.ProblemReport",
-        ("machine",),
-        (),
+_WEBHOOK_MODEL_REGISTRY: dict[str, WebhookModelConfig] = {
+    "ProblemReport": WebhookModelConfig(
+        import_path="the_flip.apps.maintenance.models.ProblemReport",
+        select_related=("machine",),
+        prefetch_related=(),
     ),
-    "LogEntry": (
-        "the_flip.apps.maintenance.models.LogEntry",
-        ("machine", "problem_report"),
-        ("maintainers", "maintainers__discord_link"),
+    "LogEntry": WebhookModelConfig(
+        import_path="the_flip.apps.maintenance.models.LogEntry",
+        select_related=("machine", "problem_report"),
+        prefetch_related=("maintainers", "maintainers__discord_link"),
     ),
-    "PartRequest": (
-        "the_flip.apps.parts.models.PartRequest",
-        ("machine", "requested_by__user", "requested_by__discord_link"),
-        (),
+    "PartRequest": WebhookModelConfig(
+        import_path="the_flip.apps.parts.models.PartRequest",
+        select_related=("machine", "requested_by__user", "requested_by__discord_link"),
+        prefetch_related=(),
     ),
-    "PartRequestUpdate": (
-        "the_flip.apps.parts.models.PartRequestUpdate",
-        ("part_request__machine", "posted_by__user", "posted_by__discord_link"),
-        (),
+    "PartRequestUpdate": WebhookModelConfig(
+        import_path="the_flip.apps.parts.models.PartRequestUpdate",
+        select_related=("part_request__machine", "posted_by__user", "posted_by__discord_link"),
+        prefetch_related=(),
     ),
 }
 
 
 def _get_model_class(model_name: str):
     """Get the model class for a model name, or None if unknown."""
-    if model_name not in _WEBHOOK_MODEL_REGISTRY:
-        logger.warning("Unknown webhook model: %s", model_name)
+    config = _WEBHOOK_MODEL_REGISTRY.get(model_name)
+    if not config:
+        logger.warning("discord_unknown_webhook_model", extra={"model_name": model_name})
         return None
-
-    import_path, _, _ = _WEBHOOK_MODEL_REGISTRY[model_name]
 
     from importlib import import_module
 
-    module_path, class_name = import_path.rsplit(".", 1)
+    module_path, class_name = config.import_path.rsplit(".", 1)
     module = import_module(module_path)
     return getattr(module, class_name)
 
@@ -139,14 +161,14 @@ def _get_object(model_name: str, object_id: int):
     if model_class is None:
         return None
 
-    _, select_related, prefetch_related = _WEBHOOK_MODEL_REGISTRY[model_name]
+    config = _WEBHOOK_MODEL_REGISTRY[model_name]
 
     # Build optimized query
     queryset = model_class.objects.all()
-    if select_related:
-        queryset = queryset.select_related(*select_related)
-    if prefetch_related:
-        queryset = queryset.prefetch_related(*prefetch_related)
+    if config.select_related:
+        queryset = queryset.select_related(*config.select_related)
+    if config.prefetch_related:
+        queryset = queryset.prefetch_related(*config.prefetch_related)
 
     return queryset.filter(pk=object_id).first()
 
@@ -154,8 +176,8 @@ def _get_object(model_name: str, object_id: int):
 def _deliver_to_url(
     url: str,
     event_type: str,
-    obj: ProblemReport | LogEntry,
-) -> dict:
+    obj: ProblemReport | LogEntry | PartRequest | PartRequestUpdate,
+) -> WebhookDeliveryResult:
     """Deliver a webhook to a URL."""
     from the_flip.apps.discord.formatters import format_discord_message
 
@@ -168,19 +190,13 @@ def _deliver_to_url(
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        return {
-            "status": "success",
-            "status_code": response.status_code,
-        }
+        return WebhookDeliveryResult(status="success", status_code=response.status_code)
     except requests.RequestException as e:
         logger.warning(
-            "Webhook delivery failed: %s",
-            str(e),
+            "discord_webhook_delivery_failed",
+            extra={"error": str(e)},
         )
-        return {
-            "status": "error",
-            "error": str(e),
-        }
+        return WebhookDeliveryResult(status="error", reason=str(e))
 
 
 def send_test_webhook(event_type: str) -> dict:

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import anthropic
 from anthropic.types import ToolChoiceToolParam, ToolParam
@@ -13,27 +15,54 @@ from decouple import config as decouple_config
 
 from the_flip.apps.catalog.models import MachineInstance
 
+if TYPE_CHECKING:
+    from the_flip.apps.discord import context as context_module
+
 logger = logging.getLogger(__name__)
+
+
+class RecordType(StrEnum):
+    """Valid record types for Discord bot suggestions."""
+
+    LOG_ENTRY = "log_entry"
+    PROBLEM_REPORT = "problem_report"
+    PART_REQUEST = "part_request"
+    PART_REQUEST_UPDATE = "part_request_update"
+
+
+@dataclass
+class ChildSuggestion:
+    """A child record to create alongside a parent (e.g., log_entry under problem_report)."""
+
+    description: str
+    source_message_ids: list[str]
+    author_id: str  # Discord user ID of the message author
 
 
 @dataclass
 class RecordSuggestion:
     """A suggested record to create from Discord messages."""
 
-    record_type: str  # "log_entry", "problem_report", "part_request"
-    machine_slug: str
-    machine_name: str
+    record_type: RecordType
     description: str
-    selected: bool = True
+    source_message_ids: list[str]
+    author_id: str  # Discord user ID of the message author
+    slug: str | None = None  # Required for log_entry/problem_report, optional for parts
+    parent_record_id: int | None = None  # log_entry→problem_report, update→part_request
+    children: list[ChildSuggestion] | None = None  # Nested children to create with this parent
 
 
 @dataclass
-class MessageContext:
-    """Context gathered from Discord messages."""
+class FlattenedSuggestion:
+    """A suggestion with optional parent linkage info for wizard flattening.
 
-    messages: list[dict]  # [{author, content, timestamp}, ...]
-    target_message_id: int
-    flipfix_urls: list[str]
+    When a parent suggestion has children, we flatten them into separate wizard steps.
+    Each child records which parent index it belongs to, so we can skip children
+    if the parent is skipped, and set parent_record_id when the parent is created.
+    """
+
+    suggestion: RecordSuggestion
+    parent_index: int | None = None  # Index of parent in flattened list (None if top-level)
 
 
 @dataclass
@@ -59,36 +88,172 @@ class AnalysisResult:
         return cls(suggestions=[], error=error)
 
 
-SYSTEM_PROMPT = """You are analyzing a Discord message from a pinball museum's maintenance channel.
-Your job is to identify what maintenance records should be created in Flipfix (the maintenance tracking system).
+def flatten_suggestions(suggestions: list[RecordSuggestion]) -> list[FlattenedSuggestion]:
+    """Flatten nested suggestions into a sequential list for wizard processing.
 
-IMPORTANT: Only analyze the TARGET MESSAGE (marked with **). The surrounding messages are provided
-only for context to help you understand the conversation. Do NOT create records for other messages.
+    Parents with children are expanded: parent first, then each child as a separate step.
+    Children inherit machine_id from their parent and have their record_type set based
+    on the parent type:
+    - problem_report children → log_entry
+    - part_request children → part_request_update
 
-Record types:
-- log_entry: Work that was done on a machine (repairs, adjustments, cleaning)
-- problem_report: A problem that needs attention (something broken, not working right)
-- part_request: Parts that need to be ordered
+    Returns FlattenedSuggestion objects that track parent-child relationships.
+    """
+    flattened: list[FlattenedSuggestion] = []
 
-Guidelines:
-- ONLY suggest records for the target message, not for context messages
-- Match machine names to the provided list (use the slug for machine_slug, display name for machine_name)
-- If the target message mentions multiple machines, create separate suggestions for each
-- Use context to understand if a problem was already fixed (then suggest log_entry, not problem_report)
-- If the target message has no maintenance-related content, call the tool with an empty suggestions array
+    for suggestion in suggestions:
+        parent_index = len(flattened)
+        flattened.append(FlattenedSuggestion(suggestion=suggestion, parent_index=None))
 
-Description guidelines - BE VERBOSE AND FAITHFUL:
-- Preserve the original wording from relevant messages as much as possible
+        if suggestion.children:
+            # Determine child record type based on parent
+            if suggestion.record_type == RecordType.PROBLEM_REPORT:
+                child_type = RecordType.LOG_ENTRY
+            elif suggestion.record_type == RecordType.PART_REQUEST:
+                child_type = RecordType.PART_REQUEST_UPDATE
+            else:
+                # Other record types can't have children
+                continue
+
+            for child in suggestion.children:
+                child_suggestion = RecordSuggestion(
+                    record_type=child_type,
+                    description=child.description,
+                    source_message_ids=child.source_message_ids,
+                    author_id=child.author_id,
+                    slug=suggestion.slug,  # Inherit from parent
+                    parent_record_id=None,  # Will be set when parent is created
+                )
+                flattened.append(
+                    FlattenedSuggestion(suggestion=child_suggestion, parent_index=parent_index)
+                )
+
+    return flattened
+
+
+SYSTEM_PROMPT = """You are analyzing a Discord messages from a pinball museum's maintenance channel.
+Your job is to identify what maintenance records should be created in the museum's maintenance tracking system.
+
+You will receive a list of Discord messages.  One of the messages (marked with is_target: true)
+is the one the user right-clicked and selected 'Add to Maintenance System'.  Your job is to analyze
+that message and all the surrounding messages to determine what maintenance records should be created.
+
+## Record Types
+
+- `log_entry`: work that was done on a machine (repairs, adjustments, cleaning)
+- `problem_report`: a problem that needs attention (something broken, not working right)
+- `part_request`: parts that need to be ordered
+- `part_request_update`: update to an existing part request (e.g., "ordered!", "arrived", "installed")
+
+## Input Format
+
+You'll receive YAML with:
+- `machines`: List of all pinball machines (use the `id` field for machine_id in your output)
+- `messages`: Discord messages in chronological order
+
+Message fields:
+- `id`: unique message ID (include in source_message_ids when this message contributes content)
+- `author`: display name of the message author
+- `author_id`: Discord user ID (use this for author_id in your output to attribute the record)
+- `content`: the message text
+- `timestamp`: when message was posted
+- `is_target`: if present, this is the message the user clicked (analyze THIS message)
+- `reply_to_id`: if present, this message is a reply to another message
+- `flipfix_record`: if present, this is a Flipfix webhook embed (no author_id - attribute to human reply)
+- `thread`: if present, contains nested messages from a Discord thread
+
+## Guidelines
+
+1. **Resolved vs unresolved problems:**
+   - If a problem was FIXED in the conversation → create a single `log_entry` that describes
+     the issue AND the fix. Don't create a problem_report that's immediately resolved.
+   - If a problem is UNRESOLVED → create a `problem_report`, with `log_entry` children for
+     any work attempts or observations made while investigating.
+
+2. **Consolidate conversational exchanges** - Back-and-forth discussion that forms one logical
+   unit should become ONE record, not multiple. For example:
+   - "Maybe needs new coil" → "Where are the coils?" → "In the parts bin" → "Replaced coil, didn't help"
+   - This is ONE log entry: "Thought it might need a new coil. Replaced the coil from the parts
+     bin but that didn't help."
+
+3. **Separate distinct work attempts** - Create separate log entries for distinct observations
+   or work attempts, even if they're from the same person. For example:
+   - "Adjusted EOS switch, flipper still weak" → one log entry
+   - "Maybe needs new coil" → separate log entry (different hypothesis/observation)
+
+4. **Part requests** - Create `part_request` for the initial need, with `part_request_update`
+   children for status changes ("ordered!", "arrived", "installed").
+
+5. **Match machines to the list** - Use the machine `id` (slug) from the machines list.
+
+6. **Parent relationships** - Use parent_record_id when appropriate:
+   - log_entry can link to an existing problem_report (from flipfix_record in context)
+   - part_request_update MUST link to a part_request
+   - Get the ID from flipfix_record in context messages when available
+
+7. **Source message tracking** - Include IDs of ALL messages that contributed content to each
+   record's description.
+
+8. **Author attribution** - Use the author_id from the primary message for that record. For
+   consolidated records spanning multiple authors, use the author who did the main work or
+   initiated the thread.
+
+9. **No maintenance content** - If the conversation has no maintenance-related content, return
+   empty array.
+
+## Nested Records (children)
+
+Use `children` array for:
+- **problem_report** → `log_entry` children (work attempts on an unresolved problem)
+- **part_request** → `part_request_update` children (status updates like "ordered!")
+
+Children inherit machine_id from the parent. Each child needs its own description, source_message_ids,
+and author_id.
+
+## Description Guidelines
+
+- Write coherent, narrative descriptions (not transcripts)
 - Include ALL specific details: part names, symptoms, what was tried, what worked
-- When context messages add important details, incorporate them into the description
-- It's better to include too much detail than too little
-- Don't summarize or paraphrase - use the actual words from the conversation
-- Example: if the message thread is...
-    - godzilla's right flipper is broken
-    - ok I fixed it
-    - the problem was the flipper pin was bent; we had a spare flipper pin, fortunately
-... then the description should be something like: "Right flipper was broken. Fixed it. The problem was the flipper pin was bent; we had a spare flipper pin, fortunately."
+- Consolidate back-and-forth exchanges into flowing prose
+- Preserve technical details and outcomes faithfully
+
+Example 1 - RESOLVED problem becomes single log_entry:
+Messages: "godzilla's right flipper is broken" → "ok I fixed it" → "the flipper pin was bent"
+Output: ONE log_entry with description: "Right flipper was broken. Fixed it - the flipper pin
+was bent; we had a spare."
+
+Example 2 - UNRESOLVED problem with work attempts:
+Messages: "Flipper weak" → "Adjusted EOS switch, still weak" → "Maybe needs new coil"
+Output: problem_report "Flipper weak" with children:
+  - log_entry: "Adjusted EOS switch, flipper still weak"
+  - log_entry: "Maybe needs new coil"
+
+Example 3 - Consolidate conversational exchanges:
+Messages: "Maybe needs new coil" → "Where are the coils?" → "Parts bin" → "Replaced it, didn't help"
+Output: ONE log_entry: "Thought it might need a new coil. Replaced the coil from the parts bin
+but that didn't help."
 """
+
+# Schema for child records (nested under parent suggestions)
+_CHILD_SUGGESTION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "description": {
+            "type": "string",
+            "description": "Details of the work/update",
+        },
+        "source_message_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "IDs of Discord messages that contributed to this child record",
+        },
+        "author_id": {
+            "type": "string",
+            "description": "Discord user ID (author_id from the message) to attribute this record to",
+        },
+    },
+    "required": ["description", "source_message_ids", "author_id"],
+}
 
 # Tool definition for structured output
 RECORD_SUGGESTIONS_TOOL: ToolParam = {
@@ -105,23 +270,37 @@ RECORD_SUGGESTIONS_TOOL: ToolParam = {
                     "properties": {
                         "record_type": {
                             "type": "string",
-                            "enum": ["log_entry", "problem_report", "part_request"],
+                            "enum": list(RecordType),
                             "description": "Type of maintenance record",
-                        },
-                        "machine_slug": {
-                            "type": "string",
-                            "description": "The slug of the machine from the provided list",
-                        },
-                        "machine_name": {
-                            "type": "string",
-                            "description": "The display name of the machine",
                         },
                         "description": {
                             "type": "string",
                             "description": "Details of the work/problem/parts needed",
                         },
+                        "source_message_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "IDs of Discord messages that contributed to this record",
+                        },
+                        "author_id": {
+                            "type": "string",
+                            "description": "Discord user ID (author_id from the message) to attribute this record to",
+                        },
+                        "machine_id": {
+                            "type": "string",
+                            "description": "The ID of the machine from the provided list. Required for log_entry and problem_report, optional for part_request and part_request_update.",
+                        },
+                        "parent_record_id": {
+                            "type": "integer",
+                            "description": "ID of parent Flipfix record if applicable. For log_entry, this is a problem_report ID. For part_request_update, this is a part_request ID.",
+                        },
+                        "children": {
+                            "type": "array",
+                            "description": "Child records to create with this parent. problem_report can have log_entry children; part_request can have part_request_update children.",
+                            "items": _CHILD_SUGGESTION_SCHEMA,
+                        },
                     },
-                    "required": ["record_type", "machine_slug", "machine_name", "description"],
+                    "required": ["record_type", "description", "source_message_ids", "author_id"],
                 },
             },
         },
@@ -132,8 +311,14 @@ RECORD_SUGGESTIONS_TOOL: ToolParam = {
 TOOL_CHOICE: ToolChoiceToolParam = {"type": "tool", "name": "record_suggestions"}
 
 
-async def analyze_messages(context: MessageContext) -> AnalysisResult:
-    """Use Claude to analyze Discord messages and suggest records to create."""
+async def analyze_gathered_context(
+    context: context_module.GatheredContext,
+) -> AnalysisResult:
+    """Use Claude to analyze gathered Discord context and suggest records to create.
+
+    This is the new interface that uses YAML-formatted prompts with full message
+    metadata (IDs, reply chains, thread nesting, webhook embeds).
+    """
     api_key = await _get_api_key()
     if not api_key:
         logger.error("ANTHROPIC_API_KEY not configured")
@@ -147,8 +332,20 @@ async def analyze_messages(context: MessageContext) -> AnalysisResult:
     # Check if parts system is enabled
     parts_enabled = await _get_parts_enabled()
 
-    # Build the user message
-    user_message = _build_user_message(context, machines)
+    # Build YAML prompt
+    user_message = build_yaml_prompt(context, machines)
+
+    # Count messages including nested thread messages
+    message_count = sum(1 + len(m.thread) for m in context.messages)
+
+    return await _analyze_with_prompt(user_message, message_count, parts_enabled)
+
+
+async def _analyze_with_prompt(
+    user_message: str, message_count: int, parts_enabled: bool
+) -> AnalysisResult:
+    """Common analysis logic for both legacy and new interfaces."""
+    api_key = await _get_api_key()
 
     try:
         # Run the synchronous API call in a thread
@@ -157,10 +354,14 @@ async def analyze_messages(context: MessageContext) -> AnalysisResult:
         # Extract tool use from response
         suggestions = _parse_tool_response(response)
 
-        # Filter out part_request suggestions if parts system is disabled
+        # Filter out parts-related suggestions if parts system is disabled
         if not parts_enabled:
             original_count = len(suggestions)
-            suggestions = [s for s in suggestions if s.record_type != "part_request"]
+            suggestions = [
+                s
+                for s in suggestions
+                if s.record_type not in (RecordType.PART_REQUEST, RecordType.PART_REQUEST_UPDATE)
+            ]
             filtered_count = original_count - len(suggestions)
             if filtered_count > 0:
                 logger.info(
@@ -171,7 +372,7 @@ async def analyze_messages(context: MessageContext) -> AnalysisResult:
         logger.info(
             "discord_llm_analysis_complete",
             extra={
-                "message_count": len(context.messages),
+                "message_count": message_count,
                 "suggestion_count": len(suggestions),
             },
         )
@@ -191,7 +392,7 @@ async def analyze_messages(context: MessageContext) -> AnalysisResult:
         logger.error("discord_llm_api_error", extra={"error": str(e)})
         return AnalysisResult.failure("AI service error. Please try again later.")
     except Exception as e:
-        logger.exception("discord_llm_error: %s", e)
+        logger.exception("discord_llm_error", extra={"error": str(e)})
         return AnalysisResult.failure("Unexpected error during analysis. Please try again.")
 
 
@@ -209,23 +410,21 @@ def _get_parts_enabled() -> bool:
 
 DEFAULT_MODEL = decouple_config("DISCORD_LLM_MODEL", default="claude-opus-4-5-20251101")
 
+# Max tokens for LLM response (tool use responses are typically short)
+DEFAULT_MAX_TOKENS = 1024
 
-@sync_to_async
-def _call_anthropic(
+
+async def _call_anthropic(
     api_key: str,
     user_message: str,
     system_prompt: str | None = None,
     model: str | None = None,
 ) -> anthropic.types.Message:
-    """Call Anthropic API with tool use for structured output.
-
-    If system_prompt is provided, it overrides the default SYSTEM_PROMPT.
-    If model is provided, it overrides the default model.
-    """
-    client = anthropic.Anthropic(api_key=api_key)
-    return client.messages.create(
+    """Call Anthropic API with tool use for structured output."""
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    return await client.messages.create(
         model=model if model is not None else DEFAULT_MODEL,
-        max_tokens=1024,
+        max_tokens=DEFAULT_MAX_TOKENS,
         system=system_prompt if system_prompt is not None else SYSTEM_PROMPT,
         tools=[RECORD_SUGGESTIONS_TOOL],
         tool_choice=TOOL_CHOICE,
@@ -240,37 +439,177 @@ def _get_machines_for_prompt() -> list[dict]:
     return [{"slug": m.slug, "name": m.name} for m in machines]
 
 
-def _build_user_message(context: MessageContext, machines: list[dict]) -> str:
-    """Build the user message for the LLM."""
-    parts = []
+def build_yaml_prompt(
+    context: context_module.GatheredContext,
+    machines: list[dict],
+) -> str:
+    """Build YAML-formatted prompt for the LLM."""
+    from the_flip.apps.discord.context import ContextMessage
 
-    # Machine list
-    parts.append("## Available Machines")
+    lines = []
+
+    # Machines section
+    lines.append("machines:")
     for machine in machines:
-        parts.append(f"- {machine['name']} (slug: {machine['slug']})")
+        lines.append(f"  - id: {machine['slug']}")
+        lines.append(f'    name: "{_escape_yaml_string(machine["name"])}"')
 
-    # Flipfix URLs if any
-    if context.flipfix_urls:
-        parts.append("\n## Related Flipfix Records")
-        for url in context.flipfix_urls:
-            parts.append(f"- {url}")
+    # Messages section
+    lines.append("")
+    lines.append("messages:")
 
-    # Messages
-    parts.append("\n## Discord Messages")
-    parts.append(
-        "(Messages are in chronological order. The user clicked on the message marked with **)"
-    )
+    def format_message(msg: ContextMessage, indent: int = 2) -> list[str]:
+        """Format a single message as YAML lines."""
+        prefix = " " * indent
+        msg_lines = []
+
+        msg_lines.append(f'{prefix}- id: "{msg.id}"')
+        msg_lines.append(f'{prefix}  author: "{_escape_yaml_string(msg.author)}"')
+        # Only include author_id if present (not for webhook embeds)
+        if msg.author_id:
+            msg_lines.append(f'{prefix}  author_id: "{msg.author_id}"')
+        msg_lines.append(f'{prefix}  content: "{_escape_yaml_string(msg.content)}"')
+        msg_lines.append(f'{prefix}  timestamp: "{msg.timestamp}"')
+
+        if msg.reply_to_id:
+            msg_lines.append(f'{prefix}  reply_to_id: "{msg.reply_to_id}"')
+
+        if msg.is_target:
+            msg_lines.append(f"{prefix}  is_target: true")
+
+        if msg.is_processed:
+            msg_lines.append(f"{prefix}  is_processed: true")
+
+        if msg.flipfix_record:
+            msg_lines.append(f"{prefix}  flipfix_record:")
+            msg_lines.append(f"{prefix}    type: {msg.flipfix_record.record_type}")
+            msg_lines.append(f"{prefix}    id: {msg.flipfix_record.record_id}")
+            if msg.flipfix_record.machine_id:
+                msg_lines.append(f"{prefix}    machine_id: {msg.flipfix_record.machine_id}")
+
+        if msg.thread:
+            msg_lines.append(f"{prefix}  thread:")
+            for thread_msg in msg.thread:
+                msg_lines.extend(format_message(thread_msg, indent + 4))
+
+        return msg_lines
+
     for msg in context.messages:
-        marker = "**" if msg.get("is_target") else ""
-        parts.append(f"{marker}[{msg['timestamp']}] {msg['author']}: {msg['content']}{marker}")
+        lines.extend(format_message(msg))
 
-    parts.append("\n## Task")
-    parts.append(
-        "Analyze ONLY the target message (marked with **) and use the record_suggestions tool to submit your suggestions. "
-        "The other messages are just for context - do not create records for them."
+    return "\n".join(lines)
+
+
+def _escape_yaml_string(s: str) -> str:
+    """Escape a string for YAML double-quoted format."""
+    # Order matters: escape backslashes first to prevent double-escaping.
+    # If we escaped quotes first (" -> \"), then backslashes (\ -> \\),
+    # the quote escape would become \\", which is wrong.
+    s = s.replace("\\", "\\\\")
+    s = s.replace('"', '\\"')
+    s = s.replace("\n", "\\n")
+    return s
+
+
+# Set of valid record type values (derived from enum for validation)
+VALID_RECORD_TYPES = set(RecordType)
+
+
+def _validate_child_item(item: dict) -> ChildSuggestion | None:
+    """Validate and parse a single child suggestion item from LLM output."""
+    required = ["description", "source_message_ids", "author_id"]
+    missing = [k for k in required if k not in item]
+    if missing:
+        logger.warning(
+            "discord_llm_child_missing_required_fields",
+            extra={"missing_fields": missing, "item_keys": list(item.keys())},
+        )
+        return None
+
+    source_message_ids = item["source_message_ids"]
+    if not isinstance(source_message_ids, list):
+        logger.warning(
+            "discord_llm_child_source_message_ids_not_list",
+            extra={"type": type(source_message_ids).__name__},
+        )
+        return None
+    if not source_message_ids:
+        logger.warning("discord_llm_child_empty_source_message_ids")
+        return None
+
+    return ChildSuggestion(
+        description=item["description"],
+        source_message_ids=[str(mid) for mid in source_message_ids],
+        author_id=str(item["author_id"]),
     )
 
-    return "\n".join(parts)
+
+def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
+    """Validate and parse a single suggestion item from LLM output."""
+    # Check required fields exist
+    required = ["record_type", "description", "source_message_ids", "author_id"]
+    missing = [k for k in required if k not in item]
+    if missing:
+        logger.warning(
+            "discord_llm_missing_required_fields",
+            extra={"missing_fields": missing, "item_keys": list(item.keys())},
+        )
+        return None
+
+    if item["record_type"] not in VALID_RECORD_TYPES:
+        logger.warning(
+            "discord_llm_invalid_record_type",
+            extra={"record_type": item["record_type"], "valid_types": list(VALID_RECORD_TYPES)},
+        )
+        return None
+
+    source_message_ids = item["source_message_ids"]
+    if not isinstance(source_message_ids, list):
+        logger.warning(
+            "discord_llm_source_message_ids_not_list",
+            extra={"type": type(source_message_ids).__name__},
+        )
+        return None
+    if not source_message_ids:
+        logger.warning("discord_llm_empty_source_message_ids")
+        return None
+
+    record_type = RecordType(item["record_type"])
+    # LLM uses "machine_id" but we store as "slug" internally
+    slug = item.get("machine_id")
+    parent_record_id = item.get("parent_record_id")
+
+    # Validate slug requirement for log_entry and problem_report
+    if record_type in (RecordType.LOG_ENTRY, RecordType.PROBLEM_REPORT) and not slug:
+        logger.warning("discord_llm_missing_machine_id", extra={"record_type": record_type})
+        return None
+
+    # Validate parent_record_id requirement for part_request_update
+    if record_type == RecordType.PART_REQUEST_UPDATE and not parent_record_id:
+        logger.warning("discord_llm_missing_parent_record_id")
+        return None
+
+    # Parse children if present
+    children: list[ChildSuggestion] | None = None
+    if "children" in item and isinstance(item["children"], list):
+        children = []
+        for child_item in item["children"]:
+            if isinstance(child_item, dict):
+                if child := _validate_child_item(child_item):
+                    children.append(child)
+        # Only keep children list if it has valid items
+        if not children:
+            children = None
+
+    return RecordSuggestion(
+        record_type=record_type,
+        description=item["description"],
+        source_message_ids=[str(mid) for mid in source_message_ids],
+        author_id=str(item["author_id"]),
+        slug=slug,
+        parent_record_id=parent_record_id,
+        children=children,
+    )
 
 
 def _parse_tool_response(response: anthropic.types.Message) -> list[RecordSuggestion]:
@@ -291,23 +630,8 @@ def _parse_tool_response(response: anthropic.types.Message) -> list[RecordSugges
             for item in suggestions_data:
                 if not isinstance(item, dict):
                     continue
-                if not all(
-                    k in item
-                    for k in ["record_type", "machine_slug", "machine_name", "description"]
-                ):
-                    continue
-                if item["record_type"] not in ["log_entry", "problem_report", "part_request"]:
-                    continue
-
-                suggestions.append(
-                    RecordSuggestion(
-                        record_type=item["record_type"],
-                        machine_slug=item["machine_slug"],
-                        machine_name=item["machine_name"],
-                        description=item["description"],
-                        selected=True,
-                    )
-                )
+                if suggestion := _validate_suggestion_item(item):
+                    suggestions.append(suggestion)
 
             return suggestions
 
