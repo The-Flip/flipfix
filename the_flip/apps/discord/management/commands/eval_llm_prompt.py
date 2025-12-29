@@ -433,6 +433,8 @@ class Command(BaseCommand):
 
         # Optional: source_message_ids (only check if expected specifies it)
         if exp.source_message_ids is not None:
+            if act.source_message_ids is None:
+                return False
             if sorted(exp.source_message_ids) != sorted(act.source_message_ids):
                 return False
 
@@ -483,6 +485,8 @@ class Command(BaseCommand):
 
         # Optional: source_message_ids (only check if expected specifies it)
         if exp.source_message_ids is not None:
+            if act.source_message_ids is None:
+                return False
             if sorted(exp.source_message_ids) != sorted(act.source_message_ids):
                 return False
 

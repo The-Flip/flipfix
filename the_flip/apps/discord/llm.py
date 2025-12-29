@@ -507,6 +507,8 @@ def _escape_yaml_string(s: str) -> str:
     # the quote escape would become \\", which is wrong.
     s = s.replace("\\", "\\\\")
     s = s.replace('"', '\\"')
+    s = s.replace("\r\n", "\\n")  # Windows line endings → single \n
+    s = s.replace("\r", "\\n")  # Bare carriage returns → \n
     s = s.replace("\n", "\\n")
     return s
 

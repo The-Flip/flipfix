@@ -166,6 +166,34 @@ class EscapeYamlStringTests(TestCase):
         result = _escape_yaml_string('Quote: "test"\nBackslash: \\')
         self.assertEqual(result, 'Quote: \\"test\\"\\nBackslash: \\\\')
 
+    def test_escapes_windows_newline(self):
+        """Windows newlines (CRLF) become single escaped newline."""
+        result = _escape_yaml_string("line1\r\nline2")
+        self.assertEqual(result, "line1\\nline2")
+
+    def test_escapes_bare_carriage_return(self):
+        """Bare carriage returns (CR) become escaped newline."""
+        result = _escape_yaml_string("line1\rline2")
+        self.assertEqual(result, "line1\\nline2")
+
+    def test_mixed_line_endings(self):
+        """Mixed line endings all become single escaped newlines."""
+        # CRLF, then LF, then CR
+        result = _escape_yaml_string("a\r\nb\nc\rd")
+        self.assertEqual(result, "a\\nb\\nc\\nd")
+
+    def test_preserves_literal_backslash_n(self):
+        """Literal backslash-n in source should become double-backslash-n."""
+        # User typed actual backslash followed by 'n' (not a newline)
+        result = _escape_yaml_string("escape sequence is \\n")
+        self.assertEqual(result, "escape sequence is \\\\n")
+
+    def test_complex_mixed_content(self):
+        """Complex content with all special characters."""
+        # Contains: quote, backslash, windows newline, unix newline
+        result = _escape_yaml_string('She said "hi\\there"\r\nNew line\nDone')
+        self.assertEqual(result, 'She said \\"hi\\\\there\\"\\nNew line\\nDone')
+
 
 @tag("tasks")
 class BuildYamlPromptTests(TestCase):

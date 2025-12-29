@@ -123,29 +123,15 @@ class Machine:
 def get_all_test_machines() -> list[dict[str, str]]:
     """Get all test machines as a list of dicts for build_yaml_prompt().
 
-    Returns list of {"slug": "...", "name": "..."} dicts.
+    Auto-discovers all TestMachine instances from the Machine class.
+    Returns list of {"slug": "...", "name": "..."} dicts sorted by slug.
     """
-    return [
+    machines = [
         {"slug": m.slug, "name": m.name}
-        for m in [
-            Machine.ballyhoo,
-            Machine.baseball,
-            Machine.blackout,
-            Machine.carom,
-            Machine.derby_day,
-            Machine.eight_ball,
-            Machine.getaway,
-            Machine.godzilla,
-            Machine.gorgar,
-            Machine.hokus_pokus,
-            Machine.hulk,
-            Machine.hyperball,
-            Machine.mo_ball,
-            Machine.star_trek,
-            Machine.star_trip,
-            Machine.trade_winds,
-        ]
+        for m in vars(Machine).values()
+        if isinstance(m, TestMachine)
     ]
+    return sorted(machines, key=lambda m: m["slug"])
 
 
 @dataclass
