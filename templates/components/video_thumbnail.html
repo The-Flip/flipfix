@@ -1,0 +1,15 @@
+{# Video thumbnail component for list views - handles all transcode states #}
+{# Usage: {% video_thumbnail media=media model_name="LogEntryMedia" %} #}
+{% load core_extras %}
+{% if media.transcode_status == media.TranscodeStatus.READY and media.poster_file %}
+  <img src="{{ media.poster_file.url }}" alt="Video poster">
+{% elif media.transcode_status == "" %}
+  {# Discord videos skip transcoding - show video icon as thumbnail #}
+  <div class="media-grid__status">{% icon "video" %}</div>
+{% elif media.transcode_status == media.TranscodeStatus.PROCESSING or media.transcode_status == media.TranscodeStatus.PENDING %}
+  <div class="media-grid__status"
+       data-media-poll-id="{{ media.id }}"
+       data-media-poll-model="{{ model_name }}">Processing video...</div>
+{% else %}
+  <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
+{% endif %}

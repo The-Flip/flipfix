@@ -1,0 +1,23 @@
+{# Video player component - handles all transcode states #}
+{# Usage: {% video_player media=media model_name="LogEntryMedia" %} #}
+{% if media.transcode_status == media.TranscodeStatus.READY and media.transcoded_file %}
+  {# Transcoded video (web UI uploads) - use transcoded file with poster #}
+  <video controls
+         {% if media.poster_file %}poster="{{ media.poster_file.url }}"{% endif %}>
+    <source src="{{ media.transcoded_file.url }}" type="video/mp4">
+    Your browser doesn't support video playback.
+  </video>
+{% elif media.transcode_status == "" %}
+  {# Discord videos skip transcoding - play directly from original file #}
+  {# Omit type attribute to let browser detect format (Discord may send mov/webm/etc) #}
+  <video controls preload="metadata">
+    <source src="{{ media.file.url }}">
+    Your browser doesn't support video playback.
+  </video>
+{% elif media.transcode_status == media.TranscodeStatus.PROCESSING or media.transcode_status == media.TranscodeStatus.PENDING %}
+  <div class="media-grid__status"
+       data-media-poll-id="{{ media.id }}"
+       data-media-poll-model="{{ model_name }}">Processing video...</div>
+{% else %}
+  <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
+{% endif %}
