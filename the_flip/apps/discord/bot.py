@@ -11,7 +11,7 @@ from constance import config
 from discord import app_commands
 
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.discord.context import gather_context
+from the_flip.apps.discord.context import ContextMessage, gather_context
 from the_flip.apps.discord.llm import (
     FlattenedSuggestion,
     RecordSuggestion,
@@ -20,7 +20,7 @@ from the_flip.apps.discord.llm import (
     flatten_suggestions,
 )
 from the_flip.apps.discord.models import DiscordMessageMapping
-from the_flip.apps.discord.records import create_record
+from the_flip.apps.discord.records import create_record_with_media
 from the_flip.apps.discord.types import DiscordUserInfo
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ class WizardState:
     discord_user: DiscordUserInfo  # The button-clicker (fallback if author not found)
     discord_message_id: int
     author_id_map: dict[str, DiscordUserInfo] = field(default_factory=dict)
+    message_attachments: dict[str, list[discord.Attachment]] = field(default_factory=dict)
     current_index: int = 0
     results: list[WizardResult] = field(default_factory=list)
     # Maps flattened index -> created record ID (for parent linking)
@@ -234,12 +235,15 @@ class SuggestionEditorModal(discord.ui.Modal):
                 if parent_record_id is not None:
                     suggestion.parent_record_id = parent_record_id
 
-                result = await create_record(
+                result = await create_record_with_media(
                     suggestion=suggestion,
                     author_id=state.get_author_id_for_current(),
                     author_id_map=state.author_id_map,
+                    message_attachments=state.message_attachments,
                 )
-                state.record_result("created", url=result.url, record_id=result.record_id)
+                state.record_result(
+                    "created", url=result.result.url, record_id=result.result.record_id
+                )
 
             # Advance to next or show completion
             if state.is_complete:
@@ -284,6 +288,7 @@ class SequentialWizardView(discord.ui.View):
         discord_user: DiscordUserInfo,
         discord_message_id: int,
         author_id_map: dict[str, DiscordUserInfo] | None = None,
+        message_attachments: dict[str, list[discord.Attachment]] | None = None,
     ):
         super().__init__(timeout=WIZARD_TIMEOUT_SECONDS)
         # Flatten suggestions to handle parent-child relationships
@@ -293,6 +298,7 @@ class SequentialWizardView(discord.ui.View):
             discord_user=discord_user,
             discord_message_id=discord_message_id,
             author_id_map=author_id_map or {},
+            message_attachments=message_attachments or {},
         )
         self._update_buttons()
 
@@ -442,12 +448,15 @@ class SequentialWizardView(discord.ui.View):
                 if parent_record_id is not None:
                     suggestion.parent_record_id = parent_record_id
 
-                result = await create_record(
+                result = await create_record_with_media(
                     suggestion=suggestion,
                     author_id=self.state.get_author_id_for_current(),
                     author_id_map=self.state.author_id_map,
+                    message_attachments=self.state.message_attachments,
                 )
-                self.state.record_result("created", url=result.url, record_id=result.record_id)
+                self.state.record_result(
+                    "created", url=result.result.url, record_id=result.result.record_id
+                )
 
             if self.state.is_complete:
                 embed, view = await self.build_completion_view()
@@ -606,11 +615,15 @@ class DiscordBot(discord.Client):
                     extra={"suggestion_count": len(result.suggestions)},
                 )
 
+                # Build attachment map from context messages
+                message_attachments = _build_attachment_map(context.messages)
+
                 view = SequentialWizardView(
                     suggestions=result.suggestions,
                     discord_user=DiscordUserInfo.from_interaction(interaction),
                     discord_message_id=message.id,
                     author_id_map=context.author_id_map,
+                    message_attachments=message_attachments,
                 )
                 embed = await view.build_step_embed()
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
@@ -696,6 +709,23 @@ async def _format_record_summary(result: WizardResult, include_link: bool = True
 async def _is_message_processed(message_id: str) -> bool:
     """Check if a Discord message has already been processed."""
     return await sync_to_async(DiscordMessageMapping.is_processed)(message_id)
+
+
+def _build_attachment_map(
+    context_messages: list[ContextMessage],
+) -> dict[str, list[discord.Attachment]]:
+    """Build a mapping of message IDs to their attachments.
+
+    Includes attachments from thread messages nested under their parent.
+    """
+    attachment_map: dict[str, list[discord.Attachment]] = {}
+    for msg in context_messages:
+        if msg.attachments:
+            attachment_map[msg.id] = msg.attachments
+        for thread_msg in msg.thread:
+            if thread_msg.attachments:
+                attachment_map[thread_msg.id] = thread_msg.attachments
+    return attachment_map
 
 
 def _create_status_embed(

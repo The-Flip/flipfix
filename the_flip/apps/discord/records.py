@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -22,6 +23,9 @@ from the_flip.apps.discord.types import DiscordUserInfo
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
+if TYPE_CHECKING:
+    import discord
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +36,7 @@ class RecordCreationResult:
     record_type: str
     record_id: int
     url: str
+    record_obj: LogEntry | ProblemReport | PartRequest | PartRequestUpdate | None = None
 
 
 def _get_base_url() -> str:
@@ -179,6 +184,7 @@ def create_record(
         record_type=suggestion.record_type,
         record_id=record_obj.pk,
         url=url,
+        record_obj=record_obj,
     )
 
 
@@ -313,4 +319,58 @@ def _create_part_request_update(
         part_request=part_request,
         text=description,
         posted_by=maintainer,
+    )
+
+
+@dataclass
+class RecordWithMediaResult:
+    """Result of creating a record with media attachments."""
+
+    result: RecordCreationResult
+    media_success: int
+    media_failed: int
+
+
+async def create_record_with_media(
+    suggestion: RecordSuggestion,
+    author_id: str,
+    author_id_map: dict[str, DiscordUserInfo],
+    message_attachments: dict[str, list[discord.Attachment]],
+) -> RecordWithMediaResult:
+    """Create record, then download and attach media.
+
+    This separates DB work (atomic transaction) from media downloads (network I/O).
+    Media is downloaded after the DB transaction commits.
+
+    Args:
+        suggestion: The record to create.
+        author_id: Author identifier for attribution.
+        author_id_map: Mapping of Discord user IDs to DiscordUserInfo.
+        message_attachments: Mapping of message IDs to their attachments.
+
+    Returns:
+        RecordWithMediaResult with creation result and media counts.
+    """
+    # First, create the record (DB transaction)
+    result = await create_record(suggestion, author_id, author_id_map)
+
+    # Gather attachments from source messages
+    all_attachments: list[discord.Attachment] = []
+    for msg_id in suggestion.source_message_ids:
+        all_attachments.extend(message_attachments.get(msg_id, []))
+
+    # Download media after DB transaction committed
+    media_success = 0
+    media_failed = 0
+    if all_attachments and result.record_obj:
+        from the_flip.apps.discord.media import download_and_create_media
+
+        media_success, media_failed = await download_and_create_media(
+            result.record_obj, all_attachments
+        )
+
+    return RecordWithMediaResult(
+        result=result,
+        media_success=media_success,
+        media_failed=media_failed,
     )
