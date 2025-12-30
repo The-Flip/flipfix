@@ -321,7 +321,7 @@ async def analyze_gathered_context(
     """
     api_key = await _get_api_key()
     if not api_key:
-        logger.error("ANTHROPIC_API_KEY not configured")
+        logger.error("discord_llm_api_key_not_configured")
         return AnalysisResult.failure(
             "Anthropic API key not configured. Please contact an administrator."
         )
@@ -547,7 +547,7 @@ def _validate_child_item(item: dict) -> ChildSuggestion | None:
         )
         return None
     if not source_message_ids:
-        logger.warning("discord_llm_child_empty_source_message_ids")
+        logger.warning("discord_llm_child_empty_source_message_ids", extra={})
         return None
 
     return ChildSuggestion(
@@ -584,7 +584,7 @@ def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
         )
         return None
     if not source_message_ids:
-        logger.warning("discord_llm_empty_source_message_ids")
+        logger.warning("discord_llm_empty_source_message_ids", extra={})
         return None
 
     record_type = RecordType(item["record_type"])
@@ -604,7 +604,7 @@ def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
 
     # Validate parent_record_id requirement for part_request_update
     if record_type == RecordType.PART_REQUEST_UPDATE and not parent_record_id:
-        logger.warning("discord_llm_missing_parent_record_id")
+        logger.warning("discord_llm_missing_parent_record_id", extra={"record_type": record_type})
         return None
 
     # Parse children if present
@@ -636,12 +636,18 @@ def _parse_tool_response(response: anthropic.types.Message) -> list[RecordSugges
         if content.type == "tool_use" and content.name == "record_suggestions":
             tool_input = content.input
             if not isinstance(tool_input, dict):
-                logger.warning("discord_llm_tool_input_not_dict")
+                logger.warning(
+                    "discord_llm_tool_input_not_dict",
+                    extra={"type": type(tool_input).__name__},
+                )
                 return []
 
             suggestions_data = tool_input.get("suggestions", [])
             if not isinstance(suggestions_data, list):
-                logger.warning("discord_llm_suggestions_not_list")
+                logger.warning(
+                    "discord_llm_suggestions_not_list",
+                    extra={"type": type(suggestions_data).__name__},
+                )
                 return []
 
             suggestions = []
@@ -653,5 +659,5 @@ def _parse_tool_response(response: anthropic.types.Message) -> list[RecordSugges
 
             return suggestions
 
-    logger.warning("discord_llm_no_tool_use_in_response")
+    logger.warning("discord_llm_no_tool_use_in_response", extra={})
     return []

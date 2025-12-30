@@ -581,11 +581,13 @@ class DiscordBot(discord.Client):
         # Warn about missing media upload configuration
         if not DJANGO_WEB_SERVICE_URL:
             logger.warning(
-                "discord_config_missing: DJANGO_WEB_SERVICE_URL not set - media uploads disabled"
+                "discord_config_missing",
+                extra={"setting": "DJANGO_WEB_SERVICE_URL", "impact": "media_uploads_disabled"},
             )
         if not TRANSCODING_UPLOAD_TOKEN:
             logger.warning(
-                "discord_config_missing: TRANSCODING_UPLOAD_TOKEN not set - media uploads disabled"
+                "discord_config_missing",
+                extra={"setting": "TRANSCODING_UPLOAD_TOKEN", "impact": "media_uploads_disabled"},
             )
 
     async def _handle_add_command(self, interaction: discord.Interaction, message: discord.Message):
@@ -600,7 +602,10 @@ class DiscordBot(discord.Client):
 
         # Check if already responded (can happen with duplicate registrations)
         if interaction.response.is_done():
-            logger.warning("discord_interaction_already_acknowledged")
+            logger.warning(
+                "discord_interaction_already_acknowledged",
+                extra={"interaction_id": interaction.id},
+            )
             return
 
         # MUST defer immediately - Discord only gives 3 seconds to respond
@@ -833,12 +838,12 @@ async def _send_error_response(interaction: discord.Interaction, message: str):
 def run_bot():
     """Run the Discord bot. Called from the management command."""
     if not config.DISCORD_BOT_ENABLED:
-        logger.error("Discord bot is disabled in settings")
+        logger.error("discord_bot_disabled")
         return
 
     token = config.DISCORD_BOT_TOKEN
     if not token:
-        logger.error("Discord bot token not configured")
+        logger.error("discord_bot_token_not_configured")
         return
 
     bot = DiscordBot()
@@ -846,6 +851,6 @@ def run_bot():
     try:
         bot.run(token)
     except discord.LoginFailure:
-        logger.error("Invalid Discord bot token")
+        logger.error("discord_bot_invalid_token")
     except Exception as e:
         logger.exception("discord_bot_error", extra={"error": str(e)})
