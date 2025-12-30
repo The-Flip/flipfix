@@ -19,6 +19,7 @@ from the_flip.apps.discord.llm import (
     analyze_gathered_context,
     flatten_suggestions,
 )
+from the_flip.apps.discord.media import DJANGO_WEB_SERVICE_URL, TRANSCODING_UPLOAD_TOKEN
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.records import create_record_with_media
 from the_flip.apps.discord.types import DiscordUserInfo
@@ -572,6 +573,16 @@ class DiscordBot(discord.Client):
                 "user_id": self.user.id if self.user else None,
             },
         )
+
+        # Warn about missing media upload configuration
+        if not DJANGO_WEB_SERVICE_URL:
+            logger.warning(
+                "discord_config_missing: DJANGO_WEB_SERVICE_URL not set - media uploads disabled"
+            )
+        if not TRANSCODING_UPLOAD_TOKEN:
+            logger.warning(
+                "discord_config_missing: TRANSCODING_UPLOAD_TOKEN not set - media uploads disabled"
+            )
 
     async def _handle_add_command(self, interaction: discord.Interaction, message: discord.Message):
         """Handle the 'Add to Flipfix' context menu command."""
