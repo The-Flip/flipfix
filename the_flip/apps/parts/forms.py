@@ -5,7 +5,7 @@ from django import forms
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
     StyledFormMixin,
-    collect_media_files,
+    normalize_uploaded_files,
     validate_media_files,
 )
 from the_flip.apps.maintenance.forms import MultiFileField, MultiFileInput
@@ -56,7 +56,7 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
 
 
@@ -100,5 +100,5 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)

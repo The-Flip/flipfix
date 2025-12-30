@@ -7,10 +7,11 @@ from django import forms
 from django.core.files.uploadedfile import UploadedFile
 from PIL import Image, UnidentifiedImageError
 
-# Media validation constants
-MAX_MEDIA_FILE_SIZE_BYTES = 200 * 1024 * 1024  # 200MB
-ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".hevc"}
-ALLOWED_HEIC_EXTENSIONS = {".heic", ".heif"}
+from the_flip.apps.core.media import (
+    ALLOWED_HEIC_EXTENSIONS,
+    ALLOWED_VIDEO_EXTENSIONS,
+    MAX_MEDIA_FILE_SIZE_BYTES,
+)
 
 # Widget type to CSS class mapping
 WIDGET_CSS_CLASSES = {
@@ -123,7 +124,9 @@ def validate_media_files(files: list[UploadedFile]) -> list[UploadedFile]:
     return cleaned_files
 
 
-def collect_media_files(files_dict: Any, field_name: str, cleaned_data: dict) -> list[UploadedFile]:
+def normalize_uploaded_files(
+    files_dict: Any, field_name: str, cleaned_data: dict
+) -> list[UploadedFile]:
     """Collect uploaded files from both multi-file and single-file contexts.
 
     Handles the complexity of file uploads coming from different sources:
@@ -155,17 +158,3 @@ def collect_media_files(files_dict: Any, field_name: str, cleaned_data: dict) ->
                 files = [single]
 
     return files
-
-
-def is_video_file(uploaded_file: UploadedFile) -> bool:
-    """Check if an uploaded file is a video based on content type and extension.
-
-    Args:
-        uploaded_file: The uploaded file to check.
-
-    Returns:
-        True if the file is a video, False otherwise.
-    """
-    content_type = (getattr(uploaded_file, "content_type", "") or "").lower()
-    ext = Path(getattr(uploaded_file, "name", "")).suffix.lower()
-    return content_type.startswith("video/") or ext in ALLOWED_VIDEO_EXTENSIONS

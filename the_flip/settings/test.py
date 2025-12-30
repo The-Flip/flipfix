@@ -20,3 +20,8 @@ DATABASES["default"] = dj_database_url.config(  # type: ignore[assignment]
 
 # Suppress noisy Django-Q logging during tests
 Q_CLUSTER["log_level"] = "WARNING"  # type: ignore[name-defined]  # noqa: F405
+
+# Suppress app logs during tests
+# Tests verify behavior through assertions, not log inspection
+LOGGING["loggers"]["the_flip"]["level"] = "CRITICAL"  # type: ignore[index]  # noqa: F405
+LOGGING["loggers"]["the_flip.apps.discord"]["level"] = "CRITICAL"  # type: ignore[index]  # noqa: F405

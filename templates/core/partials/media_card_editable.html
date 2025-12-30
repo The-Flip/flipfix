@@ -19,18 +19,7 @@
       {% for media in media_items %}
         <div class="media-grid__item" data-media-id="{{ media.id }}">
           {% if media.media_type == media.MediaType.VIDEO %}
-            {% if media.transcode_status == media.TranscodeStatus.READY and media.transcoded_file %}
-              <video controls poster="{{ media.poster_file.url }}">
-                <source src="{{ media.transcoded_file.url }}" type="video/mp4">
-                Your browser doesn't support video playback.
-              </video>
-            {% elif media.transcode_status == media.TranscodeStatus.PROCESSING or media.transcode_status == media.TranscodeStatus.PENDING %}
-              <div class="media-grid__status"
-                   data-media-poll-id="{{ media.id }}"
-                   data-media-poll-model="{{ model_name|default:'LogEntryMedia' }}">Processing video...</div>
-            {% else %}
-              <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
-            {% endif %}
+            {% video_player media=media model_name=model_name|default:"LogEntryMedia" %}
           {% else %}
             <a href="{{ media.file.url }}" target="_blank">
               {% if media.thumbnail_file %}

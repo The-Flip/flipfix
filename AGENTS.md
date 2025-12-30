@@ -99,10 +99,9 @@ make test           # Run fast suite (excludes integration)
 make test-all       # Run full suite (includes integration checks)
 
 # Code Quality
-make format         # Auto-format code
-make lint           # Lint code
+make lint           # Format and lint code (auto-fixes issues)
 make typecheck      # Check Python types
-make quality        # Format + lint + typecheck (run before committing)
+make quality        # Lint + typecheck (run before committing)
 make precommit      # Run pre-commit hooks
 
 # Database

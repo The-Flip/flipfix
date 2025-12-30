@@ -8,15 +8,7 @@
       {% for media in media_items %}
         <div class="media-grid__item">
           {% if media.media_type == media.MediaType.VIDEO %}
-            {% if media.transcode_status == media.TranscodeStatus.READY and media.poster_file %}
-              <img src="{{ media.poster_file.url }}" alt="Video poster">
-            {% elif media.transcode_status == media.TranscodeStatus.PROCESSING or media.transcode_status == media.TranscodeStatus.PENDING %}
-              <div class="media-grid__status"
-                   data-media-poll-id="{{ media.id }}"
-                   data-media-poll-model="{{ model_name|default:'LogEntryMedia' }}">Processing video...</div>
-            {% else %}
-              <div class="media-grid__status media-grid__status--error">Video processing failed.</div>
-            {% endif %}
+            {% video_thumbnail media=media model_name=model_name|default:"LogEntryMedia" %}
           {% else %}
             {% if media.thumbnail_file %}
               <img src="{{ media.thumbnail_file.url }}" alt="Photo">

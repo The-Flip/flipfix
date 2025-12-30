@@ -6,7 +6,7 @@ from django.utils import timezone
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
     StyledFormMixin,
-    collect_media_files,
+    normalize_uploaded_files,
     validate_media_files,
 )
 from the_flip.apps.maintenance.models import ProblemReport
@@ -111,7 +111,7 @@ class MaintainerProblemReportForm(ProblemReportForm):
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
-        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
 
 
@@ -177,7 +177,7 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
-        files = collect_media_files(self.files, "media_file", self.cleaned_data)
+        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
 
     def clean_machine_slug(self):

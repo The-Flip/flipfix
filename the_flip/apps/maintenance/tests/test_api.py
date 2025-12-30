@@ -422,3 +422,179 @@ class DeleteMediaTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         self.assertFalse(storage.exists(original_name))
         self.assertFalse(storage.exists(transcoded_name))
         self.assertFalse(storage.exists(poster_name))
+
+
+@tag("views")
+class ReceiveMediaViewTests(TemporaryMediaMixin, SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for the HTTP API endpoint that receives media uploads from Discord bot."""
+
+    def setUp(self):
+        super().setUp()
+        self.log_entry = create_log_entry(machine=self.machine, text="Test log entry")
+        # Generate token dynamically to avoid triggering secret scanners
+        self.test_token = secrets.token_hex(16)
+
+    def _build_upload_url(self, model_name: str = "LogEntryMedia", parent_id: int | None = None):
+        """Build upload URL with path parameters."""
+        return reverse(
+            "api-media-upload",
+            kwargs={"model_name": model_name, "parent_id": parent_id or self.log_entry.id},
+        )
+
+    def _auth_headers(self, token: str | None = None) -> dict[str, str]:
+        bearer = token or self.test_token
+        return {"HTTP_AUTHORIZATION": f"Bearer {bearer}"}
+
+    def test_requires_authorization_header(self):
+        """Request without Authorization header should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(self._build_upload_url(), {})
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("Missing or invalid Authorization header", response.json()["error"])
+
+    def test_rejects_invalid_token(self):
+        """Request with wrong token should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(), {}, **self._auth_headers("wrong-token")
+            )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("Invalid authentication token", response.json()["error"])
+
+    def test_requires_file(self):
+        """Request without file should be rejected."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(self._build_upload_url(), {}, **self._auth_headers())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Missing file", response.json()["error"])
+
+    def test_validates_file_type(self):
+        """File must have image/* or video/* content type."""
+        wrong_file = SimpleUploadedFile("fake.txt", b"not media", content_type="text/plain")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(), {"file": wrong_file}, **self._auth_headers()
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid file type", response.json()["error"])
+
+    def test_rejects_nonexistent_parent(self):
+        """Request with non-existent parent ID should be rejected."""
+        photo_file = SimpleUploadedFile("photo.jpg", MINIMAL_PNG, content_type="image/png")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(parent_id=999999),
+                {"file": photo_file},
+                **self._auth_headers(),
+            )
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("not found", response.json()["error"])
+
+    def test_rejects_invalid_model_name(self):
+        """Request with invalid model_name should be rejected."""
+        photo_file = SimpleUploadedFile("photo.jpg", MINIMAL_PNG, content_type="image/png")
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(model_name="InvalidModel"),
+                {"file": photo_file},
+                **self._auth_headers(),
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Unknown media model", response.json()["error"])
+
+    def test_successful_photo_upload(self):
+        """Successful photo upload should create media record."""
+        photo_file = SimpleUploadedFile("photo.png", MINIMAL_PNG, content_type="image/png")
+
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(),
+                {"file": photo_file},
+                **self._auth_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["media_type"], "photo")
+        self.assertIn("media_id", result)
+
+        # Verify media record was created with empty transcode status
+        media = LogEntryMedia.objects.get(id=result["media_id"])
+        self.assertEqual(media.log_entry, self.log_entry)
+        self.assertEqual(media.media_type, LogEntryMedia.MediaType.PHOTO)
+        self.assertEqual(media.transcode_status, "")  # Photos don't need transcoding
+        self.assertTrue(media.file)
+
+    def test_successful_video_upload_skips_transcoding(self):
+        """Video upload from Discord should skip transcoding (transcode_status='')."""
+        video_file = SimpleUploadedFile(
+            "video.mp4", b"fake video content", content_type="video/mp4"
+        )
+
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(),
+                {"file": video_file},
+                **self._auth_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["media_type"], "video")
+
+        # Verify media record was created with empty transcode status
+        media = LogEntryMedia.objects.get(id=result["media_id"])
+        self.assertEqual(media.media_type, LogEntryMedia.MediaType.VIDEO)
+        self.assertEqual(media.transcode_status, "")  # No transcoding queued
+
+    def test_server_not_configured_for_uploads(self):
+        """If TRANSCODING_UPLOAD_TOKEN is not set, should return 500."""
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=None):
+            response = self.client.post(
+                self._build_upload_url(), {}, **self._auth_headers("some-token")
+            )
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("Server not configured", response.json()["error"])
+
+    def test_accepts_file_with_supported_extension_but_generic_content_type(self):
+        """Files with supported extensions are accepted even with generic content type.
+
+        Discord sometimes omits MIME types, sending application/octet-stream instead.
+        The API should accept files based on extension in this case.
+        """
+        # Use application/octet-stream which Discord may send when MIME type is unknown
+        photo_file = SimpleUploadedFile(
+            "photo.jpg", MINIMAL_PNG, content_type="application/octet-stream"
+        )
+
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(),
+                {"file": photo_file},
+                **self._auth_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["media_type"], "photo")
+
+    def test_accepts_video_with_supported_extension_but_generic_content_type(self):
+        """Video files with supported extensions are accepted even with generic content type."""
+        video_file = SimpleUploadedFile(
+            "video.mp4", b"fake video content", content_type="application/octet-stream"
+        )
+
+        with override_settings(TRANSCODING_UPLOAD_TOKEN=self.test_token):
+            response = self.client.post(
+                self._build_upload_url(),
+                {"file": video_file},
+                **self._auth_headers(),
+            )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["media_type"], "video")

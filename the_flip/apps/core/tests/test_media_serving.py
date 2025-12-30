@@ -6,10 +6,12 @@ from pathlib import Path
 
 from django.test import TestCase, override_settings, tag
 
+from the_flip.apps.core.test_utils import SuppressRequestLogsMixin
+
 
 @tag("views")
 @override_settings(MEDIA_URL="/media/")
-class ServeMediaViewTests(TestCase):
+class ServeMediaViewTests(SuppressRequestLogsMixin, TestCase):
     """Tests for the serve_media view that serves user-uploaded files."""
 
     def setUp(self):

@@ -15,10 +15,9 @@ help:
 	@echo "  make eval-discord-bot-llm - Evaluate Discord bot LLM prompt"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make format         - Auto-format code"
-	@echo "  make lint           - Lint code"
+	@echo "  make lint           - Format and lint code (auto-fixes issues)"
 	@echo "  make typecheck      - Check Python types"
-	@echo "  make quality        - Format code and run all quality checks"
+	@echo "  make quality        - Lint and typecheck"
 	@echo "  make precommit      - Run pre-commit hooks"
 	@echo ""
 	@echo "Database:"
@@ -84,12 +83,8 @@ sample-data:
 
 .PHONY: lint
 lint:
-	.venv/bin/ruff check .
-	.venv/bin/djlint templates/ --check
-
-.PHONY: format
-format:
 	.venv/bin/ruff format .
+	.venv/bin/ruff check . --fix
 	.venv/bin/djlint templates/ --reformat --quiet
 
 .PHONY: typecheck
@@ -97,7 +92,7 @@ typecheck:
 	.venv/bin/mypy the_flip
 
 .PHONY: quality
-quality: format lint typecheck
+quality: lint typecheck
 	@echo "All quality checks passed!"
 
 .PHONY: precommit

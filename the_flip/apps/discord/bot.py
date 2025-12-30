@@ -11,7 +11,7 @@ from constance import config
 from discord import app_commands
 
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.discord.context import gather_context
+from the_flip.apps.discord.context import ContextMessage, gather_context
 from the_flip.apps.discord.llm import (
     FlattenedSuggestion,
     RecordSuggestion,
@@ -19,8 +19,13 @@ from the_flip.apps.discord.llm import (
     analyze_gathered_context,
     flatten_suggestions,
 )
+from the_flip.apps.discord.media import (
+    DJANGO_WEB_SERVICE_URL,
+    TRANSCODING_UPLOAD_TOKEN,
+    _is_video,
+)
 from the_flip.apps.discord.models import DiscordMessageMapping
-from the_flip.apps.discord.records import create_record
+from the_flip.apps.discord.records import create_record_with_media
 from the_flip.apps.discord.types import DiscordUserInfo
 
 logger = logging.getLogger(__name__)
@@ -51,6 +56,7 @@ class WizardState:
     discord_user: DiscordUserInfo  # The button-clicker (fallback if author not found)
     discord_message_id: int
     author_id_map: dict[str, DiscordUserInfo] = field(default_factory=dict)
+    message_attachments: dict[str, list[discord.Attachment]] = field(default_factory=dict)
     current_index: int = 0
     results: list[WizardResult] = field(default_factory=list)
     # Maps flattened index -> created record ID (for parent linking)
@@ -190,6 +196,16 @@ class WizardState:
             return self.parent_record_ids.get(flattened.parent_index)
         return None
 
+    def get_attachments_for_current(self) -> list[discord.Attachment]:
+        """Get all attachments for the current suggestion's source messages."""
+        suggestion = self.current_suggestion
+        if not suggestion:
+            return []
+        attachments: list[discord.Attachment] = []
+        for msg_id in suggestion.source_message_ids:
+            attachments.extend(self.message_attachments.get(msg_id, []))
+        return attachments
+
     @property
     def created_count(self) -> int:
         """Return how many suggestions were created as records."""
@@ -234,12 +250,15 @@ class SuggestionEditorModal(discord.ui.Modal):
                 if parent_record_id is not None:
                     suggestion.parent_record_id = parent_record_id
 
-                result = await create_record(
+                result = await create_record_with_media(
                     suggestion=suggestion,
                     author_id=state.get_author_id_for_current(),
                     author_id_map=state.author_id_map,
+                    message_attachments=state.message_attachments,
                 )
-                state.record_result("created", url=result.url, record_id=result.record_id)
+                state.record_result(
+                    "created", url=result.result.url, record_id=result.result.record_id
+                )
 
             # Advance to next or show completion
             if state.is_complete:
@@ -284,6 +303,7 @@ class SequentialWizardView(discord.ui.View):
         discord_user: DiscordUserInfo,
         discord_message_id: int,
         author_id_map: dict[str, DiscordUserInfo] | None = None,
+        message_attachments: dict[str, list[discord.Attachment]] | None = None,
     ):
         super().__init__(timeout=WIZARD_TIMEOUT_SECONDS)
         # Flatten suggestions to handle parent-child relationships
@@ -293,6 +313,7 @@ class SequentialWizardView(discord.ui.View):
             discord_user=discord_user,
             discord_message_id=discord_message_id,
             author_id_map=author_id_map or {},
+            message_attachments=message_attachments or {},
         )
         self._update_buttons()
 
@@ -344,7 +365,7 @@ class SequentialWizardView(discord.ui.View):
             color=discord.Color.blue(),
         )
 
-        # Build footer with parent link and/or author attribution
+        # Build footer with parent link, author attribution, and media counts
         footer_parts = []
         if suggestion.parent_record_id:
             parent_type = _get_parent_type_label(suggestion.record_type)
@@ -353,6 +374,10 @@ class SequentialWizardView(discord.ui.View):
         author_name = self.state.get_author_display_name_for_current()
         if author_name:
             footer_parts.append(f"👤 Attributed to {author_name}")
+
+        media_counts = _format_media_counts(self.state.get_attachments_for_current())
+        if media_counts:
+            footer_parts.append(f"🏞️ {media_counts}")
 
         if footer_parts:
             embed.set_footer(text="\n".join(footer_parts))
@@ -369,7 +394,7 @@ class SequentialWizardView(discord.ui.View):
             result = created[0]
             summary = await _format_record_summary(result)
             embed = discord.Embed(
-                description=f"Created a {summary}. [View in Flipfix ➡️]({result.url})",
+                description=f"Created a {summary}.",
                 color=discord.Color.green(),
             )
         elif created:
@@ -442,12 +467,15 @@ class SequentialWizardView(discord.ui.View):
                 if parent_record_id is not None:
                     suggestion.parent_record_id = parent_record_id
 
-                result = await create_record(
+                result = await create_record_with_media(
                     suggestion=suggestion,
                     author_id=self.state.get_author_id_for_current(),
                     author_id_map=self.state.author_id_map,
+                    message_attachments=self.state.message_attachments,
                 )
-                self.state.record_result("created", url=result.url, record_id=result.record_id)
+                self.state.record_result(
+                    "created", url=result.result.url, record_id=result.result.record_id
+                )
 
             if self.state.is_complete:
                 embed, view = await self.build_completion_view()
@@ -550,6 +578,18 @@ class DiscordBot(discord.Client):
             },
         )
 
+        # Warn about missing media upload configuration
+        if not DJANGO_WEB_SERVICE_URL:
+            logger.warning(
+                "discord_config_missing",
+                extra={"setting": "DJANGO_WEB_SERVICE_URL", "impact": "media_uploads_disabled"},
+            )
+        if not TRANSCODING_UPLOAD_TOKEN:
+            logger.warning(
+                "discord_config_missing",
+                extra={"setting": "TRANSCODING_UPLOAD_TOKEN", "impact": "media_uploads_disabled"},
+            )
+
     async def _handle_add_command(self, interaction: discord.Interaction, message: discord.Message):
         """Handle the 'Add to Flipfix' context menu command."""
         logger.info(
@@ -562,7 +602,10 @@ class DiscordBot(discord.Client):
 
         # Check if already responded (can happen with duplicate registrations)
         if interaction.response.is_done():
-            logger.warning("discord_interaction_already_acknowledged")
+            logger.warning(
+                "discord_interaction_already_acknowledged",
+                extra={"interaction_id": interaction.id},
+            )
             return
 
         # MUST defer immediately - Discord only gives 3 seconds to respond
@@ -606,11 +649,15 @@ class DiscordBot(discord.Client):
                     extra={"suggestion_count": len(result.suggestions)},
                 )
 
+                # Build attachment map from context messages
+                message_attachments = _build_attachment_map(context.messages)
+
                 view = SequentialWizardView(
                     suggestions=result.suggestions,
                     discord_user=DiscordUserInfo.from_interaction(interaction),
                     discord_message_id=message.id,
                     author_id_map=context.author_id_map,
+                    message_attachments=message_attachments,
                 )
                 embed = await view.build_step_embed()
                 await interaction.followup.send(embed=embed, view=view, ephemeral=True)
@@ -689,13 +736,65 @@ async def _format_record_summary(result: WizardResult, include_link: bool = True
         base = type_display
 
     if include_link and result.url:
-        return f"{base} — [View ➡️]({result.url})"
+        return f"{base} — [View in Flipfix ➡️]({result.url})"
     return base
 
 
 async def _is_message_processed(message_id: str) -> bool:
     """Check if a Discord message has already been processed."""
     return await sync_to_async(DiscordMessageMapping.is_processed)(message_id)
+
+
+def _format_media_counts(attachments: list[discord.Attachment]) -> str | None:
+    """Format attachment counts for footer display.
+
+    Returns a string like "3 photos, 1 video" or None if no attachments.
+    """
+    if not attachments:
+        return None
+
+    photos = sum(1 for a in attachments if not _is_video(a.filename))
+    videos = sum(1 for a in attachments if _is_video(a.filename))
+
+    parts = []
+    if photos:
+        parts.append(f"{photos} photo" if photos == 1 else f"{photos} photos")
+    if videos:
+        parts.append(f"{videos} video" if videos == 1 else f"{videos} videos")
+
+    return ", ".join(parts) if parts else None
+
+
+def _build_attachment_map(
+    context_messages: list[ContextMessage],
+) -> dict[str, list[discord.Attachment]]:
+    """Build a mapping of message IDs to their attachments.
+
+    Includes attachments from thread messages nested under their parent.
+    """
+    attachment_map: dict[str, list[discord.Attachment]] = {}
+    for msg in context_messages:
+        if msg.attachments:
+            attachment_map[msg.id] = msg.attachments
+        for thread_msg in msg.thread:
+            if thread_msg.attachments:
+                attachment_map[thread_msg.id] = thread_msg.attachments
+
+    if attachment_map:
+        logger.info(
+            "discord_attachment_map_built",
+            extra={
+                "message_count": len(attachment_map),
+                "message_ids": list(attachment_map.keys()),
+                "total_attachments": sum(len(a) for a in attachment_map.values()),
+            },
+        )
+    else:
+        logger.debug(
+            "discord_attachment_map_empty", extra={"context_message_count": len(context_messages)}
+        )
+
+    return attachment_map
 
 
 def _create_status_embed(
@@ -739,12 +838,12 @@ async def _send_error_response(interaction: discord.Interaction, message: str):
 def run_bot():
     """Run the Discord bot. Called from the management command."""
     if not config.DISCORD_BOT_ENABLED:
-        logger.error("Discord bot is disabled in settings")
+        logger.error("discord_bot_disabled")
         return
 
     token = config.DISCORD_BOT_TOKEN
     if not token:
-        logger.error("Discord bot token not configured")
+        logger.error("discord_bot_token_not_configured")
         return
 
     bot = DiscordBot()
@@ -752,6 +851,6 @@ def run_bot():
     try:
         bot.run(token)
     except discord.LoginFailure:
-        logger.error("Invalid Discord bot token")
+        logger.error("discord_bot_invalid_token")
     except Exception as e:
         logger.exception("discord_bot_error", extra={"error": str(e)})

@@ -22,7 +22,7 @@ from django.views.generic import DetailView, FormView, TemplateView
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
-from the_flip.apps.core.forms import is_video_file
+from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     InfiniteScrollMixin,

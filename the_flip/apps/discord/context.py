@@ -14,11 +14,13 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import urlparse
 
 import discord
 from asgiref.sync import sync_to_async
 
+from the_flip.apps.core.media import ALLOWED_MEDIA_EXTENSIONS
 from the_flip.apps.discord.llm import RecordType
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.types import DiscordUserInfo
@@ -64,6 +66,7 @@ class ContextMessage:
     flipfix_record: FlipfixRecord | None = None
     thread: list[ContextMessage] = field(default_factory=list)
     is_processed: bool = False  # True for placeholder messages (e.g., filtered thread starters)
+    attachments: list[discord.Attachment] = field(default_factory=list)  # Media attachments
 
 
 @dataclass
@@ -419,7 +422,7 @@ async def _fetch_messages_between(
     messages: list[discord.Message] = []
 
     try:
-        async for msg in channel.history(limit=100, after=after, before=before):
+        async for msg in channel.history(limit=MAX_TOTAL_MESSAGES, after=after, before=before):
             if msg.id not in exclude_ids:
                 messages.append(msg)
     except discord.HTTPException as e:
@@ -581,6 +584,9 @@ def _build_context_message(msg: discord.Message, target_id: str) -> ContextMessa
     if msg.reference and msg.reference.message_id:
         reply_to_id = str(msg.reference.message_id)
 
+    # Filter attachments to supported media types only
+    attachments = _filter_supported_attachments(msg.attachments)
+
     return ContextMessage(
         id=str(msg.id),
         author=author,
@@ -590,6 +596,7 @@ def _build_context_message(msg: discord.Message, target_id: str) -> ContextMessa
         is_target=str(msg.id) == target_id,
         reply_to_id=reply_to_id,
         flipfix_record=flipfix_record,
+        attachments=attachments,
     )
 
 
@@ -624,6 +631,26 @@ def _build_author_id_map(messages: list[discord.Message]) -> dict[str, DiscordUs
         if author_id not in author_map:
             author_map[author_id] = DiscordUserInfo.from_message(msg)
     return author_map
+
+
+def _filter_supported_attachments(
+    attachments: list[discord.Attachment],
+) -> list[discord.Attachment]:
+    """Filter attachments to only those with supported media extensions.
+
+    Unsupported formats (PDFs, documents, etc.) are silently ignored.
+    """
+    result = [a for a in attachments if Path(a.filename).suffix.lower() in ALLOWED_MEDIA_EXTENSIONS]
+    if attachments:
+        logger.debug(
+            "discord_attachments_filtered",
+            extra={
+                "before_count": len(attachments),
+                "after_count": len(result),
+                "filenames": [a.filename for a in attachments],
+            },
+        )
+    return result
 
 
 # =============================================================================
@@ -664,6 +691,10 @@ def _parse_webhook_embed(embed: discord.Embed) -> tuple[FlipfixRecord, str, str]
             content = embed.description[: match.start()]
         else:
             content = embed.description
+            logger.debug(
+                "discord_webhook_embed_no_author",
+                extra={"description_preview": embed.description[:100]},
+            )
 
     return flipfix_record, author, content
 

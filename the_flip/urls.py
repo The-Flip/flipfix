@@ -44,6 +44,7 @@ from the_flip.apps.maintenance.views.log_entries import (
     MachineLogPartialView,
     MachineLogView,
 )
+from the_flip.apps.maintenance.views.media_api import ReceiveMediaView
 from the_flip.apps.maintenance.views.problem_reports import (
     MachineProblemReportListView,
     ProblemReportCreateView,
@@ -238,6 +239,11 @@ urlpatterns = [
         ReceiveTranscodedMediaView.as_view(),
         name="api-transcoding-upload",
     ),  # Worker: upload transcoded video and poster
+    path(
+        "api/media/<str:model_name>/<int:parent_id>/",
+        ReceiveMediaView.as_view(),
+        name="api-media-upload",
+    ),  # Discord bot: upload media file
     path(
         "api/transcoding/status/",
         TranscodeStatusView.as_view(),
