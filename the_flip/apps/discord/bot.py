@@ -19,7 +19,11 @@ from the_flip.apps.discord.llm import (
     analyze_gathered_context,
     flatten_suggestions,
 )
-from the_flip.apps.discord.media import DJANGO_WEB_SERVICE_URL, TRANSCODING_UPLOAD_TOKEN
+from the_flip.apps.discord.media import (
+    DJANGO_WEB_SERVICE_URL,
+    TRANSCODING_UPLOAD_TOKEN,
+    _is_video,
+)
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.records import create_record_with_media
 from the_flip.apps.discord.types import DiscordUserInfo
@@ -743,8 +747,6 @@ def _format_media_counts(attachments: list[discord.Attachment]) -> str | None:
     """
     if not attachments:
         return None
-
-    from the_flip.apps.discord.media import _is_video
 
     photos = sum(1 for a in attachments if not _is_video(a.filename))
     videos = sum(1 for a in attachments if _is_video(a.filename))
