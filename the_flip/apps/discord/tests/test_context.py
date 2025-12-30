@@ -1,6 +1,7 @@
 """Tests for Discord context gathering and YAML prompt building."""
 
 from django.test import TestCase, tag
+from django.urls import reverse
 
 from the_flip.apps.discord.context import (
     ContextMessage,
@@ -11,6 +12,11 @@ from the_flip.apps.discord.context import (
     _parse_webhook_embed,
 )
 from the_flip.apps.discord.llm import RecordType, _escape_yaml_string, build_yaml_prompt
+
+
+def _make_url(url_name: str, pk: int) -> str:
+    """Build a full URL from a Django URL name, matching webhook formatter output."""
+    return f"https://flipfix.example.com{reverse(url_name, kwargs={'pk': pk})}"
 
 
 class MockEmbed:
@@ -31,32 +37,29 @@ class MockEmbed:
 
 @tag("tasks")
 class ParseFlipfixUrlTests(TestCase):
-    """Tests for _parse_flipfix_url()."""
+    """Tests for _parse_flipfix_url().
+
+    These tests use Django's reverse() to generate URLs, ensuring
+    the parser always matches the actual URL configuration.
+    """
 
     def test_parses_log_entry_url(self):
-        """Parses /log/123/ pattern."""
-        result = _parse_flipfix_url("https://flipfix.example.com/log/123/")
+        """Parses log entry URL pattern."""
+        url = _make_url("log-detail", 123)
+        result = _parse_flipfix_url(url)
         self.assertEqual(result, (RecordType.LOG_ENTRY, 123, None))
 
     def test_parses_problem_report_url(self):
-        """Parses /problem/456/ pattern."""
-        result = _parse_flipfix_url("https://flipfix.example.com/problem/456/")
+        """Parses problem report URL pattern."""
+        url = _make_url("problem-report-detail", 456)
+        result = _parse_flipfix_url(url)
         self.assertEqual(result, (RecordType.PROBLEM_REPORT, 456, None))
 
     def test_parses_part_request_url(self):
-        """Parses /parts/request/789/ pattern."""
-        result = _parse_flipfix_url("https://flipfix.example.com/parts/request/789/")
+        """Parses part request URL pattern."""
+        url = _make_url("part-request-detail", 789)
+        result = _parse_flipfix_url(url)
         self.assertEqual(result, (RecordType.PART_REQUEST, 789, None))
-
-    def test_parses_machine_log_url(self):
-        """Parses /machines/<slug>/log/<id> pattern."""
-        result = _parse_flipfix_url("https://flipfix.example.com/machines/godzilla/log/42/")
-        self.assertEqual(result, (RecordType.LOG_ENTRY, 42, "godzilla"))
-
-    def test_parses_machine_problem_url(self):
-        """Parses /machines/<slug>/problem/<id> pattern."""
-        result = _parse_flipfix_url("https://flipfix.example.com/machines/metallica/problem/99/")
-        self.assertEqual(result, (RecordType.PROBLEM_REPORT, 99, "metallica"))
 
     def test_returns_none_for_unknown_pattern(self):
         """Returns None for unrecognized URL patterns."""
@@ -65,18 +68,23 @@ class ParseFlipfixUrlTests(TestCase):
 
     def test_handles_url_without_trailing_slash(self):
         """Handles URLs without trailing slashes."""
-        result = _parse_flipfix_url("https://flipfix.example.com/log/123")
+        url = _make_url("log-detail", 123).rstrip("/")
+        result = _parse_flipfix_url(url)
         self.assertEqual(result, (RecordType.LOG_ENTRY, 123, None))
 
 
 @tag("tasks")
 class ParseWebhookEmbedTests(TestCase):
-    """Tests for _parse_webhook_embed()."""
+    """Tests for _parse_webhook_embed().
+
+    These tests use Django's reverse() to generate URLs, ensuring
+    the parser always matches the actual URL configuration.
+    """
 
     def test_parses_embed_with_author_suffix(self):
         """Parses author from description's — suffix."""
         embed = MockEmbed(
-            url="https://flipfix.example.com/log/123/",
+            url=_make_url("log-detail", 123),
             description="Fixed the flipper coil.\n\n— Bob",
         )
         result = _parse_webhook_embed(embed)
@@ -91,7 +99,7 @@ class ParseWebhookEmbedTests(TestCase):
     def test_parses_embed_without_author_suffix(self):
         """Handles embeds without — author suffix."""
         embed = MockEmbed(
-            url="https://flipfix.example.com/problem/456/",
+            url=_make_url("problem-report-detail", 456),
             description="Machine is broken",
         )
         result = _parse_webhook_embed(embed)
@@ -122,29 +130,26 @@ class ParseWebhookEmbedTests(TestCase):
 class IsFlipfixUrlTests(TestCase):
     """Tests for _is_flipfix_url().
 
-    URL recognition is based on path patterns (/log/N/, /problem/N/, etc.),
-    not domain names. This avoids configuration complexity while reliably
-    identifying Flipfix webhook embeds.
+    URL recognition is based on path patterns, not domain names. This avoids
+    configuration complexity while reliably identifying Flipfix webhook embeds.
+
+    These tests use Django's reverse() to generate URLs, ensuring
+    the recognizer always matches the actual URL configuration.
     """
 
     def test_recognizes_log_url(self):
         """Returns True for log entry URLs."""
-        result = _is_flipfix_url("https://any-domain.com/log/123/")
+        result = _is_flipfix_url(_make_url("log-detail", 123))
         self.assertTrue(result)
 
     def test_recognizes_problem_url(self):
         """Returns True for problem report URLs."""
-        result = _is_flipfix_url("https://any-domain.com/problem/456/")
+        result = _is_flipfix_url(_make_url("problem-report-detail", 456))
         self.assertTrue(result)
 
     def test_recognizes_parts_request_url(self):
         """Returns True for parts request URLs."""
-        result = _is_flipfix_url("https://any-domain.com/parts/request/789/")
-        self.assertTrue(result)
-
-    def test_recognizes_machine_scoped_url(self):
-        """Returns True for machine-scoped record URLs."""
-        result = _is_flipfix_url("https://any-domain.com/machines/godzilla/log/42/")
+        result = _is_flipfix_url(_make_url("part-request-detail", 789))
         self.assertTrue(result)
 
     def test_rejects_non_matching_path(self):
@@ -154,7 +159,7 @@ class IsFlipfixUrlTests(TestCase):
 
     def test_rejects_similar_but_wrong_path(self):
         """Returns False for paths that look similar but aren't Flipfix patterns."""
-        result = _is_flipfix_url("https://example.com/logs/123/")  # plural 'logs'
+        result = _is_flipfix_url("https://example.com/log/123/")  # singular 'log'
         self.assertFalse(result)
 
 

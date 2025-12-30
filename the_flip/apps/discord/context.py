@@ -625,21 +625,11 @@ def _parse_webhook_embed(embed: discord.Embed) -> tuple[FlipfixRecord, str, str]
     """Parse a Flipfix webhook embed.
 
     Webhook embeds have:
-    - URL: https://flipfix.example.com/log/123/ or /problem/456/ etc.
+    - URL: https://flipfix.example.com/logs/123/ or /problem-reports/456/ etc.
     - Description: "Content text\\n\\n— AuthorName"
 
     Returns (FlipfixRecord, author, content) or None if not a Flipfix embed.
     """
-    # Debug logging to diagnose webhook parsing issues
-    logger.debug(
-        "discord_parsing_embed",
-        extra={
-            "embed_url": embed.url,
-            "embed_title": embed.title,
-            "embed_description": embed.description[:100] if embed.description else None,
-            "embed_type": embed.type,
-        },
-    )
 
     if not embed.url or not _is_flipfix_url(embed.url):
         return None
@@ -671,10 +661,10 @@ def _parse_webhook_embed(embed: discord.Embed) -> tuple[FlipfixRecord, str, str]
 def _is_flipfix_url(url: str) -> bool:
     """Check if a URL matches Flipfix record URL patterns.
 
-    We identify Flipfix URLs by their path structure (/log/N/, /problem/N/, etc.)
+    We identify Flipfix URLs by their path structure (/logs/N/, /problem-reports/N/, etc.)
     rather than requiring domain configuration. This is sufficient because:
     - The path patterns are specific to Flipfix records
-    - False positives are rare (random sites rarely use /problem/<id>/ paths)
+    - False positives are rare (random sites rarely use /problem-reports/<id>/ paths)
     - False positives fail gracefully (parent lookup returns None, link not created)
     """
     return _parse_flipfix_url(url) is not None
@@ -683,38 +673,30 @@ def _is_flipfix_url(url: str) -> bool:
 def _parse_flipfix_url(url: str) -> tuple[RecordType, int, str | None] | None:
     """Parse a Flipfix URL to extract record type and ID.
 
-    Expected URL patterns:
-    - /log/123/ -> (RecordType.LOG_ENTRY, 123, None)
-    - /problem/456/ -> (RecordType.PROBLEM_REPORT, 456, None)
-    - /parts/request/789/ -> (RecordType.PART_REQUEST, 789, None)
-    - /machines/godzilla/log/123/ -> (RecordType.LOG_ENTRY, 123, "godzilla")
+    Expected URL patterns (matching Django URL config):
+    - /logs/123/ -> (RecordType.LOG_ENTRY, 123, None)
+    - /problem-reports/456/ -> (RecordType.PROBLEM_REPORT, 456, None)
+    - /parts/789/ -> (RecordType.PART_REQUEST, 789, None)
+
+    The third element (machine_id) is always None since detail pages don't
+    include machine slugs in their URLs.
     """
     try:
         parsed = urlparse(url)
         path = parsed.path.rstrip("/")
 
-        # Pattern: /machines/<slug>/log/<id>
-        match = re.match(r"/machines/([^/]+)/log/(\d+)$", path)
-        if match:
-            return (RecordType.LOG_ENTRY, int(match.group(2)), match.group(1))
-
-        # Pattern: /machines/<slug>/problem/<id>
-        match = re.match(r"/machines/([^/]+)/problem/(\d+)$", path)
-        if match:
-            return (RecordType.PROBLEM_REPORT, int(match.group(2)), match.group(1))
-
-        # Pattern: /log/<id>
-        match = re.match(r"/log/(\d+)$", path)
+        # Pattern: /logs/<id>
+        match = re.match(r"/logs/(\d+)$", path)
         if match:
             return (RecordType.LOG_ENTRY, int(match.group(1)), None)
 
-        # Pattern: /problem/<id>
-        match = re.match(r"/problem/(\d+)$", path)
+        # Pattern: /problem-reports/<id>
+        match = re.match(r"/problem-reports/(\d+)$", path)
         if match:
             return (RecordType.PROBLEM_REPORT, int(match.group(1)), None)
 
-        # Pattern: /parts/request/<id>
-        match = re.match(r"/parts/request/(\d+)$", path)
+        # Pattern: /parts/<id>
+        match = re.match(r"/parts/(\d+)$", path)
         if match:
             return (RecordType.PART_REQUEST, int(match.group(1)), None)
 
