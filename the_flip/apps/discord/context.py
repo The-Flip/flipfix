@@ -640,7 +640,17 @@ def _filter_supported_attachments(
 
     Unsupported formats (PDFs, documents, etc.) are silently ignored.
     """
-    return [a for a in attachments if Path(a.filename).suffix.lower() in ALLOWED_MEDIA_EXTENSIONS]
+    result = [a for a in attachments if Path(a.filename).suffix.lower() in ALLOWED_MEDIA_EXTENSIONS]
+    if attachments:
+        logger.debug(
+            "discord_attachments_filtered",
+            extra={
+                "before_count": len(attachments),
+                "after_count": len(result),
+                "filenames": [a.filename for a in attachments],
+            },
+        )
+    return result
 
 
 # =============================================================================

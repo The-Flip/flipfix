@@ -761,6 +761,21 @@ def _build_attachment_map(
         for thread_msg in msg.thread:
             if thread_msg.attachments:
                 attachment_map[thread_msg.id] = thread_msg.attachments
+
+    if attachment_map:
+        logger.info(
+            "discord_attachment_map_built",
+            extra={
+                "message_count": len(attachment_map),
+                "message_ids": list(attachment_map.keys()),
+                "total_attachments": sum(len(a) for a in attachment_map.values()),
+            },
+        )
+    else:
+        logger.debug(
+            "discord_attachment_map_empty", extra={"context_message_count": len(context_messages)}
+        )
+
     return attachment_map
 
 
