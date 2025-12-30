@@ -191,6 +191,16 @@ class WizardState:
             return self.parent_record_ids.get(flattened.parent_index)
         return None
 
+    def get_attachments_for_current(self) -> list[discord.Attachment]:
+        """Get all attachments for the current suggestion's source messages."""
+        suggestion = self.current_suggestion
+        if not suggestion:
+            return []
+        attachments: list[discord.Attachment] = []
+        for msg_id in suggestion.source_message_ids:
+            attachments.extend(self.message_attachments.get(msg_id, []))
+        return attachments
+
     @property
     def created_count(self) -> int:
         """Return how many suggestions were created as records."""
@@ -350,7 +360,7 @@ class SequentialWizardView(discord.ui.View):
             color=discord.Color.blue(),
         )
 
-        # Build footer with parent link and/or author attribution
+        # Build footer with parent link, author attribution, and media counts
         footer_parts = []
         if suggestion.parent_record_id:
             parent_type = _get_parent_type_label(suggestion.record_type)
@@ -359,6 +369,10 @@ class SequentialWizardView(discord.ui.View):
         author_name = self.state.get_author_display_name_for_current()
         if author_name:
             footer_parts.append(f"👤 Attributed to {author_name}")
+
+        media_counts = _format_media_counts(self.state.get_attachments_for_current())
+        if media_counts:
+            footer_parts.append(f"🏞️ {media_counts}")
 
         if footer_parts:
             embed.set_footer(text="\n".join(footer_parts))
@@ -709,6 +723,28 @@ async def _format_record_summary(result: WizardResult, include_link: bool = True
 async def _is_message_processed(message_id: str) -> bool:
     """Check if a Discord message has already been processed."""
     return await sync_to_async(DiscordMessageMapping.is_processed)(message_id)
+
+
+def _format_media_counts(attachments: list[discord.Attachment]) -> str | None:
+    """Format attachment counts for footer display.
+
+    Returns a string like "3 photos, 1 video" or None if no attachments.
+    """
+    if not attachments:
+        return None
+
+    from the_flip.apps.discord.media import _is_video
+
+    photos = sum(1 for a in attachments if not _is_video(a.filename))
+    videos = sum(1 for a in attachments if _is_video(a.filename))
+
+    parts = []
+    if photos:
+        parts.append(f"{photos} photo" if photos == 1 else f"{photos} photos")
+    if videos:
+        parts.append(f"{videos} video" if videos == 1 else f"{videos} videos")
+
+    return ", ".join(parts) if parts else None
 
 
 def _build_attachment_map(
