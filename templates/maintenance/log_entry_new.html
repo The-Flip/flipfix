@@ -127,10 +127,10 @@
         <div class="sidebar__section">
           <div class="sidebar__label">When</div>
           <input type="datetime-local"
-                 id="{{ form.work_date.id_for_label }}"
-                 name="{{ form.work_date.html_name }}"
+                 id="{{ form.occurred_at.id_for_label }}"
+                 name="{{ form.occurred_at.html_name }}"
                  class="form-input form-input--sm">
-          {% field_errors form.work_date %}
+          {% field_errors form.occurred_at %}
         </div>
       </div>
     </aside>
@@ -155,11 +155,11 @@
     // Set timezone offset for form submission
     document.getElementById('tz-offset').value = new Date().getTimezoneOffset();
 
-    // Set default work_date to current time in browser's local timezone
+    // Set default occurred_at to current time in browser's local timezone
     (function() {
       const now = toDateTimeLocalValue(new Date());
-      const workDateInput = document.getElementById('{{ form.work_date.id_for_label }}');
-      if (workDateInput && !workDateInput.value) workDateInput.value = now;
+      const occurredAtInput = document.getElementById('{{ form.occurred_at.id_for_label }}');
+      if (occurredAtInput && !occurredAtInput.value) occurredAtInput.value = now;
     })();
 
     // Auto-resize description textarea to fit content

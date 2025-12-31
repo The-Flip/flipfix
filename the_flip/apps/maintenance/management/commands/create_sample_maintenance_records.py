@@ -158,16 +158,16 @@ class Command(BaseCommand):
                     if (row.get("Checked / Unchecked") or "").lower() == "checked"
                     else ProblemReport.Status.OPEN
                 )
-                created_at = self.parse_date(row.get("Timestamp") or "")
+                occurred_at = self.parse_date(row.get("Timestamp") or "")
 
-                report = ProblemReport.objects.create(
+                ProblemReport.objects.create(
                     machine=machine,
                     description=description,
                     status=status,
                     problem_type=ProblemReport.ProblemType.OTHER,
                     reported_by_user=maintainer.user if maintainer else None,
+                    occurred_at=occurred_at,
                 )
-                ProblemReport.objects.filter(pk=report.pk).update(created_at=created_at)
                 created += 1
                 self.stdout.write(f"Created problem report for {machine.name}")
 
@@ -200,7 +200,7 @@ class Command(BaseCommand):
                     )
                     continue
 
-                date = self.parse_date(row.get("Date") or "")
+                occurred_at = self.parse_date(row.get("Date") or "")
                 maintainer_field = (row.get("Maintainers") or "").strip()
                 maintainer_names = self.split_maintainer_names(maintainer_field)
 
@@ -217,10 +217,10 @@ class Command(BaseCommand):
                     machine=machine,
                     text=notes,
                     maintainer_names=", ".join(unmatched),
+                    occurred_at=occurred_at,
                 )
                 if matched:
                     entry.maintainers.set(matched)
-                LogEntry.objects.filter(pk=entry.pk).update(created_at=date)
                 created += 1
                 self.stdout.write(f"Created log entry for {machine.name}")
 

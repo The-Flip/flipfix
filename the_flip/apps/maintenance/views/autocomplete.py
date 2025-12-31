@@ -68,7 +68,7 @@ class MachineAutocompleteView(CanAccessMaintainerPortalMixin, View):
                     "problem_reports", filter=Q(problem_reports__status=ProblemReport.Status.OPEN)
                 ),
                 latest_open_report_date=Max(
-                    "problem_reports__created_at",
+                    "problem_reports__occurred_at",
                     filter=Q(problem_reports__status=ProblemReport.Status.OPEN),
                 ),
             )
@@ -130,7 +130,7 @@ class ProblemReportAutocompleteView(CanAccessMaintainerPortalMixin, View):
         reports = (
             ProblemReport.objects.filter(status=ProblemReport.Status.OPEN)
             .select_related("machine", "machine__model", "machine__location")
-            .order_by("-created_at")
+            .order_by("-occurred_at")
         )
 
         if query:
@@ -153,7 +153,7 @@ class ProblemReportAutocompleteView(CanAccessMaintainerPortalMixin, View):
                 "machine_slug": machine.slug,
                 "machine_name": machine.name,
                 "summary": self._get_summary(report),
-                "created_at": report.created_at.isoformat(),
+                "occurred_at": report.occurred_at.isoformat(),
             }
 
             if machine.slug == current_machine_slug:

@@ -32,7 +32,7 @@ def get_activity_entries(machine, search_query=None):
     """
     latest_log_prefetch = Prefetch(
         "log_entries",
-        queryset=LogEntry.objects.order_by("-created_at"),
+        queryset=LogEntry.objects.order_by("-occurred_at"),
         to_attr="prefetched_log_entries",
     )
     logs = LogEntry.objects.filter(machine=machine).prefetch_related("maintainers__user", "media")
@@ -84,10 +84,10 @@ def get_activity_entries(machine, search_query=None):
             | Q(posted_by_name__icontains=search_query)
         ).distinct()
 
-    logs = logs.order_by("-created_at")
-    reports = reports.order_by("-created_at")
-    part_requests = part_requests.order_by("-created_at")
-    part_updates = part_updates.order_by("-created_at")
+    logs = logs.order_by("-occurred_at")
+    reports = reports.order_by("-occurred_at")
+    part_requests = part_requests.order_by("-occurred_at")
+    part_updates = part_updates.order_by("-occurred_at")
 
     return logs, reports, part_requests, part_updates
 
@@ -122,7 +122,7 @@ def get_activity_page(machine, page_num, page_size=10, search_query=None):
     # Combine, sort, slice to page
     combined = sorted(
         logs_list + reports_list + part_requests_list + part_updates_list,
-        key=lambda x: x.created_at,
+        key=lambda x: x.occurred_at,
         reverse=True,
     )
     page_items = combined[offset : offset + page_size]
@@ -147,7 +147,7 @@ class MachineListViewForPublic(ListView):
                 ),
                 # Get the most recent open problem report date
                 latest_open_report_date=Max(
-                    "problem_reports__created_at",
+                    "problem_reports__occurred_at",
                     filter=Q(problem_reports__status=ProblemReport.Status.OPEN),
                 ),
             )
@@ -156,7 +156,7 @@ class MachineListViewForPublic(ListView):
                     "problem_reports",
                     queryset=ProblemReport.objects.filter(
                         status=ProblemReport.Status.OPEN
-                    ).order_by("-created_at")[:1],
+                    ).order_by("-occurred_at")[:1],
                     to_attr="latest_open_report",
                 )
             )

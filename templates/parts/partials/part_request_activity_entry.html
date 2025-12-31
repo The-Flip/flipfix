@@ -7,7 +7,7 @@
       <div class="flex items-center stack-tight">
         <span class="timeline__title timeline__title--log">Parts Request {% icon "box-open" %} #{{ entry.pk }} created</span>
       </div>
-      <span class="timeline__meta">{{ entry.created_at|smart_date }} · {{ entry.requester_display }}</span>
+      <span class="timeline__meta">{{ entry.occurred_at|smart_date }} · {{ entry.requester_display }}</span>
     </div>
     <div class="timeline__body markdown-content markdown-content--compact">
       {{ entry.text|truncatechars:200|render_markdown }}

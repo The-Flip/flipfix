@@ -43,7 +43,7 @@
       <span class="pill pill--neutral">{{ report.get_problem_type_display }}</span>
     {% endif %}
   </div>
-  <p class="text-muted text-sm space-above-sm">{{ report.created_at|smart_date }} by {{ report.reporter_display }}</p>
+  <p class="text-muted text-sm space-above-sm">{{ report.occurred_at|smart_date }} by {{ report.reporter_display }}</p>
 {% endsidebar_section %}
 {% sidebar_section label="Machine" %}
 {% include "components/machine_sidebar_card.html" with editable=True %}

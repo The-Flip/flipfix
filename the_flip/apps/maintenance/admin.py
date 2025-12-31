@@ -14,7 +14,7 @@ class LogEntryAdminForm(forms.ModelForm):
             "maintainers",
             "maintainer_names",
             "text",
-            "work_date",
+            "occurred_at",
             "created_by",
         )
 
@@ -55,7 +55,7 @@ class ProblemReportMediaInline(admin.TabularInline):
 
 @admin.register(ProblemReport)
 class ProblemReportAdmin(SimpleHistoryAdmin):
-    list_display = ("machine", "problem_type", "status", "reporter_display", "created_at")
+    list_display = ("machine", "problem_type", "status", "reporter_display", "occurred_at")
     list_filter = ("status", "problem_type", "machine__location")
     search_fields = (
         "description",
@@ -75,7 +75,7 @@ class ProblemReportAdmin(SimpleHistoryAdmin):
 
 @admin.register(LogEntry)
 class LogEntryAdmin(SimpleHistoryAdmin):
-    list_display = ("machine", "work_date", "problem_report", "maintainer_list", "created_by")
+    list_display = ("machine", "occurred_at", "problem_report", "maintainer_list", "created_by")
     list_filter = ("machine__location", "problem_report__status")
     search_fields = (
         "text",

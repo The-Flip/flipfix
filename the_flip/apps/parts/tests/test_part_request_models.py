@@ -1,6 +1,9 @@
 """Tests for PartRequest and PartRequestUpdate models."""
 
+from datetime import timedelta
+
 from django.test import TestCase, tag
+from django.utils import timezone
 
 from the_flip.apps.core.test_utils import (
     TestDataMixin,
@@ -179,3 +182,125 @@ class PartRequestUpdateModelTests(TestDataMixin, TestCase):
             text="Update text",
         )
         self.assertEqual(update.poster_display, str(self.maintainer))
+
+
+@tag("models")
+class PartRequestOccurredAtTests(TestDataMixin, TestCase):
+    """Tests for PartRequest occurred_at field."""
+
+    def test_occurred_at_defaults_to_now(self):
+        """occurred_at defaults to current time when not specified."""
+        before = timezone.now()
+        part_request = create_part_request(requested_by=self.maintainer, text="Test request")
+        after = timezone.now()
+
+        self.assertIsNotNone(part_request.occurred_at)
+        self.assertGreaterEqual(part_request.occurred_at, before)
+        self.assertLessEqual(part_request.occurred_at, after)
+
+    def test_occurred_at_can_be_set_explicitly(self):
+        """occurred_at can be set to a specific datetime (e.g., Discord sync)."""
+        specific_date = timezone.now() - timedelta(days=5)
+        part_request = create_part_request(
+            requested_by=self.maintainer,
+            text="Historical request",
+            occurred_at=specific_date,
+        )
+        self.assertEqual(part_request.occurred_at, specific_date)
+
+    def test_part_requests_ordered_by_occurred_at_descending(self):
+        """Part requests are ordered by occurred_at descending by default.
+
+        Creates records where created_at order differs from occurred_at order
+        to ensure we're actually sorting by occurred_at, not created_at.
+        """
+        now = timezone.now()
+
+        # Create in this order: middle, oldest, newest
+        # If sorting by created_at, we'd get: middle, oldest, newest
+        # If sorting by occurred_at desc, we should get: newest, middle, oldest
+        middle = create_part_request(
+            requested_by=self.maintainer,
+            text="Middle request",
+            occurred_at=now - timedelta(days=5),
+        )
+        oldest = create_part_request(
+            requested_by=self.maintainer,
+            text="Oldest request",
+            occurred_at=now - timedelta(days=10),
+        )
+        newest = create_part_request(
+            requested_by=self.maintainer,
+            text="Newest request",
+            occurred_at=now,
+        )
+
+        requests = list(PartRequest.objects.all())
+        self.assertEqual(requests, [newest, middle, oldest])
+
+
+@tag("models")
+class PartRequestUpdateOccurredAtTests(TestDataMixin, TestCase):
+    """Tests for PartRequestUpdate occurred_at field."""
+
+    def setUp(self):
+        super().setUp()
+        self.part_request = create_part_request(requested_by=self.maintainer)
+
+    def test_occurred_at_defaults_to_now(self):
+        """occurred_at defaults to current time when not specified."""
+        before = timezone.now()
+        update = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            text="Test update",
+        )
+        after = timezone.now()
+
+        self.assertIsNotNone(update.occurred_at)
+        self.assertGreaterEqual(update.occurred_at, before)
+        self.assertLessEqual(update.occurred_at, after)
+
+    def test_occurred_at_can_be_set_explicitly(self):
+        """occurred_at can be set to a specific datetime (e.g., Discord sync)."""
+        specific_date = timezone.now() - timedelta(days=5)
+        update = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            text="Historical update",
+            occurred_at=specific_date,
+        )
+        self.assertEqual(update.occurred_at, specific_date)
+
+    def test_updates_ordered_by_occurred_at_descending(self):
+        """Updates are ordered by occurred_at descending (newest first).
+
+        Creates records where created_at order differs from occurred_at order
+        to ensure we're actually sorting by occurred_at, not created_at.
+        """
+        now = timezone.now()
+
+        # Create in this order: middle, oldest, newest
+        # If sorting by created_at desc, we'd get: newest, oldest, middle
+        # If sorting by occurred_at desc, we should get: newest, middle, oldest
+        middle = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            text="Middle update",
+            occurred_at=now - timedelta(days=5),
+        )
+        oldest = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            text="Oldest update",
+            occurred_at=now - timedelta(days=10),
+        )
+        newest = create_part_request_update(
+            part_request=self.part_request,
+            posted_by=self.maintainer,
+            text="Newest update",
+            occurred_at=now,
+        )
+
+        updates = list(PartRequestUpdate.objects.all())
+        self.assertEqual(updates, [newest, middle, oldest])

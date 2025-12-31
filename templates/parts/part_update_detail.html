@@ -20,7 +20,7 @@
 {% endsidebar_section %}
 {% endif %}
 {% sidebar_section label="Posted" %}
-<div class="sidebar__subtitle">{{ update.poster_display }} · {{ update.created_at|smart_date }}</div>
+<div class="sidebar__subtitle">{{ update.poster_display }} · {{ update.occurred_at|smart_date }}</div>
 {% endsidebar_section %}
 {% if update.new_status %}
   {% sidebar_section label="Status Change" %}

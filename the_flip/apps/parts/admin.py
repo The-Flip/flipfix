@@ -24,9 +24,8 @@ class PartRequestUpdateInline(admin.TabularInline):
 
     model = PartRequestUpdate
     extra = 0
-    fields = ["posted_by", "text", "new_status", "created_at"]
-    readonly_fields = ["created_at"]
-    ordering = ["-created_at"]
+    fields = ["posted_by", "text", "new_status", "occurred_at"]
+    ordering = ["-occurred_at"]
 
 
 @admin.register(PartRequest)
@@ -39,14 +38,14 @@ class PartRequestAdmin(admin.ModelAdmin):
         "status",
         "requested_by",
         "machine",
-        "created_at",
+        "occurred_at",
     ]
-    list_filter = ["status", "created_at"]
+    list_filter = ["status", "occurred_at"]
     search_fields = ["text", "requested_by__user__username", "machine__model__name"]
     readonly_fields = ["created_at", "updated_at"]
     autocomplete_fields = ["requested_by", "machine"]
     inlines = [PartRequestMediaInline, PartRequestUpdateInline]
-    ordering = ["-created_at"]
+    ordering = ["-occurred_at"]
 
     @admin.display(description="Description")
     def text_preview(self, obj):
@@ -84,14 +83,14 @@ class PartRequestUpdateAdmin(admin.ModelAdmin):
         "part_request",
         "posted_by",
         "new_status",
-        "created_at",
+        "occurred_at",
     ]
-    list_filter = ["new_status", "created_at"]
+    list_filter = ["new_status", "occurred_at"]
     search_fields = ["text", "posted_by__user__username", "part_request__text"]
     readonly_fields = ["created_at", "updated_at"]
     autocomplete_fields = ["posted_by", "part_request"]
     inlines = [PartRequestUpdateMediaInline]
-    ordering = ["-created_at"]
+    ordering = ["-occurred_at"]
 
     @admin.display(description="Comment")
     def text_preview(self, obj):

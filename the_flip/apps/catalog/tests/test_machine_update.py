@@ -52,7 +52,7 @@ class MachineInlineUpdateViewTests(TestCase):
         self.assertTrue(data.get("celebration"))
 
         # Check log entry exists with celebration emoji
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertIn("🎉", log.text)
 
     def test_location_change_to_workshop_creates_standard_log(self):
@@ -72,7 +72,7 @@ class MachineInlineUpdateViewTests(TestCase):
         self.assertFalse(data.get("celebration", False))
 
         # Log exists with location name, no celebration emoji
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertIn("Workshop", log.text)
         self.assertNotIn("🎉", log.text)
 
@@ -91,7 +91,7 @@ class MachineInlineUpdateViewTests(TestCase):
         self.assertEqual(
             LogEntry.objects.filter(machine=self.machine).count(), initial_log_count + 1
         )
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertNotIn("🎉", log.text)
 
     def test_location_noop_does_not_create_log(self):
@@ -117,7 +117,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
         self.client.post(self.update_url, {"action": "update_location", "location": "floor"})
 
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertEqual(log.created_by, self.maintainer_user)
 
     def test_status_change_adds_maintainer_if_exists(self):
@@ -134,7 +134,7 @@ class MachineInlineUpdateViewTests(TestCase):
             self.update_url, {"action": "update_status", "operational_status": "broken"}
         )
 
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertEqual(log.created_by, self.maintainer_user)
         self.assertIn(maintainer, log.maintainers.all())
 
@@ -152,7 +152,7 @@ class MachineInlineUpdateViewTests(TestCase):
             self.update_url, {"action": "update_status", "operational_status": "broken"}
         )
 
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertEqual(log.created_by, self.maintainer_user)
         self.assertEqual(log.maintainers.count(), 0)
 
@@ -169,7 +169,7 @@ class MachineInlineUpdateViewTests(TestCase):
             self.update_url, {"action": "update_status", "operational_status": "broken"}
         )
 
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertEqual(log.created_by, shared_terminal.user)
         # Shared terminal should NOT be added as maintainer
         self.assertEqual(log.maintainers.count(), 0)
@@ -185,7 +185,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
         self.client.post(self.update_url, {"action": "update_location", "location": "floor"})
 
-        log = LogEntry.objects.filter(machine=self.machine).latest("created_at")
+        log = LogEntry.objects.filter(machine=self.machine).latest("occurred_at")
         self.assertEqual(log.created_by, shared_terminal.user)
         # Shared terminal should NOT be added as maintainer
         self.assertEqual(log.maintainers.count(), 0)

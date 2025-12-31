@@ -131,7 +131,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.Status.CLOSED)
-        log_entry = LogEntry.objects.latest("created_at")
+        log_entry = LogEntry.objects.latest("occurred_at")
         self.assertEqual(log_entry.text, "Closed problem report")
         self.assertEqual(log_entry.problem_report, self.report)
         self.assertEqual(log_entry.machine, self.machine)
@@ -149,7 +149,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertEqual(response.status_code, 302)
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, ProblemReport.Status.OPEN)
-        log_entry = LogEntry.objects.latest("created_at")
+        log_entry = LogEntry.objects.latest("occurred_at")
         self.assertEqual(log_entry.text, "Re-opened problem report")
         self.assertEqual(log_entry.problem_report, self.report)
         self.assertEqual(log_entry.machine, self.machine)

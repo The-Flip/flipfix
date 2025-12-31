@@ -201,7 +201,7 @@ def problem_report_meta(report):
     if not report:
         return ""
 
-    ts = smart_date(getattr(report, "created_at", None))
+    ts = smart_date(getattr(report, "occurred_at", None))
     name = (getattr(report, "reporter_display", "") or "").strip()
 
     if name:
@@ -219,7 +219,7 @@ def log_entry_meta(entry):
     if not entry:
         return ""
 
-    ts = smart_date(getattr(entry, "work_date", None))
+    ts = smart_date(getattr(entry, "occurred_at", None))
     names = ""
     try:
         if hasattr(entry, "maintainers") and entry.maintainers.exists():

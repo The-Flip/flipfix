@@ -78,7 +78,7 @@ class MachineInlineUpdateView(CanAccessMaintainerPortalMixin, View):
 
     def _render_latest_log_entry(self, machine):
         """Render the most recent log entry as HTML for injection into the feed."""
-        log_entry = LogEntry.objects.filter(machine=machine).order_by("-created_at").first()
+        log_entry = LogEntry.objects.filter(machine=machine).order_by("-occurred_at").first()
         if not log_entry:
             return ""
         return render_to_string(

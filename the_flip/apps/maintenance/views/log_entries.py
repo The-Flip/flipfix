@@ -49,7 +49,7 @@ def get_log_entry_queryset(search_query: str = ""):
         .select_related("machine", "machine__model", "problem_report")
         .prefetch_related("maintainers__user", "media")
         .search(search_query)
-        .order_by("-work_date")
+        .order_by("-occurred_at")
     )
 
     return queryset
@@ -72,7 +72,7 @@ class MachineLogView(CanAccessMaintainerPortalMixin, TemplateView):
             .search_for_machine(search_query)
             .select_related("machine", "problem_report")
             .prefetch_related("maintainers__user", "media")
-            .order_by("-work_date")
+            .order_by("-occurred_at")
         )
 
         paginator = Paginator(logs, 10)
@@ -133,7 +133,7 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
                 )
         if self.machine:
             initial["machine_slug"] = self.machine.slug
-        # work_date default is set by JavaScript to use browser's local timezone
+        # occurred_at default is set by JavaScript to use browser's local timezone
         return initial
 
     def get_context_data(self, **kwargs):
@@ -160,10 +160,10 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
         submitter_name = form.cleaned_data["submitter_name"].strip()
         description = form.cleaned_data["text"].strip()
         media_files = form.cleaned_data["media_file"]
-        work_date = form.cleaned_data["work_date"]
+        occurred_at = form.cleaned_data["occurred_at"]
         machine = self.machine
 
-        # Convert work_date to browser's timezone if offset provided
+        # Convert occurred_at to browser's timezone if offset provided
         tz_offset_str = self.request.POST.get("tz_offset", "")
         if tz_offset_str:
             try:
@@ -172,10 +172,10 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
                 browser_tz = dt_timezone(timedelta(minutes=-tz_offset_minutes))
                 # Replace the timezone info with browser's timezone
                 # First make naive, then attach browser timezone
-                naive_dt = work_date.replace(tzinfo=None)
-                work_date = naive_dt.replace(tzinfo=browser_tz)
+                naive_dt = occurred_at.replace(tzinfo=None)
+                occurred_at = naive_dt.replace(tzinfo=browser_tz)
             except (ValueError, TypeError):
-                pass  # Keep original work_date if conversion fails
+                pass  # Keep original occurred_at if conversion fails
 
         if not machine:
             slug = (form.cleaned_data.get("machine_slug") or "").strip()
@@ -188,7 +188,7 @@ class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
             machine=machine,
             problem_report=self.problem_report,
             text=description,
-            work_date=work_date,
+            occurred_at=occurred_at,
             created_by=self.request.user,
         )
         self.machine = machine
@@ -268,7 +268,7 @@ class MachineLogPartialView(CanAccessMaintainerPortalMixin, View):
             .search_for_machine(request.GET.get("q", ""))
             .select_related("machine", "problem_report")
             .prefetch_related("maintainers__user", "media")
-            .order_by("-work_date")
+            .order_by("-occurred_at")
         )
 
         paginator = Paginator(logs, 10)
@@ -303,7 +303,7 @@ class LogListView(CanAccessMaintainerPortalMixin, TemplateView):
 
         # Stats for sidebar
         week_ago = datetime.now(UTC) - timedelta(days=7)
-        this_week_count = LogEntry.objects.filter(work_date__gte=week_ago).count()
+        this_week_count = LogEntry.objects.filter(occurred_at__gte=week_ago).count()
         total_count = LogEntry.objects.count()
 
         context.update(
@@ -356,13 +356,13 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
             self.object.save(update_fields=["text", "updated_at"])
             return JsonResponse({"success": True})
 
-        elif action == "update_work_date":
-            work_date_str = request.POST.get("work_date", "")
-            if not work_date_str:
+        elif action == "update_occurred_at":
+            occurred_at_str = request.POST.get("occurred_at", "")
+            if not occurred_at_str:
                 return JsonResponse({"success": False, "error": "No date provided"}, status=400)
             try:
                 # Parse datetime-local format: YYYY-MM-DDTHH:MM
-                naive_dt = datetime.strptime(work_date_str, "%Y-%m-%dT%H:%M")
+                naive_dt = datetime.strptime(occurred_at_str, "%Y-%m-%dT%H:%M")
 
                 # Get browser timezone offset (minutes behind UTC, negative = ahead)
                 tz_offset_str = request.POST.get("tz_offset", "")
@@ -370,19 +370,19 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
                     tz_offset_minutes = int(tz_offset_str)
                     # Create timezone from offset (invert sign: JS gives minutes behind UTC)
                     browser_tz = dt_timezone(timedelta(minutes=-tz_offset_minutes))
-                    work_date = naive_dt.replace(tzinfo=browser_tz)
+                    occurred_at = naive_dt.replace(tzinfo=browser_tz)
                 else:
                     # Fallback to server timezone if no offset provided
-                    work_date = timezone.make_aware(naive_dt)
+                    occurred_at = timezone.make_aware(naive_dt)
 
                 # Validate not in the future (compare in browser's timezone)
-                now_in_browser_tz = timezone.now().astimezone(work_date.tzinfo)
-                if work_date.date() > now_in_browser_tz.date():
+                now_in_browser_tz = timezone.now().astimezone(occurred_at.tzinfo)
+                if occurred_at.date() > now_in_browser_tz.date():
                     return JsonResponse(
                         {"success": False, "error": "Date cannot be in the future."}, status=400
                     )
-                self.object.work_date = work_date
-                self.object.save(update_fields=["work_date", "updated_at"])
+                self.object.occurred_at = occurred_at
+                self.object.save(update_fields=["occurred_at", "updated_at"])
                 return JsonResponse({"success": True})
             except ValueError:
                 return JsonResponse({"success": False, "error": "Invalid date format"}, status=400)

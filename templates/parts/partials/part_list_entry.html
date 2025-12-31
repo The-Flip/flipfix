@@ -14,7 +14,7 @@
         </span>
         <span class="pill pill--neutral">{{ entry.get_status_display }}</span>
       </div>
-      <span class="timeline__meta">{{ entry.requester_display }} · <strong>{{ entry.created_at|smart_date }}</strong></span>
+      <span class="timeline__meta">{{ entry.requester_display }} · <strong>{{ entry.occurred_at|smart_date }}</strong></span>
     </div>
   </a>
   <div class="timeline__body {% if entry.prefetched_updates or entry.media.all %}space-below-sm{% endif %} markdown-content markdown-content--compact">

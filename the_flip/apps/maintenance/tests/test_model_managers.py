@@ -167,7 +167,7 @@ class LogEntrySearchTests(TestDataMixin, TestCase):
         older = create_log_entry(
             machine=self.machine,
             text="Older entry",
-            work_date=timezone.now() - timedelta(days=5),
+            occurred_at=timezone.now() - timedelta(days=5),
         )
         newer = create_log_entry(machine=self.machine, text="Newer entry")
 

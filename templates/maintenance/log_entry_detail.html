@@ -27,11 +27,11 @@
 {% endsidebar_section %}
 {% sidebar_section label="When" %}
 <input type="datetime-local"
-       id="work-date"
+       id="occurred-at"
        class="form-input form-input--sm"
-       data-utc="{{ entry.work_date.isoformat }}"
+       data-utc="{{ entry.occurred_at.isoformat }}"
        data-entry-id="{{ entry.pk }}">
-<div id="work-date-status" class="status-indicator"></div>
+<div id="occurred-at-status" class="status-indicator"></div>
 {% endsidebar_section %}
 {% sidebar_section label="Who" %}
 <div class="autocomplete"

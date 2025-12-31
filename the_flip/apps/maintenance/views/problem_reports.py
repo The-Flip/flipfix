@@ -49,14 +49,14 @@ def get_problem_report_queryset(search_query: str = ""):
     """
     latest_log_prefetch = Prefetch(
         "log_entries",
-        queryset=LogEntry.objects.order_by("-created_at"),
+        queryset=LogEntry.objects.order_by("-occurred_at"),
         to_attr="prefetched_log_entries",
     )
     queryset = (
         ProblemReport.objects.select_related("machine", "machine__model")
         .prefetch_related(latest_log_prefetch, "media")
         .search(search_query)
-        .order_by("-status", "-created_at")
+        .order_by("-status", "-occurred_at")
     )
 
     return queryset
@@ -120,7 +120,7 @@ class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
             .search_for_problem_report(request.GET.get("q", ""))
             .select_related("machine")
             .prefetch_related("maintainers__user", "media")
-            .order_by("-created_at")
+            .order_by("-occurred_at")
         )
 
         paginator = Paginator(log_entries, 10)
@@ -152,7 +152,7 @@ class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
     def get_queryset(self):
         latest_log_prefetch = Prefetch(
             "log_entries",
-            queryset=LogEntry.objects.order_by("-created_at"),
+            queryset=LogEntry.objects.order_by("-occurred_at"),
             to_attr="prefetched_log_entries",
         )
         search_query = self.request.GET.get("q", "")
@@ -161,7 +161,7 @@ class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
             .search_for_machine(search_query)
             .select_related("reported_by_user")
             .prefetch_related(latest_log_prefetch, "media")
-            .order_by("-status", "-created_at")
+            .order_by("-status", "-occurred_at")
         )
 
         return queryset
@@ -457,7 +457,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             .search_for_problem_report(search_query)
             .select_related("machine")
             .prefetch_related("maintainers__user", "media")
-            .order_by("-created_at")
+            .order_by("-occurred_at")
         )
         paginator = Paginator(log_entries, 10)
         page_obj = paginator.get_page(request.GET.get("page"))

@@ -10,11 +10,11 @@ Token-based invitation for new maintainers to register.
 
 ## Catalog app
 
-### Machine Instance ([`MachineInstance`](../the_flip/apps/catalog/models.py))
-A specific physical machine in the museum (e.g., "Star Trek #12345").
-
 ### Machine Model ([`MachineModel`](../the_flip/apps/catalog/models.py))
 A model of pinball machine (e.g., "Star Trek", "Godzilla").
+
+### Machine Instance ([`MachineInstance`](../the_flip/apps/catalog/models.py))
+A specific physical machine in the museum (e.g., "Star Trek #2").
 
 ### Location ([`Location`](../the_flip/apps/catalog/models.py))
 Physical location where machines can be placed (e.g., "Main Floor", "Workshop").

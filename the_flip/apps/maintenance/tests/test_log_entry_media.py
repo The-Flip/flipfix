@@ -33,7 +33,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Test entry",
             },
@@ -91,7 +91,7 @@ class LogEntryVideoUploadTests(TestDataMixin, TestCase):
             response = self.client.post(
                 self.create_url,
                 {
-                    "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                    "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                     "submitter_name": "Test User",
                     "text": "Test entry with video",
                     "media_file": video_file,

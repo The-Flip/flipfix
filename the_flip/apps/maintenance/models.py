@@ -137,6 +137,10 @@ class ProblemReport(TimeStampedMixin):
     )
     reported_by_name = models.CharField(max_length=200, blank=True)
     reported_by_contact = models.CharField(max_length=200, blank=True)
+    occurred_at = models.DateTimeField(
+        default=timezone.now,
+        help_text="When the problem was reported. Defaults to now if not specified.",
+    )
     device_info = models.CharField(max_length=200, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
@@ -144,9 +148,9 @@ class ProblemReport(TimeStampedMixin):
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-occurred_at"]
         indexes = [
-            models.Index(fields=["created_at"]),
+            models.Index(fields=["occurred_at"]),
             models.Index(fields=["status"]),
         ]
 
@@ -272,7 +276,7 @@ class LogEntry(TimeStampedMixin):
         help_text="Comma-separated names when maintainers are not in the system.",
     )
     text = models.TextField()
-    work_date = models.DateTimeField(
+    occurred_at = models.DateTimeField(
         default=timezone.now,
         help_text="When the work was performed. Defaults to now if not specified.",
     )
@@ -289,7 +293,10 @@ class LogEntry(TimeStampedMixin):
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ["-work_date"]
+        ordering = ["-occurred_at"]
+        indexes = [
+            models.Index(fields=["occurred_at"]),
+        ]
         verbose_name = "Log entry"
         verbose_name_plural = "Log entries"
 

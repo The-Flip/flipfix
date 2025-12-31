@@ -43,12 +43,17 @@ TextChoices provides type safety and IDE autocomplete.
 description = models.TextField(blank=True)  # Stores "" when empty
 ```
 
-**Non-strings** (ForeignKey, DateTimeField, IntegerField, FileField): Use both `blank=True, null=True`.
+**Non-strings** (ForeignKey, DateTimeField, IntegerField, FileField): Use both `blank=True, null=True` for optional fields.
 
 ```python
 problem_report = models.ForeignKey(..., null=True, blank=True)
-work_date = models.DateTimeField(null=True, blank=True)
 transcoded_file = models.FileField(blank=True, null=True)
+```
+
+**Temporal fields with defaults**: Use `default=timezone.now` for required timestamps that should default to "now":
+
+```python
+occurred_at = models.DateTimeField(default=timezone.now)  # Required, defaults to now
 ```
 
 ## ForeignKey Relationships

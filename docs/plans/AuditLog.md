@@ -56,7 +56,7 @@ Audit models that can be created or modified by maintainers through the applicat
 | Model | Create | Update | Why Audit |
 |-------|--------|--------|-----------|
 | **ProblemReport** | Yes | Yes (status, description) | Track who reported problems and who closed them |
-| **LogEntry** | Yes | Yes (text, work_date, maintainers) | Track who logged work and any corrections |
+| **LogEntry** | Yes | Yes (text, occurred_at, maintainers) | Track who logged work and any corrections |
 | **LogEntryMedia** | Yes | Yes (delete) | Track who uploaded/deleted photos and videos |
 | **MachineInstance** | Yes | Yes (status, location, details) | Track status changes and location moves |
 | **MachineModel** | Yes | Yes (name, manufacturer, etc.) | Track edits to machine catalog information |

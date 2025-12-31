@@ -18,22 +18,22 @@ from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 @tag("views")
-class MachineLogCreateViewWorkDateTests(TestDataMixin, TestCase):
-    """Tests for MachineLogCreateView work_date handling."""
+class MachineLogCreateViewOccurredAtTests(TestDataMixin, TestCase):
+    """Tests for MachineLogCreateView occurred_at handling."""
 
     def setUp(self):
         super().setUp()
         self.create_url = reverse("log-create-machine", kwargs={"slug": self.machine.slug})
 
-    def test_create_log_entry_with_work_date(self):
-        """Creating a log entry saves the specified work_date."""
+    def test_create_log_entry_with_occurred_at(self):
+        """Creating a log entry saves the specified occurred_at."""
         self.client.force_login(self.maintainer_user)
 
-        work_date = timezone.now() - timedelta(days=3)
+        occurred_at = timezone.now() - timedelta(days=3)
         response = self.client.post(
             self.create_url,
             {
-                "work_date": work_date.strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": occurred_at.strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Work performed three days ago",
             },
@@ -44,19 +44,19 @@ class MachineLogCreateViewWorkDateTests(TestDataMixin, TestCase):
 
         log_entry = LogEntry.objects.first()
         self.assertEqual(
-            log_entry.work_date.strftime(DATETIME_DISPLAY_FORMAT),
-            work_date.strftime(DATETIME_DISPLAY_FORMAT),
+            log_entry.occurred_at.strftime(DATETIME_DISPLAY_FORMAT),
+            occurred_at.strftime(DATETIME_DISPLAY_FORMAT),
         )
 
     def test_create_log_entry_rejects_future_date(self):
-        """View rejects log entries with future work dates."""
+        """View rejects log entries with future occurred_at dates."""
         self.client.force_login(self.maintainer_user)
 
         future_date = timezone.now() + timedelta(days=5)
         response = self.client.post(
             self.create_url,
             {
-                "work_date": future_date.strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": future_date.strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Future work",
             },
@@ -81,7 +81,7 @@ class LogEntryCreatedByTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Some Other Person",
                 "text": "Work performed",
             },
@@ -102,7 +102,7 @@ class LogEntryCreatedByTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Work Doer",
                 "text": "Work performed by someone else",
             },
@@ -153,7 +153,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Investigated the stuck ball issue",
             },
@@ -172,7 +172,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Fixed the stuck ball",
             },
@@ -189,7 +189,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Fixed the issue",
             },
@@ -206,7 +206,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             regular_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Regular maintenance",
             },
@@ -224,7 +224,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Fixed the stuck ball",
                 "close_problem": "on",
@@ -243,7 +243,7 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         response = self.client.post(
             self.create_url,
             {
-                "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
                 "submitter_name": "Test User",
                 "text": "Investigated the issue",
             },

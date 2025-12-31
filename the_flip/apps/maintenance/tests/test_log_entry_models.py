@@ -15,52 +15,67 @@ from the_flip.apps.maintenance.models import LogEntry
 
 
 @tag("models")
-class LogEntryWorkDateTests(TestDataMixin, TestCase):
-    """Tests for LogEntry work_date field."""
+class LogEntryOccurredAtTests(TestDataMixin, TestCase):
+    """Tests for LogEntry occurred_at field."""
 
-    def test_work_date_defaults_to_now(self):
-        """Work date defaults to current time when not specified."""
+    def test_occurred_at_defaults_to_now(self):
+        """occurred_at defaults to current time when not specified."""
         before = timezone.now()
         log_entry = create_log_entry(machine=self.machine, text="Test entry")
         after = timezone.now()
 
-        self.assertIsNotNone(log_entry.work_date)
-        self.assertGreaterEqual(log_entry.work_date, before)
-        self.assertLessEqual(log_entry.work_date, after)
+        self.assertIsNotNone(log_entry.occurred_at)
+        self.assertGreaterEqual(log_entry.occurred_at, before)
+        self.assertLessEqual(log_entry.occurred_at, after)
 
-    def test_work_date_can_be_set_explicitly(self):
-        """Work date can be set to a specific datetime."""
+    def test_occurred_at_can_be_set_explicitly(self):
+        """occurred_at can be set to a specific datetime."""
         specific_date = timezone.now() - timedelta(days=5)
         log_entry = create_log_entry(
-            machine=self.machine, text="Historical entry", work_date=specific_date
+            machine=self.machine, text="Historical entry", occurred_at=specific_date
         )
-        self.assertEqual(log_entry.work_date, specific_date)
+        self.assertEqual(log_entry.occurred_at, specific_date)
 
-    def test_log_entries_ordered_by_work_date_descending(self):
-        """Log entries are ordered by work_date descending by default."""
-        old_entry = create_log_entry(
+    def test_log_entries_ordered_by_occurred_at_descending(self):
+        """Log entries are ordered by occurred_at descending by default.
+
+        Creates records where created_at order differs from occurred_at order
+        to ensure we're actually sorting by occurred_at, not created_at.
+        """
+        now = timezone.now()
+
+        # Create in this order: middle, oldest, newest
+        # If sorting by created_at, we'd get: middle, oldest, newest
+        # If sorting by occurred_at desc, we should get: newest, middle, oldest
+        middle = create_log_entry(
             machine=self.machine,
-            text="Old entry",
-            work_date=timezone.now() - timedelta(days=10),
+            text="Middle entry",
+            occurred_at=now - timedelta(days=5),
         )
-        new_entry = create_log_entry(
-            machine=self.machine, text="New entry", work_date=timezone.now()
+        oldest = create_log_entry(
+            machine=self.machine,
+            text="Oldest entry",
+            occurred_at=now - timedelta(days=10),
+        )
+        newest = create_log_entry(
+            machine=self.machine,
+            text="Newest entry",
+            occurred_at=now,
         )
 
         entries = list(LogEntry.objects.all())
-        self.assertEqual(entries[0], new_entry)
-        self.assertEqual(entries[1], old_entry)
+        self.assertEqual(entries, [newest, middle, oldest])
 
 
 @tag("forms")
-class LogEntryQuickFormWorkDateTests(TestCase):
-    """Tests for LogEntryQuickForm work_date validation."""
+class LogEntryQuickFormOccurredAtTests(TestCase):
+    """Tests for LogEntryQuickForm occurred_at validation."""
 
     def test_form_valid_with_past_date(self):
         """Form accepts past dates."""
         past_date = timezone.now() - timedelta(days=5)
         form_data = {
-            "work_date": past_date.strftime(DATETIME_INPUT_FORMAT),
+            "occurred_at": past_date.strftime(DATETIME_INPUT_FORMAT),
             "submitter_name": "Test User",
             "text": "Test description",
         }
@@ -71,7 +86,7 @@ class LogEntryQuickFormWorkDateTests(TestCase):
         """Form accepts today's date."""
         today = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
         form_data = {
-            "work_date": today.strftime(DATETIME_INPUT_FORMAT),
+            "occurred_at": today.strftime(DATETIME_INPUT_FORMAT),
             "submitter_name": "Test User",
             "text": "Test description",
         }
@@ -82,11 +97,11 @@ class LogEntryQuickFormWorkDateTests(TestCase):
         """Form rejects future dates with validation error."""
         future_date = timezone.now() + timedelta(days=5)
         form_data = {
-            "work_date": future_date.strftime(DATETIME_INPUT_FORMAT),
+            "occurred_at": future_date.strftime(DATETIME_INPUT_FORMAT),
             "submitter_name": "Test User",
             "text": "Test description",
         }
         form = LogEntryQuickForm(data=form_data)
         self.assertFalse(form.is_valid())
-        self.assertIn("work_date", form.errors)
-        self.assertIn("future", form.errors["work_date"][0].lower())
+        self.assertIn("occurred_at", form.errors)
+        self.assertIn("future", form.errors["occurred_at"][0].lower())

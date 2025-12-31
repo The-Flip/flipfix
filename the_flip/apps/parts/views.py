@@ -42,14 +42,14 @@ def get_part_request_queryset(search_query: str = ""):
     """
     latest_update_prefetch = Prefetch(
         "updates",
-        queryset=PartRequestUpdate.objects.order_by("-created_at"),
+        queryset=PartRequestUpdate.objects.order_by("-occurred_at"),
         to_attr="prefetched_updates",
     )
     queryset = (
         PartRequest.objects.all()
         .select_related("requested_by__user", "machine", "machine__model")
         .prefetch_related("media", latest_update_prefetch)
-        .order_by("-created_at")
+        .order_by("-occurred_at")
     )
 
     if search_query:
@@ -301,7 +301,7 @@ class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, Vi
             PartRequestUpdate.objects.filter(part_request=part_request)
             .select_related("posted_by__user")
             .prefetch_related("media")
-            .order_by("-created_at")
+            .order_by("-occurred_at")
         )
 
         search_query = request.GET.get("q", "").strip()
@@ -467,7 +467,7 @@ class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
             PartRequestUpdate.objects.filter(part_request=part_request)
             .select_related("posted_by__user")
             .prefetch_related("media")
-            .order_by("-created_at")
+            .order_by("-occurred_at")
         )
 
         search_query = request.GET.get("q", "").strip()

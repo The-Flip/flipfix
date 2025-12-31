@@ -120,7 +120,7 @@ Use `select_related` for ForeignKey/OneToOne (single JOIN) and `prefetch_related
 LogEntry.objects.filter(machine=self.machine)
     .select_related("machine", "problem_report")
     .prefetch_related("maintainers__user", "media")
-    .order_by("-work_date")
+    .order_by("-occurred_at")
 ```
 
 Add these in views or QuerySet methods where queries are built, not in model methods.

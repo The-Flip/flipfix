@@ -16,7 +16,7 @@ class LogEntryQuickFormMediaValidationTests(TestCase):
         from django.utils import timezone
 
         data = {
-            "work_date": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+            "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
             "submitter_name": "Test User",
             "text": "Test description",
         }

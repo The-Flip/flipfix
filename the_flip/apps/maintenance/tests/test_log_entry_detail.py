@@ -18,24 +18,24 @@ from the_flip.apps.core.test_utils import (
 
 
 @tag("views")
-class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
-    """Tests for LogEntryDetailView AJAX work_date updates."""
+class LogEntryDetailViewOccurredAtTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for LogEntryDetailView AJAX occurred_at updates."""
 
     def setUp(self):
         super().setUp()
         self.log_entry = create_log_entry(machine=self.machine, text="Test entry")
         self.detail_url = reverse("log-detail", kwargs={"pk": self.log_entry.pk})
 
-    def test_update_work_date_ajax(self):
-        """AJAX endpoint updates work_date successfully."""
+    def test_update_occurred_at_ajax(self):
+        """AJAX endpoint updates occurred_at successfully."""
         self.client.force_login(self.maintainer_user)
 
         new_date = timezone.now() - timedelta(days=7)
         response = self.client.post(
             self.detail_url,
             {
-                "action": "update_work_date",
-                "work_date": new_date.strftime(DATETIME_INPUT_FORMAT),
+                "action": "update_occurred_at",
+                "occurred_at": new_date.strftime(DATETIME_INPUT_FORMAT),
             },
         )
 
@@ -45,11 +45,11 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
 
         self.log_entry.refresh_from_db()
         self.assertEqual(
-            self.log_entry.work_date.strftime(DATETIME_DISPLAY_FORMAT),
+            self.log_entry.occurred_at.strftime(DATETIME_DISPLAY_FORMAT),
             new_date.strftime(DATETIME_DISPLAY_FORMAT),
         )
 
-    def test_update_work_date_rejects_future(self):
+    def test_update_occurred_at_rejects_future(self):
         """AJAX endpoint rejects future dates."""
         self.client.force_login(self.maintainer_user)
 
@@ -57,8 +57,8 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
         response = self.client.post(
             self.detail_url,
             {
-                "action": "update_work_date",
-                "work_date": future_date.strftime(DATETIME_INPUT_FORMAT),
+                "action": "update_occurred_at",
+                "occurred_at": future_date.strftime(DATETIME_INPUT_FORMAT),
             },
         )
 
@@ -67,13 +67,13 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
         self.assertFalse(result["success"])
         self.assertIn("future", result["error"].lower())
 
-    def test_update_work_date_rejects_invalid_format(self):
+    def test_update_occurred_at_rejects_invalid_format(self):
         """AJAX endpoint rejects invalid date formats."""
         self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
             self.detail_url,
-            {"action": "update_work_date", "work_date": "not-a-valid-date"},
+            {"action": "update_occurred_at", "occurred_at": "not-a-valid-date"},
         )
 
         self.assertEqual(response.status_code, 400)
@@ -81,12 +81,12 @@ class LogEntryDetailViewWorkDateTests(SuppressRequestLogsMixin, TestDataMixin, T
         self.assertFalse(result["success"])
         self.assertIn("Invalid date format", result["error"])
 
-    def test_update_work_date_rejects_empty(self):
+    def test_update_occurred_at_rejects_empty(self):
         """AJAX endpoint rejects empty date values."""
         self.client.force_login(self.maintainer_user)
 
         response = self.client.post(
-            self.detail_url, {"action": "update_work_date", "work_date": ""}
+            self.detail_url, {"action": "update_occurred_at", "occurred_at": ""}
         )
 
         self.assertEqual(response.status_code, 400)

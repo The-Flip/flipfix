@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from django.db import models, transaction
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
@@ -65,13 +66,17 @@ class PartRequest(TimeStampedMixin):
         related_name="part_requests",
         help_text="Optional: the machine this part is for.",
     )
+    occurred_at = models.DateTimeField(
+        default=timezone.now,
+        help_text="When the part was requested. Defaults to now if not specified.",
+    )
 
     objects = PartRequestQuerySet.as_manager()
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-occurred_at"]
         indexes = [
-            models.Index(fields=["created_at"]),
+            models.Index(fields=["occurred_at"]),
             models.Index(fields=["status"]),
         ]
 
@@ -160,9 +165,16 @@ class PartRequestUpdate(TimeStampedMixin):
         blank=True,
         help_text="If set, this update changed the part request status.",
     )
+    occurred_at = models.DateTimeField(
+        default=timezone.now,
+        help_text="When the update was posted. Defaults to now if not specified.",
+    )
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-occurred_at"]
+        indexes = [
+            models.Index(fields=["occurred_at"]),
+        ]
         verbose_name = "Part request update"
         verbose_name_plural = "Part request updates"
 

@@ -129,7 +129,7 @@ class SearchForm(forms.Form):
 
 class LogEntryQuickForm(StyledFormMixin, forms.Form):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
-    work_date = forms.DateTimeField(
+    occurred_at = forms.DateTimeField(
         label="Date of work",
         widget=forms.DateTimeInput(
             attrs={"type": "datetime-local"},
@@ -165,15 +165,15 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         ),
     )
 
-    def clean_work_date(self):
-        """Validate that work_date is not in the future."""
-        work_date = self.cleaned_data.get("work_date")
-        if work_date:
+    def clean_occurred_at(self):
+        """Validate that occurred_at is not in the future."""
+        occurred_at = self.cleaned_data.get("occurred_at")
+        if occurred_at:
             # Allow any time today, reject future dates
             today = timezone.localdate()
-            if work_date.date() > today:
+            if occurred_at.date() > today:
                 raise forms.ValidationError("Date cannot be in the future.")
-        return work_date
+        return occurred_at
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
