@@ -1,178 +1,149 @@
-{% extends "base.html" %}
+{% extends "layouts/two_column.html" %}
 {% load static core_extras %}
 {% block title %}New Log Entry · {{ block.super }}{% endblock %}
-{% block content %}
-  <!-- BREADCRUMBS -->
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    {% if is_global %}
-      <a href="{% url 'log-list' %}">Logs</a>
-      <span>New Log Entry</span>
-    {% else %}
-      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
-      {% if machine %}
-        <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
-      {% endif %}
-      {% if problem_report %}
-        <a href="{% url 'problem-report-detail' problem_report.pk %}">Problem #{{ problem_report.pk }}</a>
-      {% endif %}
-      <span>Log Work</span>
+{% block breadcrumbs %}
+  {% if is_global %}
+    <a href="{% url 'log-list' %}">Logs</a>
+    <span>New Log Entry</span>
+  {% else %}
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    {% if machine %}
+      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
     {% endif %}
-  </nav>
-  <!-- TWO COLUMN LAYOUT: Main Form + Sidebar -->
-  <form method="post" enctype="multipart/form-data" class="two-column">
+    {% if problem_report %}
+      <a href="{% url 'problem-report-detail' problem_report.pk %}">Problem #{{ problem_report.pk }}</a>
+    {% endif %}
+    <span>Log Work</span>
+  {% endif %}
+{% endblock %}
+{% block sidebar %}
+  {% if machine %}
+    {% sidebar_section label="Machine" %}
+    {% include "components/machine_sidebar_card.html" with machine=machine %}
+  {% endsidebar_section %}
+{% endif %}
+{% if problem_report %}
+  {% sidebar_section label="Problem" %}
+  {% include "components/problem_report_sidebar_card.html" with problem_report=problem_report %}
+{% endsidebar_section %}
+{% endif %}
+{% if not is_shared_account %}
+  {% sidebar_section label="Who" %}
+  {% maintainer_chip_input_field show_label=False form_id="log-entry-form" initial_maintainers=initial_maintainers %}
+{% endsidebar_section %}
+{% endif %}
+{% sidebar_section label="When" %}
+<input type="datetime-local"
+       id="{{ form.occurred_at.id_for_label }}"
+       name="{{ form.occurred_at.html_name }}"
+       class="form-input form-input--sm"
+       form="log-entry-form">
+{% field_errors form.occurred_at %}
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <form id="log-entry-form"
+        method="post"
+        enctype="multipart/form-data"
+        class="form-main">
     {% csrf_token %}
     {% form_non_field_errors form %}
-    <input type="hidden" name="tz_offset" id="tz-offset">
-    <!-- MAIN COLUMN: Primary form fields -->
-    <div class="two-column__main form-main">
-      {% if is_shared_account %}
-        <!-- WHO -->
-        {% maintainer_autocomplete_field form.submitter_name label="Who did the work?" required=True %}
-      {% endif %}
-      {% if is_global %}
-        <!-- MACHINE (global pages only - in main content for mobile visibility) -->
-        <div class="form-field">
-          <label class="form-label">Machine</label>
-          <div class="autocomplete"
-               data-machine-autocomplete
-               data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
-            <input type="search"
-                   id="machine-log-search"
-                   placeholder="Search machines..."
-                   class="form-input"
-                   autocomplete="off"
-                   data-machine-search
-                   required
-                   value="{% if selected_machine %}{{ selected_machine.name }}{% endif %}">
-            <input type="hidden"
-                   name="{{ form.machine_slug.html_name }}"
-                   id="{{ form.machine_slug.id_for_label }}"
-                   value="{{ form.machine_slug.value|default_if_none:'' }}"
-                   data-machine-slug-input>
-            <div class="autocomplete__dropdown hidden"></div>
-          </div>
-          {% field_errors form.machine_slug %}
-        </div>
-      {% endif %}
-      <!-- WORK DESCRIPTION -->
+    <input type="hidden" name="browser_timezone" id="browser-timezone">
+    {% if is_shared_account %}
+      {% maintainer_chip_input_field label="Who did the work?" %}
+    {% endif %}
+    {% if is_global %}
       <div class="form-field">
-        <label for="{{ form.text.id_for_label }}" class="form-label">What work was done?</label>
-        <textarea id="{{ form.text.id_for_label }}"
-                  name="{{ form.text.html_name }}"
-                  class="form-input form-textarea"
-                  placeholder="Describe the work performed..."
-                  required>{{ form.text.value|default:'' }}</textarea>
-        {% field_errors form.text %}
-        <!-- File upload (accumulates across multiple selections) -->
-        <div class="form-hint space-above-sm" data-file-accumulator>
-          <input type="file"
-                 name="{{ form.media_file.html_name }}"
-                 class="hidden"
-                 multiple
-                 accept="image/*,video/*,.heic,.heif"
-                 data-file-input>
-          <a href="#" class="file-upload-link" data-file-trigger>
-            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-          </a>
-          {% field_errors form.media_file %}
-          <!-- Uploaded files preview -->
-          <div class="file-preview-row" data-file-preview></div>
+        <label class="form-label">Machine</label>
+        <div class="autocomplete"
+             data-machine-autocomplete
+             data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
+          <input type="search"
+                 id="machine-log-search"
+                 placeholder="Search machines..."
+                 class="form-input"
+                 autocomplete="off"
+                 data-machine-search
+                 required
+                 value="{% if selected_machine %}{{ selected_machine.name }}{% endif %}">
+          <input type="hidden"
+                 name="{{ form.machine_slug.html_name }}"
+                 id="{{ form.machine_slug.id_for_label }}"
+                 value="{{ form.machine_slug.value|default_if_none:'' }}"
+                 data-machine-slug-input>
+          <div class="autocomplete__dropdown hidden"></div>
         </div>
+        {% field_errors form.machine_slug %}
       </div>
-      <!-- FORM ACTIONS -->
-      <div class="form-actions">
-        {% if problem_report %}
-          <!-- Close problem checkbox -->
-          <label class="checkbox-label">
-            <input type="checkbox"
-                   id="close_problem"
-                   name="close_problem"
-                   class="checkbox">
-            <span>Close the problem report</span>
-          </label>
-        {% endif %}
-        <a href="{% if is_global %}{% url 'log-list' %}{% elif problem_report %}{% url 'problem-report-detail' problem_report.pk %}{% else %}{% url 'log-machine' machine.slug %}{% endif %}"
-           class="btn btn--secondary">Cancel</a>
-        <button type="submit" class="btn btn--log">
-          {% icon "check" class="meta" %}
-          Log It
-        </button>
+    {% endif %}
+    <div class="form-field">
+      <label for="{{ form.text.id_for_label }}" class="form-label">What work was done?</label>
+      <textarea id="{{ form.text.id_for_label }}"
+                name="{{ form.text.html_name }}"
+                class="form-input form-textarea"
+                placeholder="Describe the work performed..."
+                required>{{ form.text.value|default:'' }}</textarea>
+      {% field_errors form.text %}
+      <div class="form-hint space-above-sm" data-file-accumulator>
+        <input type="file"
+               name="{{ form.media_file.html_name }}"
+               class="hidden"
+               multiple
+               accept="image/*,video/*,.heic,.heif"
+               data-file-input>
+        <a href="#" class="file-upload-link" data-file-trigger>
+          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+        </a>
+        {% field_errors form.media_file %}
+        <div class="file-preview-row" data-file-preview></div>
       </div>
     </div>
-    <!-- SIDEBAR: Context & Metadata (desktop only) -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        {% if machine %}
-          <!-- MACHINE CARD (machine-specific pages) -->
-          <div class="sidebar__section">
-            <div class="sidebar__label">Machine</div>
-            {% include "components/machine_sidebar_card.html" with machine=machine %}
-          </div>
-        {% endif %}
-        {% if problem_report %}
-          <!-- LINKED PROBLEM CARD -->
-          <div class="sidebar__section">
-            <div class="sidebar__label">Problem</div>
-            {% include "components/problem_report_sidebar_card.html" with problem_report=problem_report %}
-          </div>
-        {% endif %}
-        {% if not is_shared_account %}
-          <!-- WHO (non-shared accounts - in sidebar, pre-filled) -->
-          <div class="sidebar__section">
-            <div class="sidebar__label">Who</div>
-            {% maintainer_autocomplete_field form.submitter_name size="sm" show_label=False %}
-          </div>
-        {% endif %}
-        <!-- WHEN (sidebar only - not critical for mobile) -->
-        <div class="sidebar__section">
-          <div class="sidebar__label">When</div>
-          <input type="datetime-local"
-                 id="{{ form.occurred_at.id_for_label }}"
-                 name="{{ form.occurred_at.html_name }}"
-                 class="form-input form-input--sm">
-          {% field_errors form.occurred_at %}
-        </div>
-      </div>
-    </aside>
+    <div class="form-actions">
+      {% if problem_report %}
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 id="close_problem"
+                 name="close_problem"
+                 class="checkbox">
+          <span>Close the problem report</span>
+        </label>
+      {% endif %}
+      <a href="{% if is_global %}{% url 'log-list' %}{% elif problem_report %}{% url 'problem-report-detail' problem_report.pk %}{% else %}{% url 'log-machine' machine.slug %}{% endif %}"
+         class="btn btn--secondary">Cancel</a>
+      <button type="submit" class="btn btn--log">
+        {% icon "check" class="meta" %}
+        Log It
+      </button>
+    </div>
   </form>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
-  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
+  <script src="{% static 'core/maintainer_chip_input.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
   <script>
-    // Helper: format Date as datetime-local value (YYYY-MM-DDTHH:MM)
-    function toDateTimeLocalValue(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set browser timezone for form submission (handles DST correctly)
+      document.getElementById('browser-timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // Set timezone offset for form submission
-    document.getElementById('tz-offset').value = new Date().getTimezoneOffset();
-
-    // Set default occurred_at to current time in browser's local timezone
-    (function() {
-      const now = toDateTimeLocalValue(new Date());
+      // Set default occurred_at to current time in browser's local timezone
       const occurredAtInput = document.getElementById('{{ form.occurred_at.id_for_label }}');
-      if (occurredAtInput && !occurredAtInput.value) occurredAtInput.value = now;
-    })();
+      if (occurredAtInput && !occurredAtInput.value) {
+        occurredAtInput.value = toDateTimeLocalValue(new Date());
+      }
 
-    // Auto-resize description textarea to fit content
-    (function() {
+      // Auto-resize description textarea to fit content
       const descriptionInput = document.getElementById('{{ form.text.id_for_label }}');
-      if (!descriptionInput) return;
-      const resize = () => {
-        descriptionInput.style.height = 'auto';
-        descriptionInput.style.height = `${descriptionInput.scrollHeight}px`;
-        descriptionInput.style.overflowY = 'hidden';
-      };
-      resize();
-      descriptionInput.addEventListener('input', resize);
-    })();
+      if (descriptionInput) {
+        const resize = () => {
+          descriptionInput.style.height = 'auto';
+          descriptionInput.style.height = `${descriptionInput.scrollHeight}px`;
+          descriptionInput.style.overflowY = 'hidden';
+        };
+        resize();
+        descriptionInput.addEventListener('input', resize);
+      }
+    });
   </script>
 {% endblock %}

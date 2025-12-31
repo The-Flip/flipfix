@@ -8,6 +8,16 @@
   <span>{% icon "bug" label="Problem" %} #{{ report.pk }}</span>
 {% endblock %}
 {% block mobile_actions %}
+  <div class="mobile-meta">
+    {# Problem Report info #}
+    <div class="mobile-meta__row">
+      {% problem_report_status_pill report %}
+      {% problem_report_type_pill report %}
+      <span class="text-muted text-sm">{{ machine.name }}</span>
+    </div>
+    {# Reporter and timestamp #}
+    <div class="mobile-meta__row text-muted text-sm">{{ report|problem_report_meta }}</div>
+  </div>
   {% if report.status == report.Status.OPEN %}
     <form method="post">
       {% csrf_token %}
@@ -25,47 +35,46 @@
       </button>
     </form>
   {% endif %}
+  <a href="{% url 'problem-report-edit' report.pk %}"
+     class="btn btn--secondary btn--full">{% icon "pen" class="meta" %}</a>
 {% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=report.get_admin_history_url %}
-  {% sidebar_section label="Problem Report" %}
-  <div class="sidebar__title">{% icon "bug" %} #{{ report.pk }}</div>
+  {% sidebar_section label="Problem Report #"|addstr:report.pk %}
   <div class="flex flex-wrap stack-tight space-above-sm">
-    <span class="pill {% if report.status == report.Status.OPEN %}pill--status-broken{% else %}pill--status-good{% endif %}">
-      {% if report.status == report.Status.OPEN %}
-        {% icon "circle-exclamation" class="meta" %}
-      {% else %}
-        {% icon "check" class="meta" %}
-      {% endif %}
-      {{ report.get_status_display }}
-    </span>
-    {% if report.problem_type != report.ProblemType.OTHER %}
-      <span class="pill pill--neutral">{{ report.get_problem_type_display }}</span>
-    {% endif %}
+    {% problem_report_status_pill report %}
+    {% problem_report_type_pill report %}
   </div>
-  <p class="text-muted text-sm space-above-sm">{{ report.occurred_at|smart_date }} by {{ report.reporter_display }}</p>
+  <div class="sidebar__subtitle space-above-sm">{{ report|problem_report_meta }}</div>
 {% endsidebar_section %}
 {% sidebar_section label="Machine" %}
 {% include "components/machine_sidebar_card.html" with editable=True %}
 {% endsidebar_section %}
 {% sidebar_section %}
-{% if report.status == report.Status.OPEN %}
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn--log btn--full">
-      {% icon "check" class="meta" %}
-      Close Problem
-    </button>
-  </form>
-{% else %}
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn--report btn--full">
-      {% icon "rotate-left" class="meta" %}
-      Re-Open Problem
-    </button>
-  </form>
-{% endif %}
+<div class="flex stack-tight stack-column">
+  <a href="{% url 'problem-report-edit' report.pk %}"
+     class="btn btn--secondary btn--full">
+    {% icon "pen" class="meta" %}
+    Edit Details
+  </a>
+  {% if report.status == report.Status.OPEN %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--log btn--full">
+        {% icon "check" class="meta" %}
+        Close Problem Report
+      </button>
+    </form>
+  {% else %}
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn--report btn--full">
+        {% icon "rotate-left" class="meta" %}
+        Re-Open Problem Report
+      </button>
+    </form>
+  {% endif %}
+</div>
 {% endsidebar_section %}
 {% endblock %}
 {% block main %}

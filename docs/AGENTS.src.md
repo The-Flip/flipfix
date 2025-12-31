@@ -273,6 +273,7 @@ Load with `{% load core_extras %}`, then use:
 | `field_errors` | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup) |
 | `field_help_text` | Inclusion tag | `{% field_help_text form.field_name %}` - Renders field help text only (for custom field markup) |
 | `maintainer_autocomplete_field` | Inclusion tag | `{% maintainer_autocomplete_field form.name %}` - Autocomplete input for user search. Optional: `label`, `placeholder`, `size`, `show_label`, `required` |
+| `maintainer_chip_input_field` | Inclusion tag | `{% maintainer_chip_input_field label="Who did the work?" initial_maintainers=entry.maintainers.all initial_freetext=entry.maintainer_names %}` - Multi-select chip input for maintainer selection. Displays selected maintainers as removable chips with autocomplete to add more. |
 
 **Form Field Marking**: Do NOT mark required fields with asterisks. The `form_field` component auto-appends "(optional)" to fields with `required=False`. For manual markup, add "(optional)" to the label or use `{% form_label field %}`. See `docs/Forms.md` for full form guidance.
 

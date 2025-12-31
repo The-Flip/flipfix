@@ -7,6 +7,7 @@ from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Prefetch
@@ -17,10 +18,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.views import View
-from django.views.generic import FormView, ListView, TemplateView
+from django.views.generic import FormView, ListView, TemplateView, UpdateView
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
+from the_flip.apps.core.datetime import apply_browser_timezone
 from the_flip.apps.core.ip import get_real_ip
 from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
@@ -31,6 +33,7 @@ from the_flip.apps.core.mixins import (
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     MaintainerProblemReportForm,
+    ProblemReportEditForm,
     ProblemReportForm,
     SearchForm,
 )
@@ -179,7 +182,7 @@ class MachineProblemReportListView(CanAccessMaintainerPortalMixin, ListView):
 class PublicProblemReportCreateView(FormView):
     """Public-facing problem report submission (minimal shell)."""
 
-    template_name = "maintenance/problem_report_form_public.html"
+    template_name = "maintenance/problem_report_new_public.html"
     form_class = ProblemReportForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -234,6 +237,12 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
         initial = super().get_initial()
         if self.machine:
             initial["machine_slug"] = self.machine.slug
+        # Pre-fill reporter_name with current user's display name (unless shared account)
+        if hasattr(self.request.user, "maintainer"):
+            if not self.request.user.maintainer.is_shared_account:
+                initial["reporter_name"] = (
+                    self.request.user.get_full_name() or self.request.user.username
+                )
         return initial
 
     def get_context_data(self, **kwargs):
@@ -267,6 +276,9 @@ class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
         report.machine = machine
         report.ip_address = get_real_ip(self.request)
         report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
+        report.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         # Save reporter name for shared accounts
@@ -470,3 +482,64 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             "search_form": SearchForm(initial={"q": search_query}),
         }
         return render(request, self.template_name, context)
+
+
+class ProblemReportEditView(CanAccessMaintainerPortalMixin, UpdateView):
+    """Edit a problem report's metadata (reporter, timestamp)."""
+
+    model = ProblemReport
+    form_class = ProblemReportEditForm
+    template_name = "maintenance/problem_report_edit.html"
+
+    def get_queryset(self):
+        return ProblemReport.objects.select_related(
+            "machine",
+            "machine__model",
+            "reported_by_user",
+        )
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Pre-fill reporter_name with current reporter's display name
+        if self.object.reported_by_user:
+            initial["reporter_name"] = self.object.reported_by_user.get_full_name() or str(
+                self.object.reported_by_user
+            )
+        elif self.object.reported_by_name:
+            initial["reporter_name"] = self.object.reported_by_name
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["report"] = self.object
+        context["machine"] = self.object.machine
+        return context
+
+    def form_valid(self, form):
+        # Handle reporter attribution from hidden username field or text input
+        reporter_username = self.request.POST.get("reporter_name_username", "").strip()
+        reporter_name_text = form.cleaned_data.get("reporter_name", "").strip()
+
+        reporter_user = None
+        reporter_name = ""
+
+        if reporter_username:
+            user_model = get_user_model()
+            reporter_user = user_model.objects.filter(username__iexact=reporter_username).first()
+
+        if not reporter_user and reporter_name_text:
+            # No valid username selected, but text was entered - use text field
+            reporter_name = reporter_name_text
+
+        report = form.save(commit=False)
+        report.reported_by_user = reporter_user
+        report.reported_by_name = reporter_name
+        report.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
+        report.save()
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("problem-report-detail", kwargs={"pk": self.object.pk})

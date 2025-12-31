@@ -59,7 +59,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertContains(response, self.machine.name)
         self.assertContains(response, "Stuck Ball")
         self.assertContains(response, "Ball is stuck in the upper playfield")
-        self.assertContains(response, "by John Doe")
+        self.assertContains(response, "John Doe")
         self.assertContains(response, "Open")
 
     def test_detail_view_with_reported_by_user_hides_device_information(self):
@@ -74,7 +74,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
-        self.assertContains(response, "by Report Submitter")
+        self.assertContains(response, "Report Submitter")
         self.assertNotContains(response, "john@example.com")
         self.assertNotContains(response, "iPhone 12")
         self.assertNotContains(response, "192.168.1.1")
@@ -91,7 +91,7 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.detail_url)
 
-        self.assertContains(response, "by Anonymous")
+        self.assertContains(response, "Anonymous")
 
     def test_detail_view_shows_close_button_for_open_report(self):
         """Detail page should show 'Close Problem' button for open reports."""

@@ -1,6 +1,7 @@
 """Forms for parts management."""
 
 from django import forms
+from django.utils import timezone
 
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
@@ -32,10 +33,19 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
             }
         ),
     )
+    # occurred_at is optional; model has default=timezone.now.
+    # JS pre-fills client-side, but tests/API can omit it.
+    occurred_at = forms.DateTimeField(
+        label="When",
+        required=False,
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local", "class": "form-input form-input--sm"}
+        ),
+    )
 
     class Meta:
         model = PartRequest
-        fields = ["text"]
+        fields = ["text", "occurred_at"]
         widgets = {
             "text": forms.Textarea(
                 attrs={"rows": 4, "placeholder": "Describe what part is needed and why..."}
@@ -58,6 +68,10 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
         """Validate uploaded media files."""
         files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
+
+    def clean_occurred_at(self):
+        """Default to now if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or timezone.now()
 
 
 class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
@@ -85,10 +99,19 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
             }
         ),
     )
+    # occurred_at is optional; model has default=timezone.now.
+    # JS pre-fills client-side, but tests/API can omit it.
+    occurred_at = forms.DateTimeField(
+        label="When",
+        required=False,
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local", "class": "form-input form-input--sm"}
+        ),
+    )
 
     class Meta:
         model = PartRequestUpdate
-        fields = ["text", "new_status"]
+        fields = ["text", "new_status", "occurred_at"]
         widgets = {
             "text": forms.Textarea(
                 attrs={"rows": 3, "placeholder": "Add a comment or status update..."}
@@ -102,3 +125,61 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
         """Validate uploaded media files."""
         files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
+
+    def clean_occurred_at(self):
+        """Default to now if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or timezone.now()
+
+
+class PartRequestUpdateEditForm(StyledFormMixin, forms.ModelForm):
+    """Form for editing a part request update's metadata (poster, timestamp)."""
+
+    poster_name = forms.CharField(
+        label="Who posted this?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Search users..."}),
+    )
+
+    class Meta:
+        model = PartRequestUpdate
+        fields = ["occurred_at"]
+        widgets = {
+            "occurred_at": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-input"}
+            ),
+        }
+        labels = {
+            "occurred_at": "When",
+        }
+
+    def clean_occurred_at(self):
+        """Preserve existing value if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or self.instance.occurred_at
+
+
+class PartRequestEditForm(StyledFormMixin, forms.ModelForm):
+    """Form for editing a part request's metadata (requester, timestamp)."""
+
+    requester_name = forms.CharField(
+        label="Who requested this?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Search users..."}),
+    )
+
+    class Meta:
+        model = PartRequest
+        fields = ["occurred_at"]
+        widgets = {
+            "occurred_at": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-input"}
+            ),
+        }
+        labels = {
+            "occurred_at": "When",
+        }
+
+    def clean_occurred_at(self):
+        """Preserve existing value if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or self.instance.occurred_at

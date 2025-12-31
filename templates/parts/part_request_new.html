@@ -29,91 +29,112 @@
 {% endsidebar_section %}
 {% if machine %}
   {% sidebar_section label="Machine" %}
-  <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-     class="sidebar__title sidebar__link">{{ machine.name }}</a>
+  {% include "components/machine_sidebar_card.html" with machine=machine %}
 {% endsidebar_section %}
 {% endif %}
 {% if not is_shared_account %}
   {% sidebar_section label="Who" %}
-  {% maintainer_autocomplete_field form.requester_name size="sm" show_label=False %}
+  {% maintainer_autocomplete_field form.requester_name size="sm" show_label=False form_id="part-request-form" %}
 {% endsidebar_section %}
 {% endif %}
+{% sidebar_section label="When" %}
+<input type="datetime-local"
+       id="{{ form.occurred_at.id_for_label }}"
+       name="{{ form.occurred_at.html_name }}"
+       class="form-input form-input--sm"
+       form="part-request-form">
+{% field_errors form.occurred_at %}
+{% endsidebar_section %}
 {% endblock %}
 {% block main %}
-  <div class="card card--padded">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      {% if is_shared_account %}
-        <!-- WHO (shared accounts only - in main content for mobile visibility) -->
-        {% maintainer_autocomplete_field form.requester_name label="Who is requesting this?" %}
-      {% endif %}
-      <!-- Machine selector (if not pre-selected) -->
-      {% if not machine %}
-        <div class="form-field">
-          <label class="form-label">
-            Machine <span class="text-muted text-xs">(optional)</span>
-          </label>
-          <div class="autocomplete"
-               data-machine-autocomplete
-               data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
-            <input type="search"
-                   placeholder="Search machines..."
-                   class="form-input"
-                   autocomplete="off"
-                   data-1p-ignore="true"
-                   data-lpignore="true"
-                   data-machine-search
-                   {% if selected_machine %}value="{{ selected_machine.name }}"{% endif %}>
-            <input type="hidden"
-                   name="{{ form.machine_slug.html_name }}"
-                   id="{{ form.machine_slug.id_for_label }}"
-                   value="{{ form.machine_slug.value|default_if_none:'' }}"
-                   data-machine-slug-input>
-            <div class="autocomplete__dropdown hidden"></div>
-          </div>
-          {% field_errors form.machine_slug %}
-        </div>
-      {% endif %}
-      <!-- Description -->
+  <form id="part-request-form"
+        method="post"
+        enctype="multipart/form-data"
+        class="form-main">
+    {% csrf_token %}
+    <input type="hidden" name="browser_timezone" id="browser-timezone">
+    {% if is_shared_account %}
+      <!-- WHO (shared accounts only - in main content for mobile visibility) -->
+      {% maintainer_autocomplete_field form.requester_name label="Who is requesting this?" form_id="part-request-form" %}
+    {% endif %}
+    <!-- Machine selector (if not pre-selected) -->
+    {% if not machine %}
       <div class="form-field">
-        {% form_label form.text %}
-        {{ form.text }}
-        {% field_errors form.text %}
-        <!-- File upload (accumulates across multiple selections) -->
-        <div class="form-hint space-above-sm" data-file-accumulator>
-          <input type="file"
-                 name="{{ form.media_file.html_name }}"
-                 class="hidden"
-                 multiple
-                 accept="image/*,video/*,.heic,.heif"
-                 data-file-input>
-          <a href="#" class="file-upload-link" data-file-trigger>
-            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-          </a>
-          {% field_errors form.media_file %}
-          <!-- Uploaded files preview -->
-          <div class="file-preview-row" data-file-preview></div>
+        <label class="form-label">
+          Machine <span class="text-muted text-xs">(optional)</span>
+        </label>
+        <div class="autocomplete"
+             data-machine-autocomplete
+             data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
+          <input type="search"
+                 placeholder="Search machines..."
+                 class="form-input"
+                 autocomplete="off"
+                 data-1p-ignore="true"
+                 data-lpignore="true"
+                 data-machine-search
+                 {% if selected_machine %}value="{{ selected_machine.name }}"{% endif %}>
+          <input type="hidden"
+                 name="{{ form.machine_slug.html_name }}"
+                 id="{{ form.machine_slug.id_for_label }}"
+                 value="{{ form.machine_slug.value|default_if_none:'' }}"
+                 data-machine-slug-input>
+          <div class="autocomplete__dropdown hidden"></div>
         </div>
+        {% field_errors form.machine_slug %}
       </div>
-      <!-- Submit -->
-      <div class="form-actions">
-        <a href="{% if is_edit %}{% url 'part-request-detail' part_request.pk %}{% else %}{% url 'part-request-list' %}{% endif %}"
-           class="btn btn--secondary">Cancel</a>
-        <button type="submit" class="btn btn--log">
-          {% icon "box-open" class="meta" %}
-          {% if is_edit %}
-            Save Changes
-          {% else %}
-            Create Request
-          {% endif %}
-        </button>
+    {% endif %}
+    <!-- Description -->
+    <div class="form-field">
+      {% form_label form.text %}
+      {{ form.text }}
+      {% field_errors form.text %}
+      <!-- File upload (accumulates across multiple selections) -->
+      <div class="form-hint space-above-sm" data-file-accumulator>
+        <input type="file"
+               name="{{ form.media_file.html_name }}"
+               class="hidden"
+               multiple
+               accept="image/*,video/*,.heic,.heif"
+               data-file-input>
+        <a href="#" class="file-upload-link" data-file-trigger>
+          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+        </a>
+        {% field_errors form.media_file %}
+        <!-- Uploaded files preview -->
+        <div class="file-preview-row" data-file-preview></div>
       </div>
-    </form>
-  </div>
+    </div>
+    <!-- Submit -->
+    <div class="form-actions">
+      <a href="{% if is_edit %}{% url 'part-request-detail' part_request.pk %}{% else %}{% url 'part-request-list' %}{% endif %}"
+         class="btn btn--secondary">Cancel</a>
+      <button type="submit" class="btn btn--log">
+        {% icon "box-open" class="meta" %}
+        {% if is_edit %}
+          Save Changes
+        {% else %}
+          Create Request
+        {% endif %}
+      </button>
+    </div>
+  </form>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Set browser timezone for form submission (handles DST correctly)
+        document.getElementById('browser-timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Set default occurred_at to current time in browser's local timezone
+        const occurredAtInput = document.getElementById('{{ form.occurred_at.id_for_label }}');
+        if (occurredAtInput && !occurredAtInput.value) {
+          occurredAtInput.value = toDateTimeLocalValue(new Date());
+        }
+      });
+  </script>
 {% endblock %}

@@ -1,0 +1,42 @@
+{% load core_extras %}
+{% if show_label %}
+  <div class="form-field">
+    <label class="form-label">{{ label }}</label>
+  {% endif %}
+  <div class="autocomplete"
+       data-maintainer-chip-input
+       data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}"
+       {% if initial_maintainers_id %}data-initial-maintainers-id="{{ initial_maintainers_id }}"{% endif %}
+       {% if initial_freetext %}data-initial-freetext="{{ initial_freetext }}"{% endif %}
+       {% if form_id %}data-form-id="{{ form_id }}"{% endif %}>
+    <div class="chip-input">
+      <div data-chip-container>
+        {# Hidden inputs for initial maintainers - fallback when JS is disabled #}
+        {# JS will replace these with chip UI but they ensure data isn't lost #}
+        {% for m in initial_maintainers_data %}
+          <input type="hidden"
+                 name="maintainer_usernames"
+                 value="{{ m.username }}"
+                 data-fallback-input
+                 {% if form_id %}form="{{ form_id }}"{% endif %}>
+        {% endfor %}
+        {% for name in initial_freetext_list %}
+          <input type="hidden"
+                 name="maintainer_freetext"
+                 value="{{ name }}"
+                 data-fallback-input
+                 {% if form_id %}form="{{ form_id }}"{% endif %}>
+        {% endfor %}
+      </div>
+      <input type="text"
+             data-chip-search
+             class="chip-input__search"
+             name="maintainer_freetext"
+             placeholder="{{ placeholder }}"
+             autocomplete="off"
+             {% if form_id %}form="{{ form_id }}"{% endif %}>
+    </div>
+    <div class="autocomplete__dropdown hidden"></div>
+  </div>
+  {% if show_label %}</div>{% endif %}
+{% if initial_maintainers_data %}{{ initial_maintainers_data|json_script:initial_maintainers_id }}{% endif %}

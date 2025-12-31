@@ -175,3 +175,71 @@ Use HTML5 `required` attribute on inputs for browser validation.
 | `.form-section` | Fieldset with border for grouping related fields |
 | `.radio-group` | Horizontal container for radio button options |
 | `.checkbox-label` | Label wrapper for checkbox + text |
+
+## Datetime Fields with Timezone Handling
+
+When editing a timestamp that needs to be displayed in the user's local timezone and converted back to UTC on submit, use the following pattern:
+
+### Template Structure
+
+```html
+<input type="hidden" name="browser_timezone" id="browser-timezone">
+
+<div class="form-group">
+  <label for="{{ form.occurred_at.id_for_label }}" class="form-label">When</label>
+  <input type="datetime-local"
+         id="{{ form.occurred_at.id_for_label }}"
+         name="{{ form.occurred_at.html_name }}"
+         class="form-input"
+         data-utc="{{ object.occurred_at.isoformat }}">
+  {% field_errors form.occurred_at %}
+</div>
+```
+
+### JavaScript Initialization
+
+```html
+{% block extra_scripts %}
+  <script src="{% static 'core/core.js' %}" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Capture browser's IANA timezone (e.g., "America/Los_Angeles")
+      document.getElementById('browser-timezone').value =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      // Convert UTC timestamp to local datetime-local value
+      const input = document.getElementById('{{ form.occurred_at.id_for_label }}');
+      if (input && input.dataset.utc) {
+        const date = new Date(input.dataset.utc);
+        input.value = toDateTimeLocalValue(date);  // From core.js
+      }
+    });
+  </script>
+{% endblock %}
+```
+
+### Server-Side Handling
+
+```python
+from zoneinfo import ZoneInfo
+
+def form_valid(self, form):
+    occurred_at = form.cleaned_data.get("occurred_at")
+    if occurred_at:
+        # Get user's timezone from hidden field
+        tz_name = self.request.POST.get("browser_timezone", "UTC")
+        try:
+            user_tz = ZoneInfo(tz_name)
+        except Exception:
+            user_tz = ZoneInfo("UTC")
+
+        # Convert naive datetime to UTC
+        if occurred_at.tzinfo is None:
+            local_dt = occurred_at.replace(tzinfo=user_tz)
+            entry.occurred_at = local_dt.astimezone(ZoneInfo("UTC"))
+```
+
+**Why this pattern:**
+- Uses IANA timezone names (e.g., `America/Los_Angeles`) instead of offsets, handling DST correctly
+- The `datetime-local` input doesn't include timezone info, so we capture it separately
+- `toDateTimeLocalValue()` from `core.js` formats a Date for the `datetime-local` input

@@ -1,0 +1,3 @@
+{% if report.problem_type != report.ProblemType.OTHER %}
+  <span class="pill pill--neutral">{{ report.get_problem_type_display }}</span>
+{% endif %}

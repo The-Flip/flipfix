@@ -1,27 +1,150 @@
-{% extends "maintenance/problem_report_form_base.html" %}
+{% extends "base.html" %}
 {% load static core_extras %}
-{% block form_title %}New Problem Report{% endblock %}
-{% block breadcrumb_current %}New Report{% endblock %}
-{% block submit_label %}Report Problem{% endblock %}
-{% block form_enctype %}enctype="multipart/form-data"{% endblock %}
-{% block problem_type_field %}{% endblock %}
-{% block media_upload %}
-  <!-- File upload (accumulates across multiple selections) -->
-  <div class="form-hint space-above-sm" data-file-accumulator>
-    <input type="file"
-           name="{{ form.media_file.html_name }}"
-           class="hidden"
-           multiple
-           accept="image/*,video/*,.heic,.heif"
-           data-file-input>
-    <a href="#" class="file-upload-link" data-file-trigger>
-      {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-    </a>
-    {% field_errors form.media_file %}
-    <!-- Uploaded files preview -->
-    <div class="file-preview-row" data-file-preview></div>
-  </div>
+{% block title %}New Problem Report · {{ block.super }}{% endblock %}
+{% block content %}
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    {% if machine %}
+      <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+      <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
+      <a href="{% url 'machine-problem-reports' machine.slug %}">Problems</a>
+    {% else %}
+      <a href="{% url 'problem-report-list' %}">Problem Reports</a>
+    {% endif %}
+    <span>New Report</span>
+  </nav>
+  <!-- TWO COLUMN LAYOUT: Main Form + Sidebar -->
+  <form id="problem-report-form"
+        method="post"
+        enctype="multipart/form-data"
+        class="two-column">
+    {% csrf_token %}
+    {% form_non_field_errors form %}
+    <input type="hidden" name="browser_timezone" id="browser-timezone">
+    <!-- MAIN COLUMN: Primary form fields -->
+    <div class="two-column__main form-main">
+      {% if is_shared_account %}
+        <!-- WHO (shared accounts only - in main content for mobile visibility) -->
+        {% maintainer_autocomplete_field form.reporter_name label="Who is reporting this?" %}
+      {% endif %}
+      {% if not machine %}
+        <!-- MACHINE (global pages only - in main content for mobile visibility) -->
+        <div class="form-field">
+          <label class="form-label">Machine</label>
+          <div class="autocomplete"
+               data-machine-autocomplete
+               data-autocomplete-url="{% url 'api-machine-autocomplete' %}">
+            <input type="search"
+                   id="machine-search"
+                   placeholder="Search machines..."
+                   class="form-input"
+                   autocomplete="off"
+                   data-machine-search
+                   required
+                   value="{% if selected_machine %}{{ selected_machine.name }}{% endif %}">
+            <input type="hidden"
+                   name="{{ form.machine_slug.html_name }}"
+                   id="{{ form.machine_slug.id_for_label }}"
+                   value="{{ form.machine_slug.value|default_if_none:'' }}"
+                   data-machine-slug-input>
+            <div class="autocomplete__dropdown hidden"></div>
+          </div>
+          {% field_errors form.machine_slug %}
+        </div>
+      {% endif %}
+      <!-- DESCRIPTION -->
+      <div class="form-field">
+        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+        <textarea id="{{ form.description.id_for_label }}"
+                  name="{{ form.description.html_name }}"
+                  class="form-input form-textarea"
+                  placeholder="Describe the problem...">{{ form.description.value|default:'' }}</textarea>
+        {% field_errors form.description %}
+        <!-- File upload (accumulates across multiple selections) -->
+        <div class="form-hint space-above-sm" data-file-accumulator>
+          <input type="file"
+                 name="{{ form.media_file.html_name }}"
+                 class="hidden"
+                 multiple
+                 accept="image/*,video/*,.heic,.heif"
+                 data-file-input>
+          <a href="#" class="file-upload-link" data-file-trigger>
+            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+          </a>
+          {% field_errors form.media_file %}
+          <!-- Uploaded files preview -->
+          <div class="file-preview-row" data-file-preview></div>
+        </div>
+      </div>
+      <!-- FORM ACTIONS -->
+      <div class="form-actions">
+        <a href="{% if machine %}{% url 'machine-problem-reports' machine.slug %}{% else %}{% url 'problem-report-list' %}{% endif %}"
+           class="btn btn--secondary">Cancel</a>
+        <button type="submit" class="btn btn--report">
+          {% icon "bug" class="meta" %}
+          Report Problem
+        </button>
+      </div>
+    </div>
+    <!-- SIDEBAR: Context & Metadata (desktop only) -->
+    <aside class="two-column__sidebar">
+      <div class="card card--padded sidebar--sticky">
+        {% if machine %}
+          <!-- MACHINE CARD (machine-specific pages) -->
+          <input type="hidden"
+                 name="{{ form.machine_slug.html_name }}"
+                 value="{{ machine.slug }}">
+          <div class="sidebar__section">
+            <div class="sidebar__label">Machine</div>
+            {% include "components/machine_sidebar_card.html" with machine=machine %}
+          </div>
+        {% endif %}
+        {% if not is_shared_account %}
+          <div class="sidebar__section">
+            <div class="sidebar__label">Who</div>
+            {% maintainer_autocomplete_field form.reporter_name size="sm" show_label=False form_id="problem-report-form" %}
+          </div>
+        {% endif %}
+        <div class="sidebar__section">
+          <div class="sidebar__label">When</div>
+          <input type="datetime-local"
+                 id="{{ form.occurred_at.id_for_label }}"
+                 name="{{ form.occurred_at.html_name }}"
+                 class="form-input form-input--sm"
+                 form="problem-report-form">
+          {% field_errors form.occurred_at %}
+        </div>
+      </div>
+    </aside>
+  </form>
 {% endblock %}
-{% block extra_scripts_child %}
+{% block extra_scripts %}
+  <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
+  <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
+  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set browser timezone for form submission (handles DST correctly)
+    document.getElementById('browser-timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Set default occurred_at to current time in browser's local timezone
+    const occurredAtInput = document.getElementById('{{ form.occurred_at.id_for_label }}');
+    if (occurredAtInput && !occurredAtInput.value) {
+      occurredAtInput.value = toDateTimeLocalValue(new Date());
+    }
+
+    // Auto-resize description textarea to fit content
+    const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+    if (descriptionInput) {
+      const resize = () => {
+        descriptionInput.style.height = 'auto';
+        descriptionInput.style.height = `${descriptionInput.scrollHeight}px`;
+        descriptionInput.style.overflowY = 'hidden';
+      };
+      resize();
+      descriptionInput.addEventListener('input', resize);
+    }
+  });
+  </script>
 {% endblock %}

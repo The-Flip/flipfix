@@ -9,7 +9,7 @@ from the_flip.apps.core.forms import (
     normalize_uploaded_files,
     validate_media_files,
 )
-from the_flip.apps.maintenance.models import ProblemReport
+from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
 class MultiFileInput(forms.ClearableFileInput):
@@ -89,7 +89,7 @@ class MaintainerProblemReportForm(ProblemReportForm):
     """
 
     class Meta(ProblemReportForm.Meta):
-        fields = ["description"]  # Exclude problem_type; model defaults to "Other"
+        fields = ["description", "occurred_at"]
 
     reporter_name = forms.CharField(
         label="Reporter name",
@@ -109,10 +109,83 @@ class MaintainerProblemReportForm(ProblemReportForm):
         ),
     )
 
+    # occurred_at is optional; model has default=timezone.now.
+    # JS pre-fills client-side, but tests/API can omit it.
+    occurred_at = forms.DateTimeField(
+        label="When",
+        required=False,
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local", "class": "form-input form-input--sm"}
+        ),
+    )
+
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
         files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
         return validate_media_files(files)
+
+    def clean_occurred_at(self):
+        """Default to now if occurred_at is empty.
+
+        HTML forms submit empty strings for empty inputs, which Django interprets
+        as 'field present but empty' rather than 'field absent'. Without this,
+        the empty string becomes None and fails the model's NOT NULL constraint.
+        """
+        return self.cleaned_data.get("occurred_at") or timezone.now()
+
+
+class ProblemReportEditForm(StyledFormMixin, forms.ModelForm):
+    """Form for editing a problem report's metadata (reporter, timestamp)."""
+
+    reporter_name = forms.CharField(
+        label="Who reported this?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Search users..."}),
+    )
+
+    class Meta:
+        model = ProblemReport
+        fields = ["occurred_at"]
+        widgets = {
+            "occurred_at": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-input"}
+            ),
+        }
+        labels = {
+            "occurred_at": "When",
+        }
+
+    def clean_occurred_at(self):
+        """Preserve existing value if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or self.instance.occurred_at
+
+
+class LogEntryEditForm(StyledFormMixin, forms.ModelForm):
+    """Form for editing a log entry's metadata (maintainer, timestamp)."""
+
+    maintainer_name = forms.CharField(
+        label="Who did the work?",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Search users..."}),
+    )
+
+    class Meta:
+        model = LogEntry
+        fields = ["occurred_at"]
+        widgets = {
+            "occurred_at": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-input"}
+            ),
+        }
+        labels = {
+            "occurred_at": "When",
+        }
+
+    def clean_occurred_at(self):
+        """Preserve existing value if occurred_at is empty."""
+        return self.cleaned_data.get("occurred_at") or self.instance.occurred_at
 
 
 class SearchForm(forms.Form):
@@ -136,9 +209,12 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
             format="%Y-%m-%dT%H:%M",
         ),
     )
+    # submitter_name is no longer used - the chip input submits maintainer_usernames
+    # and maintainer_freetext directly. Kept for backwards compatibility but optional.
     submitter_name = forms.CharField(
         label="Maintainer name",
         max_length=200,
+        required=False,
         widget=forms.TextInput(
             attrs={
                 "enterkeyhint": "next",

@@ -1,0 +1,71 @@
+{% extends "layouts/two_column.html" %}
+{% load static core_extras %}
+{% block title %}Edit Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'part-request-list' %}">Parts</a>
+  <a href="{% url 'part-request-detail' part_request.pk %}">#{{ part_request.pk }}</a>
+  <span>Edit Metadata</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Parts Request" %}
+  <a href="{% url 'part-request-detail' part_request.pk %}"
+     class="sidebar__title sidebar__link">{% icon "box-open" %} #{{ part_request.pk }}</a>
+  <div class="flex flex-wrap stack-tight space-above-sm">
+    <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
+  </div>
+{% endsidebar_section %}
+{% if part_request.machine %}
+  {% sidebar_section label="Machine" %}
+  {% include "components/machine_sidebar_card.html" with machine=part_request.machine %}
+{% endsidebar_section %}
+{% endif %}
+{% endblock %}
+{% block main %}
+  <p class="text-muted space-below-sm">Editing metadata of: "{{ part_request.text|truncatechars:80 }}"</p>
+  <div class="card card--padded">
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      <input type="hidden" name="browser_timezone" id="browser-timezone">
+      {% form_non_field_errors form %}
+      <div class="form-group">{% maintainer_autocomplete_field form.requester_name label="Who requested this?" %}</div>
+      <div class="form-group">
+        <label for="{{ form.occurred_at.id_for_label }}" class="form-label">When</label>
+        <input type="datetime-local"
+               id="{{ form.occurred_at.id_for_label }}"
+               name="{{ form.occurred_at.html_name }}"
+               class="form-input"
+               data-utc="{{ part_request.occurred_at.isoformat }}">
+        {% field_errors form.occurred_at %}
+      </div>
+      <div class="form-actions">
+        <a href="{% url 'part-request-detail' part_request.pk %}"
+           class="btn btn--secondary">
+          {% icon "circle-xmark" class="meta" %}
+          Cancel
+        </a>
+        <button type="submit" class="btn btn--log">
+          {% icon "floppy-disk" class="meta" %}
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/core.js' %}" defer></script>
+  <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
+  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set browser timezone for form submission (handles DST correctly)
+      document.getElementById('browser-timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      // Initialize datetime-local input with UTC value converted to local time
+      const input = document.getElementById('{{ form.occurred_at.id_for_label }}');
+      if (input && input.dataset.utc) {
+        const date = new Date(input.dataset.utc);
+        input.value = toDateTimeLocalValue(date);
+      }
+    });
+  </script>
+{% endblock %}

@@ -11,44 +11,36 @@
   {% endif %}
   <span>Log Entry {% icon "screwdriver-wrench" %}</span>
 {% endblock %}
+{% block mobile_actions %}
+  <div class="mobile-meta">
+    <div class="mobile-meta__row text-muted text-sm">{{ entry|log_entry_meta }}</div>
+  </div>
+  <a href="{% url 'log-entry-edit' entry.pk %}"
+     class="btn btn--secondary btn--full">{% icon "pen" class="meta" %}</a>
+{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=entry.get_admin_history_url %}
-  {% sidebar_section label="Machine" %}
-  {% if entry.problem_report %}
-    {# Machine is controlled by problem report, not directly editable #}
-    {% include "components/machine_sidebar_card.html" with machine=entry.machine %}
-  {% else %}
-    {# Orphan log entry: machine is directly editable #}
-    {% include "components/machine_sidebar_card.html" with machine=entry.machine editable=True %}
-  {% endif %}
+  {% sidebar_section label="Log Entry" %}
+  <div class="sidebar__subtitle space-above-sm">{{ entry|log_entry_meta }}</div>
+{% endsidebar_section %}
+{% sidebar_section label="Machine" %}
+{% if entry.problem_report %}
+  {# Machine is controlled by problem report, not directly editable #}
+  {% include "components/machine_sidebar_card.html" with machine=entry.machine %}
+{% else %}
+  {# Orphan log entry: machine is directly editable #}
+  {% include "components/machine_sidebar_card.html" with machine=entry.machine editable=True %}
+{% endif %}
 {% endsidebar_section %}
 {% sidebar_section label="Problem" %}
 {% include "components/problem_report_sidebar_card.html" with problem_report=entry.problem_report editable=True current_machine_slug=entry.machine.slug %}
 {% endsidebar_section %}
-{% sidebar_section label="When" %}
-<input type="datetime-local"
-       id="occurred-at"
-       class="form-input form-input--sm"
-       data-utc="{{ entry.occurred_at.isoformat }}"
-       data-entry-id="{{ entry.pk }}">
-<div id="occurred-at-status" class="status-indicator"></div>
-{% endsidebar_section %}
-{% sidebar_section label="Who" %}
-<div class="autocomplete"
-     data-maintainer-autocomplete
-     data-autocomplete-url="{% url 'api-maintainer-autocomplete' %}">
-  <input type="text"
-         data-maintainer-search
-         id="maintainer-names"
-         class="form-input form-input--sm"
-         value="{% if entry.maintainers.all %}{{ entry.maintainers.all|join:", " }}{% elif entry.maintainer_names %}{{ entry.maintainer_names }}{% endif %}"
-         placeholder="Name(s), comma separated"
-         autocomplete="off"
-         data-1p-ignore="true"
-         data-lpignore="true">
-  <div class="autocomplete__dropdown hidden"></div>
-</div>
-<div id="maintainer-save-indicator" class="status-indicator"></div>
+{% sidebar_section %}
+<a href="{% url 'log-entry-edit' entry.pk %}"
+   class="btn btn--secondary btn--full">
+  {% icon "pen" class="meta" %}
+  Edit Details
+</a>
 {% endsidebar_section %}
 {% endblock %}
 {% block main %}
@@ -59,8 +51,6 @@
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
-  <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
-  <script src="{% static 'core/log_entry_detail.js' %}" defer></script>
   <script src="{% static 'core/text_edit.js' %}" defer></script>
   <script src="{% static 'core/media_grid.js' %}" defer></script>
   <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>

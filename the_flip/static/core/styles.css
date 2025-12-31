@@ -216,6 +216,7 @@ table {
   --color-input-bg: #ffffff;
   --color-input-border: #d1d5db;
   --color-input-focus: #3b82f6;
+  --color-input-focus-ring: rgba(59, 130, 246, 0.15);
   --color-avatar-bg: #d97706;
 
   /* Links */
@@ -272,6 +273,7 @@ table {
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
     --color-input-focus: #0078d4;
+    --color-input-focus-ring: rgba(0, 120, 212, 0.25);
 
     /* Links - VS Code: textLink.foreground */
     --color-link: #4daafc;
@@ -828,7 +830,7 @@ body {
 .form-input:focus {
   outline: none;
   border-color: var(--color-input-focus);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--color-input-focus-ring);
 }
 
 .form-input::placeholder {
@@ -981,6 +983,49 @@ body {
 
 .autocomplete__item:only-child {
   border-radius: var(--radius-md);
+}
+
+/* Chip input - input with removable chips for multiple maintainers */
+.chip-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 38px;
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-md);
+  cursor: text;
+}
+
+.chip-input:focus-within {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 3px var(--color-input-focus-ring);
+}
+
+.chip-input [data-chip-container] {
+  display: contents;
+}
+
+.chip-input__search {
+  flex: 1;
+  min-width: 120px;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: transparent;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.chip-input__search::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Chips inside chip-input need more contrast against the input background */
+.chip-input .pill--neutral {
+  background-color: var(--color-gray-200);
 }
 
 /* Media grid - thumbnail gallery for detail pages */
@@ -1954,6 +1999,21 @@ body {
 
 .mobile-actions > .dropdown {
   display: flex;
+}
+
+/* Mobile metadata display (used within mobile-actions) */
+.mobile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.mobile-meta__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 /* ========================================

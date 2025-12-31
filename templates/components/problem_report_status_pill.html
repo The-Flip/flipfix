@@ -1,0 +1,9 @@
+{% load core_extras %}
+<span class="pill {% if report.status == report.Status.OPEN %}pill--status-broken{% else %}pill--status-good{% endif %}">
+  {% if report.status == report.Status.OPEN %}
+    {% icon "circle-exclamation" class="meta" %}
+  {% else %}
+    {% icon "check" class="meta" %}
+  {% endif %}
+  {{ report.get_status_display }}
+</span>

@@ -16,65 +16,83 @@
 {% endsidebar_section %}
 {% if part_request.machine %}
   {% sidebar_section label="Machine" %}
-  <a href="{% url 'maintainer-machine-detail' part_request.machine.slug %}"
-     class="sidebar__title sidebar__link">{{ part_request.machine.name }}</a>
+  {% include "components/machine_sidebar_card.html" with machine=part_request.machine %}
 {% endsidebar_section %}
 {% endif %}
 {% if not is_shared_account %}
   {% sidebar_section label="Who" %}
-  {% maintainer_autocomplete_field form.requester_name size="sm" show_label=False %}
+  {% maintainer_autocomplete_field form.requester_name size="sm" show_label=False form_id="part-request-update-form" %}
 {% endsidebar_section %}
 {% endif %}
+{% sidebar_section label="When" %}
+<input type="datetime-local"
+       id="{{ form.occurred_at.id_for_label }}"
+       name="{{ form.occurred_at.html_name }}"
+       class="form-input form-input--sm"
+       form="part-request-update-form">
+{% field_errors form.occurred_at %}
+{% endsidebar_section %}
 {% endblock %}
 {% block main %}
-  <div class="card card--padded">
-    <div class="card__header">
-      <div class="card__title">Add Update</div>
+  <form id="part-request-update-form"
+        method="post"
+        enctype="multipart/form-data"
+        class="form-main">
+    {% csrf_token %}
+    <input type="hidden" name="browser_timezone" id="browser-timezone">
+    {% if is_shared_account %}
+      <!-- WHO (shared accounts only - in main content for mobile visibility) -->
+      {% maintainer_autocomplete_field form.requester_name label="Who is posting this?" %}
+    {% endif %}
+    <!-- Comment -->
+    <div class="form-field">
+      {% form_label form.text %}
+      {{ form.text }}
+      {% field_errors form.text %}
+      <!-- File upload (accumulates across multiple selections) -->
+      <div class="form-hint space-above-sm" data-file-accumulator>
+        <input type="file"
+               name="{{ form.media_file.html_name }}"
+               class="hidden"
+               multiple
+               accept="image/*,video/*,.heic,.heif"
+               data-file-input>
+        <a href="#" class="file-upload-link" data-file-trigger>
+          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+        </a>
+        {% field_errors form.media_file %}
+        <!-- Uploaded files preview -->
+        <div class="file-preview-row" data-file-preview></div>
+      </div>
     </div>
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      {% if is_shared_account %}
-        <!-- WHO (shared accounts only - in main content for mobile visibility) -->
-        {% maintainer_autocomplete_field form.requester_name label="Who is posting this?" %}
-      {% endif %}
-      <!-- Comment -->
-      <div class="form-field">
-        {% form_label form.text %}
-        {{ form.text }}
-        {% field_errors form.text %}
-        <!-- File upload (accumulates across multiple selections) -->
-        <div class="form-hint space-above-sm" data-file-accumulator>
-          <input type="file"
-                 name="{{ form.media_file.html_name }}"
-                 class="hidden"
-                 multiple
-                 accept="image/*,video/*,.heic,.heif"
-                 data-file-input>
-          <a href="#" class="file-upload-link" data-file-trigger>
-            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-          </a>
-          {% field_errors form.media_file %}
-          <!-- Uploaded files preview -->
-          <div class="file-preview-row" data-file-preview></div>
-        </div>
-      </div>
-      <!-- Status change -->
-      <div class="form-field">
-        <label for="{{ form.new_status.id_for_label }}" class="form-label">Change status to</label>
-        {{ form.new_status }}
-        {% field_errors form.new_status %}
-      </div>
-      <!-- Submit -->
-      <div class="form-actions">
-        <a href="{% url 'part-request-detail' part_request.pk %}"
-           class="btn btn--secondary">Cancel</a>
-        <button type="submit" class="btn btn--log">Post Update</button>
-      </div>
-    </form>
-  </div>
+    <!-- Status change -->
+    <div class="form-field">
+      <label for="{{ form.new_status.id_for_label }}" class="form-label">Change status to</label>
+      {{ form.new_status }}
+      {% field_errors form.new_status %}
+    </div>
+    <!-- Submit -->
+    <div class="form-actions">
+      <a href="{% url 'part-request-detail' part_request.pk %}"
+         class="btn btn--secondary">Cancel</a>
+      <button type="submit" class="btn btn--log">Post Update</button>
+    </div>
+  </form>
 {% endblock %}
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
   <script src="{% static 'core/maintainer_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set browser timezone for form submission (handles DST correctly)
+      document.getElementById('browser-timezone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      // Set default occurred_at to current time in browser's local timezone
+      const occurredAtInput = document.getElementById('{{ form.occurred_at.id_for_label }}');
+      if (occurredAtInput && !occurredAtInput.value) {
+        occurredAtInput.value = toDateTimeLocalValue(new Date());
+      }
+    });
+  </script>
 {% endblock %}

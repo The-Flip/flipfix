@@ -1,3 +1,5 @@
+import secrets
+
 import markdown
 import nh3
 from django import template
@@ -109,6 +111,16 @@ def smart_date(value):
         iso_format,
         iso_format,
     )
+
+
+@register.filter
+def addstr(value, arg):
+    """Concatenate two values as strings.
+
+    Usage:
+        {{ "Problem Report #"|addstr:report.pk }}
+    """
+    return f"{value}{arg}"
 
 
 @register.filter
@@ -417,6 +429,26 @@ def pill(label: str, variant: str = "neutral", icon: str = ""):
     }
 
 
+@register.inclusion_tag("components/problem_report_status_pill.html")
+def problem_report_status_pill(report):
+    """Render a status pill (Open/Closed) for a problem report.
+
+    Usage:
+        {% problem_report_status_pill report %}
+    """
+    return {"report": report}
+
+
+@register.inclusion_tag("components/problem_report_type_pill.html")
+def problem_report_type_pill(report):
+    """Render a problem type pill for a problem report (hidden if type is Other).
+
+    Usage:
+        {% problem_report_type_pill report %}
+    """
+    return {"report": report}
+
+
 # -----------------------------------------------------------------------------
 # Form field template tags
 # -----------------------------------------------------------------------------
@@ -532,6 +564,7 @@ def maintainer_autocomplete_field(
     size: str = "",
     show_label: bool = True,
     required: bool = False,
+    form_id: str = "",
 ):
     """Render a maintainer autocomplete field with dropdown.
 
@@ -540,6 +573,7 @@ def maintainer_autocomplete_field(
         {% maintainer_autocomplete_field form.requester_name label="Who" size="sm" %}
         {% maintainer_autocomplete_field form.submitter_name show_label=False %}
         {% maintainer_autocomplete_field form.submitter_name required=True %}
+        {% maintainer_autocomplete_field form.requester_name form_id="my-form" %}
 
     Args:
         context: Template context (auto-passed with takes_context=True)
@@ -549,6 +583,7 @@ def maintainer_autocomplete_field(
         size: Size variant - "" (default) or "sm" for smaller sidebar inputs
         show_label: Whether to show the label (default True)
         required: Whether the field is required (adds HTML required attribute and asterisk)
+        form_id: Associate inputs with a form by ID (for inputs outside the form element)
     """
     input_class = "form-input form-input--sm" if size == "sm" else "form-input"
 
@@ -567,6 +602,62 @@ def maintainer_autocomplete_field(
         "show_label": show_label,
         "required": required,
         "username_value": username_value,
+        "form_id": form_id,
+    }
+
+
+@register.inclusion_tag("components/maintainer_chip_input_field.html")
+def maintainer_chip_input_field(
+    label: str = "Who did the work?",
+    placeholder: str = "Search users...",
+    show_label: bool = True,
+    form_id: str = "",
+    initial_maintainers: list | None = None,
+    initial_freetext: str = "",
+):
+    """Render a chip-based maintainer input for multi-select.
+
+    Used for log entries which have a M2M relationship to maintainers.
+
+    Usage:
+        {% maintainer_chip_input_field %}
+        {% maintainer_chip_input_field label="Maintainers" %}
+        {% maintainer_chip_input_field initial_maintainers=entry.maintainers.all %}
+        {% maintainer_chip_input_field initial_freetext=entry.maintainer_names %}
+
+    Args:
+        label: Label text (default "Who did the work?")
+        placeholder: Input placeholder text
+        show_label: Whether to show the label (default True)
+        form_id: Associate inputs with a form by ID (for inputs outside the form element)
+        initial_maintainers: Queryset or list of Maintainer objects to pre-populate
+        initial_freetext: Comma-separated string of freetext names to pre-populate
+    """
+    # Generate unique ID for the JSON script tag
+    script_id = f"maintainer-data-{secrets.token_hex(4)}"
+
+    # Serialize maintainers to list for the template to render via json_script filter
+    maintainer_data = None
+    if initial_maintainers:
+        maintainer_data = [
+            {"username": m.user.username, "display_name": m.display_name}
+            for m in initial_maintainers
+        ]
+
+    # Split freetext into list for hidden input fallback
+    freetext_list = []
+    if initial_freetext:
+        freetext_list = [name.strip() for name in initial_freetext.split(",") if name.strip()]
+
+    return {
+        "label": label,
+        "placeholder": placeholder,
+        "show_label": show_label,
+        "form_id": form_id,
+        "initial_maintainers_id": script_id if initial_maintainers else "",
+        "initial_freetext": initial_freetext,
+        "initial_freetext_list": freetext_list,
+        "initial_maintainers_data": maintainer_data,
     }
 
 

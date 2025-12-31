@@ -116,6 +116,7 @@ All JavaScript files are in `the_flip/static/core/`.
 |------|---------|
 | machine_autocomplete.js | Machine search with API-backed results |
 | maintainer_autocomplete.js | Maintainer search with prefetched results |
+| maintainer_chip_input.js | Multi-select chip input for maintainer selection |
 
 ### File & Media
 

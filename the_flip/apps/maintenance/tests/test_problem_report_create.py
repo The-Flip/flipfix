@@ -26,7 +26,7 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         """Problem report form should be accessible to anonymous users."""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "maintenance/problem_report_form_public.html")
+        self.assertTemplateUsed(response, "maintenance/problem_report_new_public.html")
 
     def test_create_view_shows_correct_machine_name(self):
         """Problem report form should show the machine's name."""
@@ -149,3 +149,39 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         response = self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(ProblemReport.objects.count(), settings.RATE_LIMIT_REPORTS_PER_IP + 1)
+
+
+@tag("views")
+class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
+    """Tests for the maintainer problem report creation view."""
+
+    def setUp(self):
+        super().setUp()
+        self.maintainer = create_maintainer_user()
+        self.client.force_login(self.maintainer)
+        self.url = reverse("problem-report-create-machine", kwargs={"slug": self.machine.slug})
+
+    def test_create_with_empty_occurred_at_defaults_to_now(self):
+        """When occurred_at is submitted empty, it should default to now.
+
+        This tests a bug where HTML forms submit empty strings for empty inputs,
+        which Django interprets as 'field present but empty' rather than 'field
+        absent'. Without explicit handling, this would set occurred_at to None
+        and fail validation on the non-nullable model field.
+        """
+        data = {
+            "description": "Machine is broken",
+            "occurred_at": "",  # Empty string, as submitted by HTML form
+        }
+        response = self.client.post(self.url, data)
+
+        # Should succeed, not error
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ProblemReport.objects.count(), 1)
+
+        report = ProblemReport.objects.first()
+        # occurred_at should be set to approximately now, not None
+        self.assertIsNotNone(report.occurred_at)
+        # Should be within last minute
+        time_diff = timezone.now() - report.occurred_at
+        self.assertLess(time_diff.total_seconds(), 60)

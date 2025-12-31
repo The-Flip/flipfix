@@ -14,11 +14,13 @@
            placeholder="{{ placeholder }}"
            value="{{ field.value|default:'' }}"
            autocomplete="off"
+           {% if form_id %}form="{{ form_id }}"{% endif %}
            {% if required %}required{% endif %}>
     <input type="hidden"
            data-maintainer-username
            name="{{ field.html_name }}_username"
-           value="{{ username_value }}">
+           value="{{ username_value }}"
+           {% if form_id %}form="{{ form_id }}"{% endif %}>
     <div class="autocomplete__dropdown hidden"></div>
   </div>
   {% field_errors field %}

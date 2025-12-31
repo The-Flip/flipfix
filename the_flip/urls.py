@@ -38,6 +38,7 @@ from the_flip.apps.maintenance.views.autocomplete import (
 )
 from the_flip.apps.maintenance.views.log_entries import (
     LogEntryDetailView,
+    LogEntryEditView,
     LogListPartialView,
     LogListView,
     MachineLogCreateView,
@@ -49,6 +50,7 @@ from the_flip.apps.maintenance.views.problem_reports import (
     MachineProblemReportListView,
     ProblemReportCreateView,
     ProblemReportDetailView,
+    ProblemReportEditView,
     ProblemReportListPartialView,
     ProblemReportListView,
     ProblemReportLogEntriesPartialView,
@@ -172,6 +174,11 @@ urlpatterns = [
         name="problem-report-detail",
     ),  # Problem report detail page
     path(
+        "problem-reports/<int:pk>/edit/",
+        ProblemReportEditView.as_view(),
+        name="problem-report-edit",
+    ),  # Edit problem report metadata
+    path(
         "problem-reports/<int:pk>/log-entries/",
         ProblemReportLogEntriesPartialView.as_view(),
         name="problem-report-log-entries",
@@ -278,6 +285,9 @@ urlpatterns = [
         "logs/<int:pk>/", LogEntryDetailView.as_view(), name="log-detail"
     ),  # Log entry detail page
     path(
+        "logs/<int:pk>/edit/", LogEntryEditView.as_view(), name="log-entry-edit"
+    ),  # Edit log entry metadata
+    path(
         "logs/new/<slug:slug>/",
         MachineLogCreateView.as_view(),
         name="log-create-machine",
@@ -318,6 +328,11 @@ urlpatterns = [
         name="part-request-detail",
     ),  # Part request detail page
     path(
+        "parts/<int:pk>/edit/",
+        parts_views.PartRequestEditView.as_view(),
+        name="part-request-edit",
+    ),  # Edit part request metadata
+    path(
         "parts/<int:pk>/update/",
         parts_views.PartRequestUpdateCreateView.as_view(),
         name="part-request-update-create",
@@ -337,6 +352,11 @@ urlpatterns = [
         parts_views.PartRequestUpdateDetailView.as_view(),
         name="part-request-update-detail",
     ),  # Part request update detail page
+    path(
+        "parts/updates/<int:pk>/edit/",
+        parts_views.PartRequestUpdateEditView.as_view(),
+        name="part-request-update-edit",
+    ),  # Edit part request update metadata
 ]
 
 # Serve user-uploaded media files

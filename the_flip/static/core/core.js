@@ -8,6 +8,21 @@
    ========================================================================== */
 
 /**
+ * Format Date as datetime-local input value (YYYY-MM-DDTHH:MM).
+ * Used for initializing datetime-local inputs with current time or converting UTC to local.
+ * @param {Date} date - The date to format
+ * @returns {string} Formatted string for datetime-local input value
+ */
+function toDateTimeLocalValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
  * Display a toast-style message at the top of the page.
  * @param {string} kind - Message type: 'success', 'error', 'info', 'warning'
  * @param {string} text - Message content (can include HTML)

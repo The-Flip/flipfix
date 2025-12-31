@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import partial
-from pathlib import Path
 
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -14,10 +13,12 @@ from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
-from django.views.generic import FormView, TemplateView, View
+from django.views.generic import FormView, TemplateView, UpdateView, View
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
+from the_flip.apps.core.datetime import apply_browser_timezone
+from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     InfiniteScrollMixin,
@@ -25,7 +26,12 @@ from the_flip.apps.core.mixins import (
 )
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import SearchForm
-from the_flip.apps.parts.forms import PartRequestForm, PartRequestUpdateForm
+from the_flip.apps.parts.forms import (
+    PartRequestEditForm,
+    PartRequestForm,
+    PartRequestUpdateEditForm,
+    PartRequestUpdateForm,
+)
 from the_flip.apps.parts.models import (
     PartRequest,
     PartRequestMedia,
@@ -204,20 +210,16 @@ class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
         part_request.requested_by = maintainer
         part_request.requested_by_name = requester_name
         part_request.machine = machine
+        part_request.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
         part_request.save()
 
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
             for media_file in media_files:
-                content_type = (getattr(media_file, "content_type", "") or "").lower()
-                ext = Path(getattr(media_file, "name", "")).suffix.lower()
-                is_video = content_type.startswith("video/") or ext in {
-                    ".mp4",
-                    ".mov",
-                    ".m4v",
-                    ".hevc",
-                }
+                is_video = is_video_file(media_file)
 
                 media = PartRequestMedia.objects.create(
                     part_request=part_request,
@@ -323,6 +325,66 @@ class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, Vi
         return render(request, self.template_name, context)
 
 
+class PartRequestEditView(CanAccessMaintainerPortalMixin, UpdateView):
+    """Edit a part request's metadata (requester, timestamp)."""
+
+    model = PartRequest
+    form_class = PartRequestEditForm
+    template_name = "parts/part_request_edit.html"
+
+    def get_queryset(self):
+        return PartRequest.objects.select_related(
+            "requested_by__user",
+            "machine",
+            "machine__model",
+        )
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Pre-fill requester_name with current requester's display name
+        if self.object.requested_by:
+            initial["requester_name"] = str(self.object.requested_by)
+        elif self.object.requested_by_name:
+            initial["requester_name"] = self.object.requested_by_name
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["part_request"] = self.object
+        return context
+
+    def form_valid(self, form):
+        # Handle requester attribution from hidden username field or text input
+        requester_username = self.request.POST.get("requester_name_username", "").strip()
+        requester_name_text = form.cleaned_data.get("requester_name", "").strip()
+
+        maintainer = None
+        requester_name = ""
+
+        if requester_username:
+            maintainer = Maintainer.objects.filter(
+                user__username__iexact=requester_username,
+                is_shared_account=False,
+            ).first()
+
+        if not maintainer and requester_name_text:
+            # No valid username selected, but text was entered - use text field
+            requester_name = requester_name_text
+
+        part_request = form.save(commit=False)
+        part_request.requested_by = maintainer
+        part_request.requested_by_name = requester_name
+        part_request.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
+        part_request.save()
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("part-request-detail", kwargs={"pk": self.object.pk})
+
+
 class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
     """Add an update/comment to a part request."""
 
@@ -394,20 +456,16 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
         update.part_request = self.part_request
         update.posted_by = maintainer
         update.posted_by_name = poster_name
+        update.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
         update.save()
 
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
             for media_file in media_files:
-                content_type = (getattr(media_file, "content_type", "") or "").lower()
-                ext = Path(getattr(media_file, "name", "")).suffix.lower()
-                is_video = content_type.startswith("video/") or ext in {
-                    ".mp4",
-                    ".mov",
-                    ".m4v",
-                    ".hevc",
-                }
+                is_video = is_video_file(media_file)
 
                 media = PartRequestUpdateMedia.objects.create(
                     update=update,
@@ -598,3 +656,65 @@ class PartRequestUpdateDetailView(CanAccessMaintainerPortalMixin, MediaUploadMix
             "part_request": update.part_request,
         }
         return render(request, self.template_name, context)
+
+
+class PartRequestUpdateEditView(CanAccessMaintainerPortalMixin, UpdateView):
+    """Edit a part request update's metadata (poster, timestamp)."""
+
+    model = PartRequestUpdate
+    form_class = PartRequestUpdateEditForm
+    template_name = "parts/part_update_edit.html"
+
+    def get_queryset(self):
+        return PartRequestUpdate.objects.select_related(
+            "part_request__requested_by__user",
+            "part_request__machine",
+            "part_request__machine__model",
+            "posted_by__user",
+        )
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Pre-fill poster_name with current poster's display name
+        if self.object.posted_by:
+            initial["poster_name"] = str(self.object.posted_by)
+        elif self.object.posted_by_name:
+            initial["poster_name"] = self.object.posted_by_name
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["update"] = self.object
+        context["part_request"] = self.object.part_request
+        return context
+
+    def form_valid(self, form):
+        # Handle poster attribution from hidden username field or text input
+        poster_username = self.request.POST.get("poster_name_username", "").strip()
+        poster_name_text = form.cleaned_data.get("poster_name", "").strip()
+
+        maintainer = None
+        poster_name = ""
+
+        if poster_username:
+            maintainer = Maintainer.objects.filter(
+                user__username__iexact=poster_username,
+                is_shared_account=False,
+            ).first()
+
+        if not maintainer and poster_name_text:
+            # No valid username selected, but text was entered - use text field
+            poster_name = poster_name_text
+
+        update = form.save(commit=False)
+        update.posted_by = maintainer
+        update.posted_by_name = poster_name
+        update.occurred_at = apply_browser_timezone(
+            form.cleaned_data.get("occurred_at"), self.request
+        )
+        update.save()
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("part-request-update-detail", kwargs={"pk": self.object.pk})

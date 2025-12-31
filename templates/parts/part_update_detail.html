@@ -6,6 +6,21 @@
   <a href="{% url 'part-request-detail' part_request.pk %}">#{{ part_request.pk }}</a>
   <span>{% icon "comment" %} Update</span>
 {% endblock %}
+{% block mobile_actions %}
+  <div class="mobile-meta">
+    {# Part Request info #}
+    <div class="mobile-meta__row">
+      <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
+      {% if part_request.machine %}<span class="text-muted text-sm">{{ part_request.machine.name }}</span>{% endif %}
+    </div>
+    {# Update info #}
+    <div class="mobile-meta__row text-muted text-sm">
+      This update posted by {{ update.poster_display }} on {{ update.occurred_at|smart_date }}
+    </div>
+  </div>
+  <a href="{% url 'part-request-update-edit' update.pk %}"
+     class="btn btn--secondary btn--full">{% icon "pen" class="meta" %}</a>
+{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Parts Request" %}
   <a href="{% url 'part-request-detail' part_request.pk %}"
@@ -24,9 +39,18 @@
 {% endsidebar_section %}
 {% if update.new_status %}
   {% sidebar_section label="Status Change" %}
-  <span class="pill pill--neutral">{{ update.get_new_status_display }}</span>
+  <div class="sidebar__subtitle">
+    This update changed the status of the parts request to: <span class="pill pill--neutral">{{ update.get_new_status_display }}</span>
+  </div>
 {% endsidebar_section %}
 {% endif %}
+{% sidebar_section %}
+<a href="{% url 'part-request-update-edit' update.pk %}"
+   class="btn btn--secondary btn--full">
+  {% icon "pen" class="meta" %}
+  Edit Details
+</a>
+{% endsidebar_section %}
 {% endblock %}
 {% block main %}
   <!-- DESCRIPTION CARD -->

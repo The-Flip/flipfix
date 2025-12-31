@@ -4,22 +4,10 @@
  * Handles auto-save for occurred_at and maintainer fields on the log entry detail page.
  * Auto-initializes on DOMContentLoaded by finding elements by ID.
  *
- * Requires: core.js (for getCsrfToken), dropdown_keyboard.js, maintainer_autocomplete.js
+ * Requires: core.js (for getCsrfToken, toDateTimeLocalValue), dropdown_keyboard.js, maintainer_autocomplete.js
  */
 
 (function () {
-  /**
-   * Format Date as datetime-local value (YYYY-MM-DDTHH:MM)
-   */
-  function toDateTimeLocalValue(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
-
   /**
    * Show status indicator with message and state
    */

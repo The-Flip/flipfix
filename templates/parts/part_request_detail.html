@@ -5,6 +5,21 @@
   <a href="{% url 'part-request-list' %}">Parts</a>
   <span>{% icon "box-open" %} #{{ part_request.pk }}</span>
 {% endblock %}
+{% block mobile_actions %}
+  <div class="mobile-meta">
+    {# Part Request info #}
+    <div class="mobile-meta__row">
+      <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
+      {% if part_request.machine %}<span class="text-muted text-sm">{{ part_request.machine.name }}</span>{% endif %}
+    </div>
+    {# Requester and timestamp #}
+    <div class="mobile-meta__row text-muted text-sm">
+      Requested by {{ part_request.requester_display }} on {{ part_request.occurred_at|smart_date }}
+    </div>
+  </div>
+  <a href="{% url 'part-request-edit' part_request.pk %}"
+     class="btn btn--secondary btn--full">{% icon "pen" class="meta" %}</a>
+{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Parts Request" %}
   <div class="sidebar__title">{% icon "box-open" %} #{{ part_request.pk }}</div>
@@ -40,6 +55,13 @@
   {% include "components/machine_sidebar_card.html" with machine=part_request.machine %}
 {% endsidebar_section %}
 {% endif %}
+{% sidebar_section %}
+<a href="{% url 'part-request-edit' part_request.pk %}"
+   class="btn btn--secondary btn--full">
+  {% icon "pen" class="meta" %}
+  Edit Details
+</a>
+{% endsidebar_section %}
 {% endblock %}
 {% block main %}
   <!-- DESCRIPTION CARD -->
