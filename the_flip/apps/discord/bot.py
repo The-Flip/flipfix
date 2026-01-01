@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import discord
 from asgiref.sync import sync_to_async
@@ -56,6 +57,7 @@ class WizardState:
     discord_user: DiscordUserInfo  # The button-clicker (fallback if author not found)
     discord_message_id: int
     author_id_map: dict[str, DiscordUserInfo] = field(default_factory=dict)
+    message_timestamp_map: dict[str, datetime] = field(default_factory=dict)
     message_attachments: dict[str, list[discord.Attachment]] = field(default_factory=dict)
     current_index: int = 0
     results: list[WizardResult] = field(default_factory=list)
@@ -254,6 +256,7 @@ class SuggestionEditorModal(discord.ui.Modal):
                     suggestion=suggestion,
                     author_id=state.get_author_id_for_current(),
                     author_id_map=state.author_id_map,
+                    message_timestamp_map=state.message_timestamp_map,
                     message_attachments=state.message_attachments,
                 )
                 state.record_result(
@@ -303,6 +306,7 @@ class SequentialWizardView(discord.ui.View):
         discord_user: DiscordUserInfo,
         discord_message_id: int,
         author_id_map: dict[str, DiscordUserInfo] | None = None,
+        message_timestamp_map: dict[str, datetime] | None = None,
         message_attachments: dict[str, list[discord.Attachment]] | None = None,
     ):
         super().__init__(timeout=WIZARD_TIMEOUT_SECONDS)
@@ -313,6 +317,7 @@ class SequentialWizardView(discord.ui.View):
             discord_user=discord_user,
             discord_message_id=discord_message_id,
             author_id_map=author_id_map or {},
+            message_timestamp_map=message_timestamp_map or {},
             message_attachments=message_attachments or {},
         )
         self._update_buttons()
@@ -471,6 +476,7 @@ class SequentialWizardView(discord.ui.View):
                     suggestion=suggestion,
                     author_id=self.state.get_author_id_for_current(),
                     author_id_map=self.state.author_id_map,
+                    message_timestamp_map=self.state.message_timestamp_map,
                     message_attachments=self.state.message_attachments,
                 )
                 self.state.record_result(
@@ -657,6 +663,7 @@ class DiscordBot(discord.Client):
                     discord_user=DiscordUserInfo.from_interaction(interaction),
                     discord_message_id=message.id,
                     author_id_map=context.author_id_map,
+                    message_timestamp_map=context.message_timestamp_map,
                     message_attachments=message_attachments,
                 )
                 embed = await view.build_step_embed()
