@@ -6,6 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 
+from the_flip.apps.core.image_processing import resize_image_file
 from the_flip.apps.core.test_utils import (
     MINIMAL_PNG,
     SuppressRequestLogsMixin,
@@ -17,7 +18,6 @@ from the_flip.apps.core.test_utils import (
     create_user,
 )
 from the_flip.apps.maintenance.models import LogEntryMedia
-from the_flip.apps.maintenance.utils import resize_image_file
 
 
 @tag("views")
