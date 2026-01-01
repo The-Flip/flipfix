@@ -7,7 +7,7 @@ from pathlib import Path
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand, CommandError
 
-from the_flip.apps.maintenance.utils import resize_image_file
+from the_flip.apps.core.image_processing import resize_image_file
 
 
 class Command(BaseCommand):
