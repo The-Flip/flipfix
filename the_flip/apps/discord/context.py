@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -76,6 +77,7 @@ class GatheredContext:
     messages: list[ContextMessage]
     target_message_id: str
     author_id_map: dict[str, DiscordUserInfo] = field(default_factory=dict)
+    message_timestamp_map: dict[str, datetime] = field(default_factory=dict)
     truncated: bool = False  # True if messages were truncated due to limits
 
 
@@ -142,8 +144,9 @@ async def _gather_thread_context(message: discord.Message) -> GatheredContext:
     all_raw.extend(thread_messages)
     processed_ids = await _get_processed_message_ids([str(m.id) for m in all_raw])
 
-    # Build author map from all raw messages
+    # Build author and timestamp maps from all raw messages
     author_id_map = _build_author_id_map(all_raw)
+    message_timestamp_map = _build_message_timestamp_map(all_raw)
 
     # Build context messages
     context_messages = _build_thread_context_messages(
@@ -158,6 +161,7 @@ async def _gather_thread_context(message: discord.Message) -> GatheredContext:
         messages=context_messages,
         target_message_id=str(message.id),
         author_id_map=author_id_map,
+        message_timestamp_map=message_timestamp_map,
         truncated=truncated,
     )
 
@@ -367,8 +371,9 @@ async def _gather_reply_chain_context(message: discord.Message) -> GatheredConte
     # Filter out already-processed messages
     processed_ids = await _get_processed_message_ids([str(m.id) for m in all_messages])
 
-    # Build author map from all raw messages
+    # Build author and timestamp maps from all raw messages
     author_id_map = _build_author_id_map(all_messages)
+    message_timestamp_map = _build_message_timestamp_map(all_messages)
 
     # Build context messages
     context_messages: list[ContextMessage] = []
@@ -381,6 +386,7 @@ async def _gather_reply_chain_context(message: discord.Message) -> GatheredConte
         messages=context_messages,
         target_message_id=str(message.id),
         author_id_map=author_id_map,
+        message_timestamp_map=message_timestamp_map,
         truncated=truncated,
     )
 
@@ -490,8 +496,9 @@ async def _gather_simple_context(message: discord.Message) -> GatheredContext:
     # Filter out already-processed messages
     processed_ids = await _get_processed_message_ids([str(m.id) for m in raw_messages])
 
-    # Build author map from all raw messages
+    # Build author and timestamp maps from all raw messages
     author_id_map = _build_author_id_map(raw_messages)
+    message_timestamp_map = _build_message_timestamp_map(raw_messages)
 
     context_messages: list[ContextMessage] = []
     for msg in raw_messages:
@@ -503,6 +510,7 @@ async def _gather_simple_context(message: discord.Message) -> GatheredContext:
         messages=context_messages,
         target_message_id=str(message.id),
         author_id_map=author_id_map,
+        message_timestamp_map=message_timestamp_map,
         truncated=False,
     )
 
@@ -631,6 +639,18 @@ def _build_author_id_map(messages: list[discord.Message]) -> dict[str, DiscordUs
         if author_id not in author_map:
             author_map[author_id] = DiscordUserInfo.from_message(msg)
     return author_map
+
+
+def _build_message_timestamp_map(messages: list[discord.Message]) -> dict[str, datetime]:
+    """Build a mapping of message_id -> timestamp from raw Discord messages.
+
+    This allows looking up when each message was posted, so records created
+    from Discord messages can have their occurred_at set to the message timestamp
+    rather than the current time.
+
+    Discord.py 2.0+ returns timezone-aware UTC datetimes, compatible with Django.
+    """
+    return {str(msg.id): msg.created_at for msg in messages}
 
 
 def _filter_supported_attachments(

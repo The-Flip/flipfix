@@ -1,6 +1,9 @@
 """Tests for Discord record creation."""
 
+from datetime import UTC, datetime
+
 from django.test import TestCase, override_settings, tag
+from django.utils import timezone as django_timezone
 
 from the_flip.apps.core.test_utils import (
     create_machine,
@@ -12,6 +15,7 @@ from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.records import (
     _create_log_entry,
     _create_part_request_update,
+    _resolve_occurred_at,
 )
 from the_flip.apps.maintenance.models import LogEntry
 
@@ -35,6 +39,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=self.maintainer,
             discord_display_name=None,
             parent_record_id=problem_report.pk,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertEqual(log_entry.problem_report, problem_report)
@@ -48,6 +53,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=self.maintainer,
             discord_display_name=None,
             parent_record_id=None,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertIsNone(log_entry.problem_report)
@@ -60,6 +66,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=self.maintainer,
             discord_display_name=None,
             parent_record_id=99999,  # Non-existent ID
+            occurred_at=django_timezone.now(),
         )
 
         # Should not raise, just logs warning and creates without link
@@ -73,6 +80,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=self.maintainer,
             discord_display_name="Discord User",
             parent_record_id=None,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertIn(self.maintainer, log_entry.maintainers.all())
@@ -87,6 +95,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=None,
             discord_display_name="Discord User",
             parent_record_id=None,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertEqual(log_entry.maintainers.count(), 0)
@@ -100,6 +109,7 @@ class LogEntryParentLinkingTests(TestCase):
             maintainer=None,
             discord_display_name=None,
             parent_record_id=None,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertEqual(log_entry.maintainer_names, "Discord")
@@ -125,6 +135,7 @@ class PartRequestUpdateParentLinkingTests(TestCase):
             parent_record_id=part_request.pk,
             description="Parts arrived!",
             maintainer=self.maintainer,
+            occurred_at=django_timezone.now(),
         )
 
         self.assertEqual(update.part_request, part_request)
@@ -137,6 +148,7 @@ class PartRequestUpdateParentLinkingTests(TestCase):
                 parent_record_id=99999,  # Non-existent ID
                 description="Parts arrived!",
                 maintainer=self.maintainer,
+                occurred_at=django_timezone.now(),
             )
 
         self.assertIn("Part request not found", str(ctx.exception))
@@ -160,10 +172,11 @@ class MultiMessageSourceTrackingTests(TestCase):
 
         # Create suggestion with multiple source message IDs
         author_id = "123456789012345678"  # Discord snowflake format
+        source_ids = ["111111111", "222222222", "333333333"]
         suggestion = RecordSuggestion(
             record_type=RecordType.PROBLEM_REPORT,
             description="Flipper broken across multiple messages",
-            source_message_ids=["111111111", "222222222", "333333333"],
+            source_message_ids=source_ids,
             author_id=author_id,
             slug=self.machine.slug,
         )
@@ -174,9 +187,14 @@ class MultiMessageSourceTrackingTests(TestCase):
             display_name="Test User",
         )
         author_id_map = {author_id: discord_user}
+        # Build timestamp map
+        now = django_timezone.now()
+        message_timestamp_map = dict.fromkeys(source_ids, now)
 
         # Call the async function synchronously
-        result = async_to_sync(create_record)(suggestion, author_id, author_id_map)
+        result = async_to_sync(create_record)(
+            suggestion, author_id, author_id_map, message_timestamp_map
+        )
 
         # All three messages should be marked as processed
         self.assertTrue(DiscordMessageMapping.is_processed("111111111"))
@@ -197,10 +215,11 @@ class MultiMessageSourceTrackingTests(TestCase):
         from the_flip.apps.discord.types import DiscordUserInfo
 
         author_id = "234567890123456789"  # Discord snowflake format
+        source_ids = ["999999999"]
         suggestion = RecordSuggestion(
             record_type=RecordType.PROBLEM_REPORT,
             description="Something broken",
-            source_message_ids=["999999999"],
+            source_message_ids=source_ids,
             author_id=author_id,
             slug=self.machine.slug,
         )
@@ -211,8 +230,9 @@ class MultiMessageSourceTrackingTests(TestCase):
             display_name="Another User",
         )
         author_id_map = {author_id: discord_user}
+        message_timestamp_map = {msg_id: django_timezone.now() for msg_id in source_ids}
 
-        async_to_sync(create_record)(suggestion, author_id, author_id_map)
+        async_to_sync(create_record)(suggestion, author_id, author_id_map, message_timestamp_map)
 
         self.assertTrue(DiscordMessageMapping.is_processed("999999999"))
 
@@ -228,10 +248,11 @@ class MultiMessageSourceTrackingTests(TestCase):
         problem_report = create_problem_report(machine=self.machine)
 
         author_id = "345678901234567890"  # Discord snowflake format
+        source_ids = ["444444444"]
         suggestion = RecordSuggestion(
             record_type=RecordType.LOG_ENTRY,
             description="Fixed the issue reported earlier",
-            source_message_ids=["444444444"],
+            source_message_ids=source_ids,
             author_id=author_id,
             slug=self.machine.slug,
             parent_record_id=problem_report.pk,
@@ -243,8 +264,11 @@ class MultiMessageSourceTrackingTests(TestCase):
             display_name="The Fixer",
         )
         author_id_map = {author_id: discord_user}
+        message_timestamp_map = {msg_id: django_timezone.now() for msg_id in source_ids}
 
-        result = async_to_sync(create_record)(suggestion, author_id, author_id_map)
+        result = async_to_sync(create_record)(
+            suggestion, author_id, author_id_map, message_timestamp_map
+        )
 
         # Verify the log entry links to the problem report
         log_entry = LogEntry.objects.get(pk=result.record_id)
@@ -262,10 +286,11 @@ class MultiMessageSourceTrackingTests(TestCase):
         problem_report = create_problem_report(machine=self.machine)
 
         author_id = "345678901234567890"
+        source_ids = ["555555555"]
         suggestion = RecordSuggestion(
             record_type=RecordType.LOG_ENTRY,
             description="Fixed the issue",
-            source_message_ids=["555555555"],
+            source_message_ids=source_ids,
             author_id=author_id,
             slug=None,  # No machine specified - should inherit from parent
             parent_record_id=problem_report.pk,
@@ -277,8 +302,11 @@ class MultiMessageSourceTrackingTests(TestCase):
             display_name="The Fixer",
         )
         author_id_map = {author_id: discord_user}
+        message_timestamp_map = {msg_id: django_timezone.now() for msg_id in source_ids}
 
-        result = async_to_sync(create_record)(suggestion, author_id, author_id_map)
+        result = async_to_sync(create_record)(
+            suggestion, author_id, author_id_map, message_timestamp_map
+        )
 
         # Verify the log entry is on the same machine as the problem report
         log_entry = LogEntry.objects.get(pk=result.record_id)
@@ -303,10 +331,11 @@ class MultiMessageSourceTrackingTests(TestCase):
         )
 
         author_id = "456789012345678901"  # Discord snowflake format
+        source_ids = ["555555555"]
         suggestion = RecordSuggestion(
             record_type=RecordType.PART_REQUEST_UPDATE,
             description="Parts arrived today!",
-            source_message_ids=["555555555"],
+            source_message_ids=source_ids,
             author_id=author_id,
             slug=None,  # Optional for updates
             parent_record_id=part_request.pk,
@@ -319,8 +348,11 @@ class MultiMessageSourceTrackingTests(TestCase):
             display_name="Parts User",
         )
         author_id_map = {author_id: discord_user}
+        message_timestamp_map = {msg_id: django_timezone.now() for msg_id in source_ids}
 
-        result = async_to_sync(create_record)(suggestion, author_id, author_id_map)
+        result = async_to_sync(create_record)(
+            suggestion, author_id, author_id_map, message_timestamp_map
+        )
 
         # Verify the update links to the part request
         from the_flip.apps.parts.models import PartRequestUpdate
@@ -392,3 +424,134 @@ class ResolveAuthorTests(TestCase):
 
         self.assertIsNone(maintainer)
         self.assertEqual(display_name, "Discord")
+
+
+@tag("discord")
+class ResolveOccurredAtTests(TestCase):
+    """Tests for _resolve_occurred_at() function."""
+
+    def test_returns_latest_timestamp_from_multiple_messages(self):
+        """Given multiple timestamps, returns the latest (most recent) one."""
+        earliest = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+        middle = datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC)
+        latest = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
+
+        message_timestamp_map = {
+            "111": earliest,
+            "222": middle,
+            "333": latest,
+        }
+
+        result = _resolve_occurred_at(["111", "222", "333"], message_timestamp_map)
+
+        self.assertEqual(result, latest)
+
+    def test_returns_single_timestamp_when_one_message(self):
+        """Single source message returns its timestamp."""
+        timestamp = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
+        message_timestamp_map = {"123": timestamp}
+
+        result = _resolve_occurred_at(["123"], message_timestamp_map)
+
+        self.assertEqual(result, timestamp)
+
+    def test_falls_back_to_now_when_no_timestamps_found(self):
+        """Falls back to current time if no source messages in map."""
+        message_timestamp_map: dict = {}  # Empty map
+
+        before = django_timezone.now()
+        result = _resolve_occurred_at(["missing_id"], message_timestamp_map)
+        after = django_timezone.now()
+
+        # Result should be between before and after
+        self.assertGreaterEqual(result, before)
+        self.assertLessEqual(result, after)
+
+    def test_ignores_missing_message_ids(self):
+        """Only considers timestamps for message IDs that exist in the map."""
+        early = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+        late = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
+
+        message_timestamp_map = {
+            "111": early,
+            "333": late,
+            # "222" is missing
+        }
+
+        # source_message_ids includes a missing ID
+        result = _resolve_occurred_at(["111", "222", "333"], message_timestamp_map)
+
+        # Should still return latest from available timestamps
+        self.assertEqual(result, late)
+
+
+@tag("discord")
+@override_settings(SITE_URL="https://flipfix.example.com")
+class TimestampPreservationTests(TestCase):
+    """Tests for timestamp preservation in record creation."""
+
+    def setUp(self):
+        self.machine = create_machine()
+        self.user = create_maintainer_user()
+        self.maintainer = self.user.maintainer
+
+    def test_log_entry_uses_timestamp_from_source_message(self):
+        """Log entry created from Discord uses source message timestamp."""
+        # Discord message posted at 2pm
+        discord_timestamp = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
+
+        log_entry = _create_log_entry(
+            machine=self.machine,
+            description="Fixed the flipper",
+            maintainer=self.maintainer,
+            discord_display_name=None,
+            parent_record_id=None,
+            occurred_at=discord_timestamp,
+        )
+
+        self.assertEqual(log_entry.occurred_at, discord_timestamp)
+
+    def test_record_uses_latest_timestamp_from_multiple_sources(self):
+        """Record created from multiple messages uses latest timestamp."""
+        from asgiref.sync import async_to_sync
+
+        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.records import create_record
+        from the_flip.apps.discord.types import DiscordUserInfo
+
+        # Three messages at different times
+        early = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+        middle = datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC)
+        late = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
+
+        author_id = "123456789012345678"
+        source_ids = ["msg1", "msg2", "msg3"]
+        suggestion = RecordSuggestion(
+            record_type=RecordType.PROBLEM_REPORT,
+            description="Flipper problem discussed over time",
+            source_message_ids=source_ids,
+            author_id=author_id,
+            slug=self.machine.slug,
+        )
+
+        discord_user = DiscordUserInfo(
+            user_id=author_id,
+            username="testuser",
+            display_name="Test User",
+        )
+        author_id_map = {author_id: discord_user}
+        message_timestamp_map = {
+            "msg1": early,
+            "msg2": middle,
+            "msg3": late,
+        }
+
+        result = async_to_sync(create_record)(
+            suggestion, author_id, author_id_map, message_timestamp_map
+        )
+
+        # Verify record uses the latest timestamp
+        from the_flip.apps.maintenance.models import ProblemReport
+
+        problem_report = ProblemReport.objects.get(pk=result.record_id)
+        self.assertEqual(problem_report.occurred_at, late)

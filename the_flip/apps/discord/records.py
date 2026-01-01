@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.db import transaction
 from django.urls import reverse
+from django.utils import timezone
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
@@ -81,12 +83,33 @@ def _resolve_author(
         return None, "Discord"
 
 
+def _resolve_occurred_at(
+    source_message_ids: list[str],
+    message_timestamp_map: dict[str, datetime],
+) -> datetime:
+    """Get the latest timestamp from source messages (when content was finalized).
+
+    We use the latest timestamp because records typically represent the final state
+    of a conversation - e.g., a log entry "fixed the flipper" should be timestamped
+    when the fix was done, not when the problem was first reported.
+
+    Falls back to current time if no matching timestamps found.
+    """
+    timestamps = [
+        message_timestamp_map[msg_id]
+        for msg_id in source_message_ids
+        if msg_id in message_timestamp_map
+    ]
+    return max(timestamps) if timestamps else timezone.now()
+
+
 @sync_to_async
 @transaction.atomic
 def create_record(
     suggestion: RecordSuggestion,
     author_id: str,
     author_id_map: dict[str, DiscordUserInfo],
+    message_timestamp_map: dict[str, datetime],
 ) -> RecordCreationResult:
     """Create a Flipfix record from a suggestion (atomic transaction).
 
@@ -95,6 +118,7 @@ def create_record(
         author_id: Author identifier - either a Discord snowflake ID (17-19 digits)
             or a "flipfix/Name" prefixed string for webhook-sourced authors.
         author_id_map: Mapping of Discord user IDs to DiscordUserInfo.
+        message_timestamp_map: Mapping of message IDs to their timestamps.
     """
     # Get the machine (required for log_entry and problem_report, optional for parts)
     machine: MachineInstance | None = None
@@ -105,6 +129,9 @@ def create_record(
 
     # Resolve author_id to maintainer and fallback display name
     maintainer, display_name = _resolve_author(author_id, author_id_map)
+
+    # Resolve occurred_at from source message timestamps
+    occurred_at = _resolve_occurred_at(suggestion.source_message_ids, message_timestamp_map)
 
     base_url = _get_base_url()
     record_obj: LogEntry | ProblemReport | PartRequest | PartRequestUpdate
@@ -125,6 +152,7 @@ def create_record(
             maintainer,
             display_name,
             suggestion.parent_record_id,
+            occurred_at,
         )
         url = base_url + reverse("log-detail", kwargs={"pk": record_obj.pk})
 
@@ -134,7 +162,7 @@ def create_record(
                 f"Machine is required for problem_report (slug={suggestion.slug!r} not found)"
             )
         record_obj = _create_problem_report(
-            machine, suggestion.description, maintainer, display_name
+            machine, suggestion.description, maintainer, display_name, occurred_at
         )
         url = base_url + reverse("problem-report-detail", kwargs={"pk": record_obj.pk})
 
@@ -143,7 +171,7 @@ def create_record(
             raise ValueError(
                 f"Cannot create part request without a linked maintainer (author_id={author_id!r})"
             )
-        record_obj = _create_part_request(machine, suggestion.description, maintainer)
+        record_obj = _create_part_request(machine, suggestion.description, maintainer, occurred_at)
         url = base_url + reverse("part-request-detail", kwargs={"pk": record_obj.pk})
 
     elif suggestion.record_type == RecordType.PART_REQUEST_UPDATE:
@@ -157,7 +185,7 @@ def create_record(
                 "part_request_update requires parent_record_id (none provided in suggestion)"
             )
         record_obj = _create_part_request_update(
-            suggestion.parent_record_id, suggestion.description, maintainer
+            suggestion.parent_record_id, suggestion.description, maintainer, occurred_at
         )
         # URL points to parent part request (update doesn't have its own page)
         url = base_url + reverse("part-request-detail", kwargs={"pk": suggestion.parent_record_id})
@@ -246,8 +274,9 @@ def _create_log_entry(
     machine: MachineInstance,
     description: str,
     maintainer: Maintainer | None,
-    discord_display_name: str | None = None,
-    parent_record_id: int | None = None,
+    discord_display_name: str | None,
+    parent_record_id: int | None,
+    occurred_at: datetime,
 ) -> LogEntry:
     """Create a LogEntry record, optionally linking to a parent problem report."""
     fallback_name = discord_display_name or "Discord"
@@ -267,6 +296,7 @@ def _create_log_entry(
         text=description,
         maintainer_names="" if maintainer else fallback_name,
         problem_report=problem_report,
+        occurred_at=occurred_at,
     )
 
     if maintainer:
@@ -279,7 +309,8 @@ def _create_problem_report(
     machine: MachineInstance,
     description: str,
     maintainer: Maintainer | None,
-    discord_display_name: str | None = None,
+    discord_display_name: str | None,
+    occurred_at: datetime,
 ) -> ProblemReport:
     """Create a ProblemReport record for a machine."""
     fallback_name = discord_display_name or "Discord"
@@ -289,6 +320,7 @@ def _create_problem_report(
         problem_type=ProblemReport.ProblemType.OTHER,
         reported_by_user=maintainer.user if maintainer else None,
         reported_by_name="" if maintainer else fallback_name,
+        occurred_at=occurred_at,
     )
 
 
@@ -296,12 +328,14 @@ def _create_part_request(
     machine: MachineInstance | None,
     description: str,
     maintainer: Maintainer,
+    occurred_at: datetime,
 ) -> PartRequest:
     """Create a PartRequest record (machine is optional)."""
     return PartRequest.objects.create(
         machine=machine,
         text=description,
         requested_by=maintainer,
+        occurred_at=occurred_at,
     )
 
 
@@ -309,6 +343,7 @@ def _create_part_request_update(
     parent_record_id: int,
     description: str,
     maintainer: Maintainer,
+    occurred_at: datetime,
 ) -> PartRequestUpdate:
     """Create a PartRequestUpdate record. Raises ValueError if parent not found."""
     part_request = PartRequest.objects.filter(pk=parent_record_id).first()
@@ -319,6 +354,7 @@ def _create_part_request_update(
         part_request=part_request,
         text=description,
         posted_by=maintainer,
+        occurred_at=occurred_at,
     )
 
 
@@ -335,6 +371,7 @@ async def create_record_with_media(
     suggestion: RecordSuggestion,
     author_id: str,
     author_id_map: dict[str, DiscordUserInfo],
+    message_timestamp_map: dict[str, datetime],
     message_attachments: dict[str, list[discord.Attachment]],
 ) -> RecordWithMediaResult:
     """Create record, then download and attach media.
@@ -346,13 +383,14 @@ async def create_record_with_media(
         suggestion: The record to create.
         author_id: Author identifier for attribution.
         author_id_map: Mapping of Discord user IDs to DiscordUserInfo.
+        message_timestamp_map: Mapping of message IDs to their timestamps.
         message_attachments: Mapping of message IDs to their attachments.
 
     Returns:
         RecordWithMediaResult with creation result and media counts.
     """
     # First, create the record (DB transaction)
-    result = await create_record(suggestion, author_id, author_id_map)
+    result = await create_record(suggestion, author_id, author_id_map, message_timestamp_map)
 
     # Gather attachments from source messages
     all_attachments: list[discord.Attachment] = []
