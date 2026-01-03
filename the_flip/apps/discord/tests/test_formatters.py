@@ -289,8 +289,7 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
         self.assertIn("url", embed)
         self.assertIn("color", embed)
 
-        # Title includes ID and machine name
-        self.assertIn(f"#{part_request.pk}", embed["title"])
+        # Title includes machine name
         self.assertIn(self.machine.name, embed["title"])
 
         # Description includes the text
@@ -315,8 +314,8 @@ class PartRequestWebhookFormatterTests(TemporaryMediaMixin, TestCase):
 
         embed = message["embeds"][0]
 
-        # Title references the part request
-        self.assertIn(f"#{part_request.pk}", embed["title"])
+        # Title includes machine name
+        self.assertIn(self.machine.name, embed["title"])
 
         # Description includes the update text
         self.assertIn("Marco Specialties", embed["description"])

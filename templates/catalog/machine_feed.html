@@ -195,15 +195,6 @@
              class="pill pill--filter {% if active_filter == 'all' %}pill--filter-active{% else %}pill--neutral{% endif %}">
             {% icon "list" %} All Activity
           </a>
-          <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=logs"
-             class="pill pill--filter {% if active_filter == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-            {% icon "screwdriver-wrench" %}
-            {% if config.PARTS_ENABLED %}
-              Logs
-            {% else %}
-              Logs Only
-            {% endif %}
-          </a>
           <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=problems"
              class="pill pill--filter {% if active_filter == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
             {% icon "bug" %}
@@ -211,6 +202,15 @@
               Problems
             {% else %}
               Problems Only
+            {% endif %}
+          </a>
+          <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=logs"
+             class="pill pill--filter {% if active_filter == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            {% icon "screwdriver-wrench" %}
+            {% if config.PARTS_ENABLED %}
+              Logs
+            {% else %}
+              Logs Only
             {% endif %}
           </a>
           {% if config.PARTS_ENABLED %}

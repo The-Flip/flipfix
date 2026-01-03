@@ -134,9 +134,9 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     description += f"\n\n— {report.reporter_display}"
 
     # Build the main embed
-    color = 15158332  # Red color for problems
+    color = 15158332  # Red color for problem reports
     main_embed: dict[str, Any] = {
-        "title": f"⚠️ Problem Report on {report.machine.short_display_name}",
+        "title": f"⚠️ {report.machine.short_display_name}",
         "description": description,
         "url": url,
         "color": color,
@@ -207,9 +207,9 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         description += f"\n\n— {', '.join(maintainer_names)}"
 
     # Build the main embed
-    color = 3447003  # Blue color for work logs
+    color = 3447003  # Blue color for log entries
     main_embed: dict[str, Any] = {
-        "title": f"🗒️ Log on {log_entry.machine.short_display_name}",
+        "title": f"🗒️ {log_entry.machine.short_display_name}",
         "description": description,
         "url": url,
         "color": color,
@@ -246,9 +246,9 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
 
     # Build title with machine name if available
     if part_request.machine:
-        title = f"📦 Parts Request #{part_request.pk} for {part_request.machine.short_display_name}"
+        title = f"📦 Parts Request for {part_request.machine.short_display_name}"
     else:
-        title = f"📦 Parts Request #{part_request.pk}"
+        title = "📦 Parts Request"
 
     # Build the main embed
     color = 3447003  # Blue color (same as logs)
@@ -281,11 +281,6 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     if len(update.text) > 500:
         description += "..."
 
-    # Add status change if applicable
-    if update.new_status:
-        status_display = update.get_new_status_display()
-        description += f"\n\n**Status changed to:** {status_display}"
-
     # Add parts request reference with truncated description (matching log entry pattern)
     pr = update.part_request
     pr_desc = pr.text[:50]
@@ -302,9 +297,9 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
 
     # Build title
     if update.part_request.machine:
-        title = f"💬 Update on Parts Request #{update.part_request.pk} for {update.part_request.machine.short_display_name}"
+        title = f"💬 Update on Parts Request for {update.part_request.machine.short_display_name}"
     else:
-        title = f"💬 Update on Parts Request #{update.part_request.pk}"
+        title = "💬 Update on Parts Request"
 
     # Build the main embed
     color = 3447003  # Blue color (same as logs)
