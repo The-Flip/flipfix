@@ -14,6 +14,7 @@ from the_flip.apps.core.test_utils import (
     create_problem_report,
 )
 from the_flip.apps.discord.formatters import (
+    DISCORD_POST_DESCRIPTION_MAX_CHARS,
     format_discord_message,
     format_test_message,
     get_base_url,
@@ -249,6 +250,86 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
 
         # Description should include the Discord display name
         self.assertIn("Discord Display Name", embed["description"])
+
+    def test_log_entry_no_truncation_when_under_limit(self):
+        """Log entry with ~3000 char description is not truncated."""
+        # Create a log entry with a long but under-limit description
+        long_text = "A" * 3000
+        log_entry = create_log_entry(
+            machine=self.machine,
+            created_by=self.maintainer_user,
+            text=long_text,
+        )
+        message = format_discord_message("log_entry_created", log_entry)
+
+        embed = message["embeds"][0]
+
+        # Full text should appear without truncation ellipsis
+        self.assertIn(long_text, embed["description"])
+        # The description should not end with "..." from truncation
+        # (it may have "— Username" at the end, which is fine)
+        self.assertNotIn("AAA...", embed["description"])
+
+    def test_log_entry_truncates_description_preserving_attribution(self):
+        """Log entry with 5000+ char description truncates but preserves user attribution."""
+        # Create a log entry that exceeds Discord's limit
+        long_text = "B" * 5000
+        log_entry = create_log_entry(
+            machine=self.machine,
+            created_by=self.maintainer_user,
+            text=long_text,
+        )
+        message = format_discord_message("log_entry_created", log_entry)
+
+        embed = message["embeds"][0]
+        description = embed["description"]
+
+        # Total length should be under Discord's limit (with safety margin)
+        self.assertLess(len(description), DISCORD_POST_DESCRIPTION_MAX_CHARS)
+
+        # User attribution should be preserved at the end
+        maintainer = Maintainer.objects.get(user=self.maintainer_user)
+        self.assertTrue(
+            description.endswith(f"— {maintainer.display_name}"),
+            f"Description should end with user attribution, got: ...{description[-50:]}",
+        )
+
+        # The record description should be truncated (has ellipsis)
+        self.assertIn("...", description)
+
+    def test_log_entry_truncates_preserving_linked_record(self):
+        """Log entry with long description AND problem report preserves both suffix parts."""
+        # Create a problem report to link
+        report = create_problem_report(machine=self.machine)
+
+        # Create a log entry with very long text
+        long_text = "C" * 5000
+        log_entry = create_log_entry(
+            machine=self.machine,
+            created_by=self.maintainer_user,
+            text=long_text,
+            problem_report=report,
+        )
+        message = format_discord_message("log_entry_created", log_entry)
+
+        embed = message["embeds"][0]
+        description = embed["description"]
+
+        # Total length should be under Discord's limit
+        self.assertLess(len(description), DISCORD_POST_DESCRIPTION_MAX_CHARS)
+
+        # Linked problem report should be preserved
+        self.assertIn(f"Problem Report #{report.pk}", description)
+
+        # User attribution should be preserved at the end
+        maintainer = Maintainer.objects.get(user=self.maintainer_user)
+        self.assertTrue(
+            description.endswith(f"— {maintainer.display_name}"),
+            f"Description should end with user attribution, got: ...{description[-50:]}",
+        )
+
+        # The record description should be truncated (has ellipsis before the linked record)
+        self.assertIn("...", description)
 
     def test_format_test_message(self):
         """Format a test message has required structure."""

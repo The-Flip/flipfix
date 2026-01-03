@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from the_flip.apps.maintenance.models import LogEntry, ProblemReport
     from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
+# Discord embed limits
+DISCORD_POST_DESCRIPTION_MAX_CHARS = 4096
+
 
 def get_base_url() -> str:
     """Get the base URL for the site."""
@@ -97,6 +100,70 @@ def _build_gallery_embeds(
     return embeds
 
 
+def _build_discord_embed(
+    *,
+    title: str,
+    title_url: str,
+    record_description: str,
+    user_attribution: str,
+    color: int,
+    photos: list,
+    base_url: str,
+    linked_record: str | None = None,
+) -> dict:
+    """Build Discord webhook payload.
+
+    Truncates record_description if needed to fit within Discord's limit,
+    while preserving other fields like user_attribution and linked_record.
+
+    Args:
+        title: Title of the Discord message, e.g. "🗒️ Ballyhoo"
+        title_url: Clicking the title goes here (e.g. /logs/123/)
+        record_description: The record's description field (log text, PR description, etc.)
+        user_attribution: Who created it: "Bob, Alice". This function adds "— " prefix
+        color: Embed accent color (e.g. blue for logs, red for problems)
+        photos: Up to four photos; 4 is the limit that Discord will display.
+            Only photos, no videos; Discord webhooks can only contain photos.
+            List of Media objects with thumbnail_file attr.
+        base_url: Site URL prefix for building absolute photo URLs
+        linked_record: Optional related record with link, in markdown format,
+            e.g. "📎 [PR #5](url): description"
+
+    Returns:
+        Dict ready for Discord webhook payload with "embeds" key.
+    """
+    # Build the suffix that must be preserved (linked_record + user attribution)
+    suffix_parts = []
+    if linked_record:
+        suffix_parts.append(linked_record)
+    suffix_parts.append(f"— {user_attribution}")
+    suffix = "\n\n".join(suffix_parts)
+
+    # Calculate available space for record_description
+    # Safety margin of 5 chars to prevent off-by-one errors
+    # Account for "\n\n" separator between description and suffix
+    separator = "\n\n"
+    available = DISCORD_POST_DESCRIPTION_MAX_CHARS - 5 - len(suffix) - len(separator)
+
+    # Truncate record_description if needed
+    if len(record_description) > available:
+        # Leave room for ellipsis
+        record_description = record_description[: available - 3] + "..."
+
+    # Combine into final description
+    description = record_description + separator + suffix
+
+    # Build the main embed
+    main_embed: dict[str, Any] = {
+        "title": title,
+        "description": description,
+        "url": title_url,
+        "color": color,
+    }
+
+    return {"embeds": _build_gallery_embeds(main_embed, photos, title_url, base_url, color)}
+
+
 def format_discord_message(event_type: str, obj: Any) -> dict:
     """Format a Discord webhook message for the given event and object."""
     if event_type == "problem_report_created":
@@ -123,24 +190,9 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
     if report.problem_type != "other":
         parts.append(report.get_problem_type_display())
     if report.description:
-        desc = report.description[:200]
-        if len(report.description) > 200:
-            desc += "..."
-        parts.append(desc)
+        parts.append(report.description)
 
-    description = ": ".join(parts) if len(parts) > 1 else (parts[0] if parts else "")
-
-    # Add reporter attribution
-    description += f"\n\n— {report.reporter_display}"
-
-    # Build the main embed
-    color = 15158332  # Red color for problem reports
-    main_embed: dict[str, Any] = {
-        "title": f"⚠️ {report.machine.short_display_name}",
-        "description": description,
-        "url": url,
-        "color": color,
-    }
+    record_description = ": ".join(parts) if len(parts) > 1 else (parts[0] if parts else "")
 
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
@@ -149,7 +201,15 @@ def _format_problem_report_created(report: ProblemReport) -> dict:
         .order_by("display_order", "created_at")[:4]
     )
 
-    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
+    return _build_discord_embed(
+        title=f"⚠️ {report.machine.short_display_name}",
+        title_url=url,
+        record_description=record_description,
+        user_attribution=report.reporter_display,
+        color=15158332,  # Red color for problem reports
+        photos=photos,
+        base_url=base_url,
+    )
 
 
 def _format_log_entry_created(log_entry: LogEntry) -> dict:
@@ -159,12 +219,8 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
     base_url = get_base_url()
     url = base_url + reverse("log-detail", kwargs={"pk": log_entry.pk})
 
-    # Main description is the log entry text (truncate if needed)
-    description = log_entry.text[:500]
-    if len(log_entry.text) > 500:
-        description += "..."
-
-    # If attached to a problem report, add a link
+    # Build linked_record if attached to a problem report
+    linked_record = None
     if log_entry.problem_report:
         pr = log_entry.problem_report
         pr_url = base_url + reverse("problem-report-detail", kwargs={"pk": pr.pk})
@@ -180,9 +236,9 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         pr_text = ": ".join(pr_text_parts) if pr_text_parts else ""
         # Format: 📎 Problem Report #N: [text] (hyperlink the #N)
         if pr_text:
-            description += f"\n\n📎 [Problem Report #{pr.pk}]({pr_url}): {pr_text}"
+            linked_record = f"📎 [Problem Report #{pr.pk}]({pr_url}): {pr_text}"
         else:
-            description += f"\n\n📎 [Problem Report #{pr.pk}]({pr_url})"
+            linked_record = f"📎 [Problem Report #{pr.pk}]({pr_url})"
 
     # Get maintainer names (from explicit maintainers or fall back to created_by)
     maintainer_names = []
@@ -202,18 +258,7 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
                 log_entry.created_by.get_full_name() or log_entry.created_by.username
             )
 
-    # Add maintainer names with a visual prefix
-    if maintainer_names:
-        description += f"\n\n— {', '.join(maintainer_names)}"
-
-    # Build the main embed
-    color = 3447003  # Blue color for log entries
-    main_embed: dict[str, Any] = {
-        "title": f"🗒️ {log_entry.machine.short_display_name}",
-        "description": description,
-        "url": url,
-        "color": color,
-    }
+    user_attribution = ", ".join(maintainer_names) if maintainer_names else "Unknown"
 
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
@@ -222,7 +267,16 @@ def _format_log_entry_created(log_entry: LogEntry) -> dict:
         .order_by("display_order", "created_at")[:4]
     )
 
-    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
+    return _build_discord_embed(
+        title=f"🗒️ {log_entry.machine.short_display_name}",
+        title_url=url,
+        record_description=log_entry.text,
+        user_attribution=user_attribution,
+        color=3447003,  # Blue color for log entries
+        photos=photos,
+        base_url=base_url,
+        linked_record=linked_record,
+    )
 
 
 def _format_part_request_created(part_request: PartRequest) -> dict:
@@ -232,32 +286,17 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
     base_url = get_base_url()
     url = base_url + reverse("part-request-detail", kwargs={"pk": part_request.pk})
 
-    # Main description is the part request text (truncate if needed)
-    description = part_request.text[:500]
-    if len(part_request.text) > 500:
-        description += "..."
-
-    # Add requester (use Discord name if available, or fall back to display property)
+    # Get user attribution (use Discord name if available, or fall back to display property)
     if part_request.requested_by:
-        requester = _get_maintainer_display_name(part_request.requested_by)
+        user_attribution = _get_maintainer_display_name(part_request.requested_by)
     else:
-        requester = part_request.requester_display or "Unknown"
-    description += f"\n\n— {requester}"
+        user_attribution = part_request.requester_display or "Unknown"
 
     # Build title with machine name if available
     if part_request.machine:
         title = f"📦 Parts Request for {part_request.machine.short_display_name}"
     else:
         title = "📦 Parts Request"
-
-    # Build the main embed
-    color = 3447003  # Blue color (same as logs)
-    main_embed: dict[str, Any] = {
-        "title": title,
-        "description": description,
-        "url": url,
-        "color": color,
-    }
 
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
@@ -266,7 +305,15 @@ def _format_part_request_created(part_request: PartRequest) -> dict:
         .order_by("display_order", "created_at")[:4]
     )
 
-    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
+    return _build_discord_embed(
+        title=title,
+        title_url=url,
+        record_description=part_request.text,
+        user_attribution=user_attribution,
+        color=3447003,  # Blue color (same as logs)
+        photos=photos,
+        base_url=base_url,
+    )
 
 
 def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
@@ -276,39 +323,24 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
     base_url = get_base_url()
     url = base_url + reverse("part-request-detail", kwargs={"pk": update.part_request.pk})
 
-    # Main description is the update text (truncate if needed)
-    description = update.text[:500]
-    if len(update.text) > 500:
-        description += "..."
-
-    # Add parts request reference with truncated description (matching log entry pattern)
+    # Build linked_record for the parent parts request
     pr = update.part_request
     pr_desc = pr.text[:50]
     if len(pr.text) > 50:
         pr_desc += "..."
-    description += f"\n\n📎 [Parts Request #{pr.pk}]({url}): {pr_desc}"
+    linked_record = f"📎 [Parts Request #{pr.pk}]({url}): {pr_desc}"
 
-    # Add who posted (use Discord name if available, or fall back to display property)
+    # Get user attribution (use Discord name if available, or fall back to display property)
     if update.posted_by:
-        poster = _get_maintainer_display_name(update.posted_by)
+        user_attribution = _get_maintainer_display_name(update.posted_by)
     else:
-        poster = update.poster_display or "Unknown"
-    description += f"\n\n— {poster}"
+        user_attribution = update.poster_display or "Unknown"
 
     # Build title
     if update.part_request.machine:
         title = f"💬 Update on Parts Request for {update.part_request.machine.short_display_name}"
     else:
         title = "💬 Update on Parts Request"
-
-    # Build the main embed
-    color = 3447003  # Blue color (same as logs)
-    main_embed: dict[str, Any] = {
-        "title": title,
-        "description": description,
-        "url": url,
-        "color": color,
-    }
 
     # Get photos with thumbnails (up to 4 for Discord gallery)
     photos = list(
@@ -317,7 +349,16 @@ def _format_part_request_update_created(update: PartRequestUpdate) -> dict:
         .order_by("display_order", "created_at")[:4]
     )
 
-    return {"embeds": _build_gallery_embeds(main_embed, photos, url, base_url, color)}
+    return _build_discord_embed(
+        title=title,
+        title_url=url,
+        record_description=update.text,
+        user_attribution=user_attribution,
+        color=3447003,  # Blue color (same as logs)
+        photos=photos,
+        base_url=base_url,
+        linked_record=linked_record,
+    )
 
 
 def format_test_message(event_type: str) -> dict:
