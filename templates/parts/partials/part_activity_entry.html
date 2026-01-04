@@ -1,6 +1,0 @@
-{% load core_extras %}
-{% if entry.entry_type == "part_request" %}
-  {% include "parts/partials/part_request_activity_entry.html" with entry=entry %}
-{% elif entry.entry_type == "part_request_update" %}
-  {% include "parts/partials/part_update_activity_entry.html" with entry=entry %}
-{% endif %}

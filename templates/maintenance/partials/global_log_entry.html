@@ -15,6 +15,7 @@
   {% if entry.problem_report %}
     <a href="{% url 'problem-report-detail' entry.problem_report.pk %}"
        class="timeline__snippet-link">
+      ↳ {% pill label=entry.problem_report.get_status_display variant=entry.problem_report.status %}
       <span class="snippet-label text-problem">{% icon "bug" class="space-right-xs" %}Problem:</span>
       <span class="snippet-text">{{ entry.problem_report|problem_report_summary }}</span>
     </a>
