@@ -17,6 +17,13 @@
 {% endblock %}
 {% block sidebar_actions %}
   <div class="flex stack-tight stack-column">
+    {% if config.PARTS_ENABLED %}
+      <a href="{% url 'part-request-create' %}"
+         class="btn btn--secondary btn--full">
+        {% icon "box-open" class="meta" %}
+        Request Parts
+      </a>
+    {% endif %}
     <a href="{% url 'problem-report-create' %}"
        class="btn btn--report btn--full">
       {% icon "bug" class="meta" %}
