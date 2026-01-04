@@ -267,6 +267,27 @@ class PartRequestUpdateQuerySet(models.QuerySet):
 
         return self.filter(self._build_text_and_poster_q(query)).distinct()
 
+    def search(self, query: str = ""):
+        """
+        Global search: text, poster name, part request fields, and machine name.
+
+        Used in global activity feed where machine context is not implied.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+
+        machine_q = models.Q(part_request__machine__name__icontains=query) | models.Q(
+            part_request__machine__short_name__icontains=query
+        )
+
+        return self.filter(
+            self._build_text_and_poster_q(query) | self._build_part_request_q(query) | machine_q
+        ).distinct()
+
 
 class PartRequestUpdate(TimeStampedMixin):
     """An update or comment on a part request."""

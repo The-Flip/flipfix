@@ -30,7 +30,10 @@ from the_flip.apps.catalog.views import (
 )
 from the_flip.apps.catalog.views_inline import MachineInlineUpdateView
 from the_flip.apps.core.admin_views import admin_debug_view
-from the_flip.apps.core.views import HomeView, TranscodeStatusView, healthz
+from the_flip.apps.core.views.feed import GlobalActivityFeedPartialView
+from the_flip.apps.core.views.health import healthz
+from the_flip.apps.core.views.home import HomeView
+from the_flip.apps.core.views.transcode import TranscodeStatusView
 from the_flip.apps.maintenance.views.autocomplete import (
     MachineAutocompleteView,
     MaintainerAutocompleteView,
@@ -66,6 +69,11 @@ urlpatterns = [
     # Home and health check
     #
     path("", HomeView.as_view(), name="home"),  # Landing page
+    path(
+        "activity/entries/",
+        GlobalActivityFeedPartialView.as_view(),
+        name="global-activity-feed-entries",
+    ),  # AJAX: infinite scroll for global activity feed
     path("healthz", healthz, name="healthz"),  # Health check for Railway
     #
     # Django admin

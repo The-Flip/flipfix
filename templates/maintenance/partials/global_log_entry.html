@@ -3,7 +3,7 @@
 <div class="card card--log timeline__card">
   <a href="{% url 'log-detail' entry.pk %}" class="timeline__card-link">
     <div class="timeline__header">
-      <span class="timeline__title timeline__title--log">{{ entry.machine.name }}</span>
+      <span class="timeline__title timeline__title--log">{{ entry.machine.short_display_name }}</span>
       <span class="timeline__meta">{{ entry|log_entry_meta }}</span>
     </div>
   </a>

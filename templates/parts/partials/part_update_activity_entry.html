@@ -5,7 +5,17 @@
      class="timeline__card-link">
     <div class="timeline__header">
       <div class="flex items-center stack-tight flex-wrap">
-        <span class="timeline__title timeline__title--log">Update to Parts Request #{{ entry.part_request.pk }}</span>
+        <span class="timeline__title timeline__title--log">
+          {% if is_global_feed %}
+            {% if entry.part_request.machine %}
+              {{ entry.part_request.machine.short_display_name }}
+            {% else %}
+              Parts Update
+            {% endif %}
+          {% else %}
+            Update to Parts Request #{{ entry.part_request.pk }}
+          {% endif %}
+        </span>
         {% if entry.new_status %}<span class="pill pill--neutral">{{ entry.get_new_status_display }}</span>{% endif %}
       </div>
       <span class="timeline__meta">{{ entry.poster_display }} · {{ entry.occurred_at|smart_date }}</span>

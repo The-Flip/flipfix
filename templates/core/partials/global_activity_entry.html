@@ -1,0 +1,10 @@
+{% load core_extras %}
+{% if entry.entry_type == "log" %}
+  {% include "maintenance/partials/global_log_entry.html" with entry=entry %}
+{% elif entry.entry_type == "problem_report" %}
+  {% include "maintenance/partials/global_problem_report_entry.html" with entry=entry %}
+{% elif entry.entry_type == "part_request" %}
+  {% include "parts/partials/part_list_entry.html" with entry=entry is_global_feed=True %}
+{% elif entry.entry_type == "part_request_update" %}
+  {% include "parts/partials/part_update_activity_entry.html" with entry=entry is_global_feed=True %}
+{% endif %}

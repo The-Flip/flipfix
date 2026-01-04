@@ -1,0 +1,55 @@
+{% extends "maintenance/global_list_base.html" %}
+{% load static core_extras %}
+{% block list_title %}Activity{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'problem-report-create' %}" class="btn btn--report">
+    {% icon "bug" class="meta" %}
+    Report
+  </a>
+  <a href="{% url 'log-create-global' %}" class="btn btn--log">
+    {% icon "screwdriver-wrench" class="meta" %}
+    Log
+  </a>
+{% endblock %}
+{% block sidebar_stats %}
+  <div class="sidebar__label">Activity</div>
+  {% stat_grid stats=stats %}
+{% endblock %}
+{% block sidebar_actions %}
+  <div class="flex stack-tight stack-column">
+    <a href="{% url 'problem-report-create' %}"
+       class="btn btn--report btn--full">
+      {% icon "bug" class="meta" %}
+      Report Problem
+    </a>
+    <a href="{% url 'log-create-global' %}" class="btn btn--log btn--full">
+      {% icon "screwdriver-wrench" class="meta" %}
+      Log Work
+    </a>
+  </div>
+{% endblock %}
+{% block infinite_scroll_url %}
+  {% url 'global-activity-feed-entries' %}
+{% endblock %}
+{% block list_content %}
+  {% if entries %}
+    <div class="timeline">
+      <div class="timeline__line"></div>
+      <div id="log-list">
+        {% for entry in entries %}
+          {% include "core/partials/global_activity_entry.html" with entry=entry %}
+        {% endfor %}
+      </div>
+    </div>
+    <div id="log-pagination"
+         data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
+  {% else %}
+    <p class="text-muted">
+      {% if search_form.q.value %}
+        No activity matches your search.
+      {% else %}
+        No activity yet.
+      {% endif %}
+    </p>
+  {% endif %}
+{% endblock %}
