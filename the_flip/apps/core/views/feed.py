@@ -3,15 +3,14 @@
 from constance import config
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
 from the_flip.apps.core.feed import PageCursor, get_global_feed_page
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
 from the_flip.apps.maintenance.forms import SearchForm
-from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
+from the_flip.apps.maintenance.models import ProblemReport
+from the_flip.apps.parts.models import PartRequest
 
 
 class GlobalActivityFeedView(CanAccessMaintainerPortalMixin, TemplateView):
@@ -29,8 +28,7 @@ class GlobalActivityFeedView(CanAccessMaintainerPortalMixin, TemplateView):
             search_query=search_query or None,
         )
 
-        # Stats for sidebar - actionable items and activity
-        today = timezone.now().date()
+        # Stats for sidebar - actionable items
         stats = [
             {
                 "value": ProblemReport.objects.filter(status=ProblemReport.Status.OPEN).count(),
@@ -43,20 +41,9 @@ class GlobalActivityFeedView(CanAccessMaintainerPortalMixin, TemplateView):
                     "value": PartRequest.objects.filter(
                         status=PartRequest.Status.REQUESTED
                     ).count(),
-                    "label": "Parts Needed",
+                    "label": "Parts Req'd",
                 }
             )
-        # Count all entry types for today
-        today_count = (
-            LogEntry.objects.filter(occurred_at__date=today).count()
-            + ProblemReport.objects.filter(occurred_at__date=today).count()
-        )
-        if config.PARTS_ENABLED:
-            today_count += (
-                PartRequest.objects.filter(occurred_at__date=today).count()
-                + PartRequestUpdate.objects.filter(occurred_at__date=today).count()
-            )
-        stats.append({"value": today_count, "label": "Entries Today"})
 
         context.update(
             {
