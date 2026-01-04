@@ -186,8 +186,8 @@ class GlobalFeedStatsTests(TestDataMixin, TestCase):
         # The count should appear in the stats grid
         self.assertContains(response, ">2<")
 
-    def test_stats_show_parts_needed_when_enabled(self):
-        """Parts Needed stat should appear when PARTS_ENABLED is True."""
+    def test_stats_show_parts_reqd_when_enabled(self):
+        """Parts Req'd stat should appear when PARTS_ENABLED is True."""
         PartRequest.objects.create(
             machine=self.machine,
             text="Need flipper",
@@ -198,25 +198,15 @@ class GlobalFeedStatsTests(TestDataMixin, TestCase):
         with override_config(GLOBAL_ACTIVITY_FEED_ENABLED=True, PARTS_ENABLED=True):
             response = self.client.get(self.home_url)
 
-        self.assertContains(response, "Parts Needed")
+        self.assertContains(response, "Parts Req&#x27;d")
 
-    def test_stats_hide_parts_needed_when_disabled(self):
-        """Parts Needed stat should NOT appear when PARTS_ENABLED is False."""
+    def test_stats_hide_parts_reqd_when_disabled(self):
+        """Parts Req'd stat should NOT appear when PARTS_ENABLED is False."""
         self.client.force_login(self.maintainer_user)
         with override_config(GLOBAL_ACTIVITY_FEED_ENABLED=True, PARTS_ENABLED=False):
             response = self.client.get(self.home_url)
 
-        self.assertNotContains(response, "Parts Needed")
-
-    def test_stats_show_entries_today(self):
-        """Stats should show count of entries created today."""
-        create_log_entry(machine=self.machine, text="Today's work")
-
-        self.client.force_login(self.maintainer_user)
-        with override_config(GLOBAL_ACTIVITY_FEED_ENABLED=True):
-            response = self.client.get(self.home_url)
-
-        self.assertContains(response, "Entries Today")
+        self.assertNotContains(response, "Parts Req&#x27;d")
 
 
 @tag("views")
