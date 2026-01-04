@@ -18,7 +18,7 @@
   {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=entry_url model_name="PartRequestUpdateMedia" %}
   <a href="{% url 'part-request-detail' entry.part_request.pk %}"
      class="timeline__snippet-link">
-    ↳ {% pill label=entry.part_request.get_status_display variant="neutral" %}
+    <span aria-hidden="true">↳</span> {% pill label=entry.part_request.get_status_display variant="neutral" %}
     <span class="snippet-label text-log">{% icon "box-open" %}Part Request:</span>
     <span class="snippet-text">{{ entry.part_request.text|truncatewords:15 }}</span>
   </a>
