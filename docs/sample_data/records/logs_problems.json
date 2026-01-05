@@ -1,0 +1,618 @@
+{
+  "problem_reports": [
+    {
+      "machine": "The Addams Family",
+      "description": "There's a problem in the swamp. I'll need to study how it works, but it recognizes that the ball goes in, but then needs to be slammed before it kicks out",
+      "status": "open",
+      "reported_by": "william",
+      "occurred_at": "2024-01-06T00:00:00"
+    },
+    {
+      "machine": "Hokus Pokus",
+      "description": "- On a 1-player game, it gives you 10 balls. And it won't start a two-player game unless you hold down the relay for longer than it would normally close. - The issue seems to be related to the second switch from the top on a relay with name something like \"2nd player select\", but that name doesn't appear on the circuit diagram. I tried cleaning it, without luck, and I also adjusted it to be tighter. But it'll work if I hold it closed while it's cycling.  - I suspect something weird in the backbox, where the second-player state is represented. But I need a second person to fix it.",
+      "status": "closed",
+      "reported_by": "william",
+      "occurred_at": "2024-12-07T00:00:00"
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "description": "Playing volume level erratic. When not playing, low crackles from speaker",
+      "status": "open",
+      "reported_by": "william",
+      "occurred_at": "2025-06-19T16:29:00"
+    },
+    {
+      "machine": "Hokus Pokus",
+      "description": "Left flipper flaky",
+      "status": "closed",
+      "reported_by": "elijah",
+      "occurred_at": "2025-07-19T10:44:00"
+    },
+    {
+      "machine": "Star Trek",
+      "description": "Solenoids not firing, fuse blown",
+      "status": "open",
+      "reported_by": "ken",
+      "occurred_at": "2025-08-02T10:58:00"
+    },
+    {
+      "machine": "Star Trek",
+      "description": "Knocker, probably SPECIAL spontaneously firing",
+      "status": "open",
+      "reported_by": "ken",
+      "occurred_at": "2025-08-02T12:19:00"
+    },
+    {
+      "machine": "Roto Pool",
+      "description": "Refuses to start again",
+      "status": "open",
+      "reported_by": "william",
+      "occurred_at": "2025-09-03T21:23:00"
+    },
+    {
+      "machine": "The Addams Family",
+      "description": "Bars on display, weird audio",
+      "status": "open",
+      "reported_by": "william",
+      "occurred_at": "2025-09-03T21:29:00"
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "description": "#1 drop target spring missing",
+      "status": "open",
+      "reported_by": "floor1",
+      "occurred_at": "2025-09-17T19:26:00"
+    },
+    {
+      "machine": "Hyperball",
+      "description": "Ball lift stopped working again.",
+      "status": "open",
+      "reported_by": "floor1",
+      "occurred_at": "2025-09-17T22:05:00"
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "description": "Some of the city building targets aren't registering hits",
+      "status": "closed",
+      "reported_by": "floor1",
+      "occurred_at": "2025-09-15T14:22:00",
+      "log_entries": [
+        {
+          "text": "Checked switches under city buildings. Tokyo switch has weak spring, barely makes contact on hits. Ordered replacement from https://www.marcospecialties.com/pinball-parts/515-5243-00",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-09-15T18:30:00"
+        },
+        {
+          "text": "Installed new switch. All three city targets now register consistently. Tested with 50+ hits each.",
+          "maintainers": ["ken", "brian"],
+          "occurred_at": "2025-09-20T11:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "description": "Ball gets grabbed but won't release about 30% of the time. Have to nudge machine.",
+      "status": "open",
+      "reported_by": "william",
+      "occurred_at": "2025-10-28T16:45:00",
+      "media": ["sing along.jpg", "road show.jpg", "gottlieb native american.jpg", "bagatelle.jpg"],
+      "log_entries": [
+        {
+          "text": "Tested the magna-grab coil. Release coil measures 4.2 ohms, within spec per https://sternpinball.com/support/. Mechanically it moves freely when powered off.",
+          "maintainers": ["junkybrassmonkey"],
+          "occurred_at": "2025-10-29T10:15:00"
+        },
+        {
+          "text": "Scoped the release signal from the CPU board. Pulse duration looks short - only 18ms. According to the manual section 7.3, it should be 25ms minimum. Checking if there's a software setting or if this is a board issue.",
+          "maintainers": ["junkybrassmonkey", "ken"],
+          "occurred_at": "2025-10-30T14:00:00"
+        },
+        {
+          "text": "Found a thread discussing this exact issue: https://pinside.com/pinball/forum/topic/godzilla-magna-grab-problems. Consensus is it's a code timing issue fixed in v1.02. Checking our ROM version.",
+          "maintainers": ["william"],
+          "occurred_at": "2025-11-01T09:30:00"
+        },
+        {
+          "text": "We're on v0.98. Downloaded v1.02 from Stern support portal. Will update next workshop session.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-11-01T15:45:00"
+        }
+      ]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "description": "Right flipper feels weak compared to left",
+      "status": "closed",
+      "reported_by": "diana",
+      "occurred_at": "2025-08-22T13:10:00",
+      "media": ["majorettes.jpg"],
+      "log_entries": [
+        {
+          "text": "Weak flipper investigation:\n\n1. Checked EOS switch gap - was 1/32\", adjusted to 1/16\" per spec\n2. Measured coil resistance: 3.1 ohms (left was 3.0 ohms) - within tolerance\n3. Checked flipper link and pawl - no visible wear\n4. Power tested both flippers - right was definitely sluggish\n\nFound the issue: the right flipper coil sleeve was slightly melted/deformed at the plunger contact point, causing friction. Ordered replacement sleeve.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-08-22T17:00:00"
+        },
+        {
+          "text": "Replaced coil sleeve. Flippers now feel identical. Also cleaned and waxed the playfield around flipper area while we had access.",
+          "maintainers": ["ken", "junkybrassmonkey"],
+          "occurred_at": "2025-08-28T11:30:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "description": "Locked balls in borg ship but multiball never started",
+      "status": "closed",
+      "reported_by": "floor1",
+      "occurred_at": "2025-06-10T19:45:00",
+      "log_entries": [
+        {
+          "text": "Ran switch test. Borg lock switches 1 and 2 register fine, but switch 3 (the trigger for multiball) shows intermittent.\n\nPer the diagnostic mode, the switch matrix shows:\n- Row 5, Col 3: erratic\n- All other switches in row 5: good\n- All other switches in col 3: good\n\nThis points to the switch itself rather than a matrix problem.",
+          "maintainers": ["william"],
+          "occurred_at": "2025-06-11T10:00:00"
+        },
+        {
+          "text": "Disassembled the borg ship mechanism. Found the leaf switch for position 3 had a hairline crack in the blade. Probably metal fatigue from years of use. This is a common failure point - see https://pinside.com/pinball/forum/topic/sttng-borg-switch-replacement\n\nSwitch part number is 5647-12693-00. Ordered from PBR.",
+          "maintainers": ["william", "ken"],
+          "occurred_at": "2025-06-12T14:30:00"
+        },
+        {
+          "text": "Part arrived. Installed new switch. Tested multiball 10 times - works perfectly every time now.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-06-18T11:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "description": "Left cannon sometimes dribbles the ball out instead of firing it properly. Right cannon works fine.",
+      "status": "open",
+      "reported_by": "ken",
+      "occurred_at": "2025-11-20T15:30:00",
+      "media": ["led zeppelin.jpg", "bagatelle.jpg"],
+      "log_entries": [
+        {
+          "text": "Initial inspection. Cannon coil looks OK visually. Measured resistance at 5.8 ohms which is in spec. The mech moves freely by hand.\n\nSuspect either:\n1. Weak capacitor on the driver board\n2. Worn cannon sleeve\n3. Dirty/corroded coil contacts\n\nWill need to pull the playfield to investigate further.",
+          "maintainers": ["junkybrassmonkey"],
+          "occurred_at": "2025-11-21T10:00:00"
+        },
+        {
+          "text": "Pulled playfield. Found significant carbon buildup on the cannon coil contacts. Cleaned with contact cleaner and fine sandpaper. Also noticed the ball guide was slightly bent - straightened it.\n\nTest fired 20 times - seems better but still occasional weak shots. May need new coil sleeve. Adding to parts request.",
+          "maintainers": ["ken", "william"],
+          "occurred_at": "2025-11-23T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "description": "Display shows garbage characters on player 4 score",
+      "status": "closed",
+      "reported_by": "brian",
+      "occurred_at": "2025-05-18T12:00:00",
+      "log_entries": [
+        {
+          "text": "Classic DMD connector issue. Reseated the ribbon cable between the controller and display - no change. Swapped to a known good cable from spare parts - fixed!\n\nThe old cable had a small tear near the connector. These ribbon cables are fragile. Ordered backup: https://www.planetarypinball.com/mm5/merchant.mvc?Screen=PROD&Product_Code=CABLE-14-PIN-RIBBON",
+          "maintainers": ["william"],
+          "occurred_at": "2025-05-18T16:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "description": "The dinosaur mouth is stuck open and won't close",
+      "status": "closed",
+      "reported_by": "floor1",
+      "occurred_at": "2025-07-22T20:15:00",
+      "media": ["transformers.jpg", "captain fantastic.jpg", "small screenshot.png"],
+      "log_entries": [
+        {
+          "text": "The T-Rex animatronic jaw uses a motor-driven mechanism, not a solenoid. Per the Stern manual (section 4.12), the jaw motor is controlled by the node board at position J3.\n\nDiagnostic test: Motor responds to test command but moves very slowly and makes grinding noise. Suspect either:\n1. Motor failing\n2. Gear strip in the mechanism\n3. Obstruction",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-07-23T09:30:00"
+        },
+        {
+          "text": "Removed the T-Rex head assembly (8 screws, 2 connectors). Found the problem - one of the small gears in the jaw linkage had a stripped tooth. This is a known weak point.\n\nStern sells the gear assembly as part number 502-7848-00 but it's backordered. Found a compatible 3D printed replacement on Pinside mods marketplace: https://pinside.com/pinball/market/classifieds/ad/119847\n\nOrdering the 3D printed version for now, will get OEM when available.",
+          "maintainers": ["ken", "junkybrassmonkey"],
+          "occurred_at": "2025-07-24T14:00:00"
+        },
+        {
+          "text": "3D printed gear arrived. Installed and tested - jaw now operates smoothly. The printed part is actually beefier than OEM so may last longer. Reassembled head unit.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-07-30T11:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "description": "Game keeps doing ball search even when ball is clearly visible on playfield",
+      "status": "open",
+      "reported_by": "elijah",
+      "occurred_at": "2025-11-05T18:30:00",
+      "log_entries": [
+        {
+          "text": "This is typically caused by the game losing track of the ball. Ran switch test - all playfield switches show normal. Checked the trough switches - all registering.\n\nThe ball search logic on Spike 2 games requires the ball to trip at least one switch every X seconds. If a ball gets stuck in a dead zone or a switch isn't registering fast-moving balls, it triggers search.\n\nNeed to observe during gameplay to identify which area is causing the issue.",
+          "maintainers": ["william"],
+          "occurred_at": "2025-11-06T10:30:00"
+        },
+        {
+          "text": "Watched several games. Ball search triggers most often when ball is in the raptor pen area - specifically rolling across the metal guide rail between shots.\n\nThat area has one switch (the raptor target) that may not be sensitive enough for balls just rolling through. This seems like a game design issue more than a fault.\n\nFound discussion here: https://pinside.com/pinball/forum/topic/jp-stern-ball-search-issue-raptor-pen\n\nSuggested fix is to add a thin rubber sleeve to the guide rail to slow the ball slightly, giving more time to register. Will try this.",
+          "maintainers": ["junkybrassmonkey"],
+          "occurred_at": "2025-11-08T15:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "description": "Helicopter blades not spinning during helicopter rescue mode",
+      "status": "closed",
+      "reported_by": "william",
+      "occurred_at": "2025-08-05T14:00:00",
+      "log_entries": [
+        {
+          "text": "Motor completely dead. No response in test menu. Checked voltage at motor connector - 12V present, so driver board is working. Motor itself has failed.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-08-05T17:00:00"
+        },
+        {
+          "text": "Contacted Stern support. Helicopter motor is part number 041-5077-00. Ordered direct from Stern - $45 + shipping. ETA 5-7 days.",
+          "maintainers": ["william"],
+          "occurred_at": "2025-08-06T09:00:00"
+        },
+        {
+          "text": "New motor arrived. Swapped it in - straightforward replacement, just 2 screws and a connector. Helicopter spins again! Mode tested working.",
+          "maintainers": ["ken", "william"],
+          "occurred_at": "2025-08-14T11:30:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "description": "Gate not holding ball for skill shot",
+      "status": "closed",
+      "reported_by": "ken",
+      "occurred_at": "2025-09-12T16:00:00",
+      "log_entries": [
+        {
+          "text": "Gate solenoid measures 4.3 ohms - good. But the gate mechanism has excessive play - ball can push past it. The pivot post is worn.",
+          "maintainers": ["ken"],
+          "occurred_at": "2025-09-12T16:30:00"
+        },
+        {
+          "text": "Replaced pivot post and gate assembly. Used parts from a Stern Mandalorian as they're identical - had spares. Ball now holds properly for skill shot selection.",
+          "maintainers": ["ken", "brian"],
+          "occurred_at": "2025-09-14T10:00:00"
+        }
+      ]
+    }
+  ],
+  "log_entries": [
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Fixed ooto 1 switch (loose wire) and replaced fuse, restoring Supercharger feature to function",
+      "maintainers": ["ken", "junkybrassmonkey"],
+      "occurred_at": "2025-10-04T18:09:00"
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Replaced bulbs across the machine, found 3 with no voltage",
+      "maintainers": ["ken", "junkybrassmonkey"],
+      "occurred_at": "2025-09-20T13:16:00"
+    },
+    {
+      "machine": "Roto Pool",
+      "text": "Wouldn't start. Manually started score motor a few times and manually tripped the start via the S relay. Now it's working, but I didn't fix anything.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-09-03T18:29:00"
+    },
+    {
+      "machine": "Star Trip",
+      "text": "Machine wouldn't boot properly and left flipper was locked up even without power. Turned out to be melted coil sleeve. Replacement coil ordered from PBR.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-09-03T18:27:00"
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Replaced 2 of 3 models connectors for rectifier board",
+      "maintainers": ["brian", "ken", "diana"],
+      "occurred_at": "2025-08-30T16:41:00"
+    },
+    {
+      "machine": "The Incredible Hulk",
+      "text": "Waxed playfield",
+      "maintainers": ["reba"],
+      "occurred_at": "2025-08-30T15:36:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Waxed playfield",
+      "maintainers": ["reba"],
+      "occurred_at": "2025-08-30T15:35:00"
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "text": "Cleaned play field",
+      "maintainers": ["reba"],
+      "occurred_at": "2025-08-30T15:11:00"
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "text": "Replaced pop number cap on top right, and top left, swapped player 3 and 4 displays and they work now\n\n(Replacement LED display was dim, probably by design, but in troubleshooting Nick discovered swapping 3 and 4 fixed it, perhaps had been loose?)\n\nTuned left slingshot",
+      "maintainers": ["nick", "ken"],
+      "occurred_at": "2025-08-30T15:08:00"
+    },
+    {
+      "machine": "Trade Winds",
+      "text": "Got set up for the first time. Previous owner had replaced the back board of the main cabinet, but had not put in whatever hole use to be there. We added a hole.\n\nThe machine is in decent shape. It needs some bulbs, some cleaning, and a glass. The score motor doesn't work. But it's mostly playable, and definitely conveys the feel.",
+      "maintainers": ["ken", "william"],
+      "occurred_at": "2025-08-23T14:52:00"
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Did diode test across bride rectifiers on rectifier board, appears that one (leftmost of 3) is bad. Also has visible bugle on board. William ordering replacement board as recommended online (a common problem)",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-08-23T11:00:00"
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "text": "Replaced 1 Ball spring to hopefully fix sticking up dropdown target",
+      "maintainers": ["ken", "william"],
+      "occurred_at": "2025-08-23T09:52:00"
+    },
+    {
+      "machine": "Derby Day",
+      "text": "Machine was not starting up. Button worked, but S relay wasn't triggering. Sanded blades and adjusted alignment",
+      "maintainers": ["william"],
+      "occurred_at": "2025-08-20T19:43:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Started swapping over power wiring as per previous checklist. One of the AC-to-DC converters had been installed wrong by the repair guy we brought in to look at it. More work to do here.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-08-02T18:39:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Test plays showed the spinny light at the top was only working erratically. We traced the wiring through the resistor board, the triac board, and back to the power board. It turned out that one of the jumpers had been incorrectly placed on the installation of the new board. We put it in the right spot and it started passing in the solenoid tests, where it is known as MARS. Reassembled and everything seems fine.",
+      "maintainers": ["william", "diana"],
+      "occurred_at": "2025-08-02T18:35:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Installed repaired board",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-08-02T12:18:00"
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Noticed spontaneous knocker (and probably SPECIAL) going over, visually inspected",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-08-02T12:16:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Received repaired power board from Skip at Coin Op Services. He repaired the trace that runs to U1 pin 1; it had failed under the fuse. He also replaced a couple of other jumpers while he was at it.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-08-02T09:00:00"
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "Left flipper button was soft and intermittently ineffective. Replaced missing screw, so force was centered. Disassembled leaf switch. Bent outer leaf to provide better button resistance. Bent other leaves to make it as responsive as the right. Reassembled and tested to work.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-07-19T17:32:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "More detailed investigation. I did an extensive comparison of the states of the U1 pins.\n\nThe basic summary is that all the data pins show high with rapid change. The first 5 output pins on AF are steady low, but they're steady high on Getaway. The last one on AF switches from steady high to steady low when the flippers are enabled. My general take being that high means inhibit, and low means active.\n\nAs before, the OC pin is low for AF. For Getaway, it's high at U1 pin 1, but low at the connector (J113, p31). It's also high further back on the CPU board. Our initial theory was that maybe U1 itself was bad, but swapping for a new chip didn't help. However, grounding U1 pin 1 to pull it low does make the lights work. The problem is certainly on this board, so I'm sending it in for repair.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-07-19T16:00:00"
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Put legs on Star Trek, tested, found solenoids not firing, found blown fuse F1. Unknown cause of blown fuse, speculate board short.",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-07-19T10:58:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Did extensive probing and tracing of circuits based on previously mentioned guide.\n\nInput voltages are fine. Some of the output voltages are fine. Tracing the flow across the board is fine, at least for the brown circuit. The clock signal is fine, as are the data pins.\n\nBut what's not fine is pin 1 on U1 on the power driver board, which enables everything. That's supposed to be low, but the logic probe says it's high. We traced that back from the processor board, looking at U5, and it's low. It's also low on the incoming connector. But it's high at U1. Our best guess it that it's the U1 chip, which has a socket, so we've ordered a replacement.",
+      "maintainers": ["william", "ken"],
+      "occurred_at": "2025-07-12T14:58:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Carefully traced all outputs from old transformer, plus related wiring. What we have appears to be correctly wired. \n\nMade a plan for switching. On paper, on the clipboard. Requires the construction of a new connector for the 3 grey/grey-white wires, as the old one has much longer leads. \n\nOrdered necessary parts.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-07-05T18:07:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Verified that J115 voltages were correct. Ordered necessary parts for connector replacement anyhow. Ordered a logic probe as well. Next time, walk through this in detail: https://pinwiki.com/wiki/index.php/Williams_WPC#General_Illumination_Problems",
+      "maintainers": ["william"],
+      "occurred_at": "2025-07-05T17:46:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "New transformer moved to mount location. All output voltages check out. Added insulation between some transformer lugs to minimize risk. Next step is to map connections and begin the swap.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-30T19:37:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Replaced old power cord with new. Power tested good at input. Next step is to test transformer outputs again.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-28T13:24:00"
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Tried swapping ribbon cable between CPU and power board, visually inspected both boards, checked fuses",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-06-28T12:49:00"
+    },
+    {
+      "machine": "Star Trip",
+      "text": "Removed playfield hardware at top, cleaned playfield with Carnauba wax. One hardware element is hanging from its old rubber so we remember where it goes",
+      "maintainers": ["brian", "william"],
+      "occurred_at": "2025-06-28T12:48:00"
+    },
+    {
+      "machine": "Star Trip",
+      "text": "Tested voltage to strobe three while triggering solenoids to rule out a short from solenoid power to strobe.",
+      "maintainers": ["ken", "brian"],
+      "occurred_at": "2025-06-28T12:47:00"
+    },
+    {
+      "machine": "Baseball",
+      "text": "Initial triage:\n\nThis won't be an easy one.\n\nTo lift the playfield, you need to loosen the top two bolts that secure the backbox. Then it comes right up.\n\nThe power layout on this one is deranged. The line cord needs replacing for sure, but even then this thing will be a nightmare. The switch on the front of the box is not connected to anything, but line current definitely runs to the coin door, which I'm not sure I can secure.\n\nThe first thing to do is to document everything. Lots of photos and some diagrams to indicate initial wiring. Then we should test the transformer with decent line cord and make sure it's behaving sensibly. From there it will probably take a good going through, backbox and main body, to get it close to functional.\n\nIt'll be a good project, but it's definitely a project.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-21T16:08:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Swapped input connections to replacement transformer. Next step is to power up and test in situ. Unfortunately power cord needs to be replaced. Replacement ordered.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-21T14:59:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Began transformer replacement. There was a fair bit of what I'm guessing is lacquer on the lugs, but jamming the soldering iron in and letting it sit a bit got the wires off.\n\nNext step is putting the old input wiring on the replacement transformer, and then we can begin the process of swapping the cables and plugging in the new boards.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-19T19:02:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Tested new transformer. All outputs are a bit high, but nothing that seems unreasonable.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-06-15T19:31:00"
+    },
+    {
+      "machine": "Teacher's Pet",
+      "text": "- Same problem again with the kickout not happening. The score motor was once again not advancing all the way on one half of the wheel. Adjusted the second-from-top switch to be just right. But it's a narrow range between spinning forever and not going far enough. If this happens again worth asking on internet forums for ideas. Maybe the disc isn't quite right? Maybe there's some other mysterious score motor adjustment?\n- Had problems with the drop targets not popping up at the start of a new game. Spent a long time looking at it and we're not totally sure they should.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-03-22T00:00:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "talked to Lee of Midwest Pinball. He doesn't do board work on the spot, but could send it off to one of a couple of guys. He said the rectifiers should be fused. It'll be $220 to show up and $110 if he has to come back to reinstall the boards. I told him I'd get back to him shortly.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-02-12T00:00:00"
+    },
+    {
+      "machine": "Roto Pool",
+      "text": "Ordered new plastics from Shay Group via PayPal.",
+      "maintainers": ["william"],
+      "occurred_at": "2025-02-08T00:00:00"
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "- Ken and Jackie fixed the one-player, ten-balls issue. Turned out to be a dirty switch on the score motor.\n- More flipper adjustments.\n- Attempted to stop the left flipper from buzzing; no luck.",
+      "maintainers": ["ken", "jackie"],
+      "occurred_at": "2025-02-01T00:00:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "- Replaced the plug, which was a hack job.\n- Turned it on and something is making a buzzing noise and the breaker eventually trips. But we smelled smoke, so I turned it off and left it off. I need a pro!",
+      "maintainers": ["william"],
+      "occurred_at": "2025-02-01T00:00:00"
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "- Fixing left flipper, which came loose. The coil sleeve was pretty grubby, so we replaced that too. The flipper shaft is pretty chewed up, so a new one has been ordered.\n- Double bonus countdown would stick such that it would keep giving points without dropping the bonus. Solution was to clean the switches on the Double Bonus relay.",
+      "maintainers": ["william", "ken"],
+      "occurred_at": "2025-01-18T00:00:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "More cleaning",
+      "maintainers": ["william"],
+      "occurred_at": "2025-01-18T00:00:00"
+    },
+    {
+      "machine": "Gorgar",
+      "text": "- Tried powering it up.\n- At first it was totally dead.\n- There was a little of corrosion on the MPU board. I cleaned it with alcohol, but not perfectly. There was some corrosion on a chip above the battery.\n- I traced the wiring, and there was a fuse missing right at the power cord. I replaced the fuse (using 8A, as that was what was in Addams Family).\n- I tried turning it on and it came on with a clatter, including GI working and one of the solenoids firing. That shouldn't happen, so I turned it off.\n- There was even more corrosion on the driver board. I wiped it up a bit, but it probably needs more. I put the MPU back in too.\n- I went through a cycle of turning it off and on. MPU lights come on, and no clatter, but a very loud hum from the backbox.\n- I left it on a little longer and the fuse blew, so I put together one of the mini-breaker fuse replacers. That was a pain, but it worked.\n- More off on and off and I still couldn't find the source of the hum. definitely from the backbox, but hard to tell where from.\n- next steps:\n- study the wiring and figure out what all the fuses are\n- pull the fuses to see which one causes the hum to stop",
+      "maintainers": ["william"],
+      "occurred_at": "2025-01-12T00:00:00"
+    },
+    {
+      "machine": "The Addams Family",
+      "text": "The ball launcher was misbehaving. The outside spring had at some point fractured. I tried fixing it recently, and it was fine for a bit, but it was bad yesterday during the tour. Today I ended up removing one of the chunks, as it was getting tangled in the other and making things less elastic. Works for now, but I should replace it. And since there are problems unscrewing one of the screws, maybe better just to get a new assembly?",
+      "maintainers": ["william"],
+      "occurred_at": "2024-12-29T00:00:00"
+    },
+    {
+      "machine": "Teacher's Pet",
+      "text": "- symptom is that when the ball ends up in the bottom trough it doesn't cycle to the next ball and kick it out\n- That seems familiar. How did I solve it before?\n- It was adjusting the score motor wheel:\n- We got the weird behavior where the ball eject wouldn't work to happen again. It was fine to start but got worse over time. We traced it to the score motor, index wheel, switch A, which gives power to the outhole switch that in turn triggers the end of ball cycle. It was finicky because it depended on exactly how far the score motor wheel advanced, and one of the two notches was more prone to cause trouble. Adjusting the switch leaf appears to have fixed it.\n- I bent the switch just a bit more and it seems better.",
+      "maintainers": ["william"],
+      "occurred_at": "2024-12-29T00:00:00"
+    },
+    {
+      "machine": "The Addams Family",
+      "text": "- There's something wrong in the swamp. I should go through all the switches there, and perhaps more generally.\n- God, it's nice having something with decent built-in diagnostics. One of the swamp switches was erratic. But poking it was enough to get things working again. Was it a bit stuck? Was there some junk wedged there? Hard to know.\n- I had also noticed a problem with detecting the ball waiting to be launched. That was a bit trickier. It turns out the plunger was sitting just a shade too far forward. The external spring was weird and janky. I tried taking it all apart, but one of the screws is stuck. The external spring was in two parts, and I tried separating them. They mashed back together pretty quickly. I tried a bit of tape, but that made the ball not launch or launch weekly. So I took the tape off and everything is somehow fine?\n- Long term, I should get at least the screw and maybe a whole new assembly, complete with spring.",
+      "maintainers": ["william"],
+      "occurred_at": "2024-12-27T00:00:00"
+    },
+    {
+      "machine": "Hyperball",
+      "text": "- The problem I started out with was that the ball lift motor was not working. It worked before I moved it.\n- I got out the manual and ran through some self-test stuff. Everything worked except the sound and the ball lift motor.\n- After some disassembly, I found that the ball lift motor wasn't connected. But where should of it have gone to?\n- In the backbox there was a connector of the right shape but the wrong pins were hooked up.\n- Tracing the wiring led me to discover that the speaker connector and the ball lift motor had the same connectors. The labeling on them were messy, so I had them hooked up incorrectly. Fortunately, the speaker connector was wired differently, so the speaker was unharmed.\n- I hooked them up properly and labeled the motor connections. My label printer worked pretty well for that. I need to experiment more and start a policy of just labeling everything that could be ambiguous.\n- Putting it back together went reasonably smoothly. Some of the balls looked a bit grubby, so I polished them all.\n- It's now in working order! I played a game and the noise is a bit overwhelming. There are on-line mods for quieting things. I should have some sort of policy there.",
+      "maintainers": ["william"],
+      "occurred_at": "2024-12-27T00:00:00"
+    },
+    {
+      "machine": "Hyperball",
+      "text": "- Got the backbox connectors set up.\n- TODO get more durable labels for connectors.\n- It powers up. Time to put in the balls.\n- Gah, I forgot the keys at home!\n- And I didn't have any immediate luck picking the door, so I guess I should go home.",
+      "maintainers": ["william"],
+      "occurred_at": "2024-12-25T00:00:00"
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "text": "Deep cleaned playfield. Removed all balls, cleaned with Novus 2, applied fresh wax. Playfield was getting sticky near the Godzilla figure.",
+      "maintainers": ["brian", "reba"],
+      "occurred_at": "2025-07-14T14:00:00",
+      "media": ["small screenshot.png"]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "text": "Replaced GI bulbs in backbox - 4 were out. Using Cointaker LEDs: https://www.cointaker.com/stern-spike-2-backbox-led-kit",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-10-15T16:30:00"
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "Waxed playfield, cleaned plastics, replaced worn rubber on left outlane post.",
+      "maintainers": ["reba"],
+      "occurred_at": "2025-08-15T13:00:00"
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "Annual maintenance:\n- Cleaned and lubed all ball guides\n- Replaced flipper rubbers (both sides)\n- Cleaned optos with compressed air\n- Tested all switches - all good\n- ROM is v1.7, current",
+      "maintainers": ["william"],
+      "occurred_at": "2025-09-02T17:30:00",
+      "media": ["gottlieb native american.jpg", "majorettes.jpg"]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "Replaced burned out flasher bulbs - 3 in the backbox, 2 under playfield. Using Comet warm white LEDs.",
+      "maintainers": ["ken", "diana"],
+      "occurred_at": "2025-10-20T11:00:00",
+      "media": ["bagatelle.jpg", "captain fantastic.jpg", "road show.jpg", "small screenshot.png"]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "Full cleaning day. Removed and cleaned all plastics, waxed playfield, cleaned under ramps. This game collects a lot of dust around the T-Rex mechanism.",
+      "maintainers": ["reba", "brian"],
+      "occurred_at": "2025-06-28T14:30:00",
+      "media": ["sing along.jpg", "led zeppelin.jpg", "transformers.jpg"]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "Updated game code to v1.04.0 - latest release. Includes improved ball tracking and some rule tweaks. Update process per https://sternpinball.com/support/game-code/",
+      "maintainers": ["william"],
+      "occurred_at": "2025-10-01T11:00:00"
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "Replaced rubber kit - all bands were getting stiff and losing bounce. Used Titan rubbers from https://www.titanpinball.com/Stern-Jurassic-Park-Premium-Pinball-Rubber-Kit",
+      "maintainers": ["ken"],
+      "occurred_at": "2025-11-15T15:30:00"
+    }
+  ]
+}

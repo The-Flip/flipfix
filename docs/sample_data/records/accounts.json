@@ -1,0 +1,46 @@
+{
+  "admins": [
+    {"username": "moses", "first_name": "Dean", "last_name": "Moses", "email": "moses@tacocat.com"},
+    {"username": "william", "first_name": "William", "last_name": "Pietri", "email": "william@theflip.museum"}
+  ],
+  "maintainers": [
+    {"username": "brian", "first_name": "Brian", "last_name": "Boonstra", "email": "brian@theflip.museum"},
+    {"username": "diana", "first_name": "Diana", "last_name": "Ramanauskas", "email": "diana@theflip.museum"},
+    {"username": "junkybrassmonkey", "first_name": "Caleb", "last_name": "Dushman", "email": "cpdushman@gmail.com"},
+    {"username": "elijah"},
+    {"username": "ken", "first_name": "Ken", "last_name": "Small"},
+    {"username": "alex"},
+    {"username": "ben"},
+    {"username": "chris"},
+    {"username": "david"},
+    {"username": "eddie"},
+    {"username": "ethan"},
+    {"username": "james"},
+    {"username": "jeff"},
+    {"username": "jerry"},
+    {"username": "john"},
+    {"username": "josh"},
+    {"username": "justin"},
+    {"username": "kyle"},
+    {"username": "luis"},
+    {"username": "mark"},
+    {"username": "matt"},
+    {"username": "mike"},
+    {"username": "nathan"},
+    {"username": "nick"},
+    {"username": "paul"},
+    {"username": "robert"},
+    {"username": "ryan"},
+    {"username": "sam"},
+    {"username": "steve"},
+    {"username": "tyler"},
+    {"username": "reba"},
+    {"username": "jackie"},
+    {"username": "laura"},
+    {"username": "mauricio"}
+  ],
+  "terminals": [
+    {"username": "workshop1", "display_name": "Workshop Terminal"},
+    {"username": "floor1", "display_name": "Floor Terminal"}
+  ]
+}

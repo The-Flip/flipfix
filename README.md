@@ -44,18 +44,22 @@ It's in Django.
 
 5. **Run migrations**
    ```bash
-   python manage.py migrate
+   make migrate
    ```
 
-6. **Create a superuser**
+6. **Create sample data OR superuser**
+
+   If you want a rich set of sample data to play with, the following command creates a bunch of users including admins.  Look at output for usernames. All users have a password of 'test123'.
    ```bash
-   python manage.py createsuperuser
+   make sample-data
    ```
 
-7. **Load sample data (optional)**
+   Else if you want an empty system, create a user for yourself:
    ```bash
-   python manage.py create_sample_data
+   make superuser
    ```
+
+
 
 ## Running the Application
 

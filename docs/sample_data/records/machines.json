@@ -1,0 +1,541 @@
+[
+  {
+    "name": "Ballyhoo",
+    "manufacturer": "Bally",
+    "month": 1,
+    "year": 1932,
+    "era": "PM",
+    "scoring": "manual",
+    "flipper_count": 0,
+    "ipdb_id": 4817,
+    "instances": [
+      {
+        "location": "floor",
+        "operational_status": "good"
+      }
+    ]
+  },
+  {
+    "name": "Carom",
+    "manufacturer": "Bally",
+    "month": 1,
+    "year": 1937,
+    "era": "EM",
+    "scoring": "totalizer",
+    "flipper_count": 0,
+    "ipdb_id": 458,
+    "instances": [
+      {
+        "serial_number": "?",
+        "operational_status": "unknown"
+      }
+    ]
+  },
+  {
+    "name": "Trade Winds",
+    "manufacturer": "United",
+    "month": 3,
+    "year": 1945,
+    "era": "EM",
+    "scoring": "lights",
+    "ipdb_id": 2620,
+    "instances": [
+      {
+        "serial_number": "2450",
+        "acquisition_notes": "Purchased June 2025 from a guy on FB Marketplace. It's a conversion of the 1941 Sky Blazer and the serial number is from there.",
+        "operational_status": "fixing",
+        "location": "workshop"
+      }
+    ]
+  },
+  {
+    "name": "Baseball",
+    "manufacturer": "Chicago Coin",
+    "month": 10,
+    "year": 1947,
+    "era": "EM",
+    "scoring": "lights",
+    "flipper_count": 2,
+    "ipdb_id": 189,
+    "instances": [
+      {
+        "serial_number": "24284",
+        "operational_status": "broken",
+        "location": "workshop"
+      }
+    ]
+  },
+  {
+    "name": "Derby Day",
+    "manufacturer": "Gottlieb",
+    "month": 4,
+    "year": 1956,
+    "era": "EM",
+    "scoring": "lights",
+    "flipper_count": 2,
+    "ipdb_id": 664,
+    "instances": [
+      {
+        "serial_number": "AO4024DD",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Roto Pool",
+    "manufacturer": "Gottlieb",
+    "month": 7,
+    "year": 1958,
+    "era": "EM",
+    "scoring": "lights",
+    "flipper_count": 2,
+    "ipdb_id": 2022,
+    "instances": [
+      {
+        "serial_number": "87338RP",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Teacher's Pet",
+    "manufacturer": "Williams",
+    "month": 12,
+    "year": 1965,
+    "era": "EM",
+    "scoring": "reels",
+    "flipper_count": 2,
+    "pinside_rating": 8.34,
+    "ipdb_id": 2506,
+    "instances": [
+      {
+        "serial_number": "34484",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Hokus Pokus",
+    "manufacturer": "Bally",
+    "month": 3,
+    "year": 1976,
+    "era": "EM",
+    "scoring": "reels",
+    "flipper_count": 2,
+    "pinside_rating": 7.94,
+    "ipdb_id": 1206,
+    "instances": [
+      {
+        "serial_number": "2822",
+        "acquisition_notes": "Bought 8/24/23 from Chuck in Pleasanton",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Star Trip",
+    "manufacturer": "GamePlan",
+    "month": 4,
+    "year": 1979,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "MPU_1",
+    "flipper_count": 2,
+    "ipdb_id": 3605,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Star Trek",
+    "manufacturer": "Bally",
+    "month": 4,
+    "year": 1979,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "Bally MPU AS-2518-35",
+    "flipper_count": 2,
+    "pinside_rating": 6.76,
+    "ipdb_id": 2355,
+    "instances": [
+      {
+        "operational_status": "fixing",
+        "location": "workshop"
+      }
+    ]
+  },
+  {
+    "name": "The Incredible Hulk",
+    "manufacturer": "Gottlieb",
+    "month": 10,
+    "year": 1979,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "System 1",
+    "flipper_count": 2,
+    "ipdb_id": 1266,
+    "instances": [
+      {
+        "short_name": "Hulk",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Gorgar",
+    "manufacturer": "Williams",
+    "month": 12,
+    "year": 1979,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "System 6",
+    "flipper_count": 2,
+    "pinside_rating": 7.56,
+    "ipdb_id": 1062,
+    "instances": [
+      {
+        "serial_number": "368844",
+        "acquisition_notes": "Bought this from Matt Christiano circa May 2024 for $2k, including an NOS playfield. Not known to work.",
+        "operational_status": "fixing",
+        "location": "workshop"
+      },
+      {
+        "name": "Gorgar #2",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Blackout",
+    "manufacturer": "Williams",
+    "month": 6,
+    "year": 1980,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "System 6",
+    "flipper_count": 2,
+    "pinside_rating": 7.7,
+    "ipdb_id": 317,
+    "instances": [
+      {
+        "operational_status": "fixing",
+        "location": "workshop"
+      }
+    ]
+  },
+  {
+    "name": "Hyperball",
+    "manufacturer": "Williams",
+    "month": 12,
+    "year": 1981,
+    "era": "SS",
+    "scoring": "alphanumeric",
+    "system": "System 7",
+    "flipper_count": 0,
+    "ipdb_id": 3169,
+    "instances": [
+      {
+        "serial_number": "560974",
+        "acquisition_notes": "- Acquired for $800 from Jim Lewandowski of Riveriew IL on [[2024-12-19 Thursday]] - When purchased was in working shape with a couple of minor issues (sensors in top right)",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Eight Ball Deluxe Limited Edition",
+    "manufacturer": "Bally",
+    "month": 8,
+    "year": 1982,
+    "era": "SS",
+    "scoring": "7-segment",
+    "system": "Bally MPU AS-2518-35",
+    "flipper_count": 3,
+    "pinside_rating": 8.06,
+    "ipdb_id": 763,
+    "instances": [
+      {
+        "short_name": "Eight Ball 1",
+        "serial_number": "E8B1147",
+        "operational_status": "good",
+        "location": "floor"
+      },
+      {
+        "name": "Eight Ball Deluxe Limited Edition #2",
+        "short_name": "Eight Ball 2",
+        "operational_status": "fixing",
+        "location": "workshop"
+      }
+    ]
+  },
+  {
+    "name": "The Getaway: High Speed II",
+    "manufacturer": "Williams",
+    "month": 2,
+    "year": 1992,
+    "era": "SS",
+    "scoring": "DMD",
+    "system": "Fliptronics 2?",
+    "flipper_count": 3,
+    "pinside_rating": 8.14,
+    "ipdb_id": 1000,
+    "instances": [
+      {
+        "short_name": "Getaway",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "The Addams Family",
+    "manufacturer": "Williams",
+    "month": 3,
+    "year": 1992,
+    "era": "SS",
+    "scoring": "DMD",
+    "system": "Fliptronics 1?",
+    "flipper_count": 4,
+    "pinside_rating": 8.56,
+    "ipdb_id": 20,
+    "instances": [
+      {
+        "short_name": "Addams Family",
+        "serial_number": "24277",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Creature from the Black Lagoon",
+    "manufacturer": "Bally",
+    "month": 2,
+    "year": 1992,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 8.24,
+    "ipdb_id": 588,
+    "instances": [
+      {
+        "short_name": "Black Lagoon",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Terminator 2: Judgment Day",
+    "manufacturer": "Williams",
+    "month": 7,
+    "year": 1991,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 8.27,
+    "ipdb_id": 2524,
+    "instances": [
+      {
+        "short_name": "Terminator 2",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Star Trek: The Next Generation",
+    "manufacturer": "Williams",
+    "month": 3,
+    "year": 1993,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 4,
+    "pinside_rating": 8.64,
+    "ipdb_id": 2357,
+    "instances": [
+      {
+        "short_name": "Star Trek TNG",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Indiana Jones: The Pinball Adventure",
+    "manufacturer": "Williams",
+    "month": 8,
+    "year": 1993,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 4,
+    "pinside_rating": 8.53,
+    "ipdb_id": 1267,
+    "instances": [
+      {
+        "short_name": "Indiana Jones",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Jurassic Park (Data East)",
+    "manufacturer": "Data East",
+    "month": 7,
+    "year": 1993,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 7.25,
+    "ipdb_id": 1343,
+    "instances": [
+      {
+        "name": "Jurassic Park (Data East)",
+        "short_name": "Jurassic Park DE",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Twilight Zone",
+    "manufacturer": "Bally",
+    "month": 5,
+    "year": 1993,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 6,
+    "pinside_rating": 9.1,
+    "ipdb_id": 2684,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Attack from Mars",
+    "manufacturer": "Bally",
+    "month": 5,
+    "year": 1995,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 8.85,
+    "ipdb_id": 3781,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Theatre of Magic",
+    "manufacturer": "Bally",
+    "month": 3,
+    "year": 1995,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 8.62,
+    "ipdb_id": 2845,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Medieval Madness",
+    "manufacturer": "Williams",
+    "month": 6,
+    "year": 1997,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 9.21,
+    "ipdb_id": 4032,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Monster Bash",
+    "manufacturer": "Williams",
+    "month": 2,
+    "year": 1998,
+    "era": "SS",
+    "scoring": "DMD",
+    "flipper_count": 2,
+    "pinside_rating": 9.04,
+    "ipdb_id": 4441,
+    "instances": [
+      {
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Jurassic Park (Stern)",
+    "manufacturer": "Stern",
+    "month": 8,
+    "year": 2019,
+    "era": "SS",
+    "scoring": "video",
+    "system": "Spike 2",
+    "flipper_count": 2,
+    "pinside_rating": 8.45,
+    "ipdb_id": 6309,
+    "instances": [
+      {
+        "name": "Jurassic Park (Stern)",
+        "short_name": "Jurassic Park (Stern)",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  },
+  {
+    "name": "Godzilla (Premium)",
+    "manufacturer": "Stern",
+    "month": 10,
+    "year": 2021,
+    "era": "SS",
+    "scoring": "video",
+    "system": "Spike 2",
+    "flipper_count": 3,
+    "pinside_rating": 9.19,
+    "ipdb_id": 6841,
+    "instances": [
+      {
+        "short_name": "Godzilla 1",
+        "serial_number": "362497C",
+        "operational_status": "good",
+        "location": "floor"
+      },
+      {
+        "name": "Godzilla (Premium) #2",
+        "short_name": "Godzilla 2",
+        "operational_status": "good",
+        "location": "floor"
+      }
+    ]
+  }
+]
