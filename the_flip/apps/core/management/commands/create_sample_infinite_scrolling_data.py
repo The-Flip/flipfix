@@ -24,7 +24,7 @@ class Command(BaseCommand):
     TARGET_MACHINE_SHORT_NAME = "Eight Ball 2"
     RECORDS_PER_TYPE = 25
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         # Safety check: SQLite only (blocks production PostgreSQL)
         if "sqlite" not in connection.settings_dict["ENGINE"].lower():
             raise CommandError(

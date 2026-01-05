@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     data_path = Path("docs/sample_data/records/accounts.json")
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         # Safety check: SQLite only (blocks production PostgreSQL)
         if "sqlite" not in connection.settings_dict["ENGINE"].lower():
             raise CommandError(

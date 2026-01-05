@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     csv_path = Path("docs/sample_data/Machine Sign Copy v0.5.csv")
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         if not self.csv_path.exists():
             raise CommandError(f"CSV file not found: {self.csv_path}")
 
@@ -50,7 +50,7 @@ class Command(BaseCommand):
                     updated_fields.append("ownership_credit")
 
                 # Get display name (short_name if available)
-                instance = model.instances.first()
+                instance = model.instances.order_by("id").first()
                 display_name = (
                     instance.short_name if instance and instance.short_name else model.name
                 )
