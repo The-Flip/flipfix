@@ -1,0 +1,916 @@
+{
+  "part_requests": [
+    {
+      "machine": "Star Trek",
+      "text": "Need replacement bridge rectifier for power board",
+      "status": "ordered",
+      "requested_by": "ken",
+      "occurred_at": "2025-08-02T11:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Marco Specialties: https://www.marcospecialties.com/pinball-parts/BRIDGE-RECT-35A",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-03T14:30:00"
+        }
+      ]
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "Flipper coil sleeve melted, need replacement",
+      "status": "received",
+      "requested_by": "william",
+      "occurred_at": "2025-07-15T09:00:00",
+      "updates": [
+        {
+          "text": "Ordered from PBR",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-07-16T10:00:00"
+        },
+        {
+          "text": "Part arrived",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-07-22T15:00:00",
+          "media": ["part_surface.jpg", "part_bumper.jpg"]
+        }
+      ]
+    },
+    {
+      "machine": "Eight Ball Deluxe Limited Edition",
+      "text": "Drop target spring #1 missing - need replacement",
+      "status": "requested",
+      "requested_by": "ken",
+      "occurred_at": "2025-09-17T20:00:00",
+      "media": ["part_pull_rod.jpg", "part_surface.jpg", "part_bumper_avif.avif"]
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "U1 chip for power driver board - possibly faulty",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-07-13T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered 74LS374 from Mouser",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-07-13T11:00:00"
+        },
+        {
+          "text": "Arrived. Swapped chip but problem persists - sending board for repair instead",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-07-18T14:00:00",
+          "media": ["part_plunger_webp.webp"]
+        }
+      ]
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Replacement transformer - original is toast",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-05-20T09:00:00",
+      "media": ["part_bumper.jpg"],
+      "updates": [
+        {
+          "text": "Found a good used one on Pinside marketplace for $150",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-05-22T10:00:00"
+        },
+        {
+          "text": "Transformer arrived, outputs test good",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-06-01T14:00:00"
+        },
+        {
+          "text": "Installed and working!",
+          "posted_by": "william",
+          "new_status": "installed",
+          "occurred_at": "2025-06-30T20:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trip",
+      "text": "Replacement flipper coil - left side has melted sleeve and possible coil damage",
+      "status": "ordered",
+      "requested_by": "william",
+      "occurred_at": "2025-09-03T19:00:00",
+      "media": ["part_flippers_webp.webp", "part_diagram.jpg"],
+      "updates": [
+        {
+          "text": "Ordered FL-11630 from PBR: https://www.pbresource.com/products/fl-11630",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-04T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "The Addams Family",
+      "text": "Ball launcher spring assembly - current one is fractured",
+      "status": "requested",
+      "requested_by": "william",
+      "occurred_at": "2025-01-02T11:00:00"
+    },
+    {
+      "machine": "Teacher's Pet",
+      "text": "New flipper shaft - current one is chewed up",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-01-18T12:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Marco",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-01-19T09:00:00"
+        },
+        {
+          "text": "Arrived and installed",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-01-28T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Roto Pool",
+      "text": "Replacement plastics set - several are cracked or broken",
+      "status": "received",
+      "requested_by": "william",
+      "occurred_at": "2025-02-05T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Shay Group via PayPal",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-02-08T00:00:00"
+        },
+        {
+          "text": "Plastics arrived - look great!",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-02-28T15:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Blackout",
+      "text": "Sound ROM chip - audio is glitchy",
+      "status": "requested",
+      "requested_by": "junkybrassmonkey",
+      "occurred_at": "2025-10-05T14:00:00"
+    },
+    {
+      "machine": "Godzilla (Premium)",
+      "text": "Replacement magna-grab coil sleeve",
+      "status": "ordered",
+      "requested_by": "ken",
+      "occurred_at": "2025-11-02T09:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Stern direct: https://www.sternpinball.com/parts",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-02T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "Borg ship leaf switch - position 3 has cracked blade",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-06-12T15:00:00",
+      "updates": [
+        {
+          "text": "Part number 5647-12693-00, ordered from PBR",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-06-12T16:00:00"
+        },
+        {
+          "text": "Part arrived",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-06-17T10:00:00"
+        },
+        {
+          "text": "Installed - multiball working perfectly now",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-06-18T11:30:00",
+          "media": ["part_plunger2_webp.webp", "part_diagram.jpg", "part_flippers_webp.webp"]
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "Cannon coil sleeve - left cannon is weak, sleeve may be worn",
+      "status": "requested",
+      "requested_by": "ken",
+      "occurred_at": "2025-11-23T15:00:00"
+    },
+    {
+      "machine": "Star Trek: The Next Generation",
+      "text": "14-pin ribbon cable for DMD - backup needed after current one failed",
+      "status": "received",
+      "requested_by": "william",
+      "occurred_at": "2025-05-18T17:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Planetary Pinball: https://www.planetarypinball.com/mm5/merchant.mvc?Screen=PROD&Product_Code=CABLE-14-PIN-RIBBON",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-05-19T09:00:00"
+        },
+        {
+          "text": "Arrived - stashing as spare",
+          "posted_by": "brian",
+          "new_status": "received",
+          "occurred_at": "2025-05-26T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "T-Rex jaw gear assembly - stripped tooth in linkage",
+      "status": "installed",
+      "requested_by": "ken",
+      "occurred_at": "2025-07-24T15:00:00",
+      "media": ["part_powder_coated_webp.webp", "part_plunger_webp.webp", "part_plunger2_webp.webp", "part_who_dunnit_rubber_kit_avif.avif"],
+      "updates": [
+        {
+          "text": "OEM part 502-7848-00 backordered. Found 3D printed version on Pinside marketplace - ordering that",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-07-24T16:00:00"
+        },
+        {
+          "text": "3D printed gear arrived",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-07-29T11:00:00"
+        },
+        {
+          "text": "Installed - jaw operating smoothly. Part is beefier than OEM",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-07-30T12:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "Helicopter motor - completely dead",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-08-06T09:30:00",
+      "updates": [
+        {
+          "text": "Part number 041-5077-00. Ordered direct from Stern - $45 + shipping",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-06T10:00:00"
+        },
+        {
+          "text": "Motor arrived",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-08-13T14:00:00"
+        },
+        {
+          "text": "Installed - helicopter spins!",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-08-14T12:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Stern)",
+      "text": "Full rubber kit - bands getting stiff",
+      "status": "installed",
+      "requested_by": "ken",
+      "occurred_at": "2025-11-10T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered Titan rubbers: https://www.titanpinball.com/Stern-Jurassic-Park-Premium-Pinball-Rubber-Kit",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-10T11:00:00"
+        },
+        {
+          "text": "Kit arrived",
+          "posted_by": "diana",
+          "new_status": "received",
+          "occurred_at": "2025-11-14T15:00:00"
+        },
+        {
+          "text": "All rubbers replaced",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-11-15T16:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "text": "Replacement switch spring for Tokyo city target",
+      "status": "installed",
+      "requested_by": "ken",
+      "occurred_at": "2025-09-15T19:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Marco: https://www.marcospecialties.com/pinball-parts/515-5243-00",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-15T19:30:00"
+        },
+        {
+          "text": "Switch arrived",
+          "posted_by": "brian",
+          "new_status": "received",
+          "occurred_at": "2025-09-19T14:00:00"
+        },
+        {
+          "text": "Installed - all city targets registering now",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-09-20T11:30:00"
+        }
+      ]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "text": "Cointaker LED backbox kit - 4 GI bulbs out",
+      "status": "installed",
+      "requested_by": "ken",
+      "occurred_at": "2025-10-12T09:00:00",
+      "updates": [
+        {
+          "text": "Ordered: https://www.cointaker.com/stern-spike-2-backbox-led-kit",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-12T10:00:00"
+        },
+        {
+          "text": "LEDs arrived",
+          "posted_by": "reba",
+          "new_status": "received",
+          "occurred_at": "2025-10-14T15:00:00"
+        },
+        {
+          "text": "All backbox LEDs replaced",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-10-15T17:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Godzilla (Premium) #2",
+      "text": "Flipper coil sleeve - right side was melted/deformed",
+      "status": "installed",
+      "requested_by": "ken",
+      "occurred_at": "2025-08-22T18:00:00",
+      "updates": [
+        {
+          "text": "Ordered standard Stern flipper sleeve",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-23T09:00:00"
+        },
+        {
+          "text": "Part arrived",
+          "posted_by": "diana",
+          "new_status": "received",
+          "occurred_at": "2025-08-27T14:00:00"
+        },
+        {
+          "text": "Installed - flippers feel identical now",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-08-28T12:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Medieval Madness",
+      "text": "Castle drawbridge motor - making grinding noise",
+      "status": "ordered",
+      "requested_by": "brian",
+      "occurred_at": "2025-10-20T14:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Pinball Life: https://www.pinballlife.com/PBL-600-0443-00",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-21T09:00:00",
+          "media": ["part_who_dunnit_rubber_kit_avif.avif", "part_powder_coated_webp.webp", "part_pull_rod.jpg", "part_bumper_avif.avif"]
+        }
+      ]
+    },
+    {
+      "machine": "Twilight Zone",
+      "text": "Clock motor - hands not moving",
+      "status": "received",
+      "requested_by": "elijah",
+      "occurred_at": "2025-09-25T16:00:00",
+      "updates": [
+        {
+          "text": "Found replacement on eBay from parted out machine",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-26T10:00:00"
+        },
+        {
+          "text": "Motor arrived - looks good",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-10-05T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Attack from Mars",
+      "text": "Saucer motor assembly - saucer not rising properly",
+      "status": "requested",
+      "requested_by": "diana",
+      "occurred_at": "2025-11-18T11:00:00"
+    },
+    {
+      "machine": "Theatre of Magic",
+      "text": "Trunk lock mechanism - not releasing balls properly",
+      "status": "ordered",
+      "requested_by": "junkybrassmonkey",
+      "occurred_at": "2025-11-05T13:00:00",
+      "updates": [
+        {
+          "text": "Ordered complete assembly from Marco",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-06T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Monster Bash",
+      "text": "Frankenstein head motor - head tilting erratically",
+      "status": "received",
+      "requested_by": "ken",
+      "occurred_at": "2025-10-08T15:00:00",
+      "updates": [
+        {
+          "text": "Ordered from Great Plains",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-09T09:00:00"
+        },
+        {
+          "text": "Part arrived",
+          "posted_by": "alice",
+          "new_status": "received",
+          "occurred_at": "2025-10-18T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Indiana Jones",
+      "text": "Path of Adventure ball guide - bent and causing stuck balls",
+      "status": "installed",
+      "requested_by": "bob",
+      "occurred_at": "2025-08-15T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered replacement wireform",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-16T09:00:00"
+        },
+        {
+          "text": "Arrived and installed - ball flows smoothly now",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-08-28T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Creature from the Black Lagoon",
+      "text": "Hologram motor - not spinning",
+      "status": "requested",
+      "requested_by": "charlie",
+      "occurred_at": "2025-11-20T09:00:00"
+    },
+    {
+      "machine": "Terminator 2",
+      "text": "Gun assembly trigger switch - intermittent",
+      "status": "ordered",
+      "requested_by": "ken",
+      "occurred_at": "2025-10-30T11:00:00",
+      "updates": [
+        {
+          "text": "Ordered microswitch replacement",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-31T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Derby Day",
+      "text": "Score motor cleaning kit and lubricant",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-08-18T09:00:00",
+      "updates": [
+        {
+          "text": "Ordered EM cleaning supplies from Great Plains",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-18T10:00:00"
+        },
+        {
+          "text": "Supplies arrived",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-08-22T14:00:00"
+        },
+        {
+          "text": "Used to clean score motor - machine starting reliably now",
+          "posted_by": "william",
+          "new_status": "installed",
+          "occurred_at": "2025-08-22T20:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Baseball",
+      "text": "New line cord - current one is dangerous",
+      "status": "received",
+      "requested_by": "william",
+      "occurred_at": "2025-06-21T17:00:00",
+      "updates": [
+        {
+          "text": "Ordered 3-prong grounded cord from Amazon",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-06-22T09:00:00"
+        },
+        {
+          "text": "Cord arrived",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-06-25T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Trade Winds",
+      "text": "Score motor - not functioning",
+      "status": "requested",
+      "requested_by": "ken",
+      "occurred_at": "2025-08-23T15:00:00"
+    },
+    {
+      "machine": "Trade Winds",
+      "text": "Replacement bulbs - multiple sockets empty",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-08-23T15:30:00",
+      "updates": [
+        {
+          "text": "Ordered assorted #44 and #47 bulbs",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-24T09:00:00"
+        },
+        {
+          "text": "Bulbs arrived and installed",
+          "posted_by": "david",
+          "new_status": "installed",
+          "occurred_at": "2025-09-01T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Hyperball",
+      "text": "Sensor board for top right ball return - intermittent detection",
+      "status": "requested",
+      "requested_by": "william",
+      "occurred_at": "2025-01-05T10:00:00"
+    },
+    {
+      "machine": "The Addams Family",
+      "text": "Thing hand motor - hand not grabbing balls reliably",
+      "status": "ordered",
+      "requested_by": "eddie",
+      "occurred_at": "2025-11-01T14:00:00",
+      "updates": [
+        {
+          "text": "Ordered motor assembly from Marco",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-02T09:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "The Getaway: High Speed II",
+      "text": "Red Baron spinner motor - spinning slowly",
+      "status": "received",
+      "requested_by": "ken",
+      "occurred_at": "2025-09-10T11:00:00",
+      "updates": [
+        {
+          "text": "Found NOS motor on Pinside marketplace",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-11T10:00:00"
+        },
+        {
+          "text": "Motor arrived - tests good",
+          "posted_by": "frank",
+          "new_status": "received",
+          "occurred_at": "2025-09-20T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trek",
+      "text": "Rectifier board - blown component",
+      "status": "ordered",
+      "requested_by": "ken",
+      "occurred_at": "2025-08-23T11:30:00",
+      "updates": [
+        {
+          "text": "Ordered replacement board - this is a common failure point",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-23T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "Backglass restoration supplies - glass is flaking badly",
+      "status": "received",
+      "requested_by": "william",
+      "occurred_at": "2025-01-10T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered conservation-grade adhesive and supplies from museum supply",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-01-11T09:00:00"
+        },
+        {
+          "text": "Supplies arrived - need steady hands for this",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-01-20T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Hokus Pokus",
+      "text": "Lamp socket for 20 position - socket is dead",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-01-28T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered replacement sockets",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-01-29T09:00:00"
+        },
+        {
+          "text": "Sockets arrived and installed",
+          "posted_by": "grace",
+          "new_status": "installed",
+          "occurred_at": "2025-02-10T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Gorgar",
+      "text": "Power cord - original was a hack job",
+      "status": "installed",
+      "requested_by": "william",
+      "occurred_at": "2025-06-20T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered proper 3-prong cord",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-06-21T15:00:00"
+        },
+        {
+          "text": "Cord arrived",
+          "posted_by": "william",
+          "new_status": "received",
+          "occurred_at": "2025-06-26T14:00:00"
+        },
+        {
+          "text": "Installed - power tests good at input",
+          "posted_by": "william",
+          "new_status": "installed",
+          "occurred_at": "2025-06-28T13:30:00"
+        }
+      ]
+    },
+    {
+      "machine": "Blackout",
+      "text": "CPU board connector pins - several are corroded",
+      "status": "ordered",
+      "requested_by": "henry",
+      "occurred_at": "2025-10-15T11:00:00",
+      "updates": [
+        {
+          "text": "Ordered header pins from Mouser",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-16T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "The Incredible Hulk",
+      "text": "Pop bumper caps - several cracked",
+      "status": "installed",
+      "requested_by": "reba",
+      "occurred_at": "2025-07-20T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered replacement caps from Marco",
+          "posted_by": "reba",
+          "new_status": "ordered",
+          "occurred_at": "2025-07-21T09:00:00"
+        },
+        {
+          "text": "Caps arrived and installed - looks great!",
+          "posted_by": "reba",
+          "new_status": "installed",
+          "occurred_at": "2025-08-01T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Star Trip",
+      "text": "Strobe bulb - not firing",
+      "status": "received",
+      "requested_by": "brian",
+      "occurred_at": "2025-06-25T14:00:00",
+      "updates": [
+        {
+          "text": "Ordered replacement strobe tube",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-06-26T09:00:00"
+        },
+        {
+          "text": "Bulb arrived",
+          "posted_by": "iris",
+          "new_status": "received",
+          "occurred_at": "2025-07-05T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Medieval Madness",
+      "text": "Catapult rubber - worn and losing grip",
+      "status": "installed",
+      "requested_by": "jack",
+      "occurred_at": "2025-09-05T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered silicone rubber replacement - lasts longer than standard",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-06T09:00:00"
+        },
+        {
+          "text": "Rubber arrived and installed",
+          "posted_by": "ken",
+          "new_status": "installed",
+          "occurred_at": "2025-09-15T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Twilight Zone",
+      "text": "Powerball - current one is chipped",
+      "status": "ordered",
+      "requested_by": "ken",
+      "occurred_at": "2025-11-10T09:00:00",
+      "updates": [
+        {
+          "text": "Ordered ceramic powerball from Pinball Life",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-10T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Attack from Mars",
+      "text": "Martian target springs - several weak",
+      "status": "received",
+      "requested_by": "laura",
+      "occurred_at": "2025-10-25T11:00:00",
+      "updates": [
+        {
+          "text": "Ordered spring kit",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-10-26T09:00:00"
+        },
+        {
+          "text": "Springs arrived",
+          "posted_by": "laura",
+          "new_status": "received",
+          "occurred_at": "2025-11-05T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Monster Bash",
+      "text": "Mummy coffin lid motor - not opening fully",
+      "status": "requested",
+      "requested_by": "mike",
+      "occurred_at": "2025-11-22T10:00:00"
+    },
+    {
+      "machine": "Theatre of Magic",
+      "text": "Floating ball LED module - LEDs dim",
+      "status": "ordered",
+      "requested_by": "junkybrassmonkey",
+      "occurred_at": "2025-11-08T14:00:00",
+      "updates": [
+        {
+          "text": "Ordered LED replacement board from Cointaker",
+          "posted_by": "junkybrassmonkey",
+          "new_status": "ordered",
+          "occurred_at": "2025-11-09T10:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Jurassic Park (Data East)",
+      "text": "T-Rex head motor - head drooping",
+      "status": "received",
+      "requested_by": "nick",
+      "occurred_at": "2025-09-18T15:00:00",
+      "updates": [
+        {
+          "text": "Found used motor on eBay",
+          "posted_by": "william",
+          "new_status": "ordered",
+          "occurred_at": "2025-09-19T09:00:00"
+        },
+        {
+          "text": "Motor arrived - good condition",
+          "posted_by": "ken",
+          "new_status": "received",
+          "occurred_at": "2025-09-30T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Indiana Jones",
+      "text": "Idol post assembly - post sticking",
+      "status": "installed",
+      "requested_by": "paul",
+      "occurred_at": "2025-08-01T10:00:00",
+      "updates": [
+        {
+          "text": "Ordered new post and spring",
+          "posted_by": "ken",
+          "new_status": "ordered",
+          "occurred_at": "2025-08-02T09:00:00"
+        },
+        {
+          "text": "Parts arrived and installed - idol rising smoothly",
+          "posted_by": "paul",
+          "new_status": "installed",
+          "occurred_at": "2025-08-15T14:00:00"
+        }
+      ]
+    },
+    {
+      "machine": "Terminator 2",
+      "text": "Hunter-Killer cannon motor - not aiming properly",
+      "status": "requested",
+      "requested_by": "robert",
+      "occurred_at": "2025-11-25T09:00:00"
+    }
+  ]
+}

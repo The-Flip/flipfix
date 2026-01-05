@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from django.test import TestCase, override_settings, tag
 from django.utils import timezone as django_timezone
 
+from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.test_utils import (
     create_machine,
     create_maintainer_user,
@@ -17,6 +18,7 @@ from the_flip.apps.discord.records import (
     _create_part_request_update,
     _resolve_occurred_at,
 )
+from the_flip.apps.discord.types import DiscordUserInfo
 from the_flip.apps.maintenance.models import LogEntry
 
 
@@ -384,9 +386,8 @@ class ResolveAuthorTests(TestCase):
         self.assertIsNone(maintainer)
         self.assertEqual(display_name, "Test User")
 
-    def test_flipfix_prefix_resolves_by_name(self):
+    def test_flipfix_prefix_resolves_by_name(self) -> None:
         """flipfix/ prefixed author_id resolves via Maintainer.match_by_name."""
-        from the_flip.apps.accounts.models import Maintainer
         from the_flip.apps.discord.records import _resolve_author
 
         # Create a maintainer with known name
@@ -394,31 +395,31 @@ class ResolveAuthorTests(TestCase):
         expected_maintainer = Maintainer.objects.get(user=user)
 
         author_id = "flipfix/Sarah Chen"
-        author_id_map: dict = {}  # Empty - flipfix/ prefix doesn't use the map
+        author_id_map: dict[str, DiscordUserInfo] = {}
 
         maintainer, display_name = _resolve_author(author_id, author_id_map)
 
         self.assertEqual(maintainer, expected_maintainer)
         self.assertEqual(display_name, "Sarah Chen")
 
-    def test_flipfix_prefix_returns_name_when_no_match(self):
+    def test_flipfix_prefix_returns_name_when_no_match(self) -> None:
         """flipfix/ prefix returns the name even when no maintainer matches."""
         from the_flip.apps.discord.records import _resolve_author
 
         author_id = "flipfix/Unknown Person"
-        author_id_map: dict = {}
+        author_id_map: dict[str, DiscordUserInfo] = {}
 
         maintainer, display_name = _resolve_author(author_id, author_id_map)
 
         self.assertIsNone(maintainer)
         self.assertEqual(display_name, "Unknown Person")
 
-    def test_unknown_author_id_returns_fallback(self):
+    def test_unknown_author_id_returns_fallback(self) -> None:
         """Unknown author_id not in map returns fallback."""
         from the_flip.apps.discord.records import _resolve_author
 
         author_id = "999999999999999999"
-        author_id_map: dict = {}  # Empty map
+        author_id_map: dict[str, DiscordUserInfo] = {}
 
         maintainer, display_name = _resolve_author(author_id, author_id_map)
 
@@ -455,9 +456,9 @@ class ResolveOccurredAtTests(TestCase):
 
         self.assertEqual(result, timestamp)
 
-    def test_falls_back_to_now_when_no_timestamps_found(self):
+    def test_falls_back_to_now_when_no_timestamps_found(self) -> None:
         """Falls back to current time if no source messages in map."""
-        message_timestamp_map: dict = {}  # Empty map
+        message_timestamp_map: dict[str, datetime] = {}
 
         before = django_timezone.now()
         result = _resolve_occurred_at(["missing_id"], message_timestamp_map)

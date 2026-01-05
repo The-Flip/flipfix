@@ -231,7 +231,8 @@ class GlobalFeedPartialViewTests(TestDataMixin, TestCase):
         """Partial view should deny access to non-maintainers."""
         regular_user = create_user()
         self.client.force_login(regular_user)
-        response = self.client.get(self.partial_url)
+        with self.assertLogs("django.request", level="WARNING"):
+            response = self.client.get(self.partial_url)
         self.assertEqual(response.status_code, 403)
 
     def test_partial_returns_json(self):
