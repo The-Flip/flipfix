@@ -2069,15 +2069,6 @@ body {
   text-align: center;
 }
 
-/* Username availability status (register page) */
-.available {
-  color: var(--color-success);
-}
-
-.unavailable {
-  color: var(--color-problem);
-}
-
 /* Font weights */
 .font-semibold {
   font-weight: var(--font-semibold);

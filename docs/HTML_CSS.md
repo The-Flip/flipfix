@@ -4,7 +4,6 @@ This guide covers creating HTML and CSS for this project.
 
 Focus on clean, modern, lightweight mobile-friendly pages that rely on a single cached stylesheet.
 
-
 ## Things to Avoid
 
 - **Do not hardcode colors, spacing, or shadows**. Rely on the CSS variables and tokens established in the base stylesheet.
@@ -15,8 +14,7 @@ Focus on clean, modern, lightweight mobile-friendly pages that rely on a single 
 
 - **Per-page Styling is a Rare Exception**. For truly one-off page-specific styling that won't be reused elsewhere, a `<style>` block in the template is acceptable. Use sparingly—if the CSS might be useful on other pages or exceeds ~20 lines, add it to styles.css instead.
 
-- **Never Use Inline `style=` Attributes**. Inline styles (`style="..."`) are prohibited.  Always use CSS classes instead.
-
+- **Never Use Inline `style=` Attributes**. Inline styles (`style="..."`) are prohibited. Always use CSS classes instead.
 
 ## Page Layout
 
@@ -31,6 +29,7 @@ For simple centered pages (like error pages), extend `layouts/minimal_centered.h
 The project establishes component patterns in [the_flip/static/core/styles.css](../the_flip/static/core/styles.css). Before creating new components, review existing patterns:
 
 ### Layout Components
+
 - **Page Header** (`.page-header` with `.page-header__left`, `.page-header__right` for breadcrumbs and actions)
 - **List Header** (`.list-header` with `.list-header__left`, `.list-header__right` for search/filters and actions)
 - **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
@@ -38,6 +37,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **Centered Container** (`.centered-container` - flexbox container that vertically and horizontally centers content)
 
 ### UI Components
+
 - **Buttons** (`.btn` with modifiers like `.btn--primary`, `.btn--secondary`, `.btn--log`, `.btn--report`)
 - **Badges, Tags, Pills** (`.badge` with status modifiers like `.badge-open`, `.badge-fixing`, `.badge-inline`)
 - **Cards** (`.card` with BEM elements like `.card__header`, `.card__body`)
@@ -46,11 +46,13 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
 
 ### Interactive Components
+
 - **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`)
 - **Status Indicator** (`.status-indicator` with modifiers `.saving`, `.saved`, `.error`)
 - **Media Grid** (`.media-grid`, `.media-item`, `.media-link`, `.media-video`, `.btn-delete-media`)
 
 ### Utility Classes
+
 - `.hidden` - Hide elements (use with JS classList.add/remove for toggling)
 - `.visually-hidden` - Hide visually but keep accessible to screen readers (see [Icons](#icons))
 - `.text-muted` - Muted text color
@@ -72,24 +74,30 @@ See [Javascript.md](Javascript.md) for JavaScript patterns and component documen
 This project uses a "BEM-ish" approach to naming CSS classes:
 
 ### Use `Block__Element` (double underscore) for component hierarchy
+
 Use `block__element` when creating component subparts (header, body, footer, meta, etc.). Examples:
+
 - `.flip-card__top` - top section of flip-card
 - `.flip-card__bottom-right` - right-aligned bottom content of flip-card
 - `.page-header__left` - left section of page-header
 
 ### Use `Block--modifier` (double hyphen) for variants/states
-Use `block--modifier` when adding variants (colors, sizes, states).  Examples:
+
+Use `block--modifier` when adding variants (colors, sizes, states). Examples:
+
 - `.btn--primary`, `.btn--secondary`, `.btn--log`
 - `.pill--neutral`, `.pill--status-good`, `.pill--status-broken`
 
 ### Don't use hyphens for standalone utilities
+
 Use simple names for standalone utilities (`.card`, `.btn`, `.hidden`)
 
 ## Responsive Design
 
-The site must be optimized for mobile, tablet, and desktop. Breakpoints are defined in the stylesheet.  Avoid tables; hard to make those responsive.
+The site must be optimized for mobile, tablet, and desktop. Breakpoints are defined in the stylesheet. Avoid tables; hard to make those responsive.
 
 ## Accessibility & Interaction
+
 - Use semantic HTML elements (e.g., `<nav>`, `<main>`, `<section>`, `<table>`).
 - Maintain WCAG AA contrast for text/background combinations.
 - Do not remove focus outlines without providing explicit `:focus-visible` styles with equal or better visibility.
@@ -100,14 +108,12 @@ The site must be optimized for mobile, tablet, and desktop. Breakpoints are defi
 
 This project uses [Font Awesome](https://fontawesome.com/icons) icons. Always use the `{% icon %}` template tag instead of raw `<i>` elements because the tag handles accessibility automatically.
 
-| Usage | Description |
-|-------|-------------|
-| `{% icon "check" %}` | Uses icon `fa-check` from the default Font Awesome collection, Solid  |
-| `{% icon "discord" style="brands" %}` | Uses icon `fa-discord` from the Brands collection |
-| `{% icon "check" class="meta" %}` | Adds `meta` CSS class |
-| `{% icon "check" label="Problem" %}` | Create the label `Problem` for screen readers.  Use only when icon conveys meaning not in adjacent text.  By default, icons are hidden from screen readers. |
-
-
+| Usage                                 | Description                                                                                                                                               |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{% icon "check" %}`                  | Uses icon `fa-check` from the default Font Awesome collection, Solid                                                                                      |
+| `{% icon "discord" style="brands" %}` | Uses icon `fa-discord` from the Brands collection                                                                                                         |
+| `{% icon "check" class="meta" %}`     | Adds `meta` CSS class                                                                                                                                     |
+| `{% icon "check" label="Problem" %}`  | Create the label `Problem` for screen readers. Use only when icon conveys meaning not in adjacent text. By default, icons are hidden from screen readers. |
 
 ## XSS Protection
 

@@ -8,10 +8,10 @@ Migrate outbound Discord notifications from webhooks to the Discord bot API. Cur
 
 The current webhook system works, but we're adding a Discord bot for inbound message sync (see [DiscordBot.md](DiscordBot.md)). Consolidating to a single Discord integration provides:
 
- -  **Single configuration** - One bot token instead of bot token + webhook URLs
- - **Single modality** - All Discord code uses the same API/library
- - ability to do richer interaction (buttons, threads)
- - ability to resolve users dynamically
+- **Single configuration** - One bot token instead of bot token + webhook URLs
+- **Single modality** - All Discord code uses the same API/library
+- ability to do richer interaction (buttons, threads)
+- ability to resolve users dynamically
 
 ## Current Architecture
 
@@ -26,6 +26,7 @@ _deliver_to_endpoint() formats message and POSTs to webhook URL
 ```
 
 Key files:
+
 - [signals.py](../../the_flip/apps/discord/signals.py) - Signal handlers that trigger webhooks
 - [tasks.py](../../the_flip/apps/discord/tasks.py) - Async task queue logic
 - [formatters.py](../../the_flip/apps/discord/formatters.py) - Build Discord embed payloads
@@ -42,9 +43,10 @@ Django Q worker runs deliver_discord_post()
 Post to Discord REST API using bot token
 ```
 
-**We won't use the bot process to send messages**. Discord's REST API accepts bot token authentication for sending. The persistent WebSocket connection (the running bot) is only needed for *receiving* events like context menu commands.
+**We won't use the bot process to send messages**. Discord's REST API accepts bot token authentication for sending. The persistent WebSocket connection (the running bot) is only needed for _receiving_ events like context menu commands.
 
 This means:
+
 - Django Q worker will post directly to Discord API (via the discord.py library we already have installed)
 - No inter-process communication between worker and bot
 - Reuse existing retry/queue architecture
@@ -54,6 +56,7 @@ This means:
 ### Phase 1: Bot-Based Posting
 
 1. **Create `discord_http_utils.py`** - Utility module for Discord REST API calls
+
    ```python
    import discord
 
@@ -64,6 +67,7 @@ This means:
    ```
 
 2. **Add new task** in `tasks.py`
+
    ```python
    def deliver_discord_post(event_type: str, object_id: int, model_name: str):
        """Deliver event to Discord via bot API."""
@@ -132,20 +136,24 @@ We can validate in code: if `interaction.channel_id != config.DISCORD_CHANNEL_ID
 ## Configuration Changes
 
 ### Add
+
 - `DISCORD_CHANNEL_ID` - Target channel for posts and context menu
 - `POST_TO_DISCORD_ENABLED` - Master switch for outbound posts (default: off)
 - `PULL_FROM_DISCORD_ENABLED` - Master switch for inbound bot (default: off)
 
 ### Rename
+
 - `DISCORD_WEBHOOKS_PROBLEM_REPORTS` → `DISCORD_POST_PROBLEM_REPORTS`
 - `DISCORD_WEBHOOKS_LOG_ENTRIES` → `DISCORD_POST_LOG_ENTRIES`
 - `DISCORD_WEBHOOKS_PARTS` → `DISCORD_POST_PARTS`
 
 ### Keep
+
 - `DISCORD_BOT_TOKEN` - Already exists for bot
 - `DISCORD_GUILD_ID` - Already exists for bot
 
 ### Remove (Phase 3)
+
 - `DISCORD_WEBHOOK_URL` - Replaced by `DISCORD_CHANNEL_ID`
 - `DISCORD_WEBHOOKS_ENABLED` - Replaced by `POST_TO_DISCORD_ENABLED`
 - `DISCORD_BOT_ENABLED` - Replaced by `PULL_FROM_DISCORD_ENABLED`

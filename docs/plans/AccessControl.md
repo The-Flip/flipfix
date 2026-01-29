@@ -3,7 +3,8 @@
 This is a plan to make this project's access control follow Django best practices.
 
 ## Current State
-- Pinball machine maintainers need access to the end user site but NOT Django admin; however, they *DO* have access to Django admin.
+
+- Pinball machine maintainers need access to the end user site but NOT Django admin; however, they _DO_ have access to Django admin.
 - Maintainer role is implied by `User.is_staff=True`; a `Maintainer` profile is auto-created for staff users (signal).
 - All maintainer-only views/APIs use `UserPassesTestMixin` with `user.is_staff` checks.
 - Registration and invitation flows set `is_staff=True` for maintainers; shared terminals also set `is_staff=True`.
@@ -12,24 +13,28 @@ This is a plan to make this project's access control follow Django best practice
 - No Django Groups or custom permissions are defined for maintainers; `is_staff` is overloaded as the role flag.
 
 ## Best Practice Direction
+
 - Use Django's permission system with an explicit maintainer role: a "Maintainers" group carrying `accounts.can_access_maintainer_portal` permission (defined on the `Maintainer` model in the `accounts` app).
 - Reserve `is_staff` for Django admin site access only; reserve `is_superuser` for full control.
 - Centralize authorization checks in capability-based mixins following a `Can<Capability>Mixin` pattern (e.g., `CanAccessMaintainerPortalMixin`, `CanManageTerminalsMixin` etc), not role-based checks like `is_staff`.
 - Ensure maintainer profiles are created/linked independent of `is_staff`.
 
 ## Rationale
+
 - Aligns with Django conventions (staff ⇒ admin-site gate, permissions ⇒ app access).
 - Makes authorization auditable and explicit; avoids over-granting admin access.
 - Supports non-staff maintainers (e.g., Discord users) without admin exposure.
 - Simplifies future role changes (add granular perms/groups without reusing `is_staff`).
 
 ## Benefits
+
 - Clear separation of duties: admin access vs maintainer app access.
 - Principle of least privilege: maintainers no longer need admin-site rights.
 - Easier auditing and onboarding via groups/permissions.
 - Extensible: can add finer-grained permissions later.
 
 ## Drawbacks / Risks
+
 - Migration effort: many views/tests assume `is_staff`; must update consistently.
 - Existing staff users may lose access if the new permission/group is not seeded correctly.
 - Discord linkage flows must ensure maintainer profiles exist without staff reliance (note: Discord already works this way—it matches usernames to `Maintainer` profiles, not `is_staff`).
@@ -39,6 +44,7 @@ This is a plan to make this project's access control follow Django best practice
 **Important**: we will implement, test and deploy to prodution Phase 1 before beginning Phase 2. This ensures the refactoring is stable before changing authorization logic.
 
 ### Phase 1 — Centralize auth checks (no behavior change yet)
+
 - Current: Each maintainer view repeats `LoginRequiredMixin` + `UserPassesTestMixin` with `test_func` returning `user.is_staff`; some inline handlers manually check `is_staff`. Terminal management views use `SuperuserRequiredMixin` (role-based naming). `MachineBulkQRCodeView` incorrectly requires superuser when it should only require maintainer access.
 - Goal: Uniform, readable guards using capability-based naming (`Can<Capability>Mixin` pattern) that don't require every view to reimplement `test_func`.
 - Steps:
@@ -50,6 +56,7 @@ This is a plan to make this project's access control follow Django best practice
 - Rationale: Reduces duplication, clarifies intent (capability-based names are clearer than role-based), and concentrates the rules in one place for safer future changes. The `Can<Capability>Mixin` pattern is extensible for future permissions.
 
 ### Phase 2 — Switch to permissions/groups (allow non-staff maintainers)
+
 - Define role
   - Create a "Maintainers" group and custom permission `accounts.can_access_maintainer_portal` on the `Maintainer` model.
   - Seed group and permission via data migration; add all existing maintainers to the group.
@@ -73,4 +80,5 @@ This is a plan to make this project's access control follow Django best practice
   - Verify admin access still works for superusers.
 
 ### Phase 3 - Data Cleanup
+
 After Phase 2 is shipped and stable, manually remove `is_staff=True` from maintainer accounts that don't need Django admin access.

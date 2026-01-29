@@ -6,7 +6,6 @@
 
 At several points with this project, we've built features that we've wanted to easily enable and disable in different environments, from a UI, without restarting the server.
 
-
 ## Requirements
 
 - **Admin-only** - only superusers need access
@@ -19,13 +18,13 @@ At several points with this project, we've built features that we've wanted to e
 
 ## Options
 
-| Approach | No Migrations | No Restarts | Notes |
-|----------|--------------------------------|---------------------|-------|
-| Environment variables | ✅ | ❌ | Requires restart |
-| Custom singleton model | ❌ | ✅ | Simple, full control |
-| Custom key-value store | ✅ | ✅ | More complex admin UI |
-| [django-constance](https://github.com/jazzband/django-constance) | ✅ | ✅ | Mature library, nice admin UI |
-| [django-waffle](https://github.com/django-waffle/django-waffle) | ✅ | ✅ | Overkill unless needing rollouts/A/B |
+| Approach                                                         | No Migrations | No Restarts | Notes                                |
+| ---------------------------------------------------------------- | ------------- | ----------- | ------------------------------------ |
+| Environment variables                                            | ✅            | ❌          | Requires restart                     |
+| Custom singleton model                                           | ❌            | ✅          | Simple, full control                 |
+| Custom key-value store                                           | ✅            | ✅          | More complex admin UI                |
+| [django-constance](https://github.com/jazzband/django-constance) | ✅            | ✅          | Mature library, nice admin UI        |
+| [django-waffle](https://github.com/django-waffle/django-waffle)  | ✅            | ✅          | Overkill unless needing rollouts/A/B |
 
 ## django-constance Details
 

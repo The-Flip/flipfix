@@ -25,6 +25,7 @@ the_flip/
 ```
 
 ### Conventions
+
 - Keep each app’s `models.py`, `admin.py`, `forms.py`, and `tests/` focused on that domain. For larger modules, split into packages (e.g., `catalog/models/machine.py`).
 - Put routes in the root `urls.py` rather than per-app, to keep them all together and scannable.
 - Use `settings/base.py` for shared defaults, `prod_base.py` for shared production config, then `web.py` (web production), `worker.py` (worker production), `dev.py` (local development), and `test.py` (CI/tests). Set `DJANGO_SETTINGS_MODULE` per environment.

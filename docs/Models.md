@@ -96,6 +96,7 @@ PartRequest.objects.exclude(status="cancelled").filter(status__in=["requested", 
 ```
 
 The project uses this pattern in:
+
 - `MachineInstanceQuerySet` - `visible()`, `active_for_matching()`
 - `ProblemReportQuerySet` - `open()`, `search()`, `search_for_machine()`
 - `LogEntryQuerySet` - `search()`, `search_for_machine()`, `search_for_problem_report()`
@@ -110,12 +111,12 @@ For complex search logic with context-specific variants, use private `_build_*_q
 
 When building search Q objects, include these fields consistently:
 
-| Field Type | Always Search |
-|------------|---------------|
-| User FK | `username`, `first_name`, `last_name` |
-| Freetext name | The text field (e.g., `reported_by_name`) alongside any FK |
-| Status | Include if users would search for it (e.g., "open", "closed") |
-| Description/text | The main content field |
+| Field Type       | Always Search                                                 |
+| ---------------- | ------------------------------------------------------------- |
+| User FK          | `username`, `first_name`, `last_name`                         |
+| Freetext name    | The text field (e.g., `reported_by_name`) alongside any FK    |
+| Status           | Include if users would search for it (e.g., "open", "closed") |
+| Description/text | The main content field                                        |
 
 #### Core Fields Helper
 
@@ -217,6 +218,7 @@ class LogEntryQuerySet(models.QuerySet):
 **When to create scoped variants:**
 
 Create `search_for_X()` methods when the search context changes what fields are relevant:
+
 - `search()` - Global list: all fields including machine name
 - `search_for_machine()` - Machine page: excludes machine name, includes linked record fields
 - `search_for_problem_report()` - Problem report page: only the model's own fields (linked record is redundant)

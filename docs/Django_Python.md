@@ -22,11 +22,13 @@ Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focus
 ### Docstrings
 
 Add docstrings to:
+
 - All public classes (models, views, forms)
 - Public methods that aren't self-explanatory from the name
 - Template tags and filters (these are a public API)
 
 Skip docstrings for:
+
 - Private methods (prefixed with `_`)
 - Django framework methods with obvious purpose (`get_queryset`, `clean`, `save`)
 - Simple properties where the name says it all
@@ -51,6 +53,7 @@ logger.exception("event_name", extra={"error": str(e), "context": value})
 ```
 
 **Guidelines:**
+
 - First parameter: snake_case event name describing what happened
 - Use `extra={}` dict for structured data (never f-strings with variables)
 - Always include `"error": str(e)` in the extra dict when logging exceptions
@@ -62,6 +65,7 @@ logger.exception("event_name", extra={"error": str(e), "context": value})
 **For Django model fields:** Use `models.TextChoices` (see [Models.md](Models.md))
 
 **For non-model enums (API schemas, constants, etc.):**
+
 - Use `StrEnum` when values need to be strings (e.g., for JSON serialization, LLM tool schemas)
 - Use base `Enum` when values can be any type
 

@@ -4,25 +4,25 @@
 
 This project uses **Class-Based Views (CBVs)** for most views and **Function-Based Views (FBVs)** for simple endpoints.
 
-| Use | When to Use |
-|-----|------|
-| **CBV** | Standard CRUD: list, detail, create, update, delete. Django's generic views handle the boilerplate. |
+| Use     | When to Use                                                                                                                    |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **CBV** | Standard CRUD: list, detail, create, update, delete. Django's generic views handle the boilerplate.                            |
 | **FBV** | Simple one-off endpoints: health checks, AJAX validation, webhooks, or views with unusual logic that doesn't fit CBV patterns. |
 
 Examples of FBVs in this project: `healthz` (health check), `check_username` (AJAX validation), user registration views.
 
 ## Common CBV Types
 
-| CBV | When to Use |
-|-----|-------------|
-| `TemplateView` | GET-only pages with custom context (no object lookup needed) |
-| `ListView` | Paginated lists, search results, filtered collections |
-| `DetailView` | Single object by pk/slug from URL |
-| `FormView` | Forms that don't create/update a model directly |
-| `CreateView` | Model creation forms |
-| `UpdateView` | Model edit forms |
-| `DeleteView` | Deletion confirmation pages |
-| `View` | AJAX/JSON endpoints, multi-action POST handlers, or when generics don't fit |
+| CBV            | When to Use                                                                 |
+| -------------- | --------------------------------------------------------------------------- |
+| `TemplateView` | GET-only pages with custom context (no object lookup needed)                |
+| `ListView`     | Paginated lists, search results, filtered collections                       |
+| `DetailView`   | Single object by pk/slug from URL                                           |
+| `FormView`     | Forms that don't create/update a model directly                             |
+| `CreateView`   | Model creation forms                                                        |
+| `UpdateView`   | Model edit forms                                                            |
+| `DeleteView`   | Deletion confirmation pages                                                 |
+| `View`         | AJAX/JSON endpoints, multi-action POST handlers, or when generics don't fit |
 
 ## CBV Pattern
 
@@ -151,7 +151,7 @@ Add these in views or QuerySet methods where queries are built, not in model met
 
 Keep views in a single `views.py` until it exceeds ~500 lines (per [Django_Python.md](Django_Python.md)). When splitting:
 
-1. **Extract shared patterns first** - Move duplicated logic to mixins or model managers *before* splitting. Otherwise each new file inherits its own copy of the duplication.
+1. **Extract shared patterns first** - Move duplicated logic to mixins or model managers _before_ splitting. Otherwise each new file inherits its own copy of the duplication.
 
 2. **Convert to a `views/` package** - Create `views/__init__.py` with just a docstring (no re-exports).
 

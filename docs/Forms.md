@@ -21,13 +21,13 @@ Import from `the_flip.apps.core.forms`. Place `StyledFormMixin` first in the inh
 
 ### Form vs ModelForm
 
-| Use Case | Base Class |
-|----------|------------|
-| Editing an existing model instance | `forms.ModelForm` |
+| Use Case                                     | Base Class        |
+| -------------------------------------------- | ----------------- |
+| Editing an existing model instance           | `forms.ModelForm` |
 | Creating a model with all/most of its fields | `forms.ModelForm` |
-| Multi-step wizard (collecting partial data) | `forms.Form` |
-| Actions that don't map to a single model | `forms.Form` |
-| Creating multiple related objects at once | `forms.Form` |
+| Multi-step wizard (collecting partial data)  | `forms.Form`      |
+| Actions that don't map to a single model     | `forms.Form`      |
+| Creating multiple related objects at once    | `forms.Form`      |
 
 **ModelForm** automatically generates fields from the model and provides a `save()` method. Use it when there's a direct 1:1 mapping between form and model.
 
@@ -63,9 +63,7 @@ The project uses two approaches for rendering form fields:
 {% load core_extras %}
 
 <form method="post" class="form-main">
-  {% csrf_token %}
-  {% form_non_field_errors form %}
-  {% form_fields form %}
+  {% csrf_token %} {% form_non_field_errors form %} {% form_fields form %}
   <div class="form-actions">
     <a href="{% url 'cancel' %}" class="btn btn--secondary">Cancel</a>
     <button type="submit" class="btn btn--primary">Save</button>
@@ -79,10 +77,8 @@ The project uses two approaches for rendering form fields:
 {% load core_extras %}
 
 <form method="post" class="form-main">
-  {% csrf_token %}
-  {% form_non_field_errors form %}
-  {% form_field form.username %}
-  {% form_field form.email %}
+  {% csrf_token %} {% form_non_field_errors form %} {% form_field form.username %} {% form_field
+  form.email %}
   <div class="form-actions">
     <a href="{% url 'cancel' %}" class="btn btn--secondary">Cancel</a>
     <button type="submit" class="btn btn--primary">Save</button>
@@ -94,31 +90,32 @@ The project uses two approaches for rendering form fields:
 
 When `{% form_field %}` doesn't fit your needs (autocomplete, radio groups, file uploads, etc.), prefer helper tags over raw HTML. This keeps behavior consistent and makes future changes easier.
 
-| Instead of | Use |
-|------------|-----|
-| `<label class="form-label">...</label>` | `{% form_label field %}` |
-| `{{ field.label_tag }}` | `{% form_label field %}` |
-| Manual error checking | `{% field_errors field %}` |
-| Manual help text | `{% field_help_text field %}` |
+| Instead of                              | Use                           |
+| --------------------------------------- | ----------------------------- |
+| `<label class="form-label">...</label>` | `{% form_label field %}`      |
+| `{{ field.label_tag }}`                 | `{% form_label field %}`      |
+| Manual error checking                   | `{% field_errors field %}`    |
+| Manual help text                        | `{% field_help_text field %}` |
 
 Only use raw `<label>` when you need custom label text that differs from the Django field's label.
 
 ```html
 <form method="post" class="form-main">
-  {% csrf_token %}
-  {% form_non_field_errors form %}
+  {% csrf_token %} {% form_non_field_errors form %}
 
   <!-- Text field with extra elements -->
   <div class="form-field">
     {% form_label form.password %}
-    <input type="password"
-           id="{{ form.password.id_for_label }}"
-           name="{{ form.password.html_name }}"
-           class="form-input"
-           required>
+    <input
+      type="password"
+      id="{{ form.password.id_for_label }}"
+      name="{{ form.password.html_name }}"
+      class="form-input"
+      required
+    />
     {% field_errors form.password %}
     <label class="checkbox-label">
-      <input type="checkbox" id="show-password" class="checkbox">
+      <input type="checkbox" id="show-password" class="checkbox" />
       Show password
     </label>
   </div>
@@ -128,10 +125,10 @@ Only use raw `<label>` when you need custom label text that differs from the Dja
     <label class="form-label">What type of problem?</label>
     <div class="radio-group">
       {% for radio in form.problem_type %}
-        <label class="radio-label">
-          {{ radio.tag }}
-          <span>{{ radio.choice_label }}</span>
-        </label>
+      <label class="radio-label">
+        {{ radio.tag }}
+        <span>{{ radio.choice_label }}</span>
+      </label>
       {% endfor %}
     </div>
     {% field_errors form.problem_type %}
@@ -139,7 +136,7 @@ Only use raw `<label>` when you need custom label text that differs from the Dja
 
   <!-- Checkbox -->
   <label class="checkbox-label">
-    <input type="checkbox" name="agree" class="checkbox">
+    <input type="checkbox" name="agree" class="checkbox" />
     <span>I agree to the terms</span>
   </label>
 
@@ -158,23 +155,23 @@ Use HTML5 `required` attribute on inputs for browser validation.
 
 ## Form CSS Classes
 
-| Class | Purpose |
-|-------|---------|
-| `.form-main` | Form container with consistent spacing between fields |
-| `.form-field` | Wrapper for label + input + help text + errors |
-| `.form-label` | Field label styling |
-| `.form-input` | Text inputs, selects, and textareas |
-| `.form-input--width-4` | Narrow width (4em) for single-digit inputs |
-| `.form-input--width-6` | Narrow width (6em) for small numbers |
-| `.form-input--width-8` | Narrow width (8em) for IDs |
-| `.form-input--width-10` | Narrow width (10em) for years |
-| `.form-input--width-20` | Medium width (20em) for short text |
-| `.form-textarea` | Multi-line text input (extends `.form-input`) |
-| `.form-hint` | Help text below inputs |
-| `.form-actions` | Button container at form bottom (cancel left, submit right) |
-| `.form-section` | Fieldset with border for grouping related fields |
-| `.radio-group` | Horizontal container for radio button options |
-| `.checkbox-label` | Label wrapper for checkbox + text |
+| Class                   | Purpose                                                     |
+| ----------------------- | ----------------------------------------------------------- |
+| `.form-main`            | Form container with consistent spacing between fields       |
+| `.form-field`           | Wrapper for label + input + help text + errors              |
+| `.form-label`           | Field label styling                                         |
+| `.form-input`           | Text inputs, selects, and textareas                         |
+| `.form-input--width-4`  | Narrow width (4em) for single-digit inputs                  |
+| `.form-input--width-6`  | Narrow width (6em) for small numbers                        |
+| `.form-input--width-8`  | Narrow width (8em) for IDs                                  |
+| `.form-input--width-10` | Narrow width (10em) for years                               |
+| `.form-input--width-20` | Medium width (20em) for short text                          |
+| `.form-textarea`        | Multi-line text input (extends `.form-input`)               |
+| `.form-hint`            | Help text below inputs                                      |
+| `.form-actions`         | Button container at form bottom (cancel left, submit right) |
+| `.form-section`         | Fieldset with border for grouping related fields            |
+| `.radio-group`          | Horizontal container for radio button options               |
+| `.checkbox-label`       | Label wrapper for checkbox + text                           |
 
 ## Datetime Fields with Timezone Handling
 
@@ -183,15 +180,17 @@ When editing a timestamp that needs to be displayed in the user's local timezone
 ### Template Structure
 
 ```html
-<input type="hidden" name="browser_timezone" id="browser-timezone">
+<input type="hidden" name="browser_timezone" id="browser-timezone" />
 
 <div class="form-group">
   <label for="{{ form.occurred_at.id_for_label }}" class="form-label">When</label>
-  <input type="datetime-local"
-         id="{{ form.occurred_at.id_for_label }}"
-         name="{{ form.occurred_at.html_name }}"
-         class="form-input"
-         data-utc="{{ object.occurred_at.isoformat }}">
+  <input
+    type="datetime-local"
+    id="{{ form.occurred_at.id_for_label }}"
+    name="{{ form.occurred_at.html_name }}"
+    class="form-input"
+    data-utc="{{ object.occurred_at.isoformat }}"
+  />
   {% field_errors form.occurred_at %}
 </div>
 ```
@@ -200,21 +199,21 @@ When editing a timestamp that needs to be displayed in the user's local timezone
 
 ```html
 {% block extra_scripts %}
-  <script src="{% static 'core/core.js' %}" defer></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Capture browser's IANA timezone (e.g., "America/Los_Angeles")
-      document.getElementById('browser-timezone').value =
-        Intl.DateTimeFormat().resolvedOptions().timeZone;
+<script src="{% static 'core/core.js' %}" defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Capture browser's IANA timezone (e.g., "America/Los_Angeles")
+    document.getElementById('browser-timezone').value =
+      Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // Convert UTC timestamp to local datetime-local value
-      const input = document.getElementById('{{ form.occurred_at.id_for_label }}');
-      if (input && input.dataset.utc) {
-        const date = new Date(input.dataset.utc);
-        input.value = toDateTimeLocalValue(date);  // From core.js
-      }
-    });
-  </script>
+    // Convert UTC timestamp to local datetime-local value
+    const input = document.getElementById('{{ form.occurred_at.id_for_label }}');
+    if (input && input.dataset.utc) {
+      const date = new Date(input.dataset.utc);
+      input.value = toDateTimeLocalValue(date); // From core.js
+    }
+  });
+</script>
 {% endblock %}
 ```
 
@@ -240,6 +239,7 @@ def form_valid(self, form):
 ```
 
 **Why this pattern:**
+
 - Uses IANA timezone names (e.g., `America/Los_Angeles`) instead of offsets, handling DST correctly
 - The `datetime-local` input doesn't include timezone info, so we capture it separately
 - `toDateTimeLocalValue()` from `core.js` formats a Date for the `datetime-local` input

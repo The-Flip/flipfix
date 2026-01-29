@@ -7,35 +7,42 @@ This is a web app for managing pinball machine problem reports at [The Flip](htt
 It allows museum visitors to report problems with pinball machines (via QR codes on each machine), and enables maintainers to track, update, and resolve these issues.
 
 ## Live System
+
 It's live at https://flipfix.theflip.museum/
 
 ## Local Development Setup
+
 It's in Django.
 
 ### Prerequisites
+
 - Python 3.13+
 - pip
 
 ### Installation
 
 1. **Clone repo**
+
    ```bash
    git clone https://github.com/deanmoses/the_flip.git
    cd the_flip
    ```
 
 2. **Create and activate virtual environment**
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.dev.txt
    ```
 
 4. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    ```
@@ -43,56 +50,68 @@ It's in Django.
    Edit `.env` and set values based on the instructions inside
 
 5. **Run migrations**
+
    ```bash
    make migrate
    ```
 
 6. **Create sample data OR superuser**
 
-   If you want a rich set of sample data to play with, the following command creates a bunch of users including admins.  Look at output for usernames. All users have a password of 'test123'.
+   If you want a rich set of sample data to play with, the following command creates a bunch of users including admins. Look at output for usernames. All users have a password of 'test123'.
+
    ```bash
    make sample-data
    ```
 
    Else if you want an empty system, create a user for yourself:
+
    ```bash
    make superuser
    ```
 
-
-
 ## Running the Application
 
 ### Web Server
+
 This is the main thing you need to run.
+
 ```bash
 make runserver  # or: python manage.py runserver
 ```
+
 - Main site: http://localhost:8000/
 - Admin panel: http://localhost:8000/admin/
 
 ### Background Worker
+
 You only need to run the background task worker if you want to upload video and have the system post to Discord.
+
 ```bash
 make runq  # In a separate terminal
 ```
+
 Requires FFmpeg for video transcoding:
+
 - macOS: `brew install ffmpeg`
 - Ubuntu/Debian: `apt-get install ffmpeg`
 - Windows: Download from [ffmpeg.org](https://ffmpeg.org/)
 
-See [docs/Discord.md](docs/Discord.md) for how to configure Web Hooks to post to Discord.  It's disabled by default.
+See [docs/Discord.md](docs/Discord.md) for how to configure Web Hooks to post to Discord. It's disabled by default.
 
 ### Discord Bot
+
 You only need to run the Discord bot if you want to right-click in a Discord channel and add those Discord messages to Flipfix.
+
 ```bash
 make runbot  # In a separate terminal
 ```
-See [docs/Discord.md](docs/Discord.md) for setup instructions.  It's disabled by default.
+
+See [docs/Discord.md](docs/Discord.md) for setup instructions. It's disabled by default.
 
 ## Development Tools
 
 **Install pre-commit hooks** (recommended):
+
 ```bash
 pre-commit install
 ```

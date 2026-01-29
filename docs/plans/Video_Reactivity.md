@@ -38,6 +38,7 @@ This event-based design keeps the modules decoupled - they can be included indep
 **URL:** `GET /api/transcoding/status/?ids=1,2,3&models=LogEntryMedia,LogEntryMedia,PartRequestMedia`
 
 **Response:**
+
 ```json
 {
   "1": {
@@ -65,6 +66,7 @@ This event-based design keeps the modules decoupled - they can be included indep
 Polls the server for video transcoding status updates.
 
 **Features:**
+
 - Batch polling - Single request for all pending videos on page
 - Exponential backoff - Start 2s, double each attempt, cap at 10s
 - Max attempts - Stop after 60 attempts (~3 minutes at max interval)
@@ -73,11 +75,10 @@ Polls the server for video transcoding status updates.
 - Timeout message - Shows "Taking longer than expected. Try refreshing."
 
 **DOM interface:**
+
 ```html
 <!-- Template adds these attributes to processing videos -->
-<div class="media-grid__status"
-     data-media-poll-id="123"
-     data-media-poll-model="LogEntryMedia">
+<div class="media-grid__status" data-media-poll-id="123" data-media-poll-model="LogEntryMedia">
   Processing video...
 </div>
 ```
@@ -87,6 +88,7 @@ Polls the server for video transcoding status updates.
 Handles media upload and deletion.
 
 **Upload progress features:**
+
 - Shows "Uploading 1 of 5..." status during multi-file uploads
 - Disables upload button during uploads (prevents double-uploads)
 - Updates button text based on media state ("Upload" vs "Upload More")
@@ -99,6 +101,7 @@ Handles media upload and deletion.
 `templates/core/partials/media_card_editable.html`
 
 Include in page scripts:
+
 ```html
 <script src="{% static 'core/media_grid.js' %}" defer></script>
 <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
@@ -109,21 +112,22 @@ Include in page scripts:
 `templates/core/partials/media_grid_readonly.html`
 
 Only needs polling script (no upload functionality):
+
 ```html
 <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
 ```
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `the_flip/apps/core/views.py` | TranscodeStatusView API endpoint |
-| `the_flip/urls.py` | API route: `/api/transcoding/status/` |
-| `the_flip/static/core/video_transcode_poll.js` | Polling logic |
-| `the_flip/static/core/media_grid.js` | Upload/delete with progress counter |
-| `the_flip/static/core/styles.css` | `.media-grid__status` styles |
-| `templates/core/partials/media_card_editable.html` | Poll attributes on processing videos |
-| `templates/core/partials/media_grid_readonly.html` | Poll attributes for list views |
+| File                                               | Purpose                               |
+| -------------------------------------------------- | ------------------------------------- |
+| `the_flip/apps/core/views.py`                      | TranscodeStatusView API endpoint      |
+| `the_flip/urls.py`                                 | API route: `/api/transcoding/status/` |
+| `the_flip/static/core/video_transcode_poll.js`     | Polling logic                         |
+| `the_flip/static/core/media_grid.js`               | Upload/delete with progress counter   |
+| `the_flip/static/core/styles.css`                  | `.media-grid__status` styles          |
+| `templates/core/partials/media_card_editable.html` | Poll attributes on processing videos  |
+| `templates/core/partials/media_grid_readonly.html` | Poll attributes for list views        |
 
 ## Testing
 

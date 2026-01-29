@@ -12,9 +12,7 @@ from the_flip.apps.accounts.views import (
     TerminalLoginView,
     TerminalReactivateView,
     TerminalUpdateView,
-    check_username,
     invitation_register,
-    self_register,
 )
 from the_flip.apps.catalog.views import (
     MachineCreateLandingView,
@@ -89,8 +87,6 @@ urlpatterns = [
         name="login",
     ),  # Login page
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),  # Logout
-    path("register/", self_register, name="self-register"),  # Self-registration form
-    path("register/check-username/", check_username, name="check-username"),  # AJAX username check
     path(
         "register/<str:token>/",
         invitation_register,

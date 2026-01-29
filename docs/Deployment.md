@@ -16,16 +16,19 @@ How code gets from your local machine to production.
 When you create a pull request, an ephemeral test environment is automatically created.
 
 **Features:**
+
 - Unique URL for each PR (e.g., `pr-123.up.railway.app`)
 - Full stack deployment (database, storage, background workers)
 - Automatically deleted when PR is closed
 - Fresh database (no production data)
 
 **How to access:**
+
 - Railway posts the URL in the PR deployment checks
 - Click the URL to test your changes in a live environment
 
 **Limitations:**
+
 - Fresh database (not a copy of production data)
 - Separate from production (different domain, environment variables)
 
@@ -41,6 +44,7 @@ When you create a pull request, an ephemeral test environment is automatically c
 8. New version is live
 
 **Live system:**
+
 - Primary: https://flipfix.theflip.museum/
 - Railway fallback: https://the-flip-production.up.railway.app/
 

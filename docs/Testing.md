@@ -18,15 +18,14 @@ make test-models       # Run model tests only
 
 Use these 6 tags to enable selective test execution. Each tag maps to a type of code you're editing:
 
-| Tag | Use For | When to Run |
-|-----|---------|-------------|
-| `models` | Model/queryset logic, signals, managers | Editing models, managers, signals |
-| `views` | HTTP request/response tests, template filters/tags | Editing views, templates, URLs |
-| `forms` | Form validation logic | Editing form classes |
-| `tasks` | Background jobs (Django Q), async utilities, Discord bot logic | Editing async tasks, Discord integration |
-| `admin` | Django admin customizations | Editing admin.py |
-| `integration` | Tests requiring external services (ffmpeg, S3) | Exclude for fast local runs |
-
+| Tag           | Use For                                                        | When to Run                              |
+| ------------- | -------------------------------------------------------------- | ---------------------------------------- |
+| `models`      | Model/queryset logic, signals, managers                        | Editing models, managers, signals        |
+| `views`       | HTTP request/response tests, template filters/tags             | Editing views, templates, URLs           |
+| `forms`       | Form validation logic                                          | Editing form classes                     |
+| `tasks`       | Background jobs (Django Q), async utilities, Discord bot logic | Editing async tasks, Discord integration |
+| `admin`       | Django admin customizations                                    | Editing admin.py                         |
+| `integration` | Tests requiring external services (ffmpeg, S3)                 | Exclude for fast local runs              |
 
 ### Running Tests by Tag
 
@@ -35,7 +34,6 @@ python manage.py test --tag=models              # Run model tests
 python manage.py test --tag=views               # Run view tests
 python manage.py test --exclude-tag=integration # Fast local runs
 ```
-
 
 ## Writing New Tests
 
@@ -68,6 +66,7 @@ the_flip/apps/maintenance/tests/
 ```
 
 **Why feature-based?**
+
 - Run related tests together: `python manage.py test maintenance.tests.test_log_entry_create`
 - Easier to find tests when debugging a specific feature
 - Smaller files are easier to navigate than monolithic `test_views.py`
@@ -75,9 +74,10 @@ the_flip/apps/maintenance/tests/
 **Avoid layer-based naming** like `test_models.py`, `test_views.py`, `test_forms.py` — these grow large and mix unrelated features.
 
 ### Test Writing Rules
+
 - Use descriptive test names with docstrings:
   - **One-line docstrings** for straightforward tests: `"""Staff can upload media."""`
-  - **Multi-line docstrings** for regression tests or tests needing context to explain *why* they exist
+  - **Multi-line docstrings** for regression tests or tests needing context to explain _why_ they exist
 - Tags
   - Add [`@tag` decorators](#test-tags) for selective execution.
   - **Keep tags simple:** don't invent new tags or combine multiple tags. One tag per test class.
@@ -92,16 +92,16 @@ Shared utilities in `the_flip.apps.core.test_utils`:
 
 ### Factory Functions
 
-| Factory | Use For |
-|---------|---------|
-| `create_machine()` | Creates machine model + instance |
-| `create_problem_report()` | Problem report fixtures |
-| `create_log_entry()` | Log entry fixtures |
+| Factory                    | Use For                                                 |
+| -------------------------- | ------------------------------------------------------- |
+| `create_machine()`         | Creates machine model + instance                        |
+| `create_problem_report()`  | Problem report fixtures                                 |
+| `create_log_entry()`       | Log entry fixtures                                      |
 | `create_maintainer_user()` | Users with access to the maintainer portal (most tests) |
-| `create_user()` | Regular users without special permissions |
-| `create_superuser()` | Admin/superuser access |
-| `create_staff_user()` | Django admin access tests (sets `is_staff=True`) |
-| `create_shared_terminal()` | Shared terminal user account fixtures |
+| `create_user()`            | Regular users without special permissions               |
+| `create_superuser()`       | Admin/superuser access                                  |
+| `create_staff_user()`      | Django admin access tests (sets `is_staff=True`)        |
+| `create_shared_terminal()` | Shared terminal user account fixtures                   |
 
 #### Example
 
@@ -121,14 +121,15 @@ maintainer = create_maintainer_user(username="alice", first_name="Alice")
 
 Mixins provide reusable test fixtures and behaviors.
 
-| Mixin | When to Use |
-|-------|-------------|
-| `TestDataMixin` | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser` |
-| `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise. |
-| `SharedAccountTestMixin` | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer` |
-| `TemporaryMediaMixin` | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations. |
+| Mixin                      | When to Use                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TestDataMixin`            | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser`                       |
+| `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise.                                                                           |
+| `SharedAccountTestMixin`   | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer` |
+| `TemporaryMediaMixin`      | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations.          |
 
 #### Put Mixins Before TestCase
+
 When combining multiple mixins, **order matters** due to Python's MRO. Always put mixins before `TestCase`:
 
 ```python
@@ -139,7 +140,7 @@ class MyTests(SharedAccountTestMixin, SuppressRequestLogsMixin, TestDataMixin, T
 
 Do NOT hardcode strings like `"test-password-123"` because these trigger the `detect-secrets` pre-commit hook.
 
-**User factories handle this automatically**:  `create_user()`, `create_maintainer_user()`, etc. generate random passwords internally.
+**User factories handle this automatically**: `create_user()`, `create_maintainer_user()`, etc. generate random passwords internally.
 
 For other tokens or secrets in tests, generate them in `setUp()`:
 

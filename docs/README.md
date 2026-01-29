@@ -19,4 +19,4 @@ The development documentation for The Flip maintenance system.
 
 ## For AI Assistants
 
-AI assistants must read and understand these docs before responding.  AI assistants must confirm relevant sections from these documents before generating code or explanations. Cite which guide sections informed the answer whenever practical.
+AI assistants must read and understand these docs before responding. AI assistants must confirm relevant sections from these documents before generating code or explanations. Cite which guide sections informed the answer whenever practical.

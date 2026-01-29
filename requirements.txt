@@ -7,10 +7,10 @@ django-constance[database]==4.3.4
 
 # Database
 psycopg[binary]==3.3.2
-dj-database-url==3.0.1
+dj-database-url==3.1.0
 
 # Production Server
-gunicorn==23.0.0
+gunicorn==24.1.1
 
 # Static Files Serving
 whitenoise==6.11.0
@@ -25,7 +25,7 @@ django-q2==1.9.0
 requests==2.32.5
 
 # Markdown Rendering
-Markdown==3.10
+Markdown==3.10.1
 nh3==0.3.2
 linkify-it-py==2.0.3
 
@@ -39,4 +39,4 @@ django-ipware==7.0.1
 discord.py==2.6.4
 audioop-lts==0.2.2  # Python 3.13 compatibility for discord.py
 httpx==0.28.1
-anthropic
+anthropic==0.76.0

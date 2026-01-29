@@ -15,19 +15,6 @@
       <div class="card card--padded space-below-lg">
         <div class="sidebar__title">Welcome to The Flip's pinball machine maintenance system.</div>
       </div>
-      {% if not user.is_authenticated %}
-        <div class="card card--padded space-below-lg">
-          <div class="sidebar__label">Beta access</div>
-          <div class="sidebar__title">Need an account?</div>
-          <p class="text-muted space-above-sm">During beta you can register yourself.</p>
-          <div class="flex stack-tight space-above-sm">
-            <a href="{% url 'self-register' %}" class="btn btn--log">
-              {% icon "user-plus" class="meta" %}
-              Register
-            </a>
-          </div>
-        </div>
-      {% endif %}
     {% endif %}
     <div class="card card--padded space-below-lg">
       <div class="sidebar__label">Support</div>

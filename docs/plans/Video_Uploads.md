@@ -9,6 +9,7 @@ This is the spec for supporting maintainers uploading videos while logging their
 ---
 
 ## Goals
+
 - **Upload any format, transform to a widely understood format**: accept phone-recorded videos (MOV/HEVC/etc.) and transcode to widely playable H.264/AAC MP4.
 - **Poster**: generate a poster image for UI display.
 - **Responsive**: keep uploads responsive by offloading transcode to a background worker.
@@ -16,6 +17,7 @@ This is the spec for supporting maintainers uploading videos while logging their
 - **Very low maintenance**: the volunteer staff does not want to do any maintenance on this system. Use Django patterns, admin visibility, automatic task cleanup.
 
 ## Approach
+
 - Use **django-q2** with the ORM broker (tasks stored in Postgres/SQLite).
 - Run a single worker process (`python manage.py qcluster`) to process transcodes.
 - `ffmpeg` runs in the worker; cap video long side at 2400px and generate a poster.
@@ -34,20 +36,24 @@ Therefore, the worker service will communicate with the web service via HTTP to 
 5. Worker cleans up all temp files
 
 **Security:**
+
 - Both endpoints require Bearer token authentication (`TRANSCODING_UPLOAD_TOKEN`)
 - `DJANGO_WEB_SERVICE_URL` must use HTTPS in production (Railway provides this by default)
 - Token is static with no automatic rotation; acceptable for this low-volume volunteer app where the token is only used service-to-service within Railway's private network
 
 **Required environment variables:**
+
 - `TRANSCODING_UPLOAD_TOKEN` - Shared secret for authentication (required on both web and worker)
 - `DJANGO_WEB_SERVICE_URL` - Base URL of web service (worker only; must be HTTPS in production)
 - `RAILPACK_DEPLOY_APT_PACKAGES=ffmpeg` - Installs ffmpeg during build (worker only)
 
 **Files for HTTP transfer:**
+
 - `the_flip/apps/maintenance/views.py` - `ReceiveTranscodedMediaView` (upload) and `ServeSourceMediaView` (download)
 - `the_flip/apps/core/tasks.py` - `_download_source_file()` and `_upload_transcoded_files()`
 
 ## Dependencies
+
 - Add `django-q2` to `requirements.txt`.
 - Ensure `ffmpeg` is installed in localhost and Railway.
 
@@ -74,6 +80,7 @@ Q_CLUSTER = {
 ```
 
 ## Model changes
+
 - Extend `LogEntryMedia` (already has `transcoded_file`, `poster_file`, `transcode_status`, `duration`).
 - `transcode_status` values: pending -> processing -> ready/failed.
 
@@ -82,12 +89,14 @@ Q_CLUSTER = {
 **File:** `the_flip/apps/core/tasks.py`
 
 Key functions:
+
 - `enqueue_transcode(media_id, model_name)` - Queue video transcode job
 - `transcode_video_job(media_id, model_name)` - Main worker function
 - `_download_source_file()` - HTTP GET source video from web service
 - `_upload_transcoded_files()` - HTTP POST transcoded files to web service
 
 **Key implementation details:**
+
 - Uses `async_task()` for django-q2 integration
 - FFmpeg stderr captured for debugging
 - Temp files cleaned up after upload
@@ -100,11 +109,13 @@ Key functions:
 **Tradeoff - no original retention:** Original files are deleted after successful transcode to save storage. If a transcoded file is later found corrupted, user must re-upload. This is acceptable for ~2 videos/week where re-uploading is low-friction.
 
 ## Upload flow
+
 - Form/validation: allow `image/*,video/*` with size cap (200MB) and small video extension/MIME whitelist.
 - On create/AJAX upload: detect video, set status to pending, enqueue transcode; photos follow existing path.
 - UI: show poster/video when ready; "Processing..." while pending/processing; "failed" message otherwise.
 
 ## Worker
+
 - Command: `python manage.py qcluster`.
 - Railway: add a worker service with start command `python manage.py qcluster`.
 - Local: run in a terminal alongside `runserver`.
@@ -112,17 +123,21 @@ Key functions:
 ## Management Commands
 
 ### Check FFmpeg Installation
+
 Command: `python manage.py check_ffmpeg` - verifies ffmpeg/ffprobe are on PATH and prints versions.
 
 ### Check Worker Health
+
 **File:** `the_flip/apps/maintenance/management/commands/check_worker.py`
 
 **Usage:**
+
 ```bash
 python manage.py check_worker
 ```
 
 **Example output:**
+
 ```
 Recent successful tasks (24h): 5
 No recent failures
@@ -131,12 +146,14 @@ No stuck video transcodes
 ```
 
 **When to run:**
+
 - After deploying worker service
 - When videos aren't processing
 - In monitoring scripts (e.g., health check endpoint)
 - Debugging production issues
 
 ## FFmpeg commands (reference)
+
 - Transcode:
   ```
   ffmpeg -i "$INPUT" \
@@ -150,6 +167,7 @@ No stuck video transcodes
   ```
 
 ### Critical FFmpeg parameters (why they matter)
+
 - `-vf "scale=min(iw\,2400):min(ih\,2400):force_original_aspect_ratio=decrease"`: Resize down so the long side is max 2400px; never upscale; preserves aspect ratio and keeps dimensions even for H.264.
 - `-c:v libx264`: H.264 video codec (universal browser support vs HEVC/H.265).
 - `-pix_fmt yuv420p`: **CRITICAL** for iOS Safari playback; without this, videos won't play on iPhones.
@@ -163,26 +181,32 @@ No stuck video transcodes
 ## Monitoring & Debugging
 
 ### Django Admin Integration
+
 Django-Q2 provides built-in admin views at `/admin/django_q/`:
+
 - **Successful tasks**: View last 50 completed jobs (auto-pruned by `save_limit`)
 - **Failed tasks**: See errors, retry failed jobs manually
 - **Queued tasks**: Monitor pending video transcodes
 - **Scheduled tasks**: (Not used for this feature)
 
 ### Task Lifecycle Visibility
+
 1. User uploads video -> `transcode_status = 'pending'`
 2. Worker picks up job -> `transcode_status = 'processing'`
 3. FFmpeg completes -> `transcode_status = 'ready'` (or `'failed'`)
 4. UI shows video player with poster (or error message)
 
 ### Debugging Failed Jobs
+
 If video processing fails:
+
 1. Check django-q2 admin for error message
 2. Check worker logs: `railway logs` or Railway dashboard
 3. FFmpeg stderr is captured in exception logs
 4. User can re-upload (simpler than retry mechanism)
 
 ### No Extra Infrastructure
+
 - No Redis to monitor
 - No separate RQ dashboard to install
 - No additional failure points
@@ -191,6 +215,7 @@ If video processing fails:
 ## Deployment
 
 ### Railway (Active Platform)
+
 1. **Add Worker Service** via dashboard:
    - Service name: `the-flip-worker`
    - Source: Same repo as web service
@@ -214,6 +239,7 @@ If video processing fails:
 ### Local Development
 
 **Option 1: Two terminals**
+
 ```bash
 # Terminal 1
 python manage.py runserver
@@ -227,7 +253,9 @@ python manage.py qcluster
 See `.vscode/launch.json` for "Django: Full Stack (Web + Worker)" configuration.
 
 ### Verification Checklist
+
 After deploying worker:
+
 - [ ] Worker service shows as "running" in dashboard
 - [ ] `python manage.py check_ffmpeg` succeeds (both ffmpeg and ffprobe found)
 - [ ] Upload test video, verify `transcode_status` changes: pending -> processing -> ready
@@ -240,18 +268,20 @@ After deploying worker:
 ## Test for FFmpeg in CI Pipeline
 
 Add automated testing for FFmpeg availability in your CI pipeline to catch deployment issues early:
+
 - Railway build changes could break FFmpeg installation
 - railpack.worker.json edits might remove FFmpeg
 - Dependency conflicts could prevent FFmpeg from being available
 - Catch issues before deploying to production
 
 ### Implementation
+
 Add a test case to the Django Test Suite; ensure the suite runs in the CI. It tests that:
+
 - FFmpeg binary is available on PATH
 - FFprobe binary is available on PATH
 - Both execute successfully
 - Versions are reported (useful for debugging)
-
 
 ## Rejected Alternative: Redis + RQ
 
@@ -260,6 +290,7 @@ Redis + RQ was considered but not chosen for this project.
 ### Decision Factors
 
 **Volume Analysis:**
+
 - Expected: ~2 videos/week (~100 videos/year)
 - Worker utilization: <0.1% (mostly idle)
 - Processing time: 2-5 minutes per video
@@ -283,6 +314,7 @@ Redis + RQ was considered but not chosen for this project.
 | Failure points | 2 | 3 |
 
 **Performance Trade-offs:**
+
 - **Redis:** Job pickup ~10-50ms, pub/sub architecture
 - **django-q2 (DB):** Job pickup ~1-5 seconds, polling architecture
 - **Impact:** Negligible - videos process in background over 2-5 minutes anyway
@@ -322,6 +354,7 @@ Redis + RQ was considered but not chosen for this project.
 ### When Redis Would Be Better
 
 Redis + RQ would be the better choice if:
+
 - Processing >100 videos/day (we process ~0.3/day)
 - Need sub-second job pickup (we don't)
 - Complex multi-queue workflows (we have one queue)

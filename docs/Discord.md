@@ -16,20 +16,21 @@ Configure the system to post to Discord when problem reports, log entries, or pa
 ### Setup
 
 #### 1. Create a webhook in Discord
-   - In Discord, go to Server Settings → Integrations → Webhooks
-   - Click "New Webhook"
-   - Choose the channel for notifications
-   - Copy the webhook URL
+
+- In Discord, go to Server Settings → Integrations → Webhooks
+- Click "New Webhook"
+- Choose the channel for notifications
+- Copy the webhook URL
 
 #### 2. Configure in Django Admin
-   - Go to Admin → Constance → Config
-   - Set `DISCORD_WEBHOOK_URL` to the webhook URL
-   - Set `DISCORD_WEBHOOKS_ENABLED` = True
-   - Optionally disable specific event types:
-     - `DISCORD_WEBHOOKS_PROBLEM_REPORTS`
-     - `DISCORD_WEBHOOKS_LOG_ENTRIES`
-     - `DISCORD_WEBHOOKS_PARTS`
 
+- Go to Admin → Constance → Config
+- Set `DISCORD_WEBHOOK_URL` to the webhook URL
+- Set `DISCORD_WEBHOOKS_ENABLED` = True
+- Optionally disable specific event types:
+  - `DISCORD_WEBHOOKS_PROBLEM_REPORTS`
+  - `DISCORD_WEBHOOKS_LOG_ENTRIES`
+  - `DISCORD_WEBHOOKS_PARTS`
 
 <a id="discord-to-flipfix"></a>
 
@@ -44,27 +45,30 @@ Adds a "Add to Flipfix" right-click context menu command in Discord. Users right
 3. Bot sends that context to the LLM (Claude) for analysis
 4. The LLM suggests records to create (log entries, problem reports, or part requests)
 5. User reviews suggestions one at a time, can skip or edit each
-6. Bot creates the user-confirmed records in Flipfix.  The bot links Discord users to Flipfix maintainers by matching usernames.
+6. Bot creates the user-confirmed records in Flipfix. The bot links Discord users to Flipfix maintainers by matching usernames.
 7. Bot saves the ID of the Discord message to Flipfix to prevent duplicate processing
 
-This will incur LLM costs based on usage *(~$0.01-0.05 per analysis)*.
+This will incur LLM costs based on usage _(~$0.01-0.05 per analysis)_.
 
-This puts the *Add to Flipfix* right-click menu item on every message in every channel on the Discord server.  We can restrict it to just the Workshop channel if we decide we like this feature enough to keep it.
+This puts the _Add to Flipfix_ right-click menu item on every message in every channel on the Discord server. We can restrict it to just the Workshop channel if we decide we like this feature enough to keep it.
 
 ### Setting up the Bot
 
 Involves a few separate areas:
- - [A. Get an Anthropic API Key](#llm-api-key)
- - [B. Setup in Discord Developer Portal](#discord-developer-portal)
- - [C. Configure in Django Admin](#django-admin-bot-config)
+
+- [A. Get an Anthropic API Key](#llm-api-key)
+- [B. Setup in Discord Developer Portal](#discord-developer-portal)
+- [C. Configure in Django Admin](#django-admin-bot-config)
 
 <a id="llm-api-key"></a>
+
 ### A. Get an Anthropic API Key
 
 1. Go to https://console.anthropic.com/
 2. Create an API key
 
 <a id="discord-developer-portal"></a>
+
 ### B. Setup in Discord Developer Portal
 
 1. **Create a Discord application:**
@@ -86,18 +90,19 @@ Involves a few separate areas:
    - Copy the generated URL and open it to invite the bot to your server
 
 4. **Get your Guild ID:**
-   - In Discord, enable Developer Mode *(User Settings → Advanced → Developer Mode)*
+   - In Discord, enable Developer Mode _(User Settings → Advanced → Developer Mode)_
    - Right-click your server name → "Copy Server ID"
    - This is your Guild ID
 
 <a id="django-admin-bot-config"></a>
+
 ### C. Configure Bot in Django Admin
 
 Go to Admin → Constance → Config and set:
 
-| Setting | Value |
-|---------|-------|
-| `DISCORD_BOT_ENABLED` | True |
-| `DISCORD_BOT_TOKEN` | Your bot token from Discord Developer Portal |
-| `DISCORD_GUILD_ID` | Your Discord server ID |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| Setting               | Value                                        |
+| --------------------- | -------------------------------------------- |
+| `DISCORD_BOT_ENABLED` | True                                         |
+| `DISCORD_BOT_TOKEN`   | Your bot token from Discord Developer Portal |
+| `DISCORD_GUILD_ID`    | Your Discord server ID                       |
+| `ANTHROPIC_API_KEY`   | Your Anthropic API key                       |

@@ -4,7 +4,7 @@
 
 A Discord Bot that syncs messages from The Flip's workshop channel to Flipfix.
 
-This doc is about replacing the first attempt at a Discord Bot that used keyword-based auto-classification  with a human-initiated, LLM-assisted approach using Discord's context menu commands.
+This doc is about replacing the first attempt at a Discord Bot that used keyword-based auto-classification with a human-initiated, LLM-assisted approach using Discord's context menu commands.
 
 ## Why the Change
 
@@ -145,6 +145,7 @@ async def analyze_with_llm(context: MessageContext) -> list[RecordSuggestion]:
 ### 4. Confirmation UI
 
 Discord components for the ephemeral response:
+
 - Embed showing suggested records
 - Checkboxes (Select menu) to choose which to create
 - Confirm/Cancel buttons
@@ -153,6 +154,7 @@ Discord components for the ephemeral response:
 ## Configuration
 
 New settings (via constance or environment):
+
 - `DISCORD_LLM_MODEL` - Which model to use for analysis
 - `DISCORD_CONTEXT_WINDOW` - How many messages to gather (default: 10)
 - `DISCORD_BOT_ENABLED` - Keep existing toggle

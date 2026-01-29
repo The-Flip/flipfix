@@ -8,16 +8,16 @@ Create a build system that generates AI agent instruction files like [`CLAUDE.md
 
 Different AI agents look for different files to guide them, and need slightly different instructions:
 
-| File | Read By | Purpose |
-|------|---------|---------|
-| [`CLAUDE.md`](../../CLAUDE.md) | Claude Code | Project instructions for Claude |
+| File                           | Read By                            | Purpose                             |
+| ------------------------------ | ---------------------------------- | ----------------------------------- |
+| [`CLAUDE.md`](../../CLAUDE.md) | Claude Code                        | Project instructions for Claude     |
 | [`AGENTS.md`](../../AGENTS.md) | OpenAI Codex, Google Jules, others | An emerging cross-platform standard |
 
-95% of content is shared, but each needs agent-specific sections (e.g., Claude's `/pre-pr-check` skill vs. a manual checklist for Codex).  We want a way of automatically syncing the content that should be identical, while allowing for some differences.
+95% of content is shared, but each needs agent-specific sections (e.g., Claude's `/pre-pr-check` skill vs. a manual checklist for Codex). We want a way of automatically syncing the content that should be identical, while allowing for some differences.
 
 ## Accepted Approach
 
-Create a build system that generates AI agent instruction files like [`CLAUDE.md`](../../CLAUDE.md) and [`AGENTS.md`](../../AGENTS.md) from a single source of truth ([`docs/AGENTS.src.md`](../AGENTS.src.md)) that contains conditional markers.  Have a pre-commit hook to keep them in sync.
+Create a build system that generates AI agent instruction files like [`CLAUDE.md`](../../CLAUDE.md) and [`AGENTS.md`](../../AGENTS.md) from a single source of truth ([`docs/AGENTS.src.md`](../AGENTS.src.md)) that contains conditional markers. Have a pre-commit hook to keep them in sync.
 
 ### Source File Structure
 
@@ -25,11 +25,13 @@ Create a build system that generates AI agent instruction files like [`CLAUDE.md
 # Flipfix Development Guide
 
 ## Project Overview
+
 [shared content...]
 
 ## PR Workflow
 
 Before creating a pull request, run code review agents on changed files:
+
 1. `antipattern-scanner` - detects architectural violations
 2. `clean-code-reviewer` - checks clean code principles
 3. `code-smell-detector` - identifies maintainability hints
@@ -40,13 +42,15 @@ END_CLAUDE
 
 START_AGENTS
 Run these checks manually before submitting:
+
 1. `make quality` - format, lint, typecheck
 2. `make test` - run test suite
-END_AGENTS
+   END_AGENTS
 
 Address findings before submitting.
 
 ## Tool Usage
+
 START_CLAUDE
 Use Context7 (`mcp__context7__resolve-library-id`...)
 [MCP-specific instructions]
@@ -57,13 +61,16 @@ Use web search or official documentation to look up current API references.
 END_AGENTS
 
 START_CLAUDE
+
 ## Claude Code for the Web
+
 When running on Claude Code for the web (no .venv)...
 [entire section]
 END_CLAUDE
 ```
 
 **Marker syntax:**
+
 - `START_CLAUDE` / `END_CLAUDE` - content appears only in CLAUDE.md
 - `START_AGENTS` / `END_AGENTS` - content appears only in AGENTS.md
 - `START_IGNORE` / `END_IGNORE` - content stripped from both (e.g., source file metadata)
@@ -74,6 +81,7 @@ END_CLAUDE
 ### Generated Files
 
 Both `CLAUDE.md` and `AGENTS.md` in the repo root will:
+
 1. Start with a comment indicating they're auto-generated
 2. Point to the source file and regeneration command
 
@@ -83,21 +91,22 @@ Both `CLAUDE.md` and `AGENTS.md` in the repo root will:
 <!-- Source content: docs/AGENTS.src.md -->
 
 # Flipfix Development Guide
+
 ...
 ```
 
 ### Build Script
 
 `scripts/build_agent_docs.py`:
+
 - Parse `docs/AGENTS.src.md`
 - For CLAUDE.md:
-    - include `START_CLAUDE`...`END_CLAUDE` blocks
-    - exclude `START_AGENTS`...`END_AGENTS` blocks
+  - include `START_CLAUDE`...`END_CLAUDE` blocks
+  - exclude `START_AGENTS`...`END_AGENTS` blocks
 - For AGENTS.md:
-    - include `START_AGENTS`...`END_AGENTS` blocks
-    - exclude `START_CLAUDE`...`END_CLAUDE` blocks
+  - include `START_AGENTS`...`END_AGENTS` blocks
+  - exclude `START_CLAUDE`...`END_CLAUDE` blocks
 - Add auto-generated header to both
-
 
 ### Pre-commit Hooks
 
@@ -106,37 +115,40 @@ Two hooks ensure the generated files stay in sync:
 **1. Regenerate on source/script change (`agent-docs`)**
 
 Triggered when `docs/AGENTS.src.md` or `scripts/build_agent_docs.py` is modified:
+
 1. Regenerates both `CLAUDE.md` and `AGENTS.md`
 2. Stages the updated files automatically
 3. Commit includes the regenerated files
 
 **2. Block direct edits to generated files (`agent-docs-no-direct-edit`)**
 
-Triggered when `CLAUDE.md` or `AGENTS.md` is modified *without* the source file or build script also being staged:
+Triggered when `CLAUDE.md` or `AGENTS.md` is modified _without_ the source file or build script also being staged:
+
 1. Checks if `docs/AGENTS.src.md` or `scripts/build_agent_docs.py` are in the staged files
 2. If yes, allows the commit (the regeneration hook handled it)
 3. If no, fails with an error explaining these are generated files
 
 This prevents accidental drift from manual edits to generated files.
 
-
 ## Alternatives Considered
 
 ### 1. Import-based approach
 
-| File | Role |
-|------|------|
-| `AGENTS.md` | Source of truth (shared content that will also appear in CLAUDE.md) |
+| File        | Role                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| `AGENTS.md` | Source of truth (shared content that will also appear in CLAUDE.md)                                    |
 | `CLAUDE.md` | Imports `@AGENTS.md` + adds Claude-specific content. Claude Code's `@import` actually inlines content. |
 
 **Pros:**
+
 - Simple
 - No build step
 - No sync risk
 
 **Cons:**
+
 - Can't have agent-specific versions of the same section (e.g., PR Workflow)
-- Claude-specific content must come *after* all shared content (awkward structure)
+- Claude-specific content must come _after_ all shared content (awkward structure)
 - Heading hierarchy gets weird (two H1s if both files have headers)
 - AGENTS.md doesn't support an equivalent import syntax
 
@@ -144,16 +156,18 @@ This prevents accidental drift from manual edits to generated files.
 
 ### 2. CLAUDE.md as source, simple copy to AGENTS.md
 
-| File | Role |
-|------|------|
-| `CLAUDE.md` | Source of truth |
+| File        | Role                        |
+| ----------- | --------------------------- |
+| `CLAUDE.md` | Source of truth             |
 | `AGENTS.md` | Copy with text replacements |
 
 **Pros:**
+
 - Simple
 - Minimal tooling
 
 **Cons:**
+
 - Can only do simple text replacements (e.g., "Claude Code" → "AI agents")
 - Can't have agent-specific sections (Claude gets `/pre-pr-check`, Codex gets manual checklist)
 - Claude-specific sections (Tool Usage, Claude Code for Web) would appear in AGENTS.md
@@ -163,6 +177,7 @@ This prevents accidental drift from manual edits to generated files.
 ### 3. Multiple source files merged
 
 **Structure:**
+
 ```
 docs/AGENTS.base.md      ← Shared content
 docs/AGENTS.claude.md    ← Claude-specific sections
@@ -173,10 +188,12 @@ AGENTS.md                ← base + codex
 ```
 
 **Pros:**
+
 - Clear separation of concerns
 - Each file is pure (no markers)
 
 **Cons:**
+
 - Harder to see full document structure
 - Section ordering requires convention or manifest file
 - More files to manage
@@ -187,6 +204,7 @@ AGENTS.md                ← base + codex
 ### 4. Jinja templates
 
 **Structure:**
+
 ```
 docs/AGENTS.src.md.j2    ← Jinja template
      ↓ build
@@ -195,10 +213,12 @@ AGENTS.md
 ```
 
 **Pros:**
+
 - Powerful templating (conditionals, loops, includes)
 - Industry standard
 
 **Cons:**
+
 - Adds Jinja2 dependency
 - Markdown + Jinja syntax is noisy
 - Overkill for simple conditional blocks
@@ -208,16 +228,19 @@ AGENTS.md
 ### 5. No build, accept drift
 
 **Structure:**
+
 ```
 CLAUDE.md     ← Manually maintained
 AGENTS.md     ← Manually maintained
 ```
 
 **Pros:**
+
 - No tooling
 - Full flexibility
 
 **Cons:**
+
 - Will drift over time
 - Duplicated maintenance burden
 - 95% identical content maintained twice
