@@ -2,6 +2,9 @@
 # https://docs.coderabbit.ai/reference/configuration
 
 reviews:
+  tools:
+    languagetool:
+      enabled: false
   pre_merge_checks:
     docstrings:
       # Disabled: produces false positives on refactoring PRs
