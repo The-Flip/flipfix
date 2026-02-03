@@ -17,14 +17,32 @@
 {% endblock %}
 {% block mobile_actions %}
   <div class="mobile-meta">
-    {# Part Request info #}
     <div class="mobile-meta__row">
-      <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
+      {# Interactive status dropdown #}
+      <div class="dropdown"
+           data-update-url="{% url 'part-request-status-update' part_request.pk %}">
+        <button type="button"
+                class="pill pill--neutral"
+                aria-haspopup="true"
+                aria-expanded="false"
+                onclick="toggleDropdown(this)">
+          <span class="status-label">{{ part_request.get_status_display }}</span>
+          {% icon "caret-down" class="meta" %}
+        </button>
+        <div class="dropdown__menu dropdown__menu--left hidden">
+          {% for value, label in part_request.Status.choices %}
+            <button type="button"
+                    class="dropdown__item{% if value == part_request.status %} dropdown__item--selected{% endif %}"
+                    data-value="{{ value }}"
+                    data-label="{{ label }}"
+                    onclick="updatePartRequestStatus(this)">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
       {% if part_request.machine %}
         <span class="text-muted text-sm">{{ part_request.machine.short_display_name }}</span>
       {% endif %}
     </div>
-    {# Requester and timestamp #}
     <div class="mobile-meta__row text-muted text-sm">
       Requested by {{ part_request.requester_display }} on {{ part_request.occurred_at|smart_date }}
     </div>
@@ -150,15 +168,20 @@
 
         const data = await response.json();
         if (data.status === 'success') {
-          // Update the pill label
-          const statusLabel = dropdown.querySelector('.status-label');
-          if (statusLabel) {
-            statusLabel.textContent = data.new_status_display;
-          }
+          // Sync ALL status dropdowns with matching update URL (mobile + sidebar)
+          const allDropdowns = document.querySelectorAll(`.dropdown[data-update-url="${updateUrl}"]`);
+          allDropdowns.forEach(dd => {
+            const label = dd.querySelector('.status-label');
+            if (label) label.textContent = data.new_status_display;
 
-          // Update selected state in dropdown
-          dropdown.querySelectorAll('.dropdown__item').forEach(item => {
-            item.classList.toggle('dropdown__item--selected', item.dataset.value === newStatus);
+            dd.querySelectorAll('.dropdown__item').forEach(item => {
+              item.classList.toggle('dropdown__item--selected', item.dataset.value === newStatus);
+            });
+
+            const menu = dd.querySelector('.dropdown__menu');
+            if (menu) menu.classList.add('hidden');
+            const trigger = dd.querySelector('[aria-expanded]');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
           });
 
           // Inject the new update into the updates list
@@ -192,10 +215,6 @@
           // Show success message
           const pillHtml = `<span class="pill pill--neutral">${data.new_status_display}</span>`;
           showMessage('success', `Part request #{{ part_request.pk }} updated to ${pillHtml}`);
-
-          // Close the dropdown
-          dropdown.querySelector('.dropdown__menu').classList.add('hidden');
-          dropdown.querySelector('[aria-expanded]').setAttribute('aria-expanded', 'false');
         } else if (data.status !== 'noop') {
           alert('Failed to update status: ' + (data.error || 'Unknown error'));
         }
