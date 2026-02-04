@@ -48,6 +48,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 ### Interactive Components
 
 - **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`)
+- **Task List Checkboxes** (`.task-list-item` with checkbox input - rendered from markdown task list syntax: `- [ ]`, `* [ ]`, `+ [ ]`, `1. [ ]`, and inside blockquotes)
 - **Status Indicator** (`.status-indicator` with modifiers `.saving`, `.saved`, `.error`)
 - **Media Grid** (`.media-grid`, `.media-item`, `.media-link`, `.media-video`, `.btn-delete-media`)
 

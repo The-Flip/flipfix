@@ -2,7 +2,10 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.core.templatetags.core_extras import render_markdown
+from the_flip.apps.core.templatetags.core_extras import (
+    _convert_task_list_items,
+    render_markdown,
+)
 
 
 @tag("views")
@@ -100,3 +103,179 @@ class RenderMarkdownFilterTests(TestCase):
         # Headings
         result = render_markdown("## Heading")
         self.assertIn("<h2>", result)
+
+
+@tag("views")
+class TaskListCheckboxTests(TestCase):
+    """Tests for task list checkbox rendering in markdown."""
+
+    def test_unchecked_checkbox_rendered(self):
+        """Unchecked task list items render as checkbox inputs."""
+        result = render_markdown("- [ ] todo item")
+        self.assertIn('class="task-list-item"', result)
+        self.assertIn('type="checkbox"', result)
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertIn("disabled", result)
+        # Should NOT have checked attribute
+        self.assertNotIn(" checked", result)
+
+    def test_unchecked_empty_brackets_rendered(self):
+        """Empty brackets [] (no space) also render as unchecked checkbox."""
+        result = render_markdown("- [] todo item")
+        self.assertIn('class="task-list-item"', result)
+        self.assertIn('type="checkbox"', result)
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertNotIn(" checked", result)
+
+    def test_unchecked_multiple_spaces_rendered(self):
+        """Multiple spaces [  ] also render as unchecked checkbox (graceful handling)."""
+        result = render_markdown("- [  ] todo item")
+        self.assertIn('class="task-list-item"', result)
+        self.assertIn('type="checkbox"', result)
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertNotIn(" checked", result)
+
+    def test_checked_checkbox_rendered(self):
+        """Checked task list items render as checked checkbox inputs."""
+        result = render_markdown("- [x] done item")
+        self.assertIn('class="task-list-item"', result)
+        self.assertIn('type="checkbox"', result)
+        self.assertIn(" checked", result)
+        self.assertIn('data-checkbox-index="0"', result)
+
+    def test_checked_uppercase_rendered(self):
+        """Uppercase [X] also renders as checked."""
+        result = render_markdown("- [X] done item")
+        self.assertIn(" checked", result)
+        self.assertIn('type="checkbox"', result)
+
+    def test_multiple_checkboxes_sequential_indices(self):
+        """Multiple checkboxes get sequential indices in document order."""
+        result = render_markdown("- [ ] first\n- [x] second\n- [ ] third")
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertIn('data-checkbox-index="1"', result)
+        self.assertIn('data-checkbox-index="2"', result)
+
+    def test_index_ordering_matches_document_order(self):
+        """Indices follow document order, not grouping by checked/unchecked."""
+        result = render_markdown("- [x] checked\n- [ ] unchecked\n- [x] checked2")
+        # Split by task-list-item to check each one
+        parts = result.split('class="task-list-item"')
+        # First checkbox (checked) should be index 0
+        self.assertIn('data-checkbox-index="0"', parts[1])
+        self.assertIn(" checked", parts[1])
+        # Second checkbox (unchecked) should be index 1
+        self.assertIn('data-checkbox-index="1"', parts[2])
+        # Third checkbox (checked) should be index 2
+        self.assertIn('data-checkbox-index="2"', parts[3])
+
+    def test_checkboxes_render_disabled(self):
+        """All checkboxes render with disabled attribute by default."""
+        result = render_markdown("- [ ] item\n- [x] item")
+        # Count disabled attributes - should be 2
+        self.assertEqual(result.count("disabled"), 2)
+
+    def test_checkbox_not_in_paragraph(self):
+        """Text like [ ] outside a list item is NOT converted to checkbox."""
+        result = render_markdown("[ ] not a checkbox")
+        self.assertNotIn('type="checkbox"', result)
+        self.assertNotIn("task-list-item", result)
+
+    def test_regular_list_items_unchanged(self):
+        """Regular list items without [ ] are not affected."""
+        result = render_markdown("- regular item")
+        self.assertNotIn("task-list-item", result)
+        self.assertNotIn('type="checkbox"', result)
+        self.assertIn("<li>regular item</li>", result)
+
+    def test_mixed_regular_and_task_items(self):
+        """Regular and task list items coexist correctly."""
+        result = render_markdown("- regular\n- [ ] task\n- also regular")
+        self.assertEqual(result.count("task-list-item"), 1)
+        self.assertEqual(result.count('type="checkbox"'), 1)
+        self.assertIn("<li>regular</li>", result)
+        self.assertIn("<li>also regular</li>", result)
+
+    def test_checkbox_with_inline_formatting(self):
+        """Checkboxes work with bold, italic, code, and links in the text."""
+        result = render_markdown("- [ ] item with **bold** and `code`")
+        self.assertIn('type="checkbox"', result)
+        self.assertIn("<strong>bold</strong>", result)
+        self.assertIn("<code>code</code>", result)
+
+    def test_nested_task_in_regular_list(self):
+        """Task list nested inside regular list works correctly."""
+        result = render_markdown("- Parent\n  - [ ] nested task")
+        self.assertIn("task-list-item", result)
+        self.assertIn('type="checkbox"', result)
+
+    def test_multi_line_list_item(self):
+        """Multi-line list items with continuation work correctly."""
+        result = render_markdown("- [ ] Task with\n  continuation text")
+        self.assertIn("task-list-item", result)
+        self.assertIn('type="checkbox"', result)
+
+    def test_code_block_not_converted(self):
+        """Task list markers inside code blocks are NOT converted."""
+        result = render_markdown("```\n- [ ] inside code\n```")
+        self.assertNotIn("task-list-item", result)
+        self.assertNotIn('type="checkbox"', result)
+        # The literal text should be preserved in the code block
+        self.assertIn("[ ]", result)
+
+    def test_tilde_code_block_not_converted(self):
+        """Task list markers inside tilde-fenced code blocks are NOT converted."""
+        result = render_markdown("~~~\n- [ ] inside tilde code\n~~~")
+        self.assertNotIn("task-list-item", result)
+        self.assertNotIn('type="checkbox"', result)
+        self.assertIn("[ ]", result)
+
+    def test_inline_code_not_converted(self):
+        """Task list markers inside inline code are NOT converted."""
+        result = render_markdown("Use `- [ ] syntax` for tasks")
+        self.assertNotIn("task-list-item", result)
+        self.assertNotIn('type="checkbox"', result)
+
+    def test_blockquote_with_task_list(self):
+        """Task lists inside blockquotes ARE converted (valid use case)."""
+        result = render_markdown("> - [ ] quoted task")
+        self.assertIn("task-list-item", result)
+        self.assertIn('type="checkbox"', result)
+        self.assertIn("<blockquote>", result)
+
+    def test_ordered_list_task_items(self):
+        """Task list markers work with ordered lists too."""
+        result = render_markdown("1. [ ] first task\n2. [x] second task")
+        self.assertIn("task-list-item", result)
+        self.assertEqual(result.count('type="checkbox"'), 2)
+
+    def test_convert_task_list_items_directly(self):
+        """Test the _convert_task_list_items function directly."""
+        # Test unchecked
+        html = "<li>[ ] task</li>"
+        result = _convert_task_list_items(html)
+        self.assertIn('class="task-list-item"', result)
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertNotIn(" checked", result)
+
+        # Test checked
+        html = "<li>[x] task</li>"
+        result = _convert_task_list_items(html)
+        self.assertIn(" checked", result)
+
+    def test_whitespace_between_li_and_bracket(self):
+        """Whitespace between <li> and [ ] is handled correctly."""
+        html = "<li>  [ ] task with leading spaces</li>"
+        result = _convert_task_list_items(html)
+        self.assertIn("task-list-item", result)
+        self.assertIn('type="checkbox"', result)
+
+    def test_blank_line_between_items_produces_paragraph_wrapped_checkbox(self):
+        """Blank lines between list items wrap content in <p> tags - must still work."""
+        # Blank lines between items cause markdown to wrap content in <p> tags
+        result = render_markdown("- [ ] item one\n\n- [x] item two")
+        self.assertIn("task-list-item", result)
+        self.assertEqual(result.count('type="checkbox"'), 2)
+        # First should be unchecked, second checked
+        self.assertIn('data-checkbox-index="0"', result)
+        self.assertIn('data-checkbox-index="1"', result)

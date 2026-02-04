@@ -125,10 +125,11 @@ All JavaScript files are in `the_flip/static/core/`.
 
 ### Inline Editing
 
-| File                 | Purpose                                     |
-| -------------------- | ------------------------------------------- |
-| text_edit.js         | Inline text editing with markdown preview   |
-| sidebar_card_edit.js | Sidebar dropdown editing (machine, problem) |
+| File                 | Purpose                                                          |
+| -------------------- | ---------------------------------------------------------------- |
+| text_edit.js         | Inline text editing with markdown preview                        |
+| checkbox_toggle.js   | Interactive task list checkboxes; Enter key auto-continues lists |
+| sidebar_card_edit.js | Sidebar dropdown editing (machine, problem)                      |
 
 ### Lists & Navigation
 

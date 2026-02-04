@@ -1,3 +1,4 @@
+import re
 import secrets
 
 import markdown
@@ -54,6 +55,11 @@ ALLOWED_ATTRIBUTES = {
     "td": {"align"},
 }
 
+# Regex for task list items: matches <li> followed by optional <p>, then [ ], [  ], [], [x], or [X]
+# Group 1: optional whitespace+<p> (for blank-line-separated list items)
+# Group 2: the check character to determine checked state (spaces or empty = unchecked)
+_TASK_LIST_RE = re.compile(r"<li>(\s*<p>)?\s*\[( *|[xX])\]")
+
 
 def _linkify_urls(html: str) -> str:
     """Convert bare URLs to anchor tags using linkify-it-py.
@@ -84,6 +90,39 @@ def _linkify_urls(html: str) -> str:
     return result
 
 
+def _convert_task_list_items(html: str) -> str:
+    """Convert task list markers in <li> tags to checkbox HTML.
+
+    After markdown and nh3 processing, literal [ ] and [x] text inside <li> tags
+    is converted to checkbox inputs. Each checkbox gets a sequential
+    data-checkbox-index attribute for JavaScript targeting.
+
+    This runs AFTER nh3 sanitization, so the injected <input> elements are
+    trusted server code, not user-supplied HTML.
+
+    Args:
+        html: Sanitized HTML containing <li>[ ] or <li>[x] patterns
+
+    Returns:
+        HTML with task list markers replaced by checkbox inputs
+    """
+    counter = 0
+
+    def _replace(match: re.Match) -> str:
+        nonlocal counter
+        idx = counter
+        counter += 1
+        p_tag = match.group(1) or ""  # Preserve <p> if present (blank-line-separated items)
+        check_char = match.group(2)
+        checked_attr = " checked" if check_char in ("x", "X") else ""
+        return (
+            f'<li class="task-list-item">{p_tag}'
+            f'<input type="checkbox"{checked_attr} data-checkbox-index="{idx}" disabled>'
+        )
+
+    return _TASK_LIST_RE.sub(_replace, html)
+
+
 @register.filter
 def render_markdown(text):
     """Convert markdown text to sanitized HTML."""
@@ -95,6 +134,8 @@ def render_markdown(text):
     html = _linkify_urls(html)
     # Sanitize to prevent XSS
     safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
+    # Convert task list markers to checkboxes (after sanitization for security)
+    safe_html = _convert_task_list_items(safe_html)
     return mark_safe(safe_html)  # noqa: S308 - HTML sanitized by nh3
 
 
