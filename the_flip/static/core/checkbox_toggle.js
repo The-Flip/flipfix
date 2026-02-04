@@ -196,6 +196,10 @@
                 statusEl.textContent = 'Error saving';
                 statusEl.className = 'status-indicator error';
               }
+            } else if (statusEl && statusEl.classList.contains('error')) {
+              // Clear any previous error status on success
+              statusEl.textContent = '';
+              statusEl.className = 'status-indicator';
             }
           })
           .catch(function () {

@@ -1977,7 +1977,7 @@ body {
   vertical-align: middle;
   position: relative;
   top: -0.1em;
-  accent-color: var(--color-primary);
+  accent-color: var(--color-accent);
 }
 
 .markdown-content .task-list-item input[type='checkbox']:not(:disabled) {
