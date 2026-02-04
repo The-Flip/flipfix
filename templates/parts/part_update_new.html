@@ -101,6 +101,23 @@
       if (occurredAtInput && !occurredAtInput.value) {
         occurredAtInput.value = toDateTimeLocalValue(new Date());
       }
+
+      // Auto-append status change text when user selects a new status
+      const statusSelect = document.getElementById('{{ form.new_status.id_for_label }}');
+      const textArea = document.getElementById('{{ form.text.id_for_label }}');
+      const currentStatusLabel = '{{ part_request.get_status_display|escapejs }}';
+
+      statusSelect.addEventListener('change', function() {
+        if (this.value) {
+          const newLabel = this.options[this.selectedIndex].text;
+          const statusText = 'Status changed: ' + currentStatusLabel + ' \u2192 ' + newLabel;
+          if (textArea.value) {
+            textArea.value = statusText + '\n' + textArea.value;
+          } else {
+            textArea.value = statusText;
+          }
+        }
+      });
     });
   </script>
 {% endblock %}
