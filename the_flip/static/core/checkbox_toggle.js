@@ -170,11 +170,15 @@
       cb.disabled = false;
     });
 
+    // Serialize saves to prevent out-of-order responses from corrupting state
+    var saveQueue = Promise.resolve();
+
     // Attach click handler to each checkbox
     checkboxes.forEach(function (cb) {
       cb.addEventListener('change', function () {
         var index = parseInt(cb.getAttribute('data-checkbox-index'), 10);
-        var newText = toggleCheckboxInMarkdown(textarea.value, index);
+        var previousText = textarea.value;
+        var newText = toggleCheckboxInMarkdown(previousText, index);
         textarea.value = newText;
 
         // POST the update
@@ -183,34 +187,40 @@
         formData.append('text', newText);
         formData.append('csrfmiddlewaretoken', getCsrfToken());
 
-        fetch(window.location.href, {
-          method: 'POST',
-          body: formData,
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              // Revert checkbox on failure
-              cb.checked = !cb.checked;
-              textarea.value = toggleCheckboxInMarkdown(textarea.value, index);
+        saveQueue = saveQueue.then(function () {
+          return fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+          })
+            .then(function (response) {
+              if (!response.ok) {
+                // Revert only if no newer edits have been applied
+                if (textarea.value === newText) {
+                  cb.checked = !cb.checked;
+                  textarea.value = previousText;
+                }
+                if (statusEl) {
+                  statusEl.textContent = 'Error saving';
+                  statusEl.className = 'status-indicator error';
+                }
+              } else if (statusEl && statusEl.classList.contains('error')) {
+                // Clear any previous error status on success
+                statusEl.textContent = '';
+                statusEl.className = 'status-indicator';
+              }
+            })
+            .catch(function () {
+              // Revert only if no newer edits have been applied
+              if (textarea.value === newText) {
+                cb.checked = !cb.checked;
+                textarea.value = previousText;
+              }
               if (statusEl) {
                 statusEl.textContent = 'Error saving';
                 statusEl.className = 'status-indicator error';
               }
-            } else if (statusEl && statusEl.classList.contains('error')) {
-              // Clear any previous error status on success
-              statusEl.textContent = '';
-              statusEl.className = 'status-indicator';
-            }
-          })
-          .catch(function () {
-            // Revert on network error
-            cb.checked = !cb.checked;
-            textarea.value = toggleCheckboxInMarkdown(textarea.value, index);
-            if (statusEl) {
-              statusEl.textContent = 'Error saving';
-              statusEl.className = 'status-indicator error';
-            }
-          });
+            });
+        });
       });
     });
   }
