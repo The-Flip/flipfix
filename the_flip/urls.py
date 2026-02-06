@@ -375,8 +375,8 @@ urlpatterns = [
     # Wiki
     #
     path("wiki/", WikiHomeView.as_view(), name="wiki-home"),  # Wiki home/index
-    path("wiki/search", WikiSearchView.as_view(), name="wiki-search"),  # Wiki search
-    path("wiki/create", WikiPageCreateView.as_view(), name="wiki-page-create"),  # Create page
+    path("wiki/search/", WikiSearchView.as_view(), name="wiki-search"),  # Wiki search
+    path("wiki/create/", WikiPageCreateView.as_view(), name="wiki-page-create"),  # Create page
     path(
         "wiki/actions/<int:page_pk>/<str:action_name>/",
         WikiActionPrefillView.as_view(),

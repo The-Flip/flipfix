@@ -7,7 +7,9 @@ class CatalogConfig(AppConfig):
     verbose_name = "Catalog"
 
     def ready(self):
-        from the_flip.apps.catalog import signals  # noqa: F401
+        from the_flip.apps.catalog import signals
+
+        del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
 
@@ -15,27 +17,23 @@ class CatalogConfig(AppConfig):
     def _register_link_types():
         from the_flip.apps.core.markdown_links import LinkType, register
 
+        def _label_with_meta(name, manufacturer, year):
+            if manufacturer or year:
+                parts = [p for p in [manufacturer, str(year) if year else None] if p]
+                return f"{name} ({', '.join(parts)})"
+            return name
+
         def _serialize_machine(obj):
-            label = obj.name
-            if obj.model.manufacturer or obj.model.year:
-                parts = []
-                if obj.model.manufacturer:
-                    parts.append(obj.model.manufacturer)
-                if obj.model.year:
-                    parts.append(str(obj.model.year))
-                label = f"{obj.name} ({', '.join(parts)})"
-            return {"label": label, "ref": obj.slug}
+            return {
+                "label": _label_with_meta(obj.name, obj.model.manufacturer, obj.model.year),
+                "ref": obj.slug,
+            }
 
         def _serialize_model(obj):
-            label = obj.name
-            if obj.manufacturer or obj.year:
-                parts = []
-                if obj.manufacturer:
-                    parts.append(obj.manufacturer)
-                if obj.year:
-                    parts.append(str(obj.year))
-                label = f"{obj.name} ({', '.join(parts)})"
-            return {"label": label, "ref": obj.slug}
+            return {
+                "label": _label_with_meta(obj.name, obj.manufacturer, obj.year),
+                "ref": obj.slug,
+            }
 
         register(
             LinkType(

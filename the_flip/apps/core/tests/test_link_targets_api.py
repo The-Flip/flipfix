@@ -198,7 +198,8 @@ class LinkTargetsAPITests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
             None,
         )
         self.assertIsNotNone(tagged)
-        self.assertEqual(tagged["label"], "machines/blackout/System 6")
+        self.assertEqual(tagged["label"], "System 6")
+        self.assertEqual(tagged["path"], "machines/blackout")
 
     def test_machine_results_include_manufacturer_year(self):
         """Machine results include manufacturer and year in label."""

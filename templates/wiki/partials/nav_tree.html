@@ -6,7 +6,7 @@
   {% for item in tree.pages %}
     <li>
       <a href="{% url 'wiki-page-detail' item.path %}"
-         class="wiki-nav__link text-muted{% if current_tag == '' and page.slug == item.page.slug %} wiki-nav__link--active{% endif %}">
+         class="wiki-nav__link text-muted{% if page and current_tag == '' and page.slug == item.page.slug %} wiki-nav__link--active{% endif %}">
         {{ item.page.title }}
       </a>
     </li>

@@ -217,7 +217,7 @@
       searchInput.value = '';
       resultsList.innerHTML = '';
 
-      searchInput.placeholder = `Search ${selectedLabel.toLowerCase()}s...`;
+      searchInput.placeholder = `Search ${selectedLabel.toLowerCase()}...`;
 
       searchInput.focus();
 
@@ -268,8 +268,12 @@
         item.dataset.item = 'true';
         item.dataset.ref = result.ref;
 
+        const pathHtml = result.path
+          ? `<span class="link-dropdown__item-path">${escapeHtml(result.path)}/</span>`
+          : '';
         item.innerHTML = `
           <span class="link-dropdown__item-label">${escapeHtml(result.label)}</span>
+          ${pathHtml}
         `;
 
         item.addEventListener('mousedown', (e) => {

@@ -293,7 +293,9 @@ Import the signals module in `AppConfig.ready()`:
 
 ```python
 def ready(self):
-    from . import signals  # noqa: F401
+    from . import signals
+
+    del signals  # imported for side effects (signal registration)
 ```
 
 ### 5. Detail view: handle inline text edits (if applicable)

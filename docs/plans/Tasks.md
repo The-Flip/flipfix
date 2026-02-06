@@ -30,7 +30,7 @@ There's no concept for "something we should do" that isn't an urgent visitor-fac
 - **Task is a new thing**: Task is a new top-level concept that sits along Problem and Parts Request. You can log Task Updates against them.
 - **Rename Problem to Task**: Rename Problem to Task, give Task a priority/severity.
 
-Here an evaluation of each:
+An evaluation of each solution:
 
 ## Task is a new thing
 
@@ -46,7 +46,7 @@ Are Problem and Task too semantically close to separate them in the domain model
   - In the global list of tasks, we sort machines in the game room above machines elsewhere
   - Maybe I also set the priority to medium? Dunno, feels high is appropriate here.
 - As a maintainer, I notice something that really should be done on a machine in the game room, like the glass is pretty dirty.
-  - I create a Task. I set the priority = medium (the default it high).
+  - I create a Task. I set the priority = medium (the default is high).
 
 The main issue with this is naming. Problem feels right for visitor-submitted problems and other urgent problems. Task feels right for non-urgent things. What about words like:
 

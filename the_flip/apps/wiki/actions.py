@@ -26,7 +26,7 @@ import secrets
 from dataclasses import dataclass
 
 from django.urls import reverse
-from django.utils.html import conditional_escape, format_html
+from django.utils.html import format_html
 
 logger = logging.getLogger(__name__)
 
@@ -291,8 +291,11 @@ def inject_buttons(html: str, token_map: dict[str, ActionBlock], page_pk: int) -
         button_html = format_html(
             '<div class="wiki-action"><a href="{}" class="btn btn--secondary">{}</a></div>',
             url,
-            conditional_escape(block.label),
+            block.label,
         )
+        # Strip <p> wrapper if markdown wrapped the standalone token in a paragraph,
+        # which would produce invalid <p><div>…</div></p>.
+        html = re.sub(rf"<p>\s*{re.escape(token)}\s*</p>", button_html, html)
         html = html.replace(token, button_html)
     return html
 

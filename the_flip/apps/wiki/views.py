@@ -90,6 +90,8 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
             context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
         else:
             context["detail_path"] = self.object.slug
+        # Pre-filter tags for the "also appears in" display (excludes current tag)
+        context["other_tags"] = self.object.tags.exclude(tag=self.current_tag)
         return context
 
 

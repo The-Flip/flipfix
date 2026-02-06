@@ -17,7 +17,9 @@ class MaintenanceConfig(AppConfig):
 
             logging.getLogger(__name__).warning("HEIF support unavailable; HEIC decode may fail.")
 
-        from . import signals  # noqa: F401
+        from . import signals
+
+        del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
 

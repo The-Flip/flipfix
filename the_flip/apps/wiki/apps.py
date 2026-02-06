@@ -7,7 +7,9 @@ class WikiConfig(AppConfig):
     verbose_name = "Wiki"
 
     def ready(self):
-        from . import signals  # noqa: F401
+        from . import signals
+
+        del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
 
@@ -36,11 +38,13 @@ class WikiConfig(AppConfig):
 
         def _serialize_wiki_page(obj):
             ref = f"{obj.tag}/{obj.slug}" if obj.tag else obj.slug
-            label = f"{obj.tag}/{obj.page.title}" if obj.tag else obj.page.title
-            return {
-                "label": label,
+            result = {
+                "label": obj.page.title,
                 "ref": ref,
             }
+            if obj.tag:
+                result["path"] = obj.tag
+            return result
 
         register(
             LinkType(

@@ -19,15 +19,13 @@
         Last updated {{ page.modified_at|smart_date }}
         {% if page.modified_by %}by {{ page.modified_by|display_name_with_username }}{% endif %}
       </div>
-      {% if page.tags.count > 1 %}
+      {% if other_tags %}
         <div class="text-sm text-muted">
           {% icon "tags" class="space-right-sm" %}
           This page also appears in:
-          {% for tag in page.tags.all %}
-            {% if tag.tag != current_tag %}
-              <a href="{% url 'wiki-page-detail' tag %}" class="link">{{ tag }}</a>
-              {% if not forloop.last %},{% endif %}
-            {% endif %}
+          {% for tag in other_tags %}
+            <a href="{% url 'wiki-page-detail' tag %}" class="link">{{ tag }}</a>
+            {% if not forloop.last %},{% endif %}
           {% endfor %}
         </div>
       {% endif %}

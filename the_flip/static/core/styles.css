@@ -2346,7 +2346,7 @@ body {
 }
 
 .wiki-nav__link:hover {
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .wiki-nav__link--active {
@@ -2428,7 +2428,7 @@ body {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .link-dropdown__item:hover,
@@ -2442,19 +2442,19 @@ body {
 
 .link-dropdown__item-label {
   font-size: var(--text-sm);
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 .link-dropdown__item-desc,
 .link-dropdown__item-path {
   font-size: var(--text-xs);
-  color: var(--color-muted);
+  color: var(--color-text-muted);
 }
 
 .link-dropdown__empty {
   padding: var(--space-3);
   text-align: center;
-  color: var(--color-muted);
+  color: var(--color-text-muted);
   font-size: var(--text-sm);
 }
 

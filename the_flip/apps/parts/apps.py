@@ -11,7 +11,9 @@ class PartsConfig(AppConfig):
     verbose_name = "Parts Management"
 
     def ready(self):
-        from . import signals  # noqa: F401
+        from . import signals
+
+        del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
 
