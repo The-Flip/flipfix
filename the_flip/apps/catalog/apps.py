@@ -45,7 +45,7 @@ class CatalogConfig(AppConfig):
                 url_name="maintainer-machine-detail",
                 url_kwarg="slug",
                 url_field="slug",
-                autocomplete_search_fields=("name", "model__name", "slug"),
+                autocomplete_search_fields=("name", "model__name", "model__manufacturer", "slug"),
                 autocomplete_ordering=("model__name",),
                 autocomplete_select_related=("model",),
                 autocomplete_serialize=_serialize_machine,
