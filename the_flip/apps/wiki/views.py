@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -123,8 +124,6 @@ class WikiSearchView(CanAccessMaintainerPortalMixin, ListView):
 
     def get_queryset(self):
         """Filter pages by search query."""
-        from django.db.models import Q
-
         query = self.request.GET.get("q", "").strip()
         self.search_query = query
 

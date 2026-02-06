@@ -332,6 +332,7 @@
         keyboardNav = null;
       }
       dropdown.classList.add('hidden');
+      dropdown.classList.remove('keyboard-navigating');
 
       if (debounceTimer) {
         clearTimeout(debounceTimer);
@@ -445,6 +446,16 @@
       if (isOpen && stage === 'type') {
         setTimeout(() => {
           if (!searchInput.matches(':focus')) {
+            closeDropdown();
+          }
+        }, 150);
+      }
+    });
+
+    searchInput.addEventListener('blur', () => {
+      if (isOpen) {
+        setTimeout(() => {
+          if (!textarea.matches(':focus') && !searchInput.matches(':focus')) {
             closeDropdown();
           }
         }, 150);
