@@ -38,8 +38,11 @@ class PartsConfig(AppConfig):
             }
 
         def _serialize_partrequestupdate(obj):
+            label = f"#{obj.pk}: Update on #{obj.part_request_id}"
+            if obj.text:
+                label += f": {obj.text[:20]}"
             return {
-                "label": f"#{obj.pk}: Update on #{obj.part_request_id}",
+                "label": label,
                 "ref": str(obj.pk),
             }
 
@@ -47,8 +50,8 @@ class PartsConfig(AppConfig):
             LinkType(
                 name="partrequest",
                 model_path="parts.PartRequest",
-                label="Part Request",
-                description="Link to a part request",
+                label="Parts Request",
+                description="Link to a parts request",
                 url_name="part-request-detail",
                 get_label=_partrequest_label,
                 autocomplete_search_fields=("text", "id"),
@@ -63,8 +66,8 @@ class PartsConfig(AppConfig):
             LinkType(
                 name="partrequestupdate",
                 model_path="parts.PartRequestUpdate",
-                label="Part Request Update",
-                description="Link to an update",
+                label="Parts Update",
+                description="Link to an update on a parts request",
                 url_name="part-request-detail",
                 url_field="part_request_id",
                 get_label=_partrequestupdate_label,

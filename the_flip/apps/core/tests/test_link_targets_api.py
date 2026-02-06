@@ -198,7 +198,7 @@ class LinkTargetsAPITests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
             None,
         )
         self.assertIsNotNone(tagged)
-        self.assertEqual(tagged["label"], "System 6")
+        self.assertEqual(tagged["label"], "machines/blackout/System 6")
 
     def test_machine_results_include_manufacturer_year(self):
         """Machine results include manufacturer and year in label."""
@@ -391,18 +391,38 @@ class LinkTargetsAPITests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         self.assertIn("flipper", labels.lower())
 
     def test_partrequestupdate_type_returns_updates(self):
-        """Type=partrequestupdate returns part request updates."""
+        """Type=partrequestupdate returns update with text preview in label."""
         self.client.force_login(self.maintainer_user)
 
         pr = PartRequest.objects.create(text="Need new flipper bat")
-        PartRequestUpdate.objects.create(part_request=pr, text="Ordered from supplier")
+        update = PartRequestUpdate.objects.create(part_request=pr, text="Ordered parts")
 
         response = self.client.get(self.url + "?type=partrequestupdate")
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertGreater(len(data["results"]), 0)
-        self.assertIn("ref", data["results"][0])
+        label = data["results"][0]["label"]
+        self.assertIn(f"#{update.pk}", label)
+        self.assertIn(f"#{pr.pk}", label)
+        self.assertIn("Ordered parts", label)
+
+    def test_partrequestupdate_label_truncates_long_text(self):
+        """Type=partrequestupdate truncates text preview to 20 characters."""
+        self.client.force_login(self.maintainer_user)
+
+        pr = PartRequest.objects.create(text="Need parts")
+        PartRequestUpdate.objects.create(
+            part_request=pr, text="This is a very long update text that should be truncated"
+        )
+
+        response = self.client.get(self.url + "?type=partrequestupdate")
+
+        data = response.json()
+        label = data["results"][0]["label"]
+        # Should contain first 20 chars of text, not the full text
+        self.assertIn("This is a very long ", label)
+        self.assertNotIn("truncated", label)
 
     def test_partrequestupdate_type_search_filters(self):
         """Type=partrequestupdate with q filters by text."""

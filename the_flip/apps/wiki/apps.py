@@ -36,8 +36,9 @@ class WikiConfig(AppConfig):
 
         def _serialize_wiki_page(obj):
             ref = f"{obj.tag}/{obj.slug}" if obj.tag else obj.slug
+            label = f"{obj.tag}/{obj.page.title}" if obj.tag else obj.page.title
             return {
-                "label": obj.page.title,
+                "label": label,
                 "ref": ref,
             }
 
@@ -47,7 +48,7 @@ class WikiConfig(AppConfig):
                 model_path="wiki.WikiPageTag",
                 slug_field="slug",
                 label="Page",
-                description="Link to a wiki page",
+                description="Link to a page in the wiki",
                 get_url=lambda pt: reverse("wiki-page-detail", kwargs={"path": str(pt)}),
                 get_label=lambda pt: pt.page.title,
                 select_related=("page",),

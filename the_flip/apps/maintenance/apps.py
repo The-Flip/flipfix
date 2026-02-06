@@ -39,13 +39,13 @@ class MaintenanceConfig(AppConfig):
 
         def _serialize_problem(obj):
             return {
-                "label": f"#{obj.pk}: {obj.get_problem_type_display()} - {obj.machine.name}",
+                "label": f"#{obj.pk}: {obj.machine.short_display_name} - {(obj.description or '')[:50]}",
                 "ref": str(obj.pk),
             }
 
         def _serialize_log(obj):
             return {
-                "label": f"#{obj.pk}: {obj.machine.name} - {(obj.text or '')[:50]}",
+                "label": f"#{obj.pk}: {obj.machine.short_display_name} - {(obj.text or '')[:50]}",
                 "ref": str(obj.pk),
             }
 
@@ -53,7 +53,7 @@ class MaintenanceConfig(AppConfig):
             LinkType(
                 name="problem",
                 model_path="maintenance.ProblemReport",
-                label="Problem Report",
+                label="Problem",
                 description="Link to a problem report",
                 url_name="problem-report-detail",
                 get_label=_problem_label,
@@ -69,7 +69,7 @@ class MaintenanceConfig(AppConfig):
             LinkType(
                 name="log",
                 model_path="maintenance.LogEntry",
-                label="Log Entry",
+                label="Log",
                 description="Link to a log entry",
                 url_name="log-detail",
                 get_label=_log_label,
