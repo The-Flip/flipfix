@@ -31,6 +31,7 @@ from the_flip.apps.core.markdown_links import (
 from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
+    FormPrefillMixin,
     InfiniteScrollMixin,
     MediaUploadMixin,
 )
@@ -119,7 +120,7 @@ class PartRequestListPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollM
         )
 
 
-class PartRequestCreateView(CanAccessMaintainerPortalMixin, FormView):
+class PartRequestCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
     """Create a new part request."""
 
     template_name = "parts/part_request_new.html"

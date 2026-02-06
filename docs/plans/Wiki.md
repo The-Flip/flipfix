@@ -81,14 +81,11 @@ It would hyperlink to the machine's detail page, like /machines/carom/
 
 We'd like to be able to take portions of a wiki page and click a button to create a Flipfix record with it.
 
-For example, we should be able to put a big button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start". When you click it, it asks you for the name of a machine then creates a Problem Report against that machine with the checklist portion of the page as the Problem Report's Description. The button should probably be able to be configured with the slug or shortname of the machine, so as to skip the asking step.
+For example, we should be able to put a big button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start Intake". When you click it, it opens the Create Problem Report form, prepopulated with the name of that machine and the checklist portion of the page as the Problem Report's Description.
 
 We are considering building a Task entity -- see [Tasks.md](Tasks.md) -- and if we do that, this is more appropriate as a Task than a Problem Report.
 
-- This will integrate with the [MarkdownChecklists.md](MarkdownChecklists.md) we just built.
-- Once the record is created, there's no further connection with the wiki content. It's a one-time snapshot.
-- We will manually put the button on the page. Dunno what this looks like, it depends what's easiest with whatever wiki software we use.
-- TODO: figure out how we identify the portion of the page to copy to the Flipfix record, after we decide on the wiki software
+See [WikiActionButtons.md](WikiActionButtons.md) for details.
 
 ## Machine-specific pages
 

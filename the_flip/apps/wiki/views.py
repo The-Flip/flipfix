@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -16,6 +17,7 @@ from django.views.generic import (
 
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
 
+from .actions import _TYPE_TO_FIELD, build_create_url, extract_action_content
 from .forms import WikiPageForm
 from .models import WikiPage, WikiPageTag
 
@@ -394,3 +396,23 @@ class WikiTagAutocompleteView(CanAccessMaintainerPortalMixin, View):
         )
 
         return JsonResponse({"tags": list(tags)})
+
+
+class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
+    """Extract wiki action block content and redirect to a pre-filled create form."""
+
+    def get(self, request, page_pk, action_name):
+        page = get_object_or_404(WikiPage, pk=page_pk)
+        action = extract_action_content(page.content, action_name)
+        if action is None:
+            raise Http404(f"Action block '{action_name}' not found")
+
+        from the_flip.apps.core.markdown_links import convert_storage_to_authoring
+
+        content = convert_storage_to_authoring(action.content)
+
+        request.session["form_prefill"] = {
+            "field": _TYPE_TO_FIELD[action.record_type],
+            "content": content,
+        }
+        return redirect(build_create_url(action))

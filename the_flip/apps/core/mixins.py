@@ -32,6 +32,24 @@ def can_access_maintainer_portal(user: AbstractUser | Any) -> bool:
     return user.has_perm("accounts.can_access_maintainer_portal")
 
 
+class FormPrefillMixin:
+    """Pre-fill a form field from session data.
+
+    Any feature can seed a form by storing in ``request.session["form_prefill"]``::
+
+        {"field": "description", "content": "..."}
+
+    The mixin pops the data on GET so the session is cleaned up automatically.
+    """
+
+    def get_initial(self):
+        initial = super().get_initial()
+        prefill = self.request.session.pop("form_prefill", None)
+        if prefill:
+            initial[prefill["field"]] = prefill["content"]
+        return initial
+
+
 class CanAccessMaintainerPortalMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     Mixin requiring maintainer portal access.

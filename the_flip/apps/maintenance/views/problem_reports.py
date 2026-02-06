@@ -35,6 +35,7 @@ from the_flip.apps.core.markdown_links import (
 from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
+    FormPrefillMixin,
     InfiniteScrollMixin,
     MediaUploadMixin,
 )
@@ -191,7 +192,7 @@ class PublicProblemReportCreateView(FormView):
         return redirect("public-problem-report-create", slug=self.machine.slug)
 
 
-class ProblemReportCreateView(CanAccessMaintainerPortalMixin, FormView):
+class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
     """Maintainer-facing problem report creation (global or machine-scoped)."""
 
     template_name = "maintenance/problem_report_new.html"

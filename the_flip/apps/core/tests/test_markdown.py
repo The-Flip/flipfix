@@ -2,10 +2,10 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.core.templatetags.core_extras import (
-    _convert_task_list_items,
-    render_markdown,
-)
+from the_flip.apps.core.markdown import _convert_task_list_items, render_markdown_html
+
+# Tests use the pipeline function directly; the template filter is a thin mark_safe wrapper.
+render_markdown = render_markdown_html
 
 
 @tag("views")

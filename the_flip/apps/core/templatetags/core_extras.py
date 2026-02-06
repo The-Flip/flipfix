@@ -1,127 +1,12 @@
-import re
 import secrets
 
-import markdown
-import nh3
 from django import template
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from linkify_it import LinkifyIt
 
 register = template.Library()
-
-# Linkifier instance for URL detection (handles URLs, emails, www links)
-_linkify = LinkifyIt()
-
-# Allowed HTML tags for markdown rendering
-ALLOWED_TAGS = {
-    "p",
-    "br",
-    "strong",
-    "em",
-    "ul",
-    "ol",
-    "li",
-    "code",
-    "pre",
-    "blockquote",
-    "a",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "img",
-    "hr",
-    "table",
-    "thead",
-    "tbody",
-    "tr",
-    "th",
-    "td",
-    "figure",
-    "figcaption",
-}
-
-# Allowed attributes per tag
-ALLOWED_ATTRIBUTES = {
-    "a": {"href", "title"},
-    "img": {"src", "alt", "title"},
-    "code": {"class"},
-    "pre": {"class"},
-    "th": {"align"},
-    "td": {"align"},
-}
-
-# Regex for task list items: matches <li> followed by optional <p>, then [ ], [  ], [], [x], or [X]
-# Group 1: optional whitespace+<p> (for blank-line-separated list items)
-# Group 2: the check character to determine checked state (spaces or empty = unchecked)
-_TASK_LIST_RE = re.compile(r"<li>(\s*<p>)?\s*\[( *|[xX])\]")
-
-
-def _linkify_urls(html: str) -> str:
-    """Convert bare URLs to anchor tags using linkify-it-py.
-
-    Handles URLs, www links, and email addresses. Properly handles edge cases
-    like parentheses in URLs (e.g., Wikipedia links) and avoids double-linking
-    URLs already in anchor tags.
-    """
-    matches = _linkify.match(html)
-    if not matches:
-        return html
-
-    # Process matches in reverse order to preserve string indices
-    result = html
-    for match in reversed(matches):
-        start = match.index
-        end = match.last_index
-
-        # Skip if this URL is already inside an href attribute
-        prefix = html[:start]
-        if prefix.endswith('href="') or prefix.endswith("href='"):
-            continue
-
-        # Replace with anchor tag
-        anchor = f'<a href="{match.url}">{match.text}</a>'
-        result = result[:start] + anchor + result[end:]
-
-    return result
-
-
-def _convert_task_list_items(html: str) -> str:
-    """Convert task list markers in <li> tags to checkbox HTML.
-
-    After markdown and nh3 processing, literal [ ] and [x] text inside <li> tags
-    is converted to checkbox inputs. Each checkbox gets a sequential
-    data-checkbox-index attribute for JavaScript targeting.
-
-    This runs AFTER nh3 sanitization, so the injected <input> elements are
-    trusted server code, not user-supplied HTML.
-
-    Args:
-        html: Sanitized HTML containing <li>[ ] or <li>[x] patterns
-
-    Returns:
-        HTML with task list markers replaced by checkbox inputs
-    """
-    counter = 0
-
-    def _replace(match: re.Match) -> str:
-        nonlocal counter
-        idx = counter
-        counter += 1
-        p_tag = match.group(1) or ""  # Preserve <p> if present (blank-line-separated items)
-        check_char = match.group(2)
-        checked_attr = " checked" if check_char in ("x", "X") else ""
-        return (
-            f'<li class="task-list-item">{p_tag}'
-            f'<input type="checkbox"{checked_attr} data-checkbox-index="{idx}" disabled>'
-        )
-
-    return _TASK_LIST_RE.sub(_replace, html)
 
 
 @register.filter
@@ -146,21 +31,9 @@ def storage_to_authoring(text):
 @register.filter
 def render_markdown(text):
     """Convert markdown text to sanitized HTML."""
-    if not text:
-        return ""
-    # Convert [[type:ref]] links to markdown links (before markdown processing)
-    from the_flip.apps.core.markdown_links import render_all_links
+    from the_flip.apps.core.markdown import render_markdown_html
 
-    text = render_all_links(text)
-    # Convert markdown to HTML
-    html = markdown.markdown(text, extensions=["fenced_code", "nl2br", "smarty"])
-    # Convert bare URLs to links
-    html = _linkify_urls(html)
-    # Sanitize to prevent XSS
-    safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
-    # Convert task list markers to checkboxes (after sanitization for security)
-    safe_html = _convert_task_list_items(safe_html)
-    return mark_safe(safe_html)  # noqa: S308 - HTML sanitized by nh3
+    return mark_safe(render_markdown_html(text))  # noqa: S308 - HTML sanitized by nh3
 
 
 @register.filter

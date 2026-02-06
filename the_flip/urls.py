@@ -62,6 +62,7 @@ from the_flip.apps.maintenance.views.transcoding import (
 )
 from the_flip.apps.parts import views as parts_views
 from the_flip.apps.wiki.views import (
+    WikiActionPrefillView,
     WikiHomeView,
     WikiPageCreateView,
     WikiPageDeleteView,
@@ -376,6 +377,11 @@ urlpatterns = [
     path("wiki/", WikiHomeView.as_view(), name="wiki-home"),  # Wiki home/index
     path("wiki/search", WikiSearchView.as_view(), name="wiki-search"),  # Wiki search
     path("wiki/create", WikiPageCreateView.as_view(), name="wiki-page-create"),  # Create page
+    path(
+        "wiki/actions/<int:page_pk>/<str:action_name>/",
+        WikiActionPrefillView.as_view(),
+        name="wiki-action-prefill",
+    ),  # Action block → pre-fill create form
     path(
         "wiki/doc/<path:path>", WikiPageDetailView.as_view(), name="wiki-page-detail"
     ),  # Wiki page detail (path = tag/slug or just slug)

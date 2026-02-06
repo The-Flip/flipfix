@@ -33,6 +33,7 @@ from the_flip.apps.core.markdown_links import (
 from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
+    FormPrefillMixin,
     InfiniteScrollMixin,
     MediaUploadMixin,
     can_access_maintainer_portal,
@@ -63,7 +64,7 @@ def get_log_entry_queryset(search_query: str = ""):
     return queryset
 
 
-class MachineLogCreateView(CanAccessMaintainerPortalMixin, FormView):
+class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
     """Create a new log entry for a machine or problem report."""
 
     template_name = "maintenance/log_entry_new.html"
