@@ -83,6 +83,11 @@
     wrapper.appendChild(textarea);
     wrapper.appendChild(dropdown);
 
+    // Remove keyboard-navigating class on mouse movement so :hover works again
+    dropdown.addEventListener('mousemove', () => {
+      dropdown.classList.remove('keyboard-navigating');
+    });
+
     const typeList = dropdown.querySelector('[data-type-list]');
     const searchStage = dropdown.querySelector('[data-search-stage]');
     const searchInput = dropdown.querySelector('.link-dropdown__search');
@@ -367,13 +372,15 @@
 
         if (e.key === 'ArrowDown') {
           e.preventDefault();
+          dropdown.classList.add('keyboard-navigating');
           typeActiveIndex = Math.min(typeActiveIndex + 1, itemCount - 1);
           updateTypeActiveState();
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
+          dropdown.classList.add('keyboard-navigating');
           typeActiveIndex = Math.max(typeActiveIndex - 1, 0);
           updateTypeActiveState();
-        } else if (e.key === 'Enter') {
+        } else if (e.key === 'Enter' || e.key === 'ArrowRight') {
           e.preventDefault();
           if (typeActiveIndex >= 0 && typeActiveIndex < itemCount) {
             const activeItem = typeItems[typeActiveIndex];
@@ -382,7 +389,7 @@
             const typeInfo = (linkTypesCache || []).find((t) => t.name === typeName);
             selectType(typeName, typeInfo?.label);
           }
-        } else if (e.key === 'Escape') {
+        } else if (e.key === 'Escape' || e.key === 'ArrowLeft') {
           e.preventDefault();
           closeDropdown();
         } else if (e.key === 'Backspace') {
@@ -399,14 +406,27 @@
       fetchResults(searchInput.value);
     });
 
+    function goBackToTypeSelection() {
+      showTypeSelection();
+      textarea.focus();
+      // Reset cursor to after [[
+      textarea.setSelectionRange(triggerStart + 2, triggerStart + 2);
+    }
+
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Backspace' && !searchInput.value) {
-        // Go back to type selection
         e.preventDefault();
-        showTypeSelection();
-        textarea.focus();
-        // Reset cursor to after [[
-        textarea.setSelectionRange(triggerStart + 2, triggerStart + 2);
+        goBackToTypeSelection();
+      } else if (e.key === 'ArrowLeft' && searchInput.selectionStart === 0) {
+        e.preventDefault();
+        goBackToTypeSelection();
+      }
+    });
+
+    // Close when clicking the textarea itself (e.g., user clicks away from dropdown)
+    textarea.addEventListener('click', () => {
+      if (isOpen) {
+        closeDropdown();
       }
     });
 

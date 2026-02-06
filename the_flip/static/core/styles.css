@@ -1978,6 +1978,7 @@ body {
   position: relative;
   top: -0.1em;
   accent-color: var(--color-accent);
+  color-scheme: light dark;
 }
 
 .markdown-content .task-list-item input[type='checkbox']:not(:disabled) {
@@ -2433,6 +2434,10 @@ body {
 .link-dropdown__item:hover,
 .link-dropdown__item.dropdown-active {
   background-color: var(--color-gray-100);
+}
+
+.link-dropdown.keyboard-navigating .link-dropdown__item:hover:not(.dropdown-active) {
+  background-color: transparent;
 }
 
 .link-dropdown__item-label {

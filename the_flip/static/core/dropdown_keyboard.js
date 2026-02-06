@@ -54,10 +54,14 @@ function attachDropdownKeyboard(config) {
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
+      const dropdown = listContainer.closest('.link-dropdown');
+      if (dropdown) dropdown.classList.add('keyboard-navigating');
       activeIndex = Math.min(activeIndex + 1, items.length - 1);
       updateActiveState();
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
+      const dropdown = listContainer.closest('.link-dropdown');
+      if (dropdown) dropdown.classList.add('keyboard-navigating');
       activeIndex = Math.max(activeIndex - 1, 0);
       updateActiveState();
     } else if (event.key === 'Enter') {
