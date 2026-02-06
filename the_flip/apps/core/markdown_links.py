@@ -91,6 +91,21 @@ class LinkType:
 
         return apps.get_model(self.model_path)
 
+    def resolve_url(self, obj: Any) -> str:
+        """Resolve the URL for a linked object."""
+        if self.get_url:
+            return self.get_url(obj)
+        from django.urls import reverse
+
+        kwarg_value = getattr(obj, self.url_field)
+        return reverse(self.url_name, kwargs={self.url_kwarg: kwarg_value})
+
+    def resolve_label(self, obj: Any) -> str:
+        """Resolve the display label for a linked object."""
+        if self.get_label:
+            return self.get_label(obj)
+        return str(getattr(obj, self.label_field, obj))
+
 
 # ---------------------------------------------------------------------------
 # Registry
@@ -192,8 +207,8 @@ def _render_by_id(text: str, lt: LinkType, pattern: re.Pattern[str]) -> str:
         obj_id = int(match.group(1))
         obj = by_id.get(obj_id)
         if obj:
-            url = _resolve_url(lt, obj)
-            label = _resolve_label(lt, obj)
+            url = lt.resolve_url(obj)
+            label = lt.resolve_label(obj)
             result = result[: match.start()] + f"[{label}]({url})" + result[match.end() :]
         else:
             result = result[: match.start()] + "*[broken link]*" + result[match.end() :]
@@ -225,8 +240,8 @@ def _render_by_slug(text: str, lt: LinkType, pattern: re.Pattern[str]) -> str:
         key = match.group(1)
         obj = by_key.get(key)
         if obj:
-            url = _resolve_url(lt, obj)
-            label = _resolve_label(lt, obj)
+            url = lt.resolve_url(obj)
+            label = lt.resolve_label(obj)
             result = result[: match.start()] + f"[{label}]({url})" + result[match.end() :]
         else:
             result = result[: match.start()] + "*[broken link]*" + result[match.end() :]
@@ -462,20 +477,3 @@ def link_preview(content: str, max_len: int = 30) -> str:
     if len(preview) > max_len:
         preview = preview[:max_len] + "..."
     return preview
-
-
-def _resolve_url(lt: LinkType, obj: Any) -> str:
-    """Resolve the URL for a linked object."""
-    if lt.get_url:
-        return lt.get_url(obj)
-    from django.urls import reverse
-
-    kwarg_value = getattr(obj, lt.url_field)
-    return reverse(lt.url_name, kwargs={lt.url_kwarg: kwarg_value})
-
-
-def _resolve_label(lt: LinkType, obj: Any) -> str:
-    """Resolve the display label for a linked object."""
-    if lt.get_label:
-        return lt.get_label(obj)
-    return str(getattr(obj, lt.label_field, obj))
