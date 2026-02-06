@@ -89,19 +89,6 @@ def deliver_webhook(
         if not config.DISCORD_WEBHOOKS_ENABLED:
             return WebhookDeliveryResult(status="skipped", reason="webhooks globally disabled")
 
-        # Check per-event-type settings
-        if event_type.startswith("problem_report"):
-            if not config.DISCORD_WEBHOOKS_PROBLEM_REPORTS:
-                return WebhookDeliveryResult(
-                    status="skipped", reason="problem report webhooks disabled"
-                )
-        elif event_type == "log_entry_created":
-            if not config.DISCORD_WEBHOOKS_LOG_ENTRIES:
-                return WebhookDeliveryResult(status="skipped", reason="log entry webhooks disabled")
-        elif event_type.startswith("part_request"):
-            if not config.DISCORD_WEBHOOKS_PARTS:
-                return WebhookDeliveryResult(status="skipped", reason="parts webhooks disabled")
-
         # Fetch the object
         obj = _get_object(model_name, object_id)
         if obj is None:

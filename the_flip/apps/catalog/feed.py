@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from constance import config
 from django.conf import settings
 from django.db.models import Prefetch
 
@@ -129,15 +128,13 @@ def get_machine_feed_page(
         reports = _get_problem_reports(machine, search_query, fetch_limit)
         all_entries.extend(reports)
 
-    # Parts entries only if parts feature is enabled
-    if config.PARTS_ENABLED:
-        if ENTRY_TYPE_PART_REQUEST in entry_types:
-            part_requests = _get_part_requests(machine, search_query, fetch_limit)
-            all_entries.extend(part_requests)
+    if ENTRY_TYPE_PART_REQUEST in entry_types:
+        part_requests = _get_part_requests(machine, search_query, fetch_limit)
+        all_entries.extend(part_requests)
 
-        if ENTRY_TYPE_PART_REQUEST_UPDATE in entry_types:
-            part_updates = _get_part_request_updates(machine, search_query, fetch_limit)
-            all_entries.extend(part_updates)
+    if ENTRY_TYPE_PART_REQUEST_UPDATE in entry_types:
+        part_updates = _get_part_request_updates(machine, search_query, fetch_limit)
+        all_entries.extend(part_updates)
 
     # Sort by occurred_at descending (all entry types)
     combined = sorted(

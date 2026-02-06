@@ -164,13 +164,11 @@
               {% icon "pencil" class="meta" %}
               Edit Machine
             </a>
-            {% if config.PARTS_ENABLED %}
-              <a href="{% url 'part-request-create-machine' machine.slug %}"
-                 class="btn btn--secondary btn--full">
-                {% icon "box-open" class="meta" %}
-                Request Parts
-              </a>
-            {% endif %}
+            <a href="{% url 'part-request-create-machine' machine.slug %}"
+               class="btn btn--secondary btn--full">
+              {% icon "box-open" class="meta" %}
+              Request Parts
+            </a>
             <a href="{% url 'problem-report-create-machine' machine.slug %}"
                class="btn btn--report btn--full">
               {% icon "bug" class="meta" %}
@@ -198,27 +196,17 @@
           <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=problems"
              class="pill pill--filter {% if active_filter == 'problems' %}pill--filter-active{% else %}pill--neutral{% endif %}">
             {% icon "bug" %}
-            {% if config.PARTS_ENABLED %}
-              Problems
-            {% else %}
-              Problems Only
-            {% endif %}
+            Problems
           </a>
           <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=logs"
              class="pill pill--filter {% if active_filter == 'logs' %}pill--filter-active{% else %}pill--neutral{% endif %}">
             {% icon "screwdriver-wrench" %}
-            {% if config.PARTS_ENABLED %}
-              Logs
-            {% else %}
-              Logs Only
-            {% endif %}
+            Logs
           </a>
-          {% if config.PARTS_ENABLED %}
-            <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=parts"
-               class="pill pill--filter {% if active_filter == 'parts' %}pill--filter-active{% else %}pill--neutral{% endif %}">
-              {% icon "box-open" %} Parts
-            </a>
-          {% endif %}
+          <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=parts"
+             class="pill pill--filter {% if active_filter == 'parts' %}pill--filter-active{% else %}pill--neutral{% endif %}">
+            {% icon "box-open" %} Parts
+          </a>
         </div>
         <!-- Search Box -->
         <div class="filter-bar__search">

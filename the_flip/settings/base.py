@@ -147,8 +147,6 @@ LOG_LEVEL = config("LOG_LEVEL", default="WARNING").upper()
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
 
 CONSTANCE_CONFIG = {
-    "GLOBAL_ACTIVITY_FEED_ENABLED": (False, "Enable global activity feed", bool),
-    "PARTS_ENABLED": (False, "Enable the parts request feature", bool),
     # Discord Bot settings (inbound - listening to Discord messages)
     "DISCORD_BOT_ENABLED": (False, "Master switch for Discord bot", bool),
     "DISCORD_BOT_TOKEN": ("", "Discord bot token (keep secret!)", str),
@@ -162,29 +160,14 @@ CONSTANCE_CONFIG = {
         "Master switch for all Discord webhook notifications",
         bool,
     ),
-    "DISCORD_WEBHOOKS_PROBLEM_REPORTS": (
-        True,
-        "Post to Discord when a problem report is created",
-        bool,
-    ),
-    "DISCORD_WEBHOOKS_LOG_ENTRIES": (
-        True,
-        "Post to Discord when a log entry is created",
-        bool,
-    ),
-    "DISCORD_WEBHOOKS_PARTS": (True, "Post to Discord when a parts request is created", bool),
 }
 
 CONSTANCE_CONFIG_FIELDSETS = (
-    ("Feature Flags", ("GLOBAL_ACTIVITY_FEED_ENABLED", "PARTS_ENABLED")),
     (
         "Discord Webhooks (Outbound)",
         (
             "DISCORD_WEBHOOK_URL",
             "DISCORD_WEBHOOKS_ENABLED",
-            "DISCORD_WEBHOOKS_PROBLEM_REPORTS",
-            "DISCORD_WEBHOOKS_LOG_ENTRIES",
-            "DISCORD_WEBHOOKS_PARTS",
         ),
     ),
     (

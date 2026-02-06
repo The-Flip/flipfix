@@ -1,6 +1,5 @@
 """Global activity feed views."""
 
-from constance import config
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views import View
@@ -34,16 +33,11 @@ class GlobalActivityFeedView(CanAccessMaintainerPortalMixin, TemplateView):
                 "value": ProblemReport.objects.filter(status=ProblemReport.Status.OPEN).count(),
                 "label": "Open Problems",
             },
+            {
+                "value": PartRequest.objects.filter(status=PartRequest.Status.REQUESTED).count(),
+                "label": "Parts Req'd",
+            },
         ]
-        if config.PARTS_ENABLED:
-            stats.append(
-                {
-                    "value": PartRequest.objects.filter(
-                        status=PartRequest.Status.REQUESTED
-                    ).count(),
-                    "label": "Parts Req'd",
-                }
-            )
 
         context.update(
             {

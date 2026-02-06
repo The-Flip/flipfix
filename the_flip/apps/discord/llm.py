@@ -329,9 +329,6 @@ async def analyze_gathered_context(
     # Get machine list from database
     machines = await _get_machines_for_prompt()
 
-    # Check if parts system is enabled
-    parts_enabled = await _get_parts_enabled()
-
     # Build YAML prompt
     user_message = build_yaml_prompt(context, machines)
 
@@ -343,12 +340,10 @@ async def analyze_gathered_context(
     # Count messages including nested thread messages
     message_count = sum(1 + len(m.thread) for m in context.messages)
 
-    return await _analyze_with_prompt(user_message, message_count, parts_enabled)
+    return await _analyze_with_prompt(user_message, message_count)
 
 
-async def _analyze_with_prompt(
-    user_message: str, message_count: int, parts_enabled: bool
-) -> AnalysisResult:
+async def _analyze_with_prompt(user_message: str, message_count: int) -> AnalysisResult:
     """Common analysis logic for both legacy and new interfaces."""
     api_key = await _get_api_key()
 
@@ -363,21 +358,6 @@ async def _analyze_with_prompt(
 
         # Extract tool use from response
         suggestions = _parse_tool_response(response)
-
-        # Filter out parts-related suggestions if parts system is disabled
-        if not parts_enabled:
-            original_count = len(suggestions)
-            suggestions = [
-                s
-                for s in suggestions
-                if s.record_type not in (RecordType.PART_REQUEST, RecordType.PART_REQUEST_UPDATE)
-            ]
-            filtered_count = original_count - len(suggestions)
-            if filtered_count > 0:
-                logger.info(
-                    "discord_llm_filtered_parts",
-                    extra={"filtered_count": filtered_count},
-                )
 
         logger.info(
             "discord_llm_analysis_complete",
@@ -410,12 +390,6 @@ async def _analyze_with_prompt(
 def _get_api_key() -> str:
     """Get Anthropic API key from Constance config."""
     return config.ANTHROPIC_API_KEY
-
-
-@sync_to_async
-def _get_parts_enabled() -> bool:
-    """Check if parts system is enabled in Constance config."""
-    return config.PARTS_ENABLED
 
 
 DEFAULT_MODEL = decouple_config("DISCORD_LLM_MODEL", default="claude-opus-4-5-20251101")

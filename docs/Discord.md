@@ -27,10 +27,6 @@ Configure the system to post to Discord when problem reports, log entries, or pa
 - Go to Admin → Constance → Config
 - Set `DISCORD_WEBHOOK_URL` to the webhook URL
 - Set `DISCORD_WEBHOOKS_ENABLED` = True
-- Optionally disable specific event types:
-  - `DISCORD_WEBHOOKS_PROBLEM_REPORTS`
-  - `DISCORD_WEBHOOKS_LOG_ENTRIES`
-  - `DISCORD_WEBHOOKS_PARTS`
 
 <a id="discord-to-flipfix"></a>
 

@@ -1,6 +1,5 @@
 """Home page views."""
 
-from constance import config
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -12,11 +11,7 @@ class HomeView(View):
     """Home page: activity feed for maintainers, welcome page for others."""
 
     def get(self, request):
-        if (
-            config.GLOBAL_ACTIVITY_FEED_ENABLED
-            and request.user.is_authenticated
-            and can_access_maintainer_portal(request.user)
-        ):
+        if request.user.is_authenticated and can_access_maintainer_portal(request.user):
             return GlobalActivityFeedView.as_view()(request)
         return PublicHomeView.as_view()(request)
 

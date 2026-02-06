@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from constance import config
 from django.conf import settings
 from django.db.models import Prefetch
 
@@ -70,14 +69,10 @@ def get_global_feed_page(
 
     all_entries: list[FeedEntry] = []
 
-    # Always include logs and problem reports
     all_entries.extend(_get_global_log_entries(search_query, fetch_limit))
     all_entries.extend(_get_global_problem_reports(search_query, fetch_limit))
-
-    # Parts entries only if parts feature is enabled
-    if config.PARTS_ENABLED:
-        all_entries.extend(_get_global_part_requests(search_query, fetch_limit))
-        all_entries.extend(_get_global_part_request_updates(search_query, fetch_limit))
+    all_entries.extend(_get_global_part_requests(search_query, fetch_limit))
+    all_entries.extend(_get_global_part_request_updates(search_query, fetch_limit))
 
     # Sort by occurred_at descending (all entry types)
     combined = sorted(

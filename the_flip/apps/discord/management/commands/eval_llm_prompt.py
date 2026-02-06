@@ -154,11 +154,8 @@ class Command(BaseCommand):
                 "Export it before running: export ANTHROPIC_API_KEY=sk-..."
             )
 
-        # Parts are always enabled for evals
-        parts_enabled = self._get_parts_enabled()
-
         # Get fixtures
-        fixtures = self._get_fixtures(parts_enabled, options.get("fixture"))
+        fixtures = self._get_fixtures(options.get("fixture"))
         if not fixtures:
             raise CommandError("No fixtures to run")
 
@@ -182,14 +179,8 @@ class Command(BaseCommand):
         """Get API key from .env file (no database dependency)."""
         return str(decouple_config("ANTHROPIC_API_KEY", default=""))
 
-    def _get_parts_enabled(self) -> bool:
-        """Parts are always enabled for eval fixtures."""
-        return True
-
-    def _get_fixtures(
-        self, parts_enabled: bool, fixture_name: str | None = None
-    ) -> dict[str, LLMTestCase]:
-        """Get fixtures to run, filtering by parts setting and optional name."""
+    def _get_fixtures(self, fixture_name: str | None = None) -> dict[str, LLMTestCase]:
+        """Get fixtures to run, optionally filtering by name."""
         fixtures = ALL_FIXTURES.copy()
 
         # Filter to specific fixture if requested
@@ -198,14 +189,6 @@ class Command(BaseCommand):
                 available = ", ".join(sorted(fixtures.keys()))
                 raise CommandError(f"Fixture '{fixture_name}' not found.\nAvailable: {available}")
             fixtures = {fixture_name: fixtures[fixture_name]}
-
-        # Filter out part_request fixtures if parts disabled
-        if not parts_enabled:
-            fixtures = {
-                name: f
-                for name, f in fixtures.items()
-                if not any(e.record_type == "part_request" for e in f.expected)
-            }
 
         return fixtures
 

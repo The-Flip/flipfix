@@ -41,7 +41,6 @@ class WebhookDeliveryTests(TestCase):
     @override_config(
         DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
         DISCORD_WEBHOOKS_ENABLED=True,
-        DISCORD_WEBHOOKS_PROBLEM_REPORTS=True,
     )
     @patch("the_flip.apps.discord.tasks.requests.post")
     def test_successful_delivery(self, mock_post):
@@ -59,7 +58,6 @@ class WebhookDeliveryTests(TestCase):
     @override_config(
         DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/123/abc",
         DISCORD_WEBHOOKS_ENABLED=True,
-        DISCORD_WEBHOOKS_PROBLEM_REPORTS=True,
     )
     @patch("the_flip.apps.discord.tasks.requests.post")
     def test_handles_delivery_failure(self, mock_post):

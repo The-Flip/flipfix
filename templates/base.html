@@ -40,10 +40,8 @@
              class="nav-link {% if 'problem' in request.resolver_match.url_name %}nav-link--active{% endif %}">Problems</a>
           <a href="{% url 'log-list' %}"
              class="nav-link {% if 'log-' in request.resolver_match.url_name %}nav-link--active{% endif %}">Logs</a>
-          {% if config.PARTS_ENABLED %}
-            <a href="{% url 'part-request-list' %}"
-               class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}">Parts</a>
-          {% endif %}
+          <a href="{% url 'part-request-list' %}"
+             class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}">Parts</a>
           {% if user.is_superuser %}
             <div class="dropdown">
               <button type="button"
@@ -79,12 +77,10 @@
              class="nav-icon {% if 'log-' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
              aria-label="Logs"
              title="Logs">{% icon "screwdriver-wrench" %}</a>
-          {% if config.PARTS_ENABLED %}
-            <a href="{% url 'part-request-list' %}"
-               class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
-               aria-label="Parts"
-               title="Parts">{% icon "box-open" %}</a>
-          {% endif %}
+          <a href="{% url 'part-request-list' %}"
+             class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
+             aria-label="Parts"
+             title="Parts">{% icon "box-open" %}</a>
           {% if user.is_superuser %}
             <div class="dropdown">
               <button type="button"

@@ -7,7 +7,6 @@ This view handles four URL patterns via query params:
 - /machines/slug/?f=parts → parts requests and updates only
 """
 
-from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
 
@@ -74,8 +73,7 @@ class MachineFeedFilterTests(TestDataMixin, TestCase):
     def test_all_filter_shows_all_entry_types(self):
         """Default filter (all) should show logs, problems, and parts."""
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url)
+        response = self.client.get(self.feed_url)
 
         self.assertContains(response, "Test log entry")
         self.assertContains(response, "Test problem")
@@ -102,8 +100,7 @@ class MachineFeedFilterTests(TestDataMixin, TestCase):
     def test_parts_filter_shows_only_parts(self):
         """Parts filter should show only parts requests and updates."""
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url, {"f": "parts"})
+        response = self.client.get(self.feed_url, {"f": "parts"})
 
         self.assertNotContains(response, "Test log entry")
         self.assertNotContains(response, "Test problem")
@@ -112,8 +109,7 @@ class MachineFeedFilterTests(TestDataMixin, TestCase):
     def test_invalid_filter_defaults_to_all(self):
         """Invalid filter value should default to showing all entries."""
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url, {"f": "invalid"})
+        response = self.client.get(self.feed_url, {"f": "invalid"})
 
         self.assertContains(response, "Test log entry")
         self.assertContains(response, "Test problem")
@@ -211,8 +207,7 @@ class MachineFeedSearchTests(TestDataMixin, TestCase):
         )
 
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url, {"q": "Requisitioning"})
+        response = self.client.get(self.feed_url, {"q": "Requisitioning"})
 
         self.assertContains(response, "Need new rubber rings")
 
@@ -226,8 +221,7 @@ class MachineFeedSearchTests(TestDataMixin, TestCase):
         )
 
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url, {"q": "Updating"})
+        response = self.client.get(self.feed_url, {"q": "Updating"})
 
         self.assertContains(response, "Ordered from Marco")
 
@@ -357,8 +351,7 @@ class MachineFeedBreadcrumbTests(TestDataMixin, TestCase):
     def test_parts_filter_has_parts_breadcrumb(self):
         """Parts filter should show 'Parts' breadcrumb."""
         self.client.force_login(self.maintainer_user)
-        with override_config(PARTS_ENABLED=True):
-            response = self.client.get(self.feed_url, {"f": "parts"})
+        response = self.client.get(self.feed_url, {"f": "parts"})
 
         self.assertContains(response, "<span>Parts</span>")
 
