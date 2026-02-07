@@ -1,10 +1,24 @@
-# Markdown Links
+# Markdown: Linking to Other Records
 
-This guide covers the `[[type:ref]]` cross-record linking system. Read this before adding a new link type or making a model a link source.
+All of Flipfix's various types of records -- Problem Reports, Log Entries, Parts Requests and Wiki Pages -- support markdown. In that markdown, you can link from any type of record to any other type of record.
 
-## Overview
+The only markdown field this does NOT apply to is the public problem report submission form.
 
-Maintainers can type `[[` in any text field to insert links to other records. The system supports two kinds of link types:
+## How to Use It
+
+Type `[[` in any text field to insert links to other records. You'll get an autocomplete that helps you find any record in the system.
+
+## Examples
+
+- Wiki docs can link to other wiki docs.
+- The repair guide wiki doc for the Blackout machine could link directly to the Blackout machine's detail page in Flipfix.
+- A troubleshooting wiki doc could reference the specific problem reports that inspired it.
+- A log entry could be able to reference the troubleshooting wiki doc that helped solve it.
+- A log entry could be able to reference a part request that's holding up completion of the work.
+
+## Architecture
+
+The system supports two kinds of link types:
 
 - **Slug-based** (e.g., `[[machine:blackout]]`): For models with human-readable slugs. The authoring format uses the slug, while the storage format uses the database PK (`[[machine:id:42]]`).
 - **ID-based** (e.g., `[[problem:7]]`): For models without slugs. The format is the same in both authoring and storage.
@@ -20,8 +34,6 @@ Seven link types are registered across four apps:
 | `partrequest`       | parts       | ID-based   | `PartRequest`       |
 | `partrequestupdate` | parts       | ID-based   | `PartRequestUpdate` |
 | `page`              | wiki        | slug-based | `WikiPageTag`       |
-
-## Architecture
 
 ### Registry pattern
 

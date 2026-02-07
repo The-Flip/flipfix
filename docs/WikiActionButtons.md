@@ -2,21 +2,17 @@
 
 ## Overview
 
-We want to be able to stick a button on a FlipFix wiki page that takes a portion of the wiki page and creates a Flipfix record with it.
+You can stick buttons on FlipFix wiki pages that take a portion of the wiki page and create a Flipfix record with it.
 
-For example, we should be able to put a big button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start Intake". When you click it, it opens the Create Problem Report form, prepopulated with the name of that machine and the checklist portion of the page as the Problem Report's Description.
+For example you might want to stick a button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start Intake". When you click it, it opens the Create Problem Report form, prepopulated with the name of that machine and the checklist portion of the page as the Problem Report's Description.
 
-We are considering building a Task entity -- see [Tasks.md](Tasks.md) -- and if we do that, this is more appropriate as a Task than a Problem Report.
-
-- This will pair nicely with the [MarkdownChecklists.md](MarkdownChecklists.md) we just built.
+- This pairs nicely with the [MarkdownChecklists.md](MarkdownChecklists.md), so you can check off items.
 - Once the record is created, there's no further connection with the wiki content. It's a one-time snapshot.
 
 ## Syntax
 
 ```markdown
 <!-- action:start name="intake" -->
-
-## Intake: Blackout
 
 ## Checklist
 
@@ -28,23 +24,23 @@ We are considering building a Task entity -- see [Tasks.md](Tasks.md) -- and if 
 
 Some other text...
 
-<!-- action:button name="intake" type="problem" machine="blackout" label="Start Intake" -->
+<!-- action:button name="intake" type="problem" label="Start Intake" -->
 ```
 
 **Attributes** on `action:button`:
 
 | Attribute | Required | Description                                                                                       |
 | --------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `name`    | yes      | Identifier linking it to start/end                                                                |
-| `type`    | yes      | `problem`, `log`, `partrequest`, or `page`                                                        |
-| `machine` | no       | Machine slug to pre-select (not used for `type="page"`)                                           |
-| `label`   | yes      | Button text                                                                                       |
-| `tags`    | no       | Comma-separated tags for new page (`type="page"` only). `@source` resolves to source page's tags. |
-| `title`   | no       | Pre-fill the title field (`type="page"` only)                                                     |
+| `name`    | required | Identifier linking it to start/end                                                                |
+| `type`    | required | `problem`, `log`, `partrequest`, or `page`                                                        |
+| `label`   | required | Button text                                                                                       |
+| `machine` | optional | Machine slug to pre-select (not used for `type="page"`)                                           |
+| `tags`    | optional | Comma-separated tags for new page (`type="page"` only). `@source` resolves to source page's tags. |
+| `title`   | optional | Pre-fill the title field (`type="page"` only)                                                     |
 
 Multiple named action blocks per page are supported.
 
-## How It Works
+## Architecture
 
 ### Rendering on the wiki page
 

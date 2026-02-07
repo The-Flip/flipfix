@@ -19,8 +19,8 @@ None of these seem quite right for some of the other things we want to track.
 
 Our current ways of dealing with these are not adequate. We either:
 
-- Keep these into log entries, which we have to remember to check
-- Keep these into problems, which can make it hard to find the urgent visitor-relevant stuff
+- Keep these in log entries, which we have to remember to check
+- Keep these in problems, which can make it hard to find the urgent visitor-relevant stuff
 - Keep these in our conversations and memories, which can be fallible
 
 ## Potential Solutions
@@ -32,14 +32,14 @@ There's no concept for "something we should do" that isn't an urgent visitor-fac
 
 An evaluation of each solution:
 
-## Task is a new thing
+### Task is a new thing
 
 Are Problem and Task too semantically close to separate them in the domain model? Thought experiments:
 
 - As a maintainer, I notice something critically broken on a machine in the workshop. Do I create a Problem or a Task?
 - As a maintainer, I notice something that really should be done on a machine in the game room, like the glass is pretty dirty. Do I create a Problem or a Task?
 
-## Rename Problem to Task
+### Rename Problem to Task
 
 - As a maintainer, I notice something critically broken on a machine in the workshop.
   - I create a Task.
@@ -53,3 +53,19 @@ The main issue with this is naming. Problem feels right for visitor-submitted pr
 - Work Item
 - Ticket
 - Issue
+
+### Key maintainer start-of-day experiences
+
+These are some key experiences for maintainers walking in the door, wanting to volunteer:
+
+#### Experience: big problems on the floor
+
+There will be a big screen up on the wall of the workshop or game floor, with all the customer-submitted problems. These are the urgent things to look at. So we need a view that only shows problems with machines that are on the floor.
+
+#### Experience: someone comes in and asks "what can I do"
+
+They need to be able to see open problems and todos across all machines.
+
+#### Experience: someone wants to come in do some maintenance on a specific machine
+
+They need to be able to see open problems and todos on that machine.
