@@ -63,5 +63,6 @@ class LinkTargetsView(CanAccessMaintainerPortalMixin, View):
                 q_filter |= Q(**{f"{field}__icontains": query})
             qs = qs.filter(q_filter)
 
+        total_count = qs.count()
         results = [lt.autocomplete_serialize(obj) for obj in qs[:AUTOCOMPLETE_RESULT_LIMIT]]
-        return JsonResponse({"results": results})
+        return JsonResponse({"results": results, "total_count": total_count})

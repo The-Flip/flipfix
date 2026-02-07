@@ -243,14 +243,14 @@
           const url = `${apiUrl}?type=${selectedType}&q=${encodeURIComponent(query)}`;
           fetch(url)
             .then((response) => (response.ok ? response.json() : Promise.reject()))
-            .then((data) => renderResults(data.results || []))
+            .then((data) => renderResults(data.results || [], data.total_count))
             .catch(() => renderResults([]));
         },
         query ? DEBOUNCE_MS : 0
       ); // Immediate for empty query
     }
 
-    function renderResults(results) {
+    function renderResults(results, totalCount) {
       resultsList.innerHTML = '';
 
       if (results.length === 0) {
@@ -282,6 +282,13 @@
 
         resultsList.appendChild(item);
       });
+
+      if (totalCount > results.length) {
+        const hint = document.createElement('div');
+        hint.className = 'link-dropdown__hint';
+        hint.textContent = `Showing ${results.length} of ${totalCount} — type to narrow`;
+        resultsList.appendChild(hint);
+      }
 
       if (keyboardNav) {
         keyboardNav.reset();

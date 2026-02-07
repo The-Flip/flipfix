@@ -235,7 +235,7 @@ class LinkTargetsAPITests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         self.assertGreater(len(data["results"]), 1)
 
     def test_results_limited_to_50(self):
-        """Results are capped at 50 items."""
+        """Results are capped at 50 items with total_count showing true count."""
         self.client.force_login(self.maintainer_user)
 
         # Create 60 models to exceed the limit
@@ -247,6 +247,20 @@ class LinkTargetsAPITests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["results"]), 50)
+        # total_count reflects the full queryset, not the truncated results
+        self.assertGreater(data["total_count"], 50)
+
+    def test_total_count_matches_results_when_under_limit(self):
+        """total_count equals result count when all results fit within the limit."""
+        self.client.force_login(self.maintainer_user)
+
+        WikiPage.objects.create(title="Unique Page XYZ", slug="unique-xyz")
+
+        response = self.client.get(self.url + "?type=page&q=Unique Page XYZ")
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["total_count"], len(data["results"]))
 
     def test_search_with_special_characters(self):
         """Search handles special characters without error."""
