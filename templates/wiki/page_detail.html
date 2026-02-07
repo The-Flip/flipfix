@@ -2,7 +2,7 @@
 {% load core_extras %}
 {% load wiki_extras %}
 {% block title %}{{ page.title }} · Docs · {{ block.super }}{% endblock %}
-{% block breadcrumbs %}<span>{{ page.title }}</span>{% endblock %}
+{% block breadcrumbs %}{{ block.super }}<span>{{ page.title }}</span>{% endblock %}
 {% block main %}
   <article>
     <div class="card card--padded">
@@ -24,7 +24,7 @@
           {% icon "tags" class="space-right-sm" %}
           This page also appears in:
           {% for tag in other_tags %}
-            <a href="{% url 'wiki-page-detail' tag %}" class="link">{{ tag }}</a>
+            <a href="{% url 'wiki-page-detail' tag %}">{{ tag }}</a>
             {% if not forloop.last %},{% endif %}
           {% endfor %}
         </div>

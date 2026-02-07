@@ -13,7 +13,12 @@
       </form>
     </div>
     {% if nav_tree %}
-      <div class="sidebar__section">{% include "wiki/partials/nav_tree.html" with tree=nav_tree %}</div>
+      <div class="sidebar__section sidebar__section--relative">
+        <a href="{% url 'wiki-reorder' %}"
+           class="sidebar__corner-link"
+           title="Reorder Nav">{% icon "arrows-up-down" label="Reorder Nav" %}</a>
+        {% include "wiki/partials/nav_tree.html" with tree=nav_tree %}
+      </div>
     {% endif %}
     <div class="sidebar__section">
       <a href="{% url 'wiki-page-create' %}"
@@ -31,14 +36,14 @@
         {% for page in recent_pages %}
           <div class="card card--padded space-above-sm">
             <div>
-              {% with first_tag=page.tags.first %}
-                <a href="{% url 'wiki-page-detail' first_tag %}" class="link">{{ page.title }}</a>
+              {% with first_tag=page.tags.all.0 %}
+                <a href="{% url 'wiki-page-detail' first_tag %}">{{ page.title }}</a>
               {% endwith %}
             </div>
             <div class="text-sm text-muted">
               Updated {{ page.modified_at|smart_date }}
               {% if page.modified_by %}by {{ page.modified_by|display_name_with_username }}{% endif %}
-              {% if page.tags.count > 0 %}
+              {% if page.tags.all %}
                 · {% icon "hashtag" class="meta" %}
                 {% for tag in page.tags.all %}
                   {{ tag.tag|default:"(root)" }}

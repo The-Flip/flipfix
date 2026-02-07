@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from django.db.models import Q
+import json
+
+from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -20,7 +22,8 @@ from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
 
 from .actions import build_create_url, extract_action_content, get_prefill_field
 from .forms import WikiPageForm
-from .models import UNTAGGED_SENTINEL, WikiPage, WikiPageTag
+from .models import UNTAGGED_SENTINEL, WikiPage, WikiPageTag, WikiTagOrder
+from .selectors import build_nav_tree
 
 
 def parse_wiki_path(path: str) -> tuple[str, str]:
@@ -72,6 +75,13 @@ class WikiPagePathMixin:
         self.current_tag = tag
         return page_tag.page
 
+    def get_detail_path(self) -> str:
+        """Build the URL path segment for this page's current tag location."""
+        page: WikiPage = self.object  # type: ignore[attr-defined]
+        if self.current_tag:
+            return f"{self.current_tag}/{page.slug}"
+        return page.slug
+
 
 class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, DetailView):
     """Display a single wiki page."""
@@ -86,11 +96,7 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
         context = super().get_context_data(**kwargs)
         context["current_tag"] = self.current_tag
         context["nav_tree"] = build_nav_tree()
-        # Build detail path for edit/delete links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
         # Filter in Python to use the prefetched page__tags cache
         context["other_tags"] = [t for t in self.object.tags.all() if t.tag != self.current_tag]
         return context
@@ -127,17 +133,8 @@ class WikiSearchView(CanAccessMaintainerPortalMixin, ListView):
         query = self.request.GET.get("q", "").strip()
         self.search_query = query
 
-        if not query:
-            return WikiPage.objects.none()
-
         return (
-            WikiPage.objects.filter(
-                Q(title__icontains=query)
-                | Q(slug__icontains=query)
-                | Q(content__icontains=query)
-                | Q(tags__tag__icontains=query)
-            )
-            .distinct()
+            WikiPage.objects.search(query)
             .select_related("created_by", "modified_by")
             .prefetch_related("tags")
             .order_by("-modified_at")
@@ -149,102 +146,6 @@ class WikiSearchView(CanAccessMaintainerPortalMixin, ListView):
         context["search_query"] = self.search_query
         context["nav_tree"] = build_nav_tree()
         return context
-
-
-def build_nav_tree() -> dict:
-    """Build the navigation tree from WikiPageTag records.
-
-    Returns a nested dict structure representing the tag hierarchy with pages.
-
-    Structure:
-        {
-            'pages': [...],  # Untagged pages (tag='')
-            'children': {
-                'machines': {
-                    'pages': [...],  # Pages directly in 'machines'
-                    'children': {
-                        'blackout': {
-                            'pages': [...],  # Pages in 'machines/blackout'
-                            'children': {...}
-                        }
-                    }
-                }
-            }
-        }
-    """
-    from .models import WikiTagOrder
-
-    # Query 1: All page-tag relationships with page data
-    page_tags = WikiPageTag.objects.select_related("page").all()
-
-    # Query 2: Tag ordering
-    tag_orders = {o.tag: o.order for o in WikiTagOrder.objects.all()}
-
-    # Build tree structure
-    tree: dict = {"pages": [], "children": {}}
-
-    for pt in page_tags:
-        if not pt.tag:
-            # Untagged page - goes at root level
-            tree["pages"].append(
-                {
-                    "page": pt.page,
-                    "order": pt.order,
-                    "path": pt.slug,
-                }
-            )
-        else:
-            # Navigate/create path through tree
-            segments = pt.tag.split("/")
-            node = tree
-            current_path = ""
-
-            for segment in segments:
-                current_path = f"{current_path}/{segment}" if current_path else segment
-                if segment not in node["children"]:
-                    node["children"][segment] = {
-                        "pages": [],
-                        "children": {},
-                        "tag_path": current_path,
-                        "order": tag_orders.get(current_path),
-                    }
-                node = node["children"][segment]
-
-            # Add page to the final node
-            node["pages"].append(
-                {
-                    "page": pt.page,
-                    "order": pt.order,
-                    "path": f"{pt.tag}/{pt.slug}",
-                }
-            )
-
-    _sort_nav_tree(tree)
-
-    return tree
-
-
-def _sort_nav_tree(node: dict) -> None:
-    """Sort pages and children within each nav tree node recursively.
-
-    Ordered items sort first (by order value), then alphabetically.
-    """
-    node["pages"] = sorted(
-        node["pages"],
-        key=lambda p: (p["order"] is None, p["order"] or 0, p["page"].title.lower()),
-    )
-    node["children"] = dict(
-        sorted(
-            node["children"].items(),
-            key=lambda item: (
-                item[1]["order"] is None,
-                item[1]["order"] or 0,
-                item[0].lower(),
-            ),
-        )
-    )
-    for child in node["children"].values():
-        _sort_nav_tree(child)
 
 
 class WikiPageSuccessUrlMixin:
@@ -319,11 +220,7 @@ class WikiPageEditView(
         context["page_title"] = f"Edit: {self.object.title}"
         context["is_create"] = False
         context["current_tag"] = self.current_tag
-        # Build detail path for cancel/back links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
         return context
 
 
@@ -345,12 +242,7 @@ class WikiPageDeleteView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Dele
         context = super().get_context_data(**kwargs)
         context["nav_tree"] = build_nav_tree()
         context["current_tag"] = self.current_tag
-
-        # Build detail path for cancel/back links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
 
         # Warn about pages that will have broken links
         context["linking_pages"] = get_pages_linking_here(self.object)
@@ -392,3 +284,47 @@ class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
             "content": content,
         }
         return redirect(build_create_url(action))
+
+
+class WikiReorderView(CanAccessMaintainerPortalMixin, TemplateView):
+    """Dedicated page for reordering wiki docs and tags via drag-and-drop."""
+
+    template_name = "wiki/reorder.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["nav_tree"] = build_nav_tree()
+        return context
+
+
+class WikiReorderSaveView(CanAccessMaintainerPortalMixin, View):
+    """API endpoint to save wiki doc/tag reorder."""
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        if not isinstance(data, dict):
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        page_orders = data.get("pages", [])
+        tag_orders = data.get("tags", [])
+
+        try:
+            with transaction.atomic():
+                for item in page_orders:
+                    WikiPageTag.objects.filter(tag=item["tag"], slug=item["slug"]).update(
+                        order=item["order"]
+                    )
+
+                for item in tag_orders:
+                    WikiTagOrder.objects.update_or_create(
+                        tag=item["tag"],
+                        defaults={"order": item["order"]},
+                    )
+        except (KeyError, TypeError, ValueError) as e:
+            return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
+
+        return JsonResponse({"status": "success"})

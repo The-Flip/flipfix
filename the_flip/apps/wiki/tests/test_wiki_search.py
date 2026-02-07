@@ -67,7 +67,8 @@ class WikiSearchViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         response = self.client.get(reverse("wiki-search") + "?q=")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Enter a search term")
+        self.assertNotContains(response, "Found")
+        self.assertEqual(list(response.context["pages"]), [])
 
     def test_search_requires_login(self):
         """Unauthenticated users are redirected to login."""

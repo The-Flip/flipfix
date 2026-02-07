@@ -1,0 +1,32 @@
+{% load core_extras %}
+{# Recursive folder for reorder page. Each folder is a draggable item within its parent's tag list. #}
+<div class="reorder-folder" data-tag-path="{{ node.tag_path }}">
+  <div class="reorder-folder__header">
+    <span class="reorder-list__handle" aria-label="Drag to reorder">{% icon "grip-vertical" %}</span>
+    {% icon "hashtag" class="meta" %}
+    <span class="reorder-folder__label">{{ tag_name|title }}</span>
+  </div>
+  {# Pages within this tag #}
+  {% if node.pages %}
+    <ul class="reorder-list reorder-list--nested"
+        data-sortable-group="pages"
+        data-tag="{{ node.tag_path }}">
+      {% for item in node.pages %}
+        <li class="reorder-list__item" data-slug="{{ item.page.slug }}">
+          <span class="reorder-list__handle" aria-label="Drag to reorder">{% icon "grip-vertical" %}</span>
+          <span class="reorder-list__title">{{ item.page.title }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {# Child tag folders (sortable among siblings) #}
+  {% if node.children %}
+    <div class="reorder-list--nested"
+         data-sortable-group="tags"
+         data-parent-tag="{{ node.tag_path }}">
+      {% for child_name, child_node in node.children.items %}
+        {% include "wiki/partials/reorder_folder.html" with tag_name=child_name node=child_node %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

@@ -1,38 +1,31 @@
-{% extends "base.html" %}
-{% load static core_extras %}
-{% block content %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    <a href="{% url 'wiki-home' %}">Docs</a>
-    {% block breadcrumbs %}{% endblock %}
-  </nav>
-  <div class="two-column">
-    <!-- SIDEBAR: Navigation Tree -->
-    <aside class="two-column__sidebar">
-      <div class="card card--padded sidebar--sticky">
-        <div class="sidebar__section">
-          <form action="{% url 'wiki-search' %}" method="get">
-            <input type="text"
-                   name="q"
-                   placeholder="Search docs..."
-                   class="form-input form-input--sm"
-                   aria-label="Search docs">
-          </form>
-        </div>
-        {% if nav_tree %}
-          <div class="sidebar__section">{% include "wiki/partials/nav_tree.html" with tree=nav_tree %}</div>
-        {% endif %}
-        <div class="sidebar__section">
-          <a href="{% url 'wiki-page-create' %}"
-             class="btn btn--secondary btn--full">
-            {% icon "plus" class="meta" %}
-            Create Doc
-          </a>
-        </div>
-      </div>
-    </aside>
-    <!-- MAIN COLUMN -->
-    <div class="two-column__main">
-      {% block main %}{% endblock %}
+{% extends "layouts/two_column.html" %}
+{% load core_extras %}
+{% block breadcrumbs %}
+  <a href="{% url 'wiki-home' %}">Docs</a>
+{% endblock %}
+{% block sidebar %}
+  <div class="sidebar__section">
+    <form action="{% url 'wiki-search' %}" method="get">
+      <input type="text"
+             name="q"
+             placeholder="Search docs..."
+             class="form-input form-input--sm"
+             aria-label="Search docs">
+    </form>
+  </div>
+  {% if nav_tree %}
+    <div class="sidebar__section sidebar__section--relative">
+      <a href="{% url 'wiki-reorder' %}"
+         class="sidebar__corner-link"
+         title="Reorder Nav">{% icon "arrows-up-down" label="Reorder Nav" %}</a>
+      {% include "wiki/partials/nav_tree.html" with tree=nav_tree %}
     </div>
+  {% endif %}
+  <div class="sidebar__section">
+    <a href="{% url 'wiki-page-create' %}"
+       class="btn btn--secondary btn--full">
+      {% icon "plus" class="meta" %}
+      Create Doc
+    </a>
   </div>
 {% endblock %}

@@ -4,67 +4,57 @@
   {% if search_query %}Search: {{ search_query }} ·{% endif %}
   Docs · {{ block.super }}
 {% endblock %}
-{% block breadcrumbs %}<span>Search</span>{% endblock %}
+{% block breadcrumbs %}{{ block.super }}<span>Search</span>{% endblock %}
 {% block main %}
-  <header>
-    <h1>Search Docs</h1>
-  </header>
-  <form action="{% url 'wiki-search' %}"
-        method="get"
-        class="search-form space-above-sm">
-    <div class="search-input-wrapper">
-      {% icon "magnifying-glass" class="search-icon" %}
-      <input type="search"
-             name="q"
-             class="form-input search-input"
-             placeholder="Search docs..."
-             value="{{ search_query }}"
-             autocomplete="off"
-             aria-label="Search docs">
+  <div class="filter-bar">
+    <div class="filter-bar__search filter-bar__search--full">
+      <form method="get" action="{% url 'wiki-search' %}">
+        <input type="search"
+               name="q"
+               placeholder="Search docs..."
+               value="{{ search_query }}"
+               class="filter-bar__search-input">
+        {% icon "magnifying-glass" class="filter-bar__search-icon" %}
+      </form>
     </div>
-    <button type="submit" class="btn btn--primary">Search</button>
-  </form>
+  </div>
   {% if search_query %}
-    <section class="space-above-md">
-      {% if pages %}
-        <p class="text-muted">Found {{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}</p>
-        {% for page in pages %}
-          <div class="card card--padded space-above-sm">
-            <div>
-              {% with first_tag=page.tags.first %}
-                <a href="{% url 'wiki-page-detail' first_tag %}" class="link">{{ page.title }}</a>
-              {% endwith %}
-            </div>
-            <div class="text-sm text-muted">
-              Updated {{ page.modified_at|smart_date }}
-              {% if page.tags.count > 0 %}
-                · {% icon "folder" class="meta" %}
-                {% for tag in page.tags.all %}
-                  {{ tag.tag|default:"(root)" }}
-                  {% if not forloop.last %},{% endif %}
-                {% endfor %}
-              {% endif %}
-            </div>
+    {% if pages %}
+      <p class="text-muted">Found {{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}</p>
+      {% for page in pages %}
+        <div class="card card--padded space-above-sm">
+          <div>
+            {% with first_tag=page.tags.all.0 %}
+              <a href="{% url 'wiki-page-detail' first_tag %}">{{ page.title }}</a>
+            {% endwith %}
           </div>
-        {% endfor %}
-        {% if page_obj.has_other_pages %}
-          <nav class="pagination" aria-label="Pagination">
-            {% if page_obj.has_previous %}
-              <a href="?q={{ search_query|urlencode }}&page={{ page_obj.previous_page_number }}"
-                 class="btn btn--secondary">Previous</a>
+          <div class="text-sm text-muted">
+            Updated {{ page.modified_at|smart_date }}
+            {% if page.tags.all %}
+              · {% icon "folder" class="meta" %}
+              {% for tag in page.tags.all %}
+                {{ tag.tag|default:"(root)" }}
+                {% if not forloop.last %},{% endif %}
+              {% endfor %}
             {% endif %}
-            <span class="pagination__info text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            {% if page_obj.has_next %}
-              <a href="?q={{ search_query|urlencode }}&page={{ page_obj.next_page_number }}"
-                 class="btn btn--secondary">Next</a>
-            {% endif %}
-          </nav>
-        {% endif %}
-      {% else %}
-      {% empty_state empty_message="No pages found." search_message="Try different keywords." is_search=True %}
+          </div>
+        </div>
+      {% endfor %}
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="Pagination">
+          {% if page_obj.has_previous %}
+            <a href="?q={{ search_query|urlencode }}&page={{ page_obj.previous_page_number }}"
+               class="btn btn--secondary">Previous</a>
+          {% endif %}
+          <span class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?q={{ search_query|urlencode }}&page={{ page_obj.next_page_number }}"
+               class="btn btn--secondary">Next</a>
+          {% endif %}
+        </nav>
       {% endif %}
-    </section>
-  {% else %}
-    <p class="text-muted space-above-sm">Enter a search term to find docs.</p>
+    {% else %}
+    {% empty_state empty_message="No pages found." search_message="Try different keywords." is_search=True %}
+    {% endif %}
   {% endif %}
 {% endblock %}

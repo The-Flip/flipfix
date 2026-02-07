@@ -68,6 +68,8 @@ from the_flip.apps.wiki.views import (
     WikiPageDeleteView,
     WikiPageDetailView,
     WikiPageEditView,
+    WikiReorderSaveView,
+    WikiReorderView,
     WikiSearchView,
     WikiTagAutocompleteView,
 )
@@ -377,6 +379,7 @@ urlpatterns = [
     path("wiki/", WikiHomeView.as_view(), name="wiki-home"),  # Wiki home/index
     path("wiki/search/", WikiSearchView.as_view(), name="wiki-search"),  # Wiki search
     path("wiki/create/", WikiPageCreateView.as_view(), name="wiki-page-create"),  # Create page
+    path("wiki/reorder/", WikiReorderView.as_view(), name="wiki-reorder"),  # Reorder nav
     path(
         "wiki/actions/<int:page_pk>/<str:action_name>/",
         WikiActionPrefillView.as_view(),
@@ -392,6 +395,9 @@ urlpatterns = [
     path(
         "api/wiki/tags/", WikiTagAutocompleteView.as_view(), name="api-wiki-tag-autocomplete"
     ),  # AJAX: wiki tag autocomplete
+    path(
+        "api/wiki/reorder/", WikiReorderSaveView.as_view(), name="api-wiki-reorder"
+    ),  # AJAX: save wiki nav reorder
 ]
 
 # Serve user-uploaded media files

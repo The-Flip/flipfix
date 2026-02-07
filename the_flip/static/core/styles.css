@@ -2308,11 +2308,20 @@ body {
 }
 
 /* ========================================
-   HISTORY LINK
-   Positioned in sidebar top-right corner
+   SIDEBAR CORNER LINK
+   Small icon in sidebar top-right corner
    ======================================== */
 
-.history-link {
+.sidebar__section--relative {
+  position: relative;
+}
+
+.sidebar__section--relative > .sidebar__corner-link {
+  top: 0;
+  right: 0;
+}
+
+.sidebar__corner-link {
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
@@ -2320,15 +2329,8 @@ body {
   transition: color 0.15s ease;
 }
 
-.history-link:hover {
+.sidebar__corner-link:hover {
   color: var(--color-accent);
-}
-
-/* Hide on mobile */
-@media (max-width: 768px) {
-  .history-link {
-    display: none;
-  }
 }
 
 /* ========================================
@@ -2345,17 +2347,20 @@ body {
   margin-left: var(--space-4);
 }
 
+.wiki-nav__link {
+  display: block;
+  padding: var(--space-0-5) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+}
+
 .wiki-nav__link:hover {
   color: var(--color-text-primary);
 }
 
 .wiki-nav__link--active {
-  display: block;
   color: var(--color-text-primary);
   background-color: var(--color-gray-100);
   border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  margin-left: calc(-1 * var(--space-2));
   cursor: default;
 }
 
@@ -2363,6 +2368,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  padding: var(--space-0-5) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
 }
 
 /* ========================================
@@ -2382,6 +2389,115 @@ body {
   .wiki-home__desktop {
     display: block;
   }
+}
+
+/* ========================================
+   WIKI REORDER PAGE
+   ======================================== */
+
+.breadcrumbs > .reorder-page__status {
+  margin-left: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-normal);
+  color: var(--color-success);
+  transition: opacity 0.5s ease;
+}
+
+.breadcrumbs > .reorder-page__status::before {
+  content: none;
+}
+
+.breadcrumbs > .reorder-page__status--error {
+  color: var(--color-problem);
+}
+
+.breadcrumbs > .reorder-page__status--fade {
+  opacity: 0;
+}
+
+.reorder-page__group-label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-2);
+}
+
+.reorder-page__group-label:first-of-type {
+  margin-top: 0;
+}
+
+.reorder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reorder-list--nested {
+  margin-left: var(--space-6);
+}
+
+.reorder-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+}
+
+.reorder-list__handle {
+  cursor: grab;
+  color: var(--color-gray-400);
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+}
+
+.reorder-list__handle:active {
+  cursor: grabbing;
+}
+
+.reorder-list__title {
+  flex: 1;
+}
+
+.reorder-folder {
+  margin-bottom: var(--space-2);
+}
+
+.reorder-folder__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-weight: var(--font-medium);
+}
+
+.reorder-folder__label {
+  flex: 1;
+}
+
+/* Drag-and-drop visual feedback */
+.reorder-list__item--ghost,
+.reorder-folder--ghost {
+  opacity: 0.4;
+  background: var(--color-gray-100);
+  border-style: dashed;
+}
+
+.reorder-list__item--chosen,
+.reorder-folder--chosen {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.reorder-list__item--drag,
+.reorder-folder--drag {
+  opacity: 0.9;
 }
 
 /* ========================================

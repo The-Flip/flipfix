@@ -2,6 +2,7 @@
 {% load static core_extras %}
 {% block title %}{{ page_title }} · Docs · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
+  {{ block.super }}
   {% if is_create %}
     <span>Create Doc</span>
   {% else %}

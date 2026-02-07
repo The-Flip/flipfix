@@ -1,0 +1,50 @@
+{% extends "wiki/base.html" %}
+{% load static core_extras %}
+{% block title %}Reorder Nav · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  {{ block.super }}
+  <span>Reorder Nav</span><span class="reorder-page__status" data-reorder-status></span>
+{% endblock %}
+{% block sidebar %}
+  <div class="sidebar__section">
+    <p class="text-muted">Drag items to reorder them in the navigation.</p>
+  </div>
+  <div class="sidebar__section">
+    <a href="{% url 'wiki-home' %}" class="btn btn--secondary btn--full">
+      {% icon "arrow-left" class="meta" %}
+      Return to Docs
+    </a>
+  </div>
+{% endblock %}
+{% block main %}
+  <div class="reorder-page"
+       data-reorder-tree
+       data-save-url="{% url 'api-wiki-reorder' %}">
+    {# Root-level pages (untagged) #}
+    {% if nav_tree.pages %}
+      <h2 class="reorder-page__group-label">Untagged Pages</h2>
+      <ul class="reorder-list" data-sortable-group="pages" data-tag="">
+        {% for item in nav_tree.pages %}
+          <li class="reorder-list__item" data-slug="{{ item.page.slug }}">
+            <span class="reorder-list__handle" aria-label="Drag to reorder">{% icon "grip-vertical" %}</span>
+            <span class="reorder-list__title">{{ item.page.title }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {# Root-level tags (sortable among siblings) #}
+    {% if nav_tree.children %}
+      <h2 class="reorder-page__group-label">Tagged Pages</h2>
+      <div data-sortable-group="tags" data-parent-tag="">
+        {% for tag_name, node in nav_tree.children.items %}
+          {% include "wiki/partials/reorder_folder.html" with tag_name=tag_name node=node %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+          defer></script>
+  <script src="{% static 'core/wiki_reorder.js' %}" defer></script>
+{% endblock %}
