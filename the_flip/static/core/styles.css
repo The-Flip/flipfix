@@ -1866,35 +1866,48 @@ body {
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-  margin-top: 0;
   margin-bottom: var(--space-2);
   font-weight: var(--font-semibold);
 }
 
+.markdown-content h1,
+.markdown-content h2 {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+
 .markdown-content h1 {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
 }
 .markdown-content h2 {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
 }
 .markdown-content h3 {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
 }
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
 }
 
-.markdown-content h1:first-child,
-.markdown-content h2:first-child,
-.markdown-content h3:first-child,
-.markdown-content h4:first-child,
-.markdown-content h5:first-child,
-.markdown-content h6:first-child {
-  margin-top: 0;
+/* Section spacing: headings that follow other content get top margin */
+.markdown-content h1:not(:first-child) {
+  margin-top: var(--space-8);
 }
 
+.markdown-content h2:not(:first-child) {
+  margin-top: var(--space-6);
+}
+
+.markdown-content h3:not(:first-child),
+.markdown-content h4:not(:first-child),
+.markdown-content h5:not(:first-child),
+.markdown-content h6:not(:first-child) {
+  margin-top: var(--space-4);
+}
+
+/* Compact variant: tighter spacing and original font sizes for timeline cards */
 .markdown-content--compact p,
 .markdown-content--compact ul,
 .markdown-content--compact ol,
@@ -1905,6 +1918,42 @@ body {
 .markdown-content--compact h5,
 .markdown-content--compact h6 {
   margin-bottom: var(--space-1-5);
+}
+
+.markdown-content--compact h1,
+.markdown-content--compact h2 {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.markdown-content--compact h1 {
+  font-size: var(--text-xl);
+}
+.markdown-content--compact h2 {
+  font-size: var(--text-lg);
+}
+.markdown-content--compact h3 {
+  font-size: var(--text-base);
+}
+.markdown-content--compact h4,
+.markdown-content--compact h5,
+.markdown-content--compact h6 {
+  font-size: var(--text-sm);
+}
+
+.markdown-content--compact h1:not(:first-child) {
+  margin-top: var(--space-4);
+}
+
+.markdown-content--compact h2:not(:first-child) {
+  margin-top: var(--space-3);
+}
+
+.markdown-content--compact h3:not(:first-child),
+.markdown-content--compact h4:not(:first-child),
+.markdown-content--compact h5:not(:first-child),
+.markdown-content--compact h6:not(:first-child) {
+  margin-top: var(--space-2);
 }
 
 .markdown-content:last-child p:last-child,
