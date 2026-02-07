@@ -5,6 +5,7 @@ from typing import Any
 
 from django import forms
 from django.core.files.uploadedfile import UploadedFile
+from django.urls import reverse_lazy
 from PIL import Image, UnidentifiedImageError
 
 from the_flip.apps.core.media import (
@@ -29,6 +30,31 @@ WIDGET_CSS_CLASSES = {
     forms.CheckboxInput: "checkbox",
     # File inputs and RadioSelect are handled separately in templates
 }
+
+
+class MarkdownTextarea(forms.Textarea):
+    """Textarea pre-configured for markdown editing.
+
+    Provides the data attributes needed by link_autocomplete.js and
+    task_list_enter.js. Forms using this widget only need to specify
+    per-field attrs like ``rows`` or ``placeholder``.
+
+    Templates must include the companion scripts::
+
+        <script src="{% static 'core/link_autocomplete.js' %}" defer></script>
+        <script src="{% static 'core/task_list_enter.js' %}" defer></script>
+    """
+
+    def __init__(self, attrs=None):
+        defaults = {
+            "data-text-textarea": "",
+            "data-link-autocomplete": "",
+            "data-link-api-url": reverse_lazy("api-link-targets"),
+            "data-task-list-enter": "",
+        }
+        if attrs:
+            defaults.update(attrs)
+        super().__init__(attrs=defaults)
 
 
 class StyledFormMixin:

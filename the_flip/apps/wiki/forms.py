@@ -3,7 +3,7 @@
 from django import forms
 from django.utils.text import slugify
 
-from the_flip.apps.core.forms import StyledFormMixin
+from the_flip.apps.core.forms import MarkdownTextarea, StyledFormMixin
 from the_flip.apps.core.markdown_links import (
     convert_authoring_to_storage,
     convert_storage_to_authoring,
@@ -20,14 +20,7 @@ class WikiPageForm(StyledFormMixin, forms.ModelForm):
         model = WikiPage
         fields = ["title", "content"]
         widgets = {
-            "content": forms.Textarea(
-                attrs={
-                    "rows": 20,
-                    "data-text-textarea": "",
-                    "data-link-autocomplete": "",
-                    "data-link-api-url": "/api/link-targets/",
-                }
-            ),
+            "content": MarkdownTextarea(attrs={"rows": 20}),
         }
 
     def __init__(self, *args, tags=None, **kwargs):
@@ -48,6 +41,8 @@ class WikiPageForm(StyledFormMixin, forms.ModelForm):
         if self.instance.pk:
             tags = self.instance.tags.exclude(tag=UNTAGGED_SENTINEL).values_list("tag", flat=True)
             return ", ".join(tags)
+        if self._tags:
+            return ", ".join(self._tags)
         return ""
 
     @staticmethod

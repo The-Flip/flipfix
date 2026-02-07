@@ -40,6 +40,9 @@ class FormPrefillMixin:
         {"field": "description", "content": "..."}
 
     The mixin pops the data on GET so the session is cleaned up automatically.
+
+    Views can extend ``get_initial()`` to pop additional session keys
+    (e.g. ``WikiPageCreateView`` adds ``form_prefill_tags`` and ``form_prefill_title``).
     """
 
     def get_initial(self):

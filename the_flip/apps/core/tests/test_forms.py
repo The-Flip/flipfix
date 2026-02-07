@@ -3,7 +3,7 @@
 from django import forms
 from django.test import TestCase, tag
 
-from the_flip.apps.core.forms import StyledFormMixin
+from the_flip.apps.core.forms import MarkdownTextarea, StyledFormMixin
 
 
 @tag("forms")
@@ -103,3 +103,41 @@ class StyledFormMixinTests(TestCase):
 
         form = TestForm()
         self.assertEqual(form.fields["choice"].widget.attrs.get("class"), "form-input")
+
+
+@tag("forms")
+class MarkdownTextareaTests(TestCase):
+    """Tests for the MarkdownTextarea widget."""
+
+    def test_default_attrs_present(self):
+        """Widget includes all markdown editing data attributes."""
+        widget = MarkdownTextarea()
+        self.assertEqual(widget.attrs["data-text-textarea"], "")
+        self.assertEqual(widget.attrs["data-link-autocomplete"], "")
+        self.assertEqual(widget.attrs["data-task-list-enter"], "")
+        # reverse_lazy returns a lazy string; str() to compare
+        self.assertEqual(str(widget.attrs["data-link-api-url"]), "/api/link-targets/")
+
+    def test_custom_attrs_merge(self):
+        """Custom attrs merge with defaults (custom wins on conflict)."""
+        widget = MarkdownTextarea(attrs={"rows": 20, "placeholder": "Write..."})
+        self.assertEqual(widget.attrs["rows"], 20)
+        self.assertEqual(widget.attrs["placeholder"], "Write...")
+        # Defaults still present
+        self.assertEqual(widget.attrs["data-text-textarea"], "")
+
+    def test_custom_attrs_override_defaults(self):
+        """Custom attrs can override default values."""
+        widget = MarkdownTextarea(attrs={"data-link-api-url": "/custom/"})
+        self.assertEqual(widget.attrs["data-link-api-url"], "/custom/")
+
+    def test_styled_form_mixin_adds_css_classes(self):
+        """StyledFormMixin adds textarea CSS classes to MarkdownTextarea."""
+
+        class TestForm(StyledFormMixin, forms.Form):
+            content = forms.CharField(widget=MarkdownTextarea())
+
+        form = TestForm()
+        classes = form.fields["content"].widget.attrs.get("class", "")
+        self.assertIn("form-input", classes)
+        self.assertIn("form-textarea", classes)

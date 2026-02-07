@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
+    MarkdownTextarea,
     StyledFormMixin,
     normalize_uploaded_files,
     validate_media_files,
@@ -48,14 +49,8 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
         model = PartRequest
         fields = ["text", "occurred_at"]
         widgets = {
-            "text": forms.Textarea(
-                attrs={
-                    "rows": 4,
-                    "placeholder": "Describe what part is needed and why...",
-                    "data-text-textarea": "",
-                    "data-link-autocomplete": "",
-                    "data-link-api-url": "/api/link-targets/",
-                }
+            "text": MarkdownTextarea(
+                attrs={"rows": 4, "placeholder": "Describe what part is needed and why..."}
             ),
         }
         labels = {
@@ -127,14 +122,8 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
         model = PartRequestUpdate
         fields = ["text", "new_status", "occurred_at"]
         widgets = {
-            "text": forms.Textarea(
-                attrs={
-                    "rows": 3,
-                    "placeholder": "Add a comment or status update...",
-                    "data-text-textarea": "",
-                    "data-link-autocomplete": "",
-                    "data-link-api-url": "/api/link-targets/",
-                }
+            "text": MarkdownTextarea(
+                attrs={"rows": 3, "placeholder": "Add a comment or status update..."}
             ),
         }
         labels = {

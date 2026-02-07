@@ -209,15 +209,14 @@ There's no such thing as an empty tag. Deleting the last wiki page tagged `machi
 Six tables:
 
 ```python
-class WikiPage(models.Model):
+class WikiPage(TimeStampedMixin):
     """The actual content of a wiki page."""
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200)
     content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='+')
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='+')
+    # created_at and updated_at provided by TimeStampedMixin
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
 
 class WikiPageTag(models.Model):

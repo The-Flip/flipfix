@@ -22,7 +22,7 @@ Public API:
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -451,18 +451,28 @@ def sync_references(source: models.Model, content: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def save_inline_markdown_field(instance: models.Model, field: str, raw_text: str) -> None:
+def save_inline_markdown_field(
+    instance: models.Model,
+    field: str,
+    raw_text: str,
+    *,
+    extra_update_fields: Sequence[str] = (),
+) -> None:
     """Convert, save, and sync a markdown text field from an inline AJAX edit.
 
     Converts authoring-format links to storage format, saves the field,
     and syncs the :class:`~the_flip.apps.core.models.RecordReference` table.
+
+    Args:
+        extra_update_fields: Additional field names to include in
+            ``save(update_fields=...)``, e.g. ``["updated_by"]``.
 
     Raises :exc:`~django.core.exceptions.ValidationError` if any linked
     targets don't exist.
     """
     text = convert_authoring_to_storage(raw_text) if raw_text else raw_text
     setattr(instance, field, text)
-    instance.save(update_fields=[field, "updated_at"])
+    instance.save(update_fields=[field, "updated_at", *extra_update_fields])
     sync_references(instance, text)
 
 

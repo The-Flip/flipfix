@@ -49,7 +49,8 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 
 - **Inline Edit** (`.inline-edit-group`, `.inline-edit-field`, `.inline-edit-select`)
 - **Task List Checkboxes** (`.task-list-item` with checkbox input - rendered from markdown task list syntax: `- [ ]`, `* [ ]`, `+ [ ]`, `1. [ ]`, and inside blockquotes)
-- **Status Indicator** (`.status-indicator` with modifiers `.saving`, `.saved`, `.error`)
+- **Status Indicator** (`.status-indicator` with modifiers `.saving`, `.saved`, `.error`) — card-level, used by `text_edit.js`
+- **Save Status** (`.save-status` with modifiers `.save-status--saving`, `.save-status--saved`, `.save-status--error`, `.save-status--fade`) — page-level breadcrumb indicator, used by `save_status.js`
 - **Media Grid** (`.media-grid`, `.media-item`, `.media-link`, `.media-video`, `.btn-delete-media`)
 
 ### Utility Classes

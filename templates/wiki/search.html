@@ -29,7 +29,7 @@
             {% endwith %}
           </div>
           <div class="text-sm text-muted">
-            Updated {{ page.modified_at|smart_date }}
+            Updated {{ page.updated_at|smart_date }}
             {% if page.tags.all %}
               · {% icon "folder" class="meta" %}
               {% for tag in page.tags.all %}

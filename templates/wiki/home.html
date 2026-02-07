@@ -41,8 +41,8 @@
               {% endwith %}
             </div>
             <div class="text-sm text-muted">
-              Updated {{ page.modified_at|smart_date }}
-              {% if page.modified_by %}by {{ page.modified_by|display_name_with_username }}{% endif %}
+              Updated {{ page.updated_at|smart_date }}
+              {% if page.updated_by %}by {{ page.updated_by|display_name_with_username }}{% endif %}
               {% if page.tags.all %}
                 · {% icon "hashtag" class="meta" %}
                 {% for tag in page.tags.all %}

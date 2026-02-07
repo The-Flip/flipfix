@@ -77,14 +77,8 @@
       </div>
     {% endif %}
     <div class="form-field">
-      <label for="{{ form.text.id_for_label }}" class="form-label">What work was done?</label>
-      <textarea id="{{ form.text.id_for_label }}"
-                name="{{ form.text.html_name }}"
-                class="form-input form-textarea"
-                placeholder="Describe the work performed..."
-                data-link-autocomplete
-                data-link-api-url="{% url 'api-link-targets' %}"
-                required>{{ form.text.value|default:'' }}</textarea>
+      {% form_label form.text %}
+      {{ form.text }}
       {% field_errors form.text %}
       <div class="form-hint space-above-sm" data-file-accumulator>
         <input type="file"
@@ -122,6 +116,7 @@
 {% block extra_scripts %}
   <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
   <script src="{% static 'core/link_autocomplete.js' %}" defer></script>
+  <script src="{% static 'core/task_list_enter.js' %}" defer></script>
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/maintainer_chip_input.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>

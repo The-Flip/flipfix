@@ -17,6 +17,7 @@ from the_flip.apps.wiki.actions import (
     prepare_for_rendering,
 )
 from the_flip.apps.wiki.models import WikiPage, WikiPageTag
+from the_flip.apps.wiki.views import _resolve_action_tags
 
 
 def _make_content(name="test"):
@@ -30,11 +31,13 @@ def _make_content(name="test"):
     )
 
 
-def _make_button(name="test", record_type="problem", machine="blackout", label="Go"):
+def _make_button(name="test", record_type="problem", machine="blackout", label="Go", **extra):
     """Create action:button marker with all action attributes."""
     machine_attr = f' machine="{machine}"' if machine else ""
+    extra_attrs = "".join(f' {k}="{v}"' for k, v in extra.items() if v)
     return (
-        f'<!-- action:button name="{name}" type="{record_type}"{machine_attr} label="{label}" -->'
+        f'<!-- action:button name="{name}" type="{record_type}"'
+        f'{machine_attr}{extra_attrs} label="{label}" -->'
     )
 
 
@@ -210,6 +213,29 @@ class PrepareForRenderingTests(TestCase):
         block = next(iter(tokens.values()))
         self.assertEqual(block.machine_slug, "")
 
+    def test_page_type_accepted(self):
+        content = _make_content("x") + _make_button("x", record_type="page", machine="")
+        _processed, tokens = prepare_for_rendering(content)
+        self.assertEqual(len(tokens), 1)
+        block = next(iter(tokens.values()))
+        self.assertEqual(block.record_type, "page")
+
+    def test_button_tags_populated(self):
+        content = _make_content("x") + _make_button(
+            "x", record_type="page", machine="", tags="guides,archive"
+        )
+        _processed, tokens = prepare_for_rendering(content)
+        block = next(iter(tokens.values()))
+        self.assertEqual(block.tags, "guides,archive")
+
+    def test_button_title_populated(self):
+        content = _make_content("x") + _make_button(
+            "x", record_type="page", machine="", title="My Title"
+        )
+        _processed, tokens = prepare_for_rendering(content)
+        block = next(iter(tokens.values()))
+        self.assertEqual(block.title, "My Title")
+
 
 # ---------------------------------------------------------------------------
 # Button injection tests
@@ -298,6 +324,16 @@ class URLConstructionTests(TestCase):
         url = build_create_url(block)
         self.assertEqual(url, reverse("part-request-create"))
 
+    def test_build_create_url_page_global(self):
+        block = ActionBlock("x", "page", "", "Go", "")
+        url = build_create_url(block)
+        self.assertEqual(url, reverse("wiki-page-create"))
+
+    def test_build_create_url_page_ignores_machine_slug(self):
+        block = ActionBlock("x", "page", "some-machine", "Go", "")
+        url = build_create_url(block)
+        self.assertEqual(url, reverse("wiki-page-create"))
+
 
 # ---------------------------------------------------------------------------
 # Content extraction tests
@@ -345,6 +381,75 @@ class ExtractActionContentTests(TestCase):
         """Content block exists but button has invalid type → None."""
         content = _make_content("x") + '<!-- action:button name="x" type="invalid" label="Go" -->'
         self.assertIsNone(extract_action_content(content, "x"))
+
+    def test_extract_page_type_with_tags_and_title(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", tags="@source", title="Evaluation"
+        )
+        block = extract_action_content(content, "eval")
+        self.assertIsNotNone(block)
+        self.assertEqual(block.record_type, "page")
+        self.assertEqual(block.tags, "@source")
+        self.assertEqual(block.title, "Evaluation")
+
+
+# ---------------------------------------------------------------------------
+# _resolve_action_tags tests (DB-aware)
+# ---------------------------------------------------------------------------
+
+
+@tag("views")
+class ResolveActionTagsTests(TestDataMixin, TestCase):
+    """Tests for _resolve_action_tags."""
+
+    def _create_page_with_tags(self, *tags):
+        page = WikiPage.objects.create(title="Template", slug="template", content="")
+        for t in tags:
+            WikiPageTag.objects.create(page=page, tag=t, slug="template")
+        return page
+
+    def test_explicit_tag(self):
+        page = self._create_page_with_tags("guides")
+        result = _resolve_action_tags("evaluations", page)
+        self.assertEqual(result, ["evaluations"])
+
+    def test_multiple_explicit_tags(self):
+        page = self._create_page_with_tags("guides")
+        result = _resolve_action_tags("evaluations,archive", page)
+        self.assertEqual(result, ["evaluations", "archive"])
+
+    def test_source_expands_to_page_tags(self):
+        page = self._create_page_with_tags("guides", "templates")
+        result = _resolve_action_tags("@source", page)
+        self.assertIn("guides", result)
+        self.assertIn("templates", result)
+
+    def test_source_excludes_untagged_sentinel(self):
+        # WikiPage post_save signal auto-creates the untagged sentinel tag,
+        # so a page with no explicit tags already has only the sentinel.
+        page = WikiPage.objects.create(title="Untagged", slug="untagged", content="")
+        result = _resolve_action_tags("@source", page)
+        self.assertEqual(result, [])
+
+    def test_mixed_source_and_explicit(self):
+        page = self._create_page_with_tags("guides")
+        result = _resolve_action_tags("@source,archive", page)
+        self.assertEqual(result, ["guides", "archive"])
+
+    def test_deduplicates_preserving_order(self):
+        page = self._create_page_with_tags("evaluations")
+        result = _resolve_action_tags("@source,evaluations,extra", page)
+        self.assertEqual(result, ["evaluations", "extra"])
+
+    def test_empty_string_returns_empty(self):
+        page = self._create_page_with_tags("guides")
+        result = _resolve_action_tags("", page)
+        self.assertEqual(result, [])
+
+    def test_whitespace_stripped(self):
+        page = self._create_page_with_tags("guides")
+        result = _resolve_action_tags("  evaluations , archive  ", page)
+        self.assertEqual(result, ["evaluations", "archive"])
 
 
 # ---------------------------------------------------------------------------
@@ -409,9 +514,12 @@ class WikiContentRenderingTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
     def test_markers_not_visible_in_output(self):
         self._create_page(_make_action("intake"))
         html = self._get_page_html()
-        self.assertNotIn("action:start", html)
-        self.assertNotIn("action:end", html)
-        self.assertNotIn("action:button", html)
+        # Check the rendered content area only (not the hidden textarea
+        # which contains raw markdown for checkbox toggle JS).
+        display_html = html.split("data-text-display")[1].split("data-text-textarea")[0]
+        self.assertNotIn("action:start", display_html)
+        self.assertNotIn("action:end", display_html)
+        self.assertNotIn("action:button", display_html)
 
     def test_malformed_markers_degrade_gracefully(self):
         content = '<!-- action:start name="x" -->\ncontent\n'
@@ -501,6 +609,80 @@ class WikiActionPrefillViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertEqual(response.status_code, 302)
         self.assertIn("login", response.url)
 
+    def test_page_type_redirects_to_wiki_create(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse("wiki-page-create"), fetch_redirect_response=False)
+
+    def test_page_type_stores_content_field(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        prefill = self.client.session.get("form_prefill")
+        self.assertEqual(prefill["field"], "content")
+        self.assertIn("step one", prefill["content"])
+
+    def test_page_type_stores_tags_in_session(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", tags="guides", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        self.assertEqual(self.client.session.get("form_prefill_tags"), ["guides"])
+
+    def test_page_type_stores_title_in_session(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", title="Evaluation", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        self.assertEqual(self.client.session.get("form_prefill_title"), "Evaluation")
+
+    def test_page_type_resolves_source_tags(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", tags="@source", label="Go"
+        )
+        page = self._create_page(content)
+        WikiPageTag.objects.create(page=page, tag="templates", slug="test-page")
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        # _create_page doesn't add tags, but we added "templates" above
+        self.assertIn("templates", self.client.session.get("form_prefill_tags", []))
+
+    def test_page_type_no_tags_omits_session_key(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        self.assertNotIn("form_prefill_tags", self.client.session)
+
+    def test_page_type_no_title_omits_session_key(self):
+        content = _make_content("eval") + _make_button(
+            "eval", record_type="page", machine="", label="Go"
+        )
+        page = self._create_page(content)
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "eval"})
+        self.client.get(url)
+        self.assertNotIn("form_prefill_title", self.client.session)
+
 
 # ---------------------------------------------------------------------------
 # Integration: FormPrefillMixin
@@ -547,3 +729,42 @@ class FormPrefillMixinTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         self.client.force_login(self.maintainer_user)
         response = self.client.get(reverse("problem-report-create"))
         self.assertEqual(response.status_code, 200)
+
+    def test_wiki_page_content_prefilled(self):
+        self.client.force_login(self.maintainer_user)
+        session = self.client.session
+        session["form_prefill"] = {"field": "content", "content": "- [ ] checklist item"}
+        session.save()
+        response = self.client.get(reverse("wiki-page-create"))
+        self.assertContains(response, "- [ ] checklist item")
+
+    def test_wiki_page_title_prefilled(self):
+        self.client.force_login(self.maintainer_user)
+        session = self.client.session
+        session["form_prefill_title"] = "Evaluation Checklist"
+        session.save()
+        response = self.client.get(reverse("wiki-page-create"))
+        self.assertContains(response, "Evaluation Checklist")
+
+    def test_wiki_page_tags_prefilled(self):
+        self.client.force_login(self.maintainer_user)
+        session = self.client.session
+        session["form_prefill_tags"] = ["guides", "evaluations"]
+        session.save()
+        response = self.client.get(reverse("wiki-page-create"))
+        # Tags render in the tag chip component's data attribute and hidden inputs
+        self.assertContains(response, 'data-initial-tags="guides, evaluations"')
+        self.assertContains(response, 'name="tags" value="guides"')
+        self.assertContains(response, 'name="tags" value="evaluations"')
+
+    def test_wiki_page_session_cleared_after_prefill(self):
+        self.client.force_login(self.maintainer_user)
+        session = self.client.session
+        session["form_prefill"] = {"field": "content", "content": "template"}
+        session["form_prefill_tags"] = ["guides"]
+        session["form_prefill_title"] = "Title"
+        session.save()
+        self.client.get(reverse("wiki-page-create"))
+        self.assertNotIn("form_prefill", self.client.session)
+        self.assertNotIn("form_prefill_tags", self.client.session)
+        self.assertNotIn("form_prefill_title", self.client.session)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -18,7 +19,8 @@ from django.views.generic import (
     UpdateView,
 )
 
-from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
+from the_flip.apps.core.markdown_links import save_inline_markdown_field
+from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, FormPrefillMixin
 
 from .actions import build_create_url, extract_action_content, get_prefill_field
 from .forms import WikiPageForm
@@ -91,6 +93,24 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
     context_object_name = "page"
     prefetch_page_tags = True
 
+    def post(self, request, *args, **kwargs):
+        """Handle AJAX checkbox toggle updates."""
+        self.object = self.get_object()
+        action = request.POST.get("action")
+
+        if action == "update_text":
+            raw_text = request.POST.get("text", "")
+            self.object.updated_by = request.user
+            try:
+                save_inline_markdown_field(
+                    self.object, "content", raw_text, extra_update_fields=["updated_by"]
+                )
+            except ValidationError as e:
+                return JsonResponse({"success": False, "errors": e.messages}, status=400)
+            return JsonResponse({"success": True})
+
+        return JsonResponse({"error": "Unknown action"}, status=400)
+
     def get_context_data(self, **kwargs):
         """Add wiki-specific context."""
         context = super().get_context_data(**kwargs)
@@ -113,9 +133,9 @@ class WikiHomeView(CanAccessMaintainerPortalMixin, TemplateView):
         context["nav_tree"] = build_nav_tree()
         # Show recent pages on home
         context["recent_pages"] = (
-            WikiPage.objects.select_related("created_by", "modified_by")
+            WikiPage.objects.select_related("created_by", "updated_by")
             .prefetch_related("tags")
-            .order_by("-modified_at")[:10]
+            .order_by("-updated_at")[:10]
         )
         return context
 
@@ -135,9 +155,9 @@ class WikiSearchView(CanAccessMaintainerPortalMixin, ListView):
 
         return (
             WikiPage.objects.search(query)
-            .select_related("created_by", "modified_by")
+            .select_related("created_by", "updated_by")
             .prefetch_related("tags")
-            .order_by("-modified_at")
+            .order_by("-updated_at")
         )
 
     def get_context_data(self, **kwargs):
@@ -162,24 +182,38 @@ class WikiPageSuccessUrlMixin:
         return reverse("wiki-page-detail", args=[path])
 
 
-class WikiPageCreateView(WikiPageSuccessUrlMixin, CanAccessMaintainerPortalMixin, CreateView):
+class WikiPageCreateView(
+    WikiPageSuccessUrlMixin, FormPrefillMixin, CanAccessMaintainerPortalMixin, CreateView
+):
     """Create a new wiki page."""
 
     model = WikiPage
     form_class = WikiPageForm
     template_name = "wiki/page_form.html"
 
+    def get_initial(self):
+        """Pre-fill content (via mixin) and title from session."""
+        initial = super().get_initial()
+        title = self.request.session.pop("form_prefill_title", None)
+        if title:
+            initial["title"] = title
+        return initial
+
     def get_form_kwargs(self):
-        """Pass tags from POST data to form."""
+        """Pass tags from POST data or session prefill to form."""
         kwargs = super().get_form_kwargs()
         if self.request.method == "POST":
             kwargs["tags"] = self.request.POST.getlist("tags")
+        else:
+            tags = self.request.session.pop("form_prefill_tags", None)
+            if tags:
+                kwargs["tags"] = tags
         return kwargs
 
     def form_valid(self, form):
-        """Set created_by and modified_by before saving."""
+        """Set created_by and updated_by before saving."""
         form.instance.created_by = self.request.user
-        form.instance.modified_by = self.request.user
+        form.instance.updated_by = self.request.user
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -209,8 +243,8 @@ class WikiPageEditView(
         return kwargs
 
     def form_valid(self, form):
-        """Set modified_by before saving."""
-        form.instance.modified_by = self.request.user
+        """Set updated_by before saving."""
+        form.instance.updated_by = self.request.user
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -266,6 +300,31 @@ class WikiTagAutocompleteView(CanAccessMaintainerPortalMixin, View):
         return JsonResponse({"tags": list(tags)})
 
 
+def _resolve_action_tags(raw_tags: str, source_page: WikiPage) -> list[str]:
+    """Resolve action button tags, expanding ``@source`` to the source page's tags.
+
+    Args:
+        raw_tags: Comma-separated tag values, possibly including ``@source``.
+        source_page: The wiki page containing the action button.
+
+    Returns:
+        Deduplicated list of tag strings, preserving insertion order.
+    """
+    parts = [t.strip() for t in raw_tags.split(",") if t.strip()]
+    result: list[str] = []
+    source_tags: list[str] | None = None  # lazy-loaded, at most once
+    for part in parts:
+        if part == "@source":
+            if source_tags is None:
+                source_tags = list(
+                    source_page.tags.exclude(tag=UNTAGGED_SENTINEL).values_list("tag", flat=True)
+                )
+            result.extend(source_tags)
+        else:
+            result.append(part)
+    return list(dict.fromkeys(result))
+
+
 class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
     """Extract wiki action block content and redirect to a pre-filled create form."""
 
@@ -283,6 +342,15 @@ class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
             "field": get_prefill_field(action.record_type),
             "content": content,
         }
+
+        if action.record_type == "page":
+            if action.tags:
+                tags = _resolve_action_tags(action.tags, page)
+                if tags:
+                    request.session["form_prefill_tags"] = tags
+            if action.title:
+                request.session["form_prefill_title"] = action.title
+
         return redirect(build_create_url(action))
 
 

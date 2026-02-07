@@ -17,11 +17,11 @@ class WikiPageTagInline(admin.TabularInline):
 
 @admin.register(WikiPage)
 class WikiPageAdmin(SimpleHistoryAdmin):
-    list_display = ("title", "slug", "tag_list", "modified_at", "modified_by")
-    list_filter = ("created_at", "modified_at")
+    list_display = ("title", "slug", "tag_list", "updated_at", "updated_by")
+    list_filter = ("created_at", "updated_at")
     search_fields = ("title", "slug", "content", "tags__tag")
     prepopulated_fields = {"slug": ("title",)}
-    readonly_fields = ("created_at", "modified_at", "created_by", "modified_by", "content")
+    readonly_fields = ("created_at", "updated_at", "created_by", "updated_by", "content")
     inlines = (WikiPageTagInline,)
 
     fieldsets = (
@@ -29,22 +29,22 @@ class WikiPageAdmin(SimpleHistoryAdmin):
         (
             "Metadata",
             {
-                "fields": ("created_at", "modified_at", "created_by", "modified_by"),
+                "fields": ("created_at", "updated_at", "created_by", "updated_by"),
                 "classes": ("collapse",),
             },
         ),
     )
 
     def save_model(self, request, obj, form, change):
-        """Auto-populate created_by and modified_by from current user."""
+        """Auto-populate created_by and updated_by from current user."""
         if not change:
             obj.created_by = request.user
-        obj.modified_by = request.user
+        obj.updated_by = request.user
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.select_related("created_by", "modified_by").prefetch_related("tags")
+        return qs.select_related("created_by", "updated_by").prefetch_related("tags")
 
     @admin.display(description="Tags")
     def tag_list(self, obj):

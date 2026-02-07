@@ -33,12 +33,14 @@ Some other text...
 
 **Attributes** on `action:button`:
 
-| Attribute | Required | Description                        |
-| --------- | -------- | ---------------------------------- |
-| `name`    | yes      | Identifier linking it to start/end |
-| `type`    | yes      | `problem`, `log`, or `partrequest` |
-| `machine` | no       | Machine slug to pre-select         |
-| `label`   | yes      | Button text                        |
+| Attribute | Required | Description                                                                                       |
+| --------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `name`    | yes      | Identifier linking it to start/end                                                                |
+| `type`    | yes      | `problem`, `log`, `partrequest`, or `page`                                                        |
+| `machine` | no       | Machine slug to pre-select (not used for `type="page"`)                                           |
+| `label`   | yes      | Button text                                                                                       |
+| `tags`    | no       | Comma-separated tags for new page (`type="page"` only). `@source` resolves to source page's tags. |
+| `title`   | no       | Pre-fill the title field (`type="page"` only)                                                     |
 
 Multiple named action blocks per page are supported.
 
@@ -68,3 +70,9 @@ Click button → GET /wiki/actions/<page_pk>/<action_name>/
 ```
 
 **Key principle**: create views have zero wiki knowledge. They use a generic `FormPrefillMixin` that checks the session for pre-fill data. The wiki endpoint handles all wiki-specific logic (page loading, content extraction, URL routing). If the page or action block is missing, the endpoint returns 404 (stale link).
+
+### `type="page"` — creating wiki pages from templates
+
+When `type="page"`, the prefill endpoint redirects to the wiki page create form instead of a maintenance record. The content block pre-fills the new page's content field. Optional `tags` and `title` attributes are stored in separate session keys (`form_prefill_tags`, `form_prefill_title`) and popped by `WikiPageCreateView`.
+
+The special tag value `@source` is resolved at prefill time to the source page's actual tags, so new pages land in the same nav location as the template page. Explicit tags and `@source` can be mixed (e.g., `tags="@source,archive"`); duplicates are removed while preserving order.

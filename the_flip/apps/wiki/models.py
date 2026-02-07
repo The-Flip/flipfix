@@ -9,6 +9,8 @@ from django.db.models import F
 from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
+from the_flip.apps.core.models import TimeStampedMixin
+
 
 class WikiPageQuerySet(models.QuerySet):
     """Custom queryset for WikiPage."""
@@ -31,24 +33,24 @@ class WikiPageQuerySet(models.QuerySet):
         ).distinct()
 
 
-class WikiPage(models.Model):
+class WikiPage(TimeStampedMixin):
     """The actual content of a wiki page."""
 
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200)
     content = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="+",
     )
-    modified_by = models.ForeignKey(
+    updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="+",
     )
 
@@ -57,6 +59,9 @@ class WikiPage(models.Model):
 
     class Meta:
         ordering = ["title"]
+        indexes = [
+            models.Index(fields=["updated_at"]),
+        ]
 
     def __str__(self) -> str:
         return self.title

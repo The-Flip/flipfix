@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
+    MarkdownTextarea,
     StyledFormMixin,
     normalize_uploaded_files,
     validate_media_files,
@@ -93,15 +94,13 @@ class MaintainerProblemReportForm(ProblemReportForm):
         fields = ["description", "occurred_at"]
         widgets = {
             **ProblemReportForm.Meta.widgets,
-            "description": forms.Textarea(
-                attrs={
-                    "rows": 4,
-                    "placeholder": "Describe the problem...",
-                    "data-text-textarea": "",
-                    "data-link-autocomplete": "",
-                    "data-link-api-url": "/api/link-targets/",
-                }
+            "description": MarkdownTextarea(
+                attrs={"rows": 4, "placeholder": "Describe the problem..."}
             ),
+        }
+        labels = {
+            **ProblemReportForm.Meta.labels,
+            "description": "Description",
         }
 
     reporter_name = forms.CharField(
@@ -244,16 +243,8 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         ),
     )
     text = forms.CharField(
-        label="Description",
-        widget=forms.Textarea(
-            attrs={
-                "rows": 4,
-                "placeholder": "What work was done?",
-                "data-text-textarea": "",
-                "data-link-autocomplete": "",
-                "data-link-api-url": "/api/link-targets/",
-            }
-        ),
+        label="What work was done?",
+        widget=MarkdownTextarea(attrs={"rows": 4, "placeholder": "Describe the work performed..."}),
     )
     media_file = MultiFileField(
         label="Photo",

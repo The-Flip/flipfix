@@ -55,7 +55,7 @@ class WikiPageCreateViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase)
         self.assertEqual(page.title, "New Page")
         self.assertEqual(page.content, "Page content here")
         self.assertEqual(page.created_by, self.maintainer_user)
-        self.assertEqual(page.modified_by, self.maintainer_user)
+        self.assertEqual(page.updated_by, self.maintainer_user)
 
     def test_create_page_auto_generates_slug(self):
         """Slug is auto-generated from title if not provided."""
@@ -176,7 +176,7 @@ class WikiPageEditViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         page.refresh_from_db()
         self.assertEqual(page.title, "Updated")
         self.assertEqual(page.content, "New content")
-        self.assertEqual(page.modified_by, self.maintainer_user)
+        self.assertEqual(page.updated_by, self.maintainer_user)
 
     def test_edit_page_adds_tags(self):
         """Editing a page can add new tags."""

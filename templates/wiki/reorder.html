@@ -3,7 +3,7 @@
 {% block title %}Reorder Nav · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   {{ block.super }}
-  <span>Reorder Nav</span><span class="reorder-page__status" data-reorder-status></span>
+  <span>Reorder Nav</span>
 {% endblock %}
 {% block sidebar %}
   <div class="sidebar__section">
@@ -46,5 +46,6 @@
 {% block extra_scripts %}
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
           defer></script>
+  <script src="{% static 'core/save_status.js' %}" defer></script>
   <script src="{% static 'core/wiki_reorder.js' %}" defer></script>
 {% endblock %}

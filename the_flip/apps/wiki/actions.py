@@ -15,7 +15,9 @@ Markers:
     - ``action:start`` / ``action:end``: delimit content (invisible, content renders normally).
       Only ``name`` is required.
     - ``action:button``: renders a button wherever placed (independent of content markers).
-      Carries the action attributes: ``name``, ``type``, ``label`` (required), ``machine`` (optional).
+      Carries the action attributes: ``name``, ``type``, ``label`` (required),
+      ``machine`` (optional), ``tags`` (optional, for ``type="page"``),
+      ``title`` (optional, for ``type="page"``).
 """
 
 from __future__ import annotations
@@ -73,6 +75,11 @@ _RECORD_TYPES: dict[str, RecordTypeConfig] = {
         global_url_name="part-request-create",
         prefill_field="text",
     ),
+    "page": RecordTypeConfig(
+        machine_url_name="",  # Wiki pages are not machine-scoped
+        global_url_name="wiki-page-create",
+        prefill_field="content",
+    ),
 }
 
 
@@ -98,6 +105,8 @@ class ActionBlock:
     machine_slug: str
     label: str
     content: str
+    tags: str = ""
+    title: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -272,6 +281,8 @@ def prepare_for_rendering(content: str) -> tuple[str, dict[str, ActionBlock]]:
             machine_slug=attrs.get("machine", ""),
             label=attrs["label"],
             content=cb.content,
+            tags=attrs.get("tags", ""),
+            title=attrs.get("title", ""),
         )
         return token
 
@@ -321,7 +332,7 @@ def build_create_url(action: ActionBlock) -> str:
     Returns a machine-scoped URL if ``machine_slug`` is set, otherwise global.
     """
     config = _RECORD_TYPES[action.record_type]
-    if action.machine_slug:
+    if action.machine_slug and config.machine_url_name:
         return reverse(config.machine_url_name, kwargs={"slug": action.machine_slug})
     return reverse(config.global_url_name)
 
@@ -370,6 +381,8 @@ def extract_action_content(content: str, action_name: str) -> ActionBlock | None
             machine_slug=attrs.get("machine", ""),
             label=attrs["label"],
             content=cb.content,
+            tags=attrs.get("tags", ""),
+            title=attrs.get("title", ""),
         )
 
     # No button found for this name

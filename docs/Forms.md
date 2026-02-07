@@ -47,6 +47,38 @@ class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
     year = forms.IntegerField(required=False)
 ```
 
+## Markdown Textareas
+
+For fields that support markdown with `[[wiki links]]` and task list continuation, use `MarkdownTextarea` instead of `forms.Textarea`:
+
+```python
+from the_flip.apps.core.forms import MarkdownTextarea
+
+class MyForm(StyledFormMixin, forms.ModelForm):
+    class Meta:
+        model = MyModel
+        fields = ["content"]
+        widgets = {
+            "content": MarkdownTextarea(attrs={"rows": 10, "placeholder": "Write..."}),
+        }
+```
+
+The widget provides these data attributes automatically:
+
+- `data-text-textarea` — marks textarea for text editing features
+- `data-link-autocomplete` — enables `[[link]]` autocomplete
+- `data-link-api-url` — API endpoint for link suggestions (via `reverse_lazy`)
+- `data-task-list-enter` — enables Enter key task list continuation
+
+Only specify per-field attrs like `rows` or `placeholder`. Custom attrs merge with and can override defaults.
+
+Templates using this widget must include the companion scripts:
+
+```html
+<script src="{% static 'core/link_autocomplete.js' %}" defer></script>
+<script src="{% static 'core/task_list_enter.js' %}" defer></script>
+```
+
 ## Rendering Forms in Templates
 
 The project uses two approaches for rendering form fields:
