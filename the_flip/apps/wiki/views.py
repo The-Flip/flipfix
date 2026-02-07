@@ -75,6 +75,13 @@ class WikiPagePathMixin:
         self.current_tag = tag
         return page_tag.page
 
+    def get_detail_path(self) -> str:
+        """Build the URL path segment for this page's current tag location."""
+        page: WikiPage = self.object  # type: ignore[attr-defined]
+        if self.current_tag:
+            return f"{self.current_tag}/{page.slug}"
+        return page.slug
+
 
 class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, DetailView):
     """Display a single wiki page."""
@@ -89,11 +96,7 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
         context = super().get_context_data(**kwargs)
         context["current_tag"] = self.current_tag
         context["nav_tree"] = build_nav_tree()
-        # Build detail path for edit/delete links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
         # Filter in Python to use the prefetched page__tags cache
         context["other_tags"] = [t for t in self.object.tags.all() if t.tag != self.current_tag]
         return context
@@ -322,11 +325,7 @@ class WikiPageEditView(
         context["page_title"] = f"Edit: {self.object.title}"
         context["is_create"] = False
         context["current_tag"] = self.current_tag
-        # Build detail path for cancel/back links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
         return context
 
 
@@ -348,12 +347,7 @@ class WikiPageDeleteView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Dele
         context = super().get_context_data(**kwargs)
         context["nav_tree"] = build_nav_tree()
         context["current_tag"] = self.current_tag
-
-        # Build detail path for cancel/back links
-        if self.current_tag:
-            context["detail_path"] = f"{self.current_tag}/{self.object.slug}"
-        else:
-            context["detail_path"] = self.object.slug
+        context["detail_path"] = self.get_detail_path()
 
         # Warn about pages that will have broken links
         context["linking_pages"] = get_pages_linking_here(self.object)
