@@ -10,6 +10,27 @@ from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
 
+class WikiPageQuerySet(models.QuerySet):
+    """Custom queryset for WikiPage."""
+
+    def search(self, query: str = ""):
+        """Full-text search across title, slug, content, and tags.
+
+        Returns empty queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self.none()
+
+        return self.filter(
+            models.Q(title__icontains=query)
+            | models.Q(slug__icontains=query)
+            | models.Q(content__icontains=query)
+            | models.Q(tags__tag__icontains=query)
+        ).distinct()
+
+
 class WikiPage(models.Model):
     """The actual content of a wiki page."""
 
@@ -31,6 +52,7 @@ class WikiPage(models.Model):
         related_name="+",
     )
 
+    objects = WikiPageQuerySet.as_manager()
     history = HistoricalRecords()
 
     class Meta:

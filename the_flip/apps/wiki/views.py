@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 from django.db import transaction
-from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -133,17 +132,8 @@ class WikiSearchView(CanAccessMaintainerPortalMixin, ListView):
         query = self.request.GET.get("q", "").strip()
         self.search_query = query
 
-        if not query:
-            return WikiPage.objects.none()
-
         return (
-            WikiPage.objects.filter(
-                Q(title__icontains=query)
-                | Q(slug__icontains=query)
-                | Q(content__icontains=query)
-                | Q(tags__tag__icontains=query)
-            )
-            .distinct()
+            WikiPage.objects.search(query)
             .select_related("created_by", "modified_by")
             .prefetch_related("tags")
             .order_by("-modified_at")
