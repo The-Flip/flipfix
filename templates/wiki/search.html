@@ -4,7 +4,7 @@
   {% if search_query %}Search: {{ search_query }} ·{% endif %}
   Docs · {{ block.super }}
 {% endblock %}
-{% block breadcrumbs %}<span>Search</span>{% endblock %}
+{% block breadcrumbs %}{{ block.super }}<span>Search</span>{% endblock %}
 {% block main %}
   <div class="filter-bar">
     <div class="filter-bar__search filter-bar__search--full">

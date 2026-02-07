@@ -2,6 +2,7 @@
 {% load core_extras %}
 {% block title %}Delete: {{ page.title }} · Docs · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
+  {{ block.super }}
   <a href="{% url 'wiki-page-detail' detail_path %}">{{ page.title }}</a>
   <span>Delete</span>
 {% endblock %}

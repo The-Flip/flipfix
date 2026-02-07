@@ -2,7 +2,7 @@
 {% load core_extras %}
 {% load wiki_extras %}
 {% block title %}{{ page.title }} · Docs · {{ block.super }}{% endblock %}
-{% block breadcrumbs %}<span>{{ page.title }}</span>{% endblock %}
+{% block breadcrumbs %}{{ block.super }}<span>{{ page.title }}</span>{% endblock %}
 {% block main %}
   <article>
     <div class="card card--padded">

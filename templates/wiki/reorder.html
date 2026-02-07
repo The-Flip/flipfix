@@ -2,6 +2,7 @@
 {% load static core_extras %}
 {% block title %}Reorder Nav · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
+  {{ block.super }}
   <span>Reorder Nav</span><span class="reorder-page__status" data-reorder-status></span>
 {% endblock %}
 {% block sidebar %}
