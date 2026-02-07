@@ -127,11 +127,12 @@ All JavaScript files are in `the_flip/static/core/`.
 
 ### Inline Editing
 
-| File                 | Purpose                                                          |
-| -------------------- | ---------------------------------------------------------------- |
-| text_edit.js         | Inline text editing with markdown preview                        |
-| checkbox_toggle.js   | Interactive task list checkboxes; Enter key auto-continues lists |
-| sidebar_card_edit.js | Sidebar dropdown editing (machine, problem)                      |
+| File                 | Purpose                                                                       |
+| -------------------- | ----------------------------------------------------------------------------- |
+| text_edit.js         | Inline text editing with markdown preview                                     |
+| checkbox_toggle.js   | Interactive task list checkboxes; Enter key auto-continues lists              |
+| save_status.js       | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events |
+| sidebar_card_edit.js | Sidebar dropdown editing (machine, problem)                                   |
 
 ### Lists & Navigation
 
@@ -159,9 +160,11 @@ These are utility functions called by other components rather than auto-initiali
 
 Events document the contract between components:
 
-| Event                 | Dispatched by              | Listened by             | Purpose                                       |
-| --------------------- | -------------------------- | ----------------------- | --------------------------------------------- |
-| `card:initialize`     | infinite_scroll.js         | core.js                 | Re-bind clickable cards after dynamic content |
-| `maintainer:selected` | maintainer_autocomplete.js | log_entry_detail.js     | Maintainer selected from autocomplete         |
-| `media:uploaded`      | media_grid.js              | video_transcode_poll.js | Video uploaded, start polling                 |
-| `media:ready`         | video_transcode_poll.js    | media_grid.js           | Video transcoding complete                    |
+| Event                 | Dispatched by                       | Listened by             | Purpose                                                |
+| --------------------- | ----------------------------------- | ----------------------- | ------------------------------------------------------ |
+| `card:initialize`     | infinite_scroll.js                  | core.js                 | Re-bind clickable cards after dynamic content          |
+| `maintainer:selected` | maintainer_autocomplete.js          | log_entry_detail.js     | Maintainer selected from autocomplete                  |
+| `media:uploaded`      | media_grid.js                       | video_transcode_poll.js | Video uploaded, start polling                          |
+| `media:ready`         | video_transcode_poll.js             | media_grid.js           | Video transcoding complete                             |
+| `save:start`          | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save started                           |
+| `save:end`            | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save finished (`detail: { ok: bool }`) |

@@ -1,42 +1,25 @@
 (function () {
   'use strict';
 
-  var statusEl;
-  var fadeTimer;
-
-  function showStatus(text, isError) {
-    if (!statusEl) return;
-    clearTimeout(fadeTimer);
-    statusEl.textContent = text;
-    statusEl.classList.toggle('reorder-page__status--error', isError);
-    statusEl.classList.remove('reorder-page__status--fade');
-    if (!isError) {
-      fadeTimer = setTimeout(function () {
-        statusEl.classList.add('reorder-page__status--fade');
-      }, 1500);
-    }
-  }
-
   function initReorder(container) {
-    var saveUrl = container.dataset.saveUrl;
-    statusEl = document.querySelector('[data-reorder-status]');
+    const saveUrl = container.dataset.saveUrl;
 
     // Initialize SortableJS on all page lists
-    container.querySelectorAll('[data-sortable-group="pages"]').forEach(function (list) {
+    container.querySelectorAll('[data-sortable-group="pages"]').forEach((list) => {
       new Sortable(list, {
         handle: '.reorder-list__handle',
         animation: 150,
         ghostClass: 'reorder-list__item--ghost',
         chosenClass: 'reorder-list__item--chosen',
         dragClass: 'reorder-list__item--drag',
-        onSort: function () {
+        onSort: () => {
           savePageOrder(list, saveUrl);
         },
       });
     });
 
     // Initialize SortableJS on all tag containers
-    container.querySelectorAll('[data-sortable-group="tags"]').forEach(function (tagContainer) {
+    container.querySelectorAll('[data-sortable-group="tags"]').forEach((tagContainer) => {
       new Sortable(tagContainer, {
         handle: '.reorder-folder__header > .reorder-list__handle',
         animation: 150,
@@ -44,7 +27,7 @@
         chosenClass: 'reorder-folder--chosen',
         dragClass: 'reorder-folder--drag',
         draggable: '.reorder-folder',
-        onSort: function () {
+        onSort: () => {
           saveTagOrder(tagContainer, saveUrl);
         },
       });
@@ -52,9 +35,9 @@
   }
 
   function savePageOrder(list, saveUrl) {
-    var tag = list.dataset.tag;
-    var pages = [];
-    list.querySelectorAll('.reorder-list__item').forEach(function (item, index) {
+    const tag = list.dataset.tag;
+    const pages = [];
+    list.querySelectorAll('.reorder-list__item').forEach((item, index) => {
       pages.push({
         tag: tag,
         slug: item.dataset.slug,
@@ -66,9 +49,9 @@
   }
 
   function saveTagOrder(tagContainer, saveUrl) {
-    var tags = [];
-    var folders = tagContainer.querySelectorAll(':scope > .reorder-folder');
-    folders.forEach(function (folder, index) {
+    const tags = [];
+    const folders = tagContainer.querySelectorAll(':scope > .reorder-folder');
+    folders.forEach((folder, index) => {
       tags.push({
         tag: folder.dataset.tagPath,
         order: index,
@@ -78,35 +61,32 @@
     postOrder(saveUrl, { pages: [], tags: tags });
   }
 
-  function postOrder(saveUrl, payload) {
-    fetch(saveUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCsrfToken(),
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      credentials: 'same-origin',
-      body: JSON.stringify(payload),
-    })
-      .then(function (res) {
-        if (!res.ok) throw new Error('Save failed');
-        return res.json();
-      })
-      .then(function (data) {
-        if (data.status === 'success') {
-          showStatus('Saved', false);
-        } else {
-          showStatus('Error saving', true);
-        }
-      })
-      .catch(function () {
-        showStatus('Error saving', true);
+  async function postOrder(saveUrl, payload) {
+    document.dispatchEvent(new CustomEvent('save:start'));
+
+    try {
+      const res = await fetch(saveUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error('Save failed');
+      const data = await res.json();
+      document.dispatchEvent(
+        new CustomEvent('save:end', { detail: { ok: data.status === 'success' } })
+      );
+    } catch {
+      document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: false } }));
+    }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var container = document.querySelector('[data-reorder-tree]');
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('[data-reorder-tree]');
     if (container) initReorder(container);
   });
 })();

@@ -2197,6 +2197,38 @@ body {
 }
 
 /* ========================================
+   SAVE STATUS (breadcrumb-level)
+   Muted inline indicator for AJAX save feedback
+   ======================================== */
+
+.save-status {
+  margin-left: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+  transition: opacity 0.5s ease;
+}
+
+.breadcrumbs > .save-status::before {
+  content: none;
+}
+
+.save-status.save-status--saving {
+  color: var(--color-gray-400);
+}
+
+.save-status.save-status--saved {
+  color: var(--color-gray-400);
+}
+
+.save-status.save-status--error {
+  color: var(--color-problem);
+}
+
+.save-status--fade {
+  opacity: 0;
+}
+
+/* ========================================
    RESPONSIVE OVERRIDES (mobile-first)
    ======================================== */
 
@@ -2394,26 +2426,6 @@ body {
 /* ========================================
    WIKI REORDER PAGE
    ======================================== */
-
-.breadcrumbs > .reorder-page__status {
-  margin-left: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--font-normal);
-  color: var(--color-success);
-  transition: opacity 0.5s ease;
-}
-
-.breadcrumbs > .reorder-page__status::before {
-  content: none;
-}
-
-.breadcrumbs > .reorder-page__status--error {
-  color: var(--color-problem);
-}
-
-.breadcrumbs > .reorder-page__status--fade {
-  opacity: 0;
-}
 
 .reorder-page__group-label {
   font-size: var(--text-sm);
