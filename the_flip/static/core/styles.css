@@ -2408,7 +2408,7 @@ body {
 }
 
 .breadcrumbs > .reorder-page__status--error {
-  color: var(--color-error);
+  color: var(--color-problem);
 }
 
 .breadcrumbs > .reorder-page__status--fade {

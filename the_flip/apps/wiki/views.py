@@ -321,7 +321,7 @@ class WikiReorderSaveView(CanAccessMaintainerPortalMixin, View):
                         tag=item["tag"],
                         defaults={"order": item["order"]},
                     )
-        except (KeyError, TypeError) as e:
+        except (KeyError, TypeError, ValueError) as e:
             return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
 
         return JsonResponse({"status": "success"})

@@ -24,13 +24,13 @@
       {% for page in pages %}
         <div class="card card--padded space-above-sm">
           <div>
-            {% with first_tag=page.tags.first %}
+            {% with first_tag=page.tags.all.0 %}
               <a href="{% url 'wiki-page-detail' first_tag %}">{{ page.title }}</a>
             {% endwith %}
           </div>
           <div class="text-sm text-muted">
             Updated {{ page.modified_at|smart_date }}
-            {% if page.tags.count > 0 %}
+            {% if page.tags.all %}
               · {% icon "folder" class="meta" %}
               {% for tag in page.tags.all %}
                 {{ tag.tag|default:"(root)" }}
