@@ -31,6 +31,18 @@ class RenderMarkdownFilterTests(TestCase):
         result = render_markdown("`code`")
         self.assertIn("<code>code</code>", result)
 
+    def test_table_rendering(self):
+        """GFM-style pipe tables are converted to HTML tables."""
+        result = render_markdown("| a | b |\n| - | - |\n| 1 | 2 |")
+        self.assertIn("<table>", result)
+        self.assertIn("<th>a</th>", result)
+        self.assertIn("<td>1</td>", result)
+
+    def test_strikethrough_rendering(self):
+        """Double tildes render as strikethrough."""
+        result = render_markdown("~~deleted~~")
+        self.assertIn("<s>deleted</s>", result)
+
     def test_list_rendering(self):
         """Markdown lists are converted to HTML lists."""
         # Unordered list
@@ -44,6 +56,18 @@ class RenderMarkdownFilterTests(TestCase):
         self.assertIn("<ol>", result)
         self.assertIn("<li>first</li>", result)
         self.assertIn("<li>second</li>", result)
+
+    def test_list_after_paragraph_without_blank_line(self):
+        """Lists work without a blank line after a paragraph (CommonMark behavior)."""
+        # Unordered
+        result = render_markdown("Here is some text:\n- item 1\n- item 2")
+        self.assertIn("<ul>", result)
+        self.assertIn("<li>item 1</li>", result)
+
+        # Ordered
+        result = render_markdown("Here is some text:\n1. first\n2. second")
+        self.assertIn("<ol>", result)
+        self.assertIn("<li>first</li>", result)
 
     def test_newlines_converted_to_breaks(self):
         """Single newlines are converted to <br> tags (nl2br extension)."""
@@ -75,10 +99,11 @@ class RenderMarkdownFilterTests(TestCase):
         self.assertNotIn("onclick", result)
 
     def test_xss_javascript_urls_stripped(self):
-        """JavaScript URLs are stripped for XSS protection."""
+        """JavaScript URLs are not rendered as clickable links."""
         result = render_markdown("[click](javascript:alert(1))")
-        # The link should be sanitized - either href removed or link not rendered
-        self.assertNotIn("javascript:", result)
+        # markdown-it-py refuses to render javascript: URLs as links entirely,
+        # so no <a> tag is created. Verify no clickable link exists.
+        self.assertNotIn("<a", result)
 
     def test_dangerous_tags_stripped(self):
         """Dangerous HTML tags are stripped."""
@@ -103,6 +128,49 @@ class RenderMarkdownFilterTests(TestCase):
         # Headings
         result = render_markdown("## Heading")
         self.assertIn("<h2>", result)
+
+
+@tag("views")
+class LinkifyTests(TestCase):
+    """Tests for automatic URL linkification in markdown."""
+
+    def test_bare_url_linked(self):
+        """Bare URLs are converted to clickable links."""
+        result = render_markdown("Visit https://example.com for details")
+        self.assertIn('<a href="https://example.com"', result)
+
+    def test_www_url_linked(self):
+        """www URLs without scheme are linked."""
+        result = render_markdown("Visit www.example.com for details")
+        self.assertIn("example.com", result)
+        self.assertIn("<a", result)
+
+    def test_url_in_markdown_link_not_double_linked(self):
+        """URLs already in markdown link syntax are not double-linked."""
+        result = render_markdown("[click here](https://example.com)")
+        # Should have exactly one <a> tag, not nested
+        self.assertEqual(result.count("<a"), 1)
+
+    def test_url_in_inline_code_not_linked(self):
+        """URLs inside inline code are NOT converted to links."""
+        result = render_markdown("Use `https://example.com/api` for the endpoint")
+        # The URL inside backticks should not be wrapped in <a>
+        self.assertIn("<code>https://example.com/api</code>", result)
+        # Only the code tag, no link inside it
+        self.assertNotIn("<a", result)
+
+    def test_url_in_fenced_code_block_not_linked(self):
+        """URLs inside fenced code blocks are NOT converted to links."""
+        result = render_markdown("```\nhttps://example.com\n```")
+        self.assertIn("<pre>", result)
+        self.assertNotIn("<a", result)
+
+    def test_url_with_trailing_period(self):
+        """Trailing period is not included in the URL."""
+        result = render_markdown("See https://example.com.")
+        self.assertIn('href="https://example.com"', result)
+        # Period should be outside the link
+        self.assertNotIn('href="https://example.com."', result)
 
 
 @tag("views")

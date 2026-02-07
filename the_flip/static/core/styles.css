@@ -1923,6 +1923,7 @@ body {
 .markdown-content--compact p,
 .markdown-content--compact ul,
 .markdown-content--compact ol,
+.markdown-content--compact table,
 .markdown-content--compact h1,
 .markdown-content--compact h2,
 .markdown-content--compact h3,
@@ -1968,9 +1969,27 @@ body {
   margin-top: var(--space-2);
 }
 
+.markdown-content--compact table {
+  width: auto;
+  margin: var(--space-1-5) 0;
+  font-size: var(--text-sm);
+}
+
+.markdown-content--compact th,
+.markdown-content--compact td {
+  padding: var(--space-0-5) var(--space-1-5);
+  border-left: none;
+  border-right: none;
+}
+
+.markdown-content--compact tr:nth-child(even) td {
+  background-color: transparent;
+}
+
 .markdown-content:last-child p:last-child,
 .markdown-content:last-child ul:last-child,
 .markdown-content:last-child ol:last-child,
+.markdown-content:last-child table:last-child,
 .markdown-content:last-child h1:last-child,
 .markdown-content:last-child h2:last-child,
 .markdown-content:last-child h3:last-child,
@@ -1994,6 +2013,29 @@ body {
   padding-left: var(--space-4);
   margin: var(--space-3) 0;
   color: var(--color-text-muted);
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-3) 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: var(--color-gray-200);
+  font-weight: var(--font-semibold);
+}
+
+.markdown-content tr:nth-child(even) td {
+  background-color: var(--color-gray-50);
 }
 
 /* Code blocks: ```code``` - wrapped in <pre><code> */
@@ -2022,9 +2064,8 @@ body {
 /* --- Task List (checkbox) items --- */
 .markdown-content .task-list-item {
   list-style: none;
-  padding-left: 0;
-  display: flex;
-  align-items: baseline;
+  position: relative;
+  padding-left: 1.5em;
 }
 
 /* Only top-level task items get negative margin to align with text */
@@ -2034,8 +2075,10 @@ body {
 }
 
 .markdown-content .task-list-item input[type='checkbox'] {
-  flex-shrink: 0;
-  margin-right: var(--space-2);
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  margin: 0;
   width: 1em;
   height: 1em;
   accent-color: var(--color-accent);

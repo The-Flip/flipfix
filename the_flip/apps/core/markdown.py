@@ -6,12 +6,19 @@ the ``render_markdown`` template filter and the wiki action rendering tag.
 
 import re
 
-import markdown as md
 import nh3
-from linkify_it import LinkifyIt
+from markdown_it import MarkdownIt
 
-# Linkifier instance for URL detection (handles URLs, emails, www links)
-_linkify = LinkifyIt()
+# CommonMark-compliant markdown parser.
+# - linkify: auto-link bare URLs during parsing (structure-aware, won't
+#   linkify inside code blocks or existing links)
+# - breaks: single newlines become <br> (equiv. to Python-Markdown's nl2br)
+# - typographer + smartquotes/replacements: smart quotes, em dashes, ellipsis
+#   (equiv. to Python-Markdown's smarty)
+# - fenced code blocks are built into the commonmark preset
+_md = MarkdownIt("commonmark", {"linkify": True, "breaks": True, "typographer": True}).enable(
+    ["linkify", "replacements", "smartquotes", "table", "strikethrough"]
+)
 
 # Allowed HTML tags for markdown rendering
 ALLOWED_TAGS = {
@@ -19,6 +26,7 @@ ALLOWED_TAGS = {
     "br",
     "strong",
     "em",
+    "s",
     "ul",
     "ol",
     "li",
@@ -60,35 +68,6 @@ ALLOWED_ATTRIBUTES = {
 _TASK_LIST_RE = re.compile(r"<li>(\s*<p>)?\s*\[( *|[xX])\]")
 
 
-def _linkify_urls(html: str) -> str:
-    """Convert bare URLs to anchor tags using linkify-it-py.
-
-    Handles URLs, www links, and email addresses. Properly handles edge cases
-    like parentheses in URLs (e.g., Wikipedia links) and avoids double-linking
-    URLs already in anchor tags.
-    """
-    matches = _linkify.match(html)
-    if not matches:
-        return html
-
-    # Process matches in reverse order to preserve string indices
-    result = html
-    for match in reversed(matches):
-        start = match.index
-        end = match.last_index
-
-        # Skip if this URL is already inside an href attribute
-        prefix = html[:start]
-        if prefix.endswith('href="') or prefix.endswith("href='"):
-            continue
-
-        # Replace with anchor tag
-        anchor = f'<a href="{match.url}">{match.text}</a>'
-        result = result[:start] + anchor + result[end:]
-
-    return result
-
-
 def _convert_task_list_items(html: str) -> str:
     """Convert task list markers in <li> tags to checkbox HTML.
 
@@ -125,7 +104,7 @@ def _convert_task_list_items(html: str) -> str:
 def render_markdown_html(text: str) -> str:
     """Convert markdown text to sanitized HTML.
 
-    Full pipeline: wiki links → markdown → linkify → nh3 → checkboxes.
+    Full pipeline: wiki links → markdown (with linkify) → nh3 → checkboxes.
 
     Args:
         text: Raw markdown text (may contain ``[[type:ref]]`` links).
@@ -140,10 +119,8 @@ def render_markdown_html(text: str) -> str:
     from the_flip.apps.core.markdown_links import render_all_links
 
     text = render_all_links(text)
-    # Convert markdown to HTML
-    html = md.markdown(text, extensions=["fenced_code", "nl2br", "smarty"])
-    # Convert bare URLs to links
-    html = _linkify_urls(html)
+    # Convert markdown to HTML (bare URLs are auto-linked during parsing)
+    html = _md.render(text)
     # Sanitize to prevent XSS
     safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
     # Convert task list markers to checkboxes (after sanitization for security)
