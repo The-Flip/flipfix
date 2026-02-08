@@ -1,0 +1,54 @@
+{% extends "layouts/two_column.html" %}
+{% load core_extras %}
+{% block title %}Wall Display Setup{% endblock %}
+{% block breadcrumbs %}<span>Wall Display</span>{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Wall Display" %}
+  <p class="text-muted text-sm">Configure a full-screen display showing open problems.</p>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <form method="get"
+          action="{% url 'wall-display-board' %}"
+          class="form-main">
+      <div class="form-field">
+        <label class="form-label">Locations</label>
+        {% for location in locations %}
+          <label class="checkbox-label">
+            <input type="checkbox"
+                   name="location"
+                   value="{{ location.slug }}"
+                   class="checkbox">
+            <span>{{ location.name }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="refresh">Refresh interval (optional)</label>
+        <input type="number"
+               id="refresh"
+               name="refresh"
+               min="10"
+               placeholder="e.g. 120"
+               class="form-input form-input--width-10">
+        <p class="form-hint">Auto-refresh in seconds. Minimum 10. Leave blank for no refresh.</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary" disabled>
+          {% icon "tv" class="meta" %}
+          Open Display
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script>
+    const form = document.querySelector(".form-main");
+    const btn = form.querySelector("[type=submit]");
+    form.addEventListener("change", () => {
+      btn.disabled = !form.querySelector("input[name=location]:checked");
+    });
+  </script>
+{% endblock %}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import timedelta
 from functools import partial
 
@@ -20,7 +21,7 @@ from django.views import View
 from django.views.generic import FormView, TemplateView, UpdateView
 
 from the_flip.apps.accounts.models import Maintainer
-from the_flip.apps.catalog.models import MachineInstance
+from the_flip.apps.catalog.models import Location, MachineInstance
 from the_flip.apps.core.attribution import (
     resolve_maintainer_for_create,
     resolve_maintainer_for_edit,
@@ -583,3 +584,73 @@ class ProblemReportEditView(CanAccessMaintainerPortalMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("problem-report-detail", kwargs={"pk": self.object.pk})
+
+
+# ---------------------------------------------------------------------------
+# Wall display
+# ---------------------------------------------------------------------------
+
+MIN_REFRESH_SECONDS = 10
+
+
+class WallDisplaySetupView(CanAccessMaintainerPortalMixin, TemplateView):
+    """Configuration page for the wall display board."""
+
+    template_name = "maintenance/wall_display_setup.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["locations"] = Location.objects.all()
+        return context
+
+
+class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
+    """Full-screen wall display showing open problems by location."""
+
+    template_name = "maintenance/wall_display_board.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        location_slugs = self.request.GET.getlist("location")
+
+        if not location_slugs:
+            context["error"] = "No locations specified."
+            context["columns"] = []
+            context["refresh_seconds"] = None
+            return context
+
+        # Parse refresh parameter
+        refresh_seconds = None
+        raw_refresh = self.request.GET.get("refresh")
+        if raw_refresh:
+            try:
+                value = int(raw_refresh)
+                if value >= MIN_REFRESH_SECONDS:
+                    refresh_seconds = value
+            except (ValueError, TypeError):
+                pass
+
+        locations = Location.objects.filter(slug__in=location_slugs)
+        valid_slugs = set(locations.values_list("slug", flat=True))
+        invalid_slugs = [s for s in location_slugs if s not in valid_slugs]
+
+        if invalid_slugs:
+            joined = ", ".join(f'"{s}"' for s in invalid_slugs)
+            context["error"] = f"Unknown location: {joined}."
+            context["columns"] = []
+            context["refresh_seconds"] = None
+            return context
+
+        reports = ProblemReport.objects.for_wall_display(location_slugs)
+
+        # Group reports by location in a single pass (queryset is ordered by
+        # priority, so locations interleave — groupby would break).
+        reports_by_location: dict[int, list[ProblemReport]] = defaultdict(list)
+        for report in reports:
+            reports_by_location[report.machine.location_id].append(report)
+
+        columns = [(location, reports_by_location.get(location.pk, [])) for location in locations]
+
+        context["columns"] = columns
+        context["refresh_seconds"] = refresh_seconds
+        return context

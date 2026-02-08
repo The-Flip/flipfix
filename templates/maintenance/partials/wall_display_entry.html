@@ -1,0 +1,17 @@
+{% load core_extras %}
+<a href="{% url 'problem-report-detail' entry.pk %}"
+   class="card card--problem wall-entry">
+  <div class="card--padded">
+    <div class="timeline__header">
+      <div class="flex items-center stack-tight">
+        <span class="timeline__title timeline__title--problem">{{ entry.machine.short_display_name }}</span>
+        {% problem_report_priority_pill entry %}
+      </div>
+      <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
+    </div>
+    {% if entry.description %}<p class="body-small text-muted">{{ entry.description|truncatewords:20 }}</p>{% endif %}
+    {% if entry.media_count %}
+      <p class="body-small text-muted">{{ entry.media_count }} photo{{ entry.media_count|pluralize }}</p>
+    {% endif %}
+  </div>
+</a>

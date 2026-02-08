@@ -388,6 +388,12 @@ body {
   padding: var(--space-4);
 }
 
+/* Wall display card: <a> wrapping a .card */
+.wall-entry {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
 .card__header {
   display: flex;
   justify-content: space-between;

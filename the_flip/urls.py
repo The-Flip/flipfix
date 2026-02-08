@@ -54,6 +54,8 @@ from the_flip.apps.maintenance.views.problem_reports import (
     ProblemReportListView,
     ProblemReportLogEntriesPartialView,
     PublicProblemReportCreateView,
+    WallDisplayBoardView,
+    WallDisplaySetupView,
 )
 from the_flip.apps.maintenance.views.qr_codes import MachineBulkQRCodeView, MachineQRView
 from the_flip.apps.maintenance.views.transcoding import (
@@ -197,6 +199,13 @@ urlpatterns = [
         ProblemReportLogEntriesPartialView.as_view(),
         name="problem-report-log-entries",
     ),  # AJAX: infinite scroll for log entries on problem report
+    #
+    # Wall display
+    #
+    path("wall/", WallDisplaySetupView.as_view(), name="wall-display-setup"),  # Wall display setup
+    path(
+        "wall/board/", WallDisplayBoardView.as_view(), name="wall-display-board"
+    ),  # Wall display board
     #
     # Machines (maintainer)
     #
