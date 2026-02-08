@@ -630,9 +630,10 @@ class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
             except (ValueError, TypeError):
                 pass
 
-        locations = Location.objects.filter(slug__in=location_slugs)
-        valid_slugs = set(locations.values_list("slug", flat=True))
-        invalid_slugs = [s for s in location_slugs if s not in valid_slugs]
+        locations_by_slug = {
+            loc.slug: loc for loc in Location.objects.filter(slug__in=location_slugs)
+        }
+        invalid_slugs = [s for s in location_slugs if s not in locations_by_slug]
 
         if invalid_slugs:
             joined = ", ".join(f'"{s}"' for s in invalid_slugs)
@@ -640,6 +641,9 @@ class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
             context["columns"] = []
             context["refresh_seconds"] = None
             return context
+
+        # Preserve URL param order so the setup page's drag order controls columns.
+        locations = [locations_by_slug[s] for s in location_slugs]
 
         reports = ProblemReport.objects.for_wall_display(location_slugs)
 

@@ -180,6 +180,18 @@ class WallDisplayBoardViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
         response = self.client.get(self.board_url, {"location": ["floor"]})
         self.assertContains(response, "2 photos")
 
+    def test_columns_respect_url_param_order(self):
+        """Columns should appear in the order specified by URL params, not DB order."""
+        create_problem_report(machine=self.floor_machine, description="Floor issue")
+        create_problem_report(machine=self.workshop_machine, description="Workshop issue")
+        self.client.force_login(self.maintainer_user)
+        # Request workshop before floor (opposite of DB sort_order)
+        response = self.client.get(self.board_url, {"location": ["workshop", "floor"]})
+        content = response.content.decode()
+        workshop_pos = content.index("Workshop")
+        floor_pos = content.index("Floor")
+        self.assertLess(workshop_pos, floor_pos)
+
     def test_empty_location_shows_no_problems_message(self):
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.board_url, {"location": ["floor"]})

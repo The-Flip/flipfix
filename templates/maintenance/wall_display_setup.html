@@ -1,5 +1,5 @@
 {% extends "layouts/two_column.html" %}
-{% load core_extras %}
+{% load static core_extras %}
 {% block title %}Wall Display Setup{% endblock %}
 {% block breadcrumbs %}<span>Wall Display</span>{% endblock %}
 {% block sidebar %}
@@ -14,15 +14,19 @@
           class="form-main">
       <div class="form-field">
         <label class="form-label">Locations</label>
-        {% for location in locations %}
-          <label class="checkbox-label">
-            <input type="checkbox"
-                   name="location"
-                   value="{{ location.slug }}"
-                   class="checkbox">
-            <span>{{ location.name }}</span>
-          </label>
-        {% endfor %}
+        <p class="form-hint">Drag to set column order.</p>
+        <div data-sortable-locations>
+          {% for location in locations %}
+            <label class="checkbox-label">
+              <span class="reorder-list__handle" aria-label="Drag to reorder">{% icon "grip-vertical" %}</span>
+              <input type="checkbox"
+                     name="location"
+                     value="{{ location.slug }}"
+                     class="checkbox">
+              <span>{{ location.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
       </div>
       <div class="form-field">
         <label class="form-label" for="refresh">Refresh interval (optional)</label>
@@ -44,11 +48,25 @@
   </div>
 {% endblock %}
 {% block extra_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+          defer></script>
   <script>
-    const form = document.querySelector(".form-main");
-    const btn = form.querySelector("[type=submit]");
-    form.addEventListener("change", () => {
-      btn.disabled = !form.querySelector("input[name=location]:checked");
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.querySelector(".form-main");
+      const btn = form.querySelector("[type=submit]");
+      const list = form.querySelector("[data-sortable-locations]");
+
+      // Enable/disable submit based on checkbox state
+      form.addEventListener("change", () => {
+        btn.disabled = !form.querySelector("input[name=location]:checked");
+      });
+
+      // Drag-to-reorder locations
+      new Sortable(list, {
+        handle: ".reorder-list__handle",
+        animation: 150,
+        ghostClass: "reorder-list__item--ghost",
+      });
     });
   </script>
 {% endblock %}
