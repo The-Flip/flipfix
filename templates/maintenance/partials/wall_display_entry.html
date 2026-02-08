@@ -9,7 +9,11 @@
       </div>
       <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
     </div>
-    {% if entry.description %}<p class="body-small text-muted">{{ entry.description|truncatewords:20 }}</p>{% endif %}
+    {% if entry.description %}
+      <p class="body-small text-muted">{{ entry.description|truncatewords:20 }}</p>
+    {% elif entry.problem_type != entry.ProblemType.OTHER %}
+      <p class="body-small text-muted">{{ entry.get_problem_type_display }}</p>
+    {% endif %}
     {% if entry.media_count %}
       <p class="body-small text-muted">{{ entry.media_count }} photo{{ entry.media_count|pluralize }}</p>
     {% endif %}
