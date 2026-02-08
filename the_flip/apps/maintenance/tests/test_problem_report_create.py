@@ -56,6 +56,17 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         self.assertEqual(report.status, ProblemReport.Status.OPEN)
         self.assertEqual(report.ip_address, "192.168.1.100")
 
+    def test_visitor_report_gets_untriaged_priority(self):
+        """Public submissions should always be set to UNTRIAGED priority."""
+        data = {
+            "problem_type": ProblemReport.ProblemType.STUCK_BALL,
+            "description": "Ball stuck",
+        }
+        self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
+
+        report = ProblemReport.objects.first()
+        self.assertEqual(report.priority, ProblemReport.Priority.UNTRIAGED)
+
     def test_create_problem_report_with_other_type(self):
         """Problem type can be explicitly set to 'other'."""
         data = {
@@ -215,6 +226,7 @@ class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
         """
         data = {
             "description": "Machine is broken",
+            "priority": ProblemReport.Priority.MINOR,
             "occurred_at": "",  # Empty string, as submitted by HTML form
         }
         response = self.client.post(self.url, data)
@@ -230,6 +242,28 @@ class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
         time_diff = timezone.now() - report.occurred_at
         self.assertLess(time_diff.total_seconds(), 60)
 
+    def test_maintainer_report_defaults_to_minor_priority(self):
+        """Priority defaults to MINOR — the select renders it pre-selected."""
+        response = self.client.get(self.url)
+        form = response.context["form"]
+        self.assertEqual(
+            form.fields["priority"].initial,
+            ProblemReport.Priority.MINOR,
+        )
+
+    def test_maintainer_can_set_custom_priority(self):
+        """Maintainer can explicitly set priority on creation."""
+        data = {
+            "description": "Machine totally broken",
+            "priority": ProblemReport.Priority.UNPLAYABLE,
+            "occurred_at": "",
+        }
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, 302)
+        report = ProblemReport.objects.first()
+        self.assertEqual(report.priority, ProblemReport.Priority.UNPLAYABLE)
+
     def test_create_rejects_future_date(self):
         """View rejects problem reports with future occurred_at dates."""
         future_date = timezone.now() + timedelta(days=5)
@@ -237,6 +271,7 @@ class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 "occurred_at": future_date.strftime(DATETIME_INPUT_FORMAT),
             },
         )
@@ -264,6 +299,7 @@ class ProblemReportSharedAccountTests(
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 "reporter_name": str(self.identifying_maintainer),
                 "reporter_name_username": self.identifying_user.username,
             },
@@ -280,6 +316,7 @@ class ProblemReportSharedAccountTests(
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 "reporter_name": "Jane Visitor",
                 "reporter_name_username": "",
             },
@@ -296,6 +333,7 @@ class ProblemReportSharedAccountTests(
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 "reporter_name": "",
                 "reporter_name_username": "",
             },
@@ -311,6 +349,7 @@ class ProblemReportSharedAccountTests(
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 # No reporter_name or reporter_name_username
             },
         )
@@ -330,6 +369,7 @@ class ProblemReportSharedAccountTests(
             self.url,
             {
                 "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
                 "reporter_name": "Jane Visitor",
                 "reporter_name_username": "",  # No matching user
             },

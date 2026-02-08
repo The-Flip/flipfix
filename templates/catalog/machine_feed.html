@@ -96,64 +96,8 @@
           <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
           <div class="flex flex-wrap stack-tight space-above-sm"
                data-update-url="{% url 'machine-inline-update' machine.slug %}">
-            <div class="dropdown">
-              <button type="button"
-                      id="status-pill"
-                      class="pill {{ machine.operational_status|machine_status_css_class }}"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      onclick="toggleDropdown(this)">
-                {% icon machine.operational_status|machine_status_icon class="meta status-icon" %}
-                <span class="status-label">{{ machine.get_operational_status_display }}</span>
-                {% icon "caret-down" class="meta" %}
-              </button>
-              <div class="dropdown__menu dropdown__menu--left hidden">
-                {% for value, label in machine.OperationalStatus.choices %}
-                  <button type="button"
-                          class="dropdown__item{% if value == machine.operational_status %} dropdown__item--selected{% endif %}"
-                          data-field="operational_status"
-                          data-value="{{ value }}"
-                          data-label="{{ label }}"
-                          onclick="updateMachineField(this)">{{ label }}</button>
-                {% endfor %}
-              </div>
-            </div>
-            <div class="dropdown">
-              <button type="button"
-                      id="location-pill"
-                      class="pill pill--neutral"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                      onclick="toggleDropdown(this)">
-                {% icon "location-dot" class="meta" %}
-                <span class="location-label">
-                  {% if machine.location %}
-                    {{ machine.location.name }}
-                  {% else %}
-                    No Location
-                  {% endif %}
-                </span>
-                {% icon "caret-down" class="meta" %}
-              </button>
-              <div class="dropdown__menu dropdown__menu--left hidden">
-                {% if locations %}
-                  {% for loc in locations %}
-                    <button type="button"
-                            class="dropdown__item{% if machine.location and machine.location.slug == loc.slug %} dropdown__item--selected{% endif %}"
-                            data-field="location"
-                            data-value="{{ loc.slug }}"
-                            data-label="{{ loc.name }}"
-                            onclick="updateMachineField(this)">{{ loc.name }}</button>
-                  {% endfor %}
-                {% endif %}
-                <button type="button"
-                        class="dropdown__item{% if not machine.location %} dropdown__item--selected{% endif %}"
-                        data-field="location"
-                        data-value=""
-                        data-label="No Location"
-                        onclick="updateMachineField(this)">No Location</button>
-              </div>
-            </div>
+            {% settable_machine_status_pill machine %}
+            {% settable_machine_location_pill machine locations %}
           </div>
         </div>
         <!-- ACTIONS -->

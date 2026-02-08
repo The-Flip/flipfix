@@ -387,6 +387,133 @@ def problem_report_type_pill(report):
     return {"report": report}
 
 
+# --- Problem report priority filters ----------------------------------------
+
+_PRIORITY_CSS_CLASSES = {
+    "untriaged": "pill--priority-untriaged",
+    "unplayable": "pill--priority-unplayable",
+    "major": "pill--priority-major",
+}
+
+_PRIORITY_ICONS = {
+    "untriaged": "triangle-exclamation",
+    "unplayable": "circle-xmark",
+    "major": "arrow-up",
+    "minor": "arrow-down",
+    "task": "list-check",
+}
+
+_PRIORITY_BTN_CLASSES = {
+    "untriaged": "btn--priority-untriaged",
+    "unplayable": "btn--priority-unplayable",
+    "major": "btn--priority-major",
+}
+
+
+@register.filter
+def problem_priority_css_class(priority):
+    """Return pill CSS class for ProblemReport.priority.
+
+    Usage:
+        {{ report.priority|problem_priority_css_class }}
+    """
+    return _PRIORITY_CSS_CLASSES.get(priority, "pill--neutral")
+
+
+@register.filter
+def problem_priority_icon(priority):
+    """Return Font Awesome icon name for ProblemReport.priority.
+
+    Usage:
+        {{ report.priority|problem_priority_icon }}
+    """
+    return _PRIORITY_ICONS.get(priority, "minus")
+
+
+@register.filter
+def problem_priority_btn_class(priority):
+    """Return button CSS class for ProblemReport.priority.
+
+    Usage:
+        {{ report.priority|problem_priority_btn_class }}
+    """
+    return _PRIORITY_BTN_CLASSES.get(priority, "btn--secondary")
+
+
+@register.inclusion_tag("components/problem_report_priority_pill.html")
+def problem_report_priority_pill(report):
+    """Render a priority pill for a problem report.
+
+    Usage:
+        {% problem_report_priority_pill report %}
+    """
+    return {"report": report}
+
+
+# --- Problem report settable dropdown pills ----------------------------------
+
+
+@register.inclusion_tag("components/settable_problem_status_pill.html")
+def settable_problem_status_pill(report):
+    """Render a settable status dropdown pill for a problem report.
+
+    Displays the current status as a clickable pill that opens a dropdown
+    menu to change the status via AJAX (``updateProblemReportField``).
+
+    Usage:
+        {% settable_problem_status_pill report %}
+    """
+    return {"report": report}
+
+
+@register.inclusion_tag("components/settable_problem_priority_pill.html")
+def settable_problem_priority_pill(report):
+    """Render a settable priority dropdown pill for a problem report.
+
+    Displays the current priority as a clickable pill that opens a dropdown
+    menu to change the priority via AJAX (``updateProblemReportField``).
+    Excludes UNTRIAGED from the choices — maintainers cannot set it.
+
+    Usage:
+        {% settable_problem_priority_pill report %}
+    """
+    from the_flip.apps.maintenance.models import ProblemReport
+
+    return {
+        "report": report,
+        "priority_choices": ProblemReport.Priority.maintainer_settable(),
+    }
+
+
+# --- Machine settable dropdown pills ----------------------------------------
+
+
+@register.inclusion_tag("components/settable_machine_status_pill.html")
+def settable_machine_status_pill(machine):
+    """Render a settable status dropdown pill for a machine.
+
+    Displays the current operational status as a clickable pill that opens
+    a dropdown menu to change it via AJAX (``updateMachineField``).
+
+    Usage:
+        {% settable_machine_status_pill machine %}
+    """
+    return {"machine": machine}
+
+
+@register.inclusion_tag("components/settable_machine_location_pill.html")
+def settable_machine_location_pill(machine, locations):
+    """Render a settable location dropdown pill for a machine.
+
+    Displays the current location as a clickable pill that opens a dropdown
+    menu to change it via AJAX (``updateMachineField``).
+
+    Usage:
+        {% settable_machine_location_pill machine locations %}
+    """
+    return {"machine": machine, "locations": locations}
+
+
 # -----------------------------------------------------------------------------
 # Form field template tags
 # -----------------------------------------------------------------------------

@@ -55,8 +55,15 @@ class ProblemReportMediaInline(admin.TabularInline):
 
 @admin.register(ProblemReport)
 class ProblemReportAdmin(SimpleHistoryAdmin):
-    list_display = ("machine", "problem_type", "status", "reporter_display", "occurred_at")
-    list_filter = ("status", "problem_type", "machine__location")
+    list_display = (
+        "machine",
+        "priority",
+        "problem_type",
+        "status",
+        "reporter_display",
+        "occurred_at",
+    )
+    list_filter = ("status", "priority", "problem_type", "machine__location")
     search_fields = (
         "description",
         "reported_by_name",

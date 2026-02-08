@@ -208,6 +208,33 @@ function applySmartDates(root = document) {
 document.addEventListener('DOMContentLoaded', () => applySmartDates());
 
 /* ==========================================================================
+   Timeline Injection
+   ========================================================================== */
+
+/**
+ * Inject a new entry into the feed timeline if the timeline accepts this entry type.
+ * Looks for a timeline with data-entry-types attribute that includes the entry_type
+ * from the AJAX response.
+ * @param {Object} data - Response data with log_entry_html and entry_type fields
+ */
+function injectFeedEntry(data) {
+  if (!data.log_entry_html || !data.entry_type) return;
+
+  const timelines = document.querySelectorAll('.timeline[data-entry-types]');
+  for (const timeline of timelines) {
+    const acceptedTypes = timeline.dataset.entryTypes.split(',').map((t) => t.trim());
+    if (acceptedTypes.includes(data.entry_type)) {
+      const timelineLine = timeline.querySelector('.timeline__line');
+      if (timelineLine) {
+        timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
+        applySmartDates(timelineLine.nextElementSibling);
+      }
+      break;
+    }
+  }
+}
+
+/* ==========================================================================
    Machine Field Updates (status/location dropdowns)
    ========================================================================== */
 
@@ -225,28 +252,6 @@ function updateMachineField(button) {
   if (!updateUrl) return;
 
   dropdownMenu.classList.add('hidden');
-
-  /**
-   * Inject a new entry into the feed timeline if the timeline accepts this entry type.
-   * Looks for a timeline with data-entry-types attribute that includes the entry_type from the response.
-   */
-  function injectFeedEntry(data) {
-    if (!data.log_entry_html || !data.entry_type) return;
-
-    // Find a timeline that accepts this entry type
-    const timelines = document.querySelectorAll('.timeline[data-entry-types]');
-    for (const timeline of timelines) {
-      const acceptedTypes = timeline.dataset.entryTypes.split(',').map((t) => t.trim());
-      if (acceptedTypes.includes(data.entry_type)) {
-        const timelineLine = timeline.querySelector('.timeline__line');
-        if (timelineLine) {
-          timelineLine.insertAdjacentHTML('afterend', data.log_entry_html);
-          applySmartDates(timelineLine.nextElementSibling);
-        }
-        break;
-      }
-    }
-  }
 
   const formData = new FormData();
   formData.append('action', field === 'operational_status' ? 'update_status' : 'update_location');
@@ -324,6 +329,124 @@ function updateMachineField(button) {
         }
       } else {
         showMessage('error', 'Error saving change');
+      }
+    })
+    .catch(() => showMessage('error', 'Error saving change'));
+}
+
+/* ==========================================================================
+   Problem Report Field Updates (priority/status dropdowns)
+   ========================================================================== */
+
+/**
+ * Update a problem report field via AJAX (priority or status).
+ * @param {HTMLElement} button - The dropdown item button that was clicked
+ */
+function updateProblemReportField(button) {
+  const field = button.dataset.field;
+  const value = button.dataset.value;
+  const label = button.dataset.label;
+  const dropdownMenu = button.closest('.dropdown__menu');
+  const wrapper = dropdownMenu.closest('[data-update-url]');
+  const updateUrl = wrapper ? wrapper.dataset.updateUrl : null;
+  if (!updateUrl) return;
+
+  dropdownMenu.classList.add('hidden');
+
+  const formData = new FormData();
+  formData.append('action', field === 'status' ? 'update_status' : 'update_priority');
+  formData.append(field, value);
+
+  fetch(updateUrl, {
+    method: 'POST',
+    body: formData,
+    credentials: 'same-origin',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken': getCsrfToken(),
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.status === 'noop') {
+        return;
+      } else if (data.status === 'success') {
+        const reportPk = wrapper.dataset.reportPk;
+        const machineName = wrapper.dataset.machineName;
+        if (field === 'priority') {
+          const priorityClassMap = {
+            untriaged: 'pill--priority-untriaged',
+            unplayable: 'pill--priority-unplayable',
+            major: 'pill--priority-major',
+            minor: 'pill--neutral',
+            task: 'pill--neutral',
+          };
+          const priorityIconMap = {
+            untriaged: 'fa-triangle-exclamation',
+            unplayable: 'fa-circle-xmark',
+            major: 'fa-arrow-up',
+            task: 'fa-list-check',
+            minor: 'fa-arrow-down',
+          };
+          // Update all priority pills on the page (sidebar + mobile)
+          document.querySelectorAll('.priority-pill').forEach((pill) => {
+            const labelEl = pill.querySelector('.priority-label');
+            const iconEl = pill.querySelector('.priority-icon');
+            if (labelEl) labelEl.textContent = label;
+            pill.className =
+              'pill ' + (priorityClassMap[value] || 'pill--neutral') + ' priority-pill';
+            if (iconEl) {
+              iconEl.className =
+                'fa-solid meta priority-icon ' + (priorityIconMap[value] || 'fa-arrow-down');
+            }
+          });
+          const pillHtml = `<span class="pill ${priorityClassMap[value] || 'pill--neutral'}"><i class="fa-solid ${priorityIconMap[value] || 'fa-arrow-down'} meta"></i> ${label}</span>`;
+          showMessage(
+            'success',
+            `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} set to ${pillHtml}`
+          );
+        } else if (field === 'status') {
+          const isOpen = value === 'open';
+          const pillClass = isOpen ? 'pill--status-broken' : 'pill--status-good';
+          const iconClass = isOpen ? 'fa-circle-exclamation' : 'fa-check';
+
+          // Update all status pills on the page (sidebar + mobile)
+          document.querySelectorAll('.status-pill').forEach((pill) => {
+            const labelEl = pill.querySelector('.status-label');
+            const iconEl = pill.querySelector('.status-icon');
+            if (labelEl) labelEl.textContent = label;
+            pill.className = 'pill ' + pillClass + ' status-pill';
+            if (iconEl) {
+              iconEl.className = 'fa-solid meta status-icon ' + iconClass;
+            }
+          });
+
+          // Update desktop Close/Re-Open button text
+          const closeBtn = document.querySelector(
+            '.two-column__sidebar form button[type="submit"]'
+          );
+          if (closeBtn) {
+            if (isOpen) {
+              closeBtn.innerHTML =
+                '<i class="fa-solid fa-check meta" aria-hidden="true"></i> Close Problem Report';
+              closeBtn.className = 'btn btn--log btn--full';
+            } else {
+              closeBtn.innerHTML =
+                '<i class="fa-solid fa-rotate-left meta" aria-hidden="true"></i> Re-Open Problem Report';
+              closeBtn.className = 'btn btn--report btn--full';
+            }
+          }
+
+          // Inject log entry into timeline
+          injectFeedEntry(data);
+
+          showMessage(
+            'success',
+            `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} ${isOpen ? 're-opened' : 'closed'}`
+          );
+        }
+      } else {
+        showMessage('error', data.error || 'Error saving change');
       }
     })
     .catch(() => showMessage('error', 'Error saving change'));

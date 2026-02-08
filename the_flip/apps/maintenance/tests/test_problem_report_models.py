@@ -65,3 +65,34 @@ class ProblemReportOccurredAtTests(TestDataMixin, TestCase):
 
         reports = list(ProblemReport.objects.all())
         self.assertEqual(reports, [newest, middle, oldest])
+
+
+@tag("models")
+class ProblemReportPriorityTests(TestDataMixin, TestCase):
+    """Tests for ProblemReport priority field."""
+
+    def test_default_priority_is_minor(self):
+        """Priority defaults to MINOR when not explicitly set."""
+        report = create_problem_report(machine=self.machine, description="Test report")
+        self.assertEqual(report.priority, ProblemReport.Priority.MINOR)
+
+    def test_priority_can_be_set_explicitly(self):
+        """Priority can be set to any valid choice."""
+        report = create_problem_report(
+            machine=self.machine,
+            description="Urgent issue",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+        )
+        self.assertEqual(report.priority, ProblemReport.Priority.UNPLAYABLE)
+
+    def test_all_priority_choices_are_valid(self):
+        """All Priority choices can be saved and retrieved."""
+        for value, label in ProblemReport.Priority.choices:
+            report = create_problem_report(
+                machine=self.machine,
+                description=f"Report with {label}",
+                priority=value,
+            )
+            report.refresh_from_db()
+            self.assertEqual(report.priority, value)
+            self.assertEqual(report.get_priority_display(), label)

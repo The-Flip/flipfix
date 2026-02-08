@@ -7,6 +7,7 @@
       <div class="flex items-center stack-tight">
         <span class="timeline__title timeline__title--problem">{{ entry.machine.short_display_name }}</span>
         {% pill label=entry.get_status_display variant=entry.status %}
+        {% problem_report_priority_pill entry %}
       </div>
       <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
     </div>

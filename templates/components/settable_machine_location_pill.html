@@ -1,0 +1,34 @@
+{% load core_extras %}
+<div class="dropdown">
+  <button type="button"
+          class="pill pill--neutral"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="toggleDropdown(this)">
+    {% icon "location-dot" class="meta" %}
+    <span class="location-label">
+      {% if machine.location %}
+        {{ machine.location.name }}
+      {% else %}
+        No Location
+      {% endif %}
+    </span>
+    {% icon "caret-down" class="meta" %}
+  </button>
+  <div class="dropdown__menu dropdown__menu--left hidden">
+    {% for loc in locations %}
+      <button type="button"
+              class="dropdown__item{% if machine.location and machine.location.slug == loc.slug %} dropdown__item--selected{% endif %}"
+              data-field="location"
+              data-value="{{ loc.slug }}"
+              data-label="{{ loc.name }}"
+              onclick="updateMachineField(this)">{{ loc.name }}</button>
+    {% endfor %}
+    <button type="button"
+            class="dropdown__item{% if not machine.location %} dropdown__item--selected{% endif %}"
+            data-field="location"
+            data-value=""
+            data-label="No Location"
+            onclick="updateMachineField(this)">No Location</button>
+  </div>
+</div>

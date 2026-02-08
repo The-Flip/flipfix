@@ -83,8 +83,6 @@ We'd like to be able to take portions of a wiki page and click a button to creat
 
 For example, we should be able to put a big button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start Intake". When you click it, it opens the Create Problem Report form, prepopulated with the name of that machine and the checklist portion of the page as the Problem Report's Description.
 
-We are considering building a Task entity -- see [Tasks.md](Tasks.md) -- and if we do that, this is more appropriate as a Task than a Problem Report.
-
 See [WikiActionButtons.md](WikiActionButtons.md) for details.
 
 ## Machine-specific pages

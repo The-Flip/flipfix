@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Case, F, IntegerField, Prefetch, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -58,17 +58,47 @@ def get_problem_report_queryset(search_query: str = ""):
 
     Used by both the main list view and the infinite scroll partial view
     to ensure consistent filtering, prefetching, and ordering.
+
+    Sort order:
+    1. Open before closed (``-status`` descending: "open" > "closed")
+    2. Within open: priority order derived from ``Priority`` choices definition
+    3. Within same priority: location sort_order (floor first, then workshop)
+    4. Within same location: occurred_at newest first
+    5. Closed: only by occurred_at newest first (priority/location ignored)
     """
     latest_log_prefetch = Prefetch(
         "log_entries",
         queryset=LogEntry.objects.order_by("-occurred_at"),
         to_attr="prefetched_log_entries",
     )
+
+    # Derive sort values from TextChoices definition order so reordering
+    # the enum members automatically updates the sort.
+    priority_whens = [
+        When(priority=value, then=Value(i))
+        for i, (value, _) in enumerate(ProblemReport.Priority.choices)
+    ]
+
+    # Closed reports get a high constant so priority/location don't affect their order.
+    priority_sort = Case(
+        When(status=ProblemReport.Status.CLOSED, then=Value(999)),
+        *priority_whens,
+        default=Value(999),
+        output_field=IntegerField(),
+    )
+    location_sort = Case(
+        When(status=ProblemReport.Status.CLOSED, then=Value(999)),
+        When(machine__location__isnull=True, then=Value(998)),
+        default=F("machine__location__sort_order"),
+        output_field=IntegerField(),
+    )
+
     queryset = (
-        ProblemReport.objects.select_related("machine", "machine__model")
+        ProblemReport.objects.select_related("machine", "machine__model", "machine__location")
         .prefetch_related(latest_log_prefetch, "media")
         .search(search_query)
-        .order_by("-status", "-occurred_at")
+        .annotate(priority_sort=priority_sort, location_sort=location_sort)
+        .order_by("-status", "priority_sort", "location_sort", "-occurred_at")
     )
 
     return queryset
@@ -183,6 +213,7 @@ class PublicProblemReportCreateView(FormView):
     def form_valid(self, form):
         report = form.save(commit=False)
         report.machine = self.machine
+        report.priority = ProblemReport.Priority.UNTRIAGED
         report.ip_address = get_real_ip(self.request)
         report.device_info = self.request.META.get("HTTP_USER_AGENT", "")[:200]
         if self.request.user.is_authenticated:
@@ -331,116 +362,152 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         )
         action = request.POST.get("action")
 
-        # Handle AJAX description update
-        if action == "update_text":
-            text = request.POST.get("text", "")
-            try:
-                save_inline_markdown_field(self.report, "description", text)
-            except ValidationError as e:
-                return JsonResponse({"success": False, "errors": e.messages}, status=400)
-            return JsonResponse({"success": True})
+        action_handlers = {
+            "update_text": self._handle_update_text,
+            "update_machine": self._handle_update_machine,
+            "update_priority": self._handle_update_priority,
+            "update_status": self._handle_update_status,
+            "upload_media": self.handle_upload_media,
+            "delete_media": self.handle_delete_media,
+            "toggle_status": self._handle_toggle_status,
+        }
 
-        # Handle AJAX machine update (move report to different machine)
-        if action == "update_machine":
-            machine_slug = request.POST.get("machine_slug", "").strip()
-            if not machine_slug:
-                return JsonResponse(
-                    {"success": False, "error": "Machine slug required"}, status=400
-                )
+        if action in action_handlers:
+            return action_handlers[action](request)
 
-            new_machine = MachineInstance.objects.filter(slug=machine_slug).first()
-            if not new_machine:
-                return JsonResponse({"success": False, "error": "Machine not found"}, status=404)
+        # No action means form POST toggle (desktop Close/Re-Open button)
+        if not action:
+            return self._handle_toggle_status(request)
 
-            if new_machine.pk == self.report.machine_id:
-                return JsonResponse({"success": True, "status": "noop"})
+        return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
 
-            old_machine = self.report.machine
+    # -- Action handlers -------------------------------------------------------
 
-            with transaction.atomic():
-                self.report.machine = new_machine
-                self.report.save(update_fields=["machine", "updated_at"])
+    def _handle_update_text(self, request):
+        """AJAX: update the description field with inline markdown."""
+        text = request.POST.get("text", "")
+        try:
+            save_inline_markdown_field(self.report, "description", text)
+        except ValidationError as e:
+            return JsonResponse({"success": False, "errors": e.messages}, status=400)
+        return JsonResponse({"success": True})
 
-                # Move all child log entries to the new machine
-                child_log_count = LogEntry.objects.filter(problem_report=self.report).update(
-                    machine=new_machine
-                )
+    def _handle_update_machine(self, request):
+        """AJAX: move the report (and its log entries) to a different machine."""
+        machine_slug = request.POST.get("machine_slug", "").strip()
+        if not machine_slug:
+            return JsonResponse({"success": False, "error": "Machine slug required"}, status=400)
 
-            # Build message with hyperlinked machine names
-            old_machine_link = format_html(
-                '<a href="{}">{}</a>',
-                reverse("maintainer-machine-detail", kwargs={"slug": old_machine.slug}),
-                old_machine.short_display_name,
-            )
-            new_machine_link = format_html(
-                '<a href="{}">{}</a>',
-                reverse("maintainer-machine-detail", kwargs={"slug": new_machine.slug}),
-                new_machine.short_display_name,
-            )
-            if child_log_count:
-                messages.success(
-                    request,
-                    format_html(
-                        "Problem report moved from {} to {}. Its {} log entries also moved.",
-                        old_machine_link,
-                        new_machine_link,
-                        child_log_count,
-                    ),
-                )
-            else:
-                messages.success(
-                    request,
-                    format_html(
-                        "Problem report moved from {} to {}.",
-                        old_machine_link,
-                        new_machine_link,
-                    ),
-                )
+        new_machine = MachineInstance.objects.filter(slug=machine_slug).first()
+        if not new_machine:
+            return JsonResponse({"success": False, "error": "Machine not found"}, status=404)
 
-            return JsonResponse(
-                {
-                    "success": True,
-                    "new_machine_slug": new_machine.slug,
-                    "new_machine_name": new_machine.name,
-                    "log_entries_moved": child_log_count,
-                }
-            )
+        if new_machine.pk == self.report.machine_id:
+            return JsonResponse({"success": True, "status": "noop"})
 
-        # Handle AJAX media upload
-        if action == "upload_media":
-            return self.handle_upload_media(request)
-
-        # Handle AJAX media delete
-        if action == "delete_media":
-            return self.handle_delete_media(request)
-
-        # Reject unrecognized actions (empty string means toggle status from form)
-        if action and action != "toggle_status":
-            return JsonResponse(
-                {"success": False, "error": f"Unknown action: {action}"}, status=400
-            )
-
-        # Toggle status (wrapped in transaction so status + log entry are atomic)
-        if self.report.status == ProblemReport.Status.OPEN:
-            self.report.status = ProblemReport.Status.CLOSED
-            action_text = "closed"
-            log_text = "Closed problem report"
-        else:
-            self.report.status = ProblemReport.Status.OPEN
-            action_text = "re-opened"
-            log_text = "Re-opened problem report"
+        old_machine = self.report.machine
 
         with transaction.atomic():
-            self.report.save(update_fields=["status", "updated_at"])
-            log_entry = LogEntry.objects.create(
-                machine=self.report.machine,
-                problem_report=self.report,
-                text=log_text,
-                created_by=request.user,
+            self.report.machine = new_machine
+            self.report.save(update_fields=["machine", "updated_at"])
+            child_log_count = LogEntry.objects.filter(problem_report=self.report).update(
+                machine=new_machine
             )
-            maintainer = Maintainer.objects.filter(user=request.user).first()
-            if maintainer:
-                log_entry.maintainers.add(maintainer)
+
+        old_machine_link = format_html(
+            '<a href="{}">{}</a>',
+            reverse("maintainer-machine-detail", kwargs={"slug": old_machine.slug}),
+            old_machine.short_display_name,
+        )
+        new_machine_link = format_html(
+            '<a href="{}">{}</a>',
+            reverse("maintainer-machine-detail", kwargs={"slug": new_machine.slug}),
+            new_machine.short_display_name,
+        )
+        if child_log_count:
+            messages.success(
+                request,
+                format_html(
+                    "Problem report moved from {} to {}. Its {} log entries also moved.",
+                    old_machine_link,
+                    new_machine_link,
+                    child_log_count,
+                ),
+            )
+        else:
+            messages.success(
+                request,
+                format_html(
+                    "Problem report moved from {} to {}.",
+                    old_machine_link,
+                    new_machine_link,
+                ),
+            )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "new_machine_slug": new_machine.slug,
+                "new_machine_name": new_machine.name,
+                "log_entries_moved": child_log_count,
+            }
+        )
+
+    def _handle_update_priority(self, request):
+        """AJAX: change priority (no log entry, no Discord)."""
+        new_priority = request.POST.get("priority", "")
+        settable = dict(ProblemReport.Priority.maintainer_settable())
+        if new_priority not in settable:
+            return JsonResponse({"success": False, "error": "Invalid priority"}, status=400)
+        if new_priority == self.report.priority:
+            return JsonResponse({"success": True, "status": "noop"})
+        self.report.priority = new_priority
+        self.report.save(update_fields=["priority", "updated_at"])
+        return JsonResponse(
+            {
+                "success": True,
+                "status": "success",
+                "priority": new_priority,
+                "priority_display": self.report.get_priority_display(),
+            }
+        )
+
+    def _handle_update_status(self, request):
+        """AJAX: change status (creates log entry, returns HTML for timeline injection)."""
+        new_status = request.POST.get("status", "")
+        if new_status not in ProblemReport.Status.values:
+            return JsonResponse({"success": False, "error": "Invalid status"}, status=400)
+        if new_status == self.report.status:
+            return JsonResponse({"success": True, "status": "noop"})
+
+        log_entry = self._change_report_status(new_status, request.user)
+
+        log_entry_html = render_to_string(
+            "maintenance/partials/problem_report_log_entry.html",
+            {"entry": log_entry},
+            request=request,
+        )
+        return JsonResponse(
+            {
+                "success": True,
+                "status": "success",
+                "new_status": new_status,
+                "new_status_display": self.report.get_status_display(),
+                "log_entry_html": log_entry_html,
+                "entry_type": "log",
+            }
+        )
+
+    def _handle_toggle_status(self, request):
+        """Form POST: toggle between open/closed (desktop Close/Re-Open button)."""
+        new_status = (
+            ProblemReport.Status.CLOSED
+            if self.report.status == ProblemReport.Status.OPEN
+            else ProblemReport.Status.OPEN
+        )
+        self._change_report_status(new_status, request.user)
+
+        action_text = "closed" if new_status == ProblemReport.Status.CLOSED else "re-opened"
         messages.success(
             request,
             format_html(
@@ -451,6 +518,33 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             ),
         )
         return redirect("problem-report-detail", pk=self.report.pk)
+
+    def _change_report_status(self, new_status, user):
+        """Change the report status and create a log entry.
+
+        Shared by both the AJAX status update and the form POST toggle.
+        Returns the created LogEntry.
+        """
+        self.report.status = new_status
+        log_text = (
+            "Closed problem report"
+            if new_status == ProblemReport.Status.CLOSED
+            else "Re-opened problem report"
+        )
+
+        with transaction.atomic():
+            self.report.save(update_fields=["status", "updated_at"])
+            log_entry = LogEntry.objects.create(
+                machine=self.report.machine,
+                problem_report=self.report,
+                text=log_text,
+                created_by=user,
+            )
+            maintainer = Maintainer.objects.filter(user=user).first()
+            if maintainer:
+                log_entry.maintainers.add(maintainer)
+
+        return log_entry
 
     def render_response(self, request, report):
         # Get log entries for this problem report with pagination

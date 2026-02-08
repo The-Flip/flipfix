@@ -91,17 +91,22 @@ class MaintainerProblemReportForm(ProblemReportForm):
     """
 
     class Meta(ProblemReportForm.Meta):
-        fields = ["description", "occurred_at"]
+        fields = ["description", "priority", "occurred_at"]
         widgets = {
             **ProblemReportForm.Meta.widgets,
             "description": MarkdownTextarea(
                 attrs={"rows": 4, "placeholder": "Describe the problem..."}
             ),
+            "priority": forms.Select(),
         }
         labels = {
             **ProblemReportForm.Meta.labels,
             "description": "Description",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["priority"].choices = ProblemReport.Priority.maintainer_settable()
 
     reporter_name = forms.CharField(
         label="Reporter name",

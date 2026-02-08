@@ -1,0 +1,26 @@
+{% load core_extras %}
+<div class="dropdown">
+  <button type="button"
+          class="pill {% if report.status == report.Status.OPEN %}pill--status-broken{% else %}pill--status-good{% endif %} status-pill"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="toggleDropdown(this)">
+    {% if report.status == report.Status.OPEN %}
+      {% icon "circle-exclamation" class="meta status-icon" %}
+    {% else %}
+      {% icon "check" class="meta status-icon" %}
+    {% endif %}
+    <span class="status-label">{{ report.get_status_display }}</span>
+    {% icon "caret-down" class="meta" %}
+  </button>
+  <div class="dropdown__menu dropdown__menu--left hidden">
+    {% for value, label in report.Status.choices %}
+      <button type="button"
+              class="dropdown__item{% if value == report.status %} dropdown__item--selected{% endif %}"
+              data-field="status"
+              data-value="{{ value }}"
+              data-label="{{ label }}"
+              onclick="updateProblemReportField(this)">{{ label }}</button>
+    {% endfor %}
+  </div>
+</div>

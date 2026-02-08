@@ -211,6 +211,9 @@ table {
   --color-warning-bg: #fef3c7;
   --color-warning-text: #b45309;
   --color-warning-border: #fcd34d;
+  --color-priority-major-bg: #fff7ed;
+  --color-priority-major-text: #c2410c;
+  --color-priority-major-border: #fdba74;
 
   /* Inputs / avatar */
   --color-input-bg: #ffffff;
@@ -269,6 +272,12 @@ table {
     --color-success-bg: #1f2d1f;
     --color-success-text: #3fb950;
     --color-success-border: #2d4a2d;
+    --color-warning-bg: #2d2714;
+    --color-warning-text: #fbbf24;
+    --color-warning-border: #4a3a1a;
+    --color-priority-major-bg: #2d2014;
+    --color-priority-major-text: #fb923c;
+    --color-priority-major-border: #4a301a;
 
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
@@ -571,6 +580,36 @@ body {
   background-color: var(--color-problem-light-border);
 }
 
+.btn--priority-untriaged {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
+}
+
+.btn--priority-untriaged:hover {
+  background-color: var(--color-warning-border);
+}
+
+.btn--priority-unplayable {
+  background-color: var(--color-problem-light-bg);
+  color: var(--color-problem);
+  border: 1px solid var(--color-problem-light-border);
+}
+
+.btn--priority-unplayable:hover {
+  background-color: var(--color-problem-light-border);
+}
+
+.btn--priority-major {
+  background-color: var(--color-priority-major-bg);
+  color: var(--color-priority-major-text);
+  border: 1px solid var(--color-priority-major-border);
+}
+
+.btn--priority-major:hover {
+  background-color: var(--color-priority-major-border);
+}
+
 /* --- Pills & Badges --- */
 .pill {
   display: inline-flex;
@@ -598,9 +637,8 @@ body {
 }
 
 .pill--status-broken {
-  background-color: var(--color-problem-light-bg);
-  color: var(--color-problem);
-  border: 1px solid var(--color-problem-light-border);
+  background-color: var(--color-problem);
+  color: white;
   padding: var(--space-1) var(--space-2);
 }
 
@@ -620,6 +658,26 @@ body {
   background-color: var(--color-gray-100);
   color: var(--color-gray-700);
   border: 1px solid var(--color-gray-300);
+  padding: var(--space-1) var(--space-2);
+}
+
+.pill--priority-untriaged {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
+  padding: var(--space-1) var(--space-2);
+}
+
+.pill--priority-unplayable {
+  background-color: var(--color-problem);
+  color: white;
+  padding: var(--space-1) var(--space-2);
+}
+
+.pill--priority-major {
+  background-color: var(--color-priority-major-bg);
+  color: var(--color-priority-major-text);
+  border: 1px solid var(--color-priority-major-border);
   padding: var(--space-1) var(--space-2);
 }
 
@@ -1426,6 +1484,7 @@ body {
 .timeline__meta {
   font-size: var(--text-xs);
   color: var(--color-gray-500);
+  margin-left: var(--space-4);
 }
 
 /*

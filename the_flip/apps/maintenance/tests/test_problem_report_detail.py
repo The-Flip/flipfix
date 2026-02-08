@@ -282,6 +282,166 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
 
 @tag("views")
+class ProblemReportPriorityUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for AJAX priority updates on the problem report detail view."""
+
+    def setUp(self):
+        super().setUp()
+        self.report = create_problem_report(
+            machine=self.machine,
+            description="Test problem",
+            priority=ProblemReport.Priority.MINOR,
+        )
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
+
+    def test_update_priority_success(self):
+        """AJAX priority update changes the priority and returns JSON."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.UNPLAYABLE},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["priority"], ProblemReport.Priority.UNPLAYABLE)
+
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.priority, ProblemReport.Priority.UNPLAYABLE)
+
+    def test_update_priority_noop_when_same(self):
+        """Setting priority to current value returns noop."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.MINOR},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result["status"], "noop")
+
+    def test_update_priority_rejects_untriaged(self):
+        """Maintainers cannot set priority to UNTRIAGED."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.UNTRIAGED},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.priority, ProblemReport.Priority.MINOR)
+
+    def test_update_priority_rejects_invalid_value(self):
+        """Invalid priority value returns 400."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": "invalid_value"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_priority_does_not_create_log_entry(self):
+        """Priority changes should NOT create a log entry."""
+        initial_log_count = LogEntry.objects.count()
+
+        self.client.force_login(self.maintainer_user)
+        self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.MAJOR},
+        )
+
+        self.assertEqual(LogEntry.objects.count(), initial_log_count)
+
+
+@tag("views")
+class ProblemReportStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for AJAX status updates on the problem report detail view."""
+
+    def setUp(self):
+        super().setUp()
+        self.report = create_problem_report(
+            machine=self.machine,
+            description="Test problem",
+        )
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
+
+    def test_update_status_closes_report(self):
+        """AJAX status update to closed creates log entry and returns JSON."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.CLOSED},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["new_status"], ProblemReport.Status.CLOSED)
+        self.assertIn("log_entry_html", result)
+
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, ProblemReport.Status.CLOSED)
+
+        log_entry = LogEntry.objects.latest("occurred_at")
+        self.assertEqual(log_entry.text, "Closed problem report")
+        self.assertEqual(log_entry.problem_report, self.report)
+
+    def test_update_status_reopens_report(self):
+        """AJAX status update to open creates log entry."""
+        self.report.status = ProblemReport.Status.CLOSED
+        self.report.save()
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.OPEN},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.report.refresh_from_db()
+        self.assertEqual(self.report.status, ProblemReport.Status.OPEN)
+
+        log_entry = LogEntry.objects.latest("occurred_at")
+        self.assertEqual(log_entry.text, "Re-opened problem report")
+
+    def test_update_status_noop_when_same(self):
+        """Setting status to current value returns noop without creating log entry."""
+        initial_log_count = LogEntry.objects.count()
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.OPEN},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result["status"], "noop")
+        self.assertEqual(LogEntry.objects.count(), initial_log_count)
+
+    def test_update_status_rejects_invalid_value(self):
+        """Invalid status value returns 400."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": "invalid_status"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+
+@tag("views")
 class ProblemReportDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for ProblemReportDetailView AJAX text updates."""
 

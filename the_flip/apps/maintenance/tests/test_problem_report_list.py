@@ -3,16 +3,22 @@
 Machine-scoped problem report tests are in catalog/tests/test_machine_feed.py.
 """
 
+from datetime import timedelta
+
 from django.test import TestCase, tag
 from django.urls import reverse
+from django.utils import timezone
 
+from the_flip.apps.catalog.models import Location
 from the_flip.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
     create_log_entry,
+    create_machine,
     create_maintainer_user,
     create_problem_report,
 )
+from the_flip.apps.maintenance.models import ProblemReport
 
 
 @tag("views")
@@ -236,3 +242,173 @@ class ProblemReportListSearchTests(TestDataMixin, TestCase):
         response = self.client.get(self.list_url, {"q": "Submitting"})
 
         self.assertContains(response, "Flipper not working")
+
+    def test_search_by_priority_label(self):
+        """Search should find reports by priority label text."""
+        create_problem_report(
+            machine=self.machine,
+            description="Critical failure",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+        )
+        create_problem_report(
+            machine=self.machine,
+            description="Minor scratch",
+            priority=ProblemReport.Priority.MINOR,
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.list_url, {"q": "unplayable"})
+
+        self.assertContains(response, "Critical failure")
+        self.assertNotContains(response, "Minor scratch")
+
+
+@tag("views")
+class ProblemReportListSortOrderTests(TestDataMixin, TestCase):
+    """Tests for global problem report list sort ordering.
+
+    Sort order:
+    1. Open before closed
+    2. Within open: priority order (untriaged > unplayable > big > small > task)
+    3. Within same priority: location sort_order
+    4. Within same location: occurred_at newest first
+    5. Closed: only by occurred_at newest first
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.list_url = reverse("problem-report-list")
+        self.client.force_login(self.maintainer_user)
+
+    def test_open_reports_before_closed(self):
+        """Open reports should appear before closed reports."""
+        now = timezone.now()
+        closed = create_problem_report(
+            machine=self.machine,
+            description="Closed report",
+            status=ProblemReport.Status.CLOSED,
+            occurred_at=now,
+        )
+        open_report = create_problem_report(
+            machine=self.machine,
+            description="Open report",
+            status=ProblemReport.Status.OPEN,
+            occurred_at=now - timedelta(days=10),
+        )
+
+        response = self.client.get(self.list_url)
+        reports = list(response.context["reports"])
+
+        self.assertEqual(reports[0].pk, open_report.pk)
+        self.assertEqual(reports[1].pk, closed.pk)
+
+    def test_priority_ordering_within_open(self):
+        """Open reports sort by priority: untriaged, unplayable, big, small, task."""
+        now = timezone.now()
+        task = create_problem_report(
+            machine=self.machine,
+            description="Task report",
+            priority=ProblemReport.Priority.TASK,
+            occurred_at=now,
+        )
+        unplayable = create_problem_report(
+            machine=self.machine,
+            description="Unplayable report",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            occurred_at=now,
+        )
+        untriaged = create_problem_report(
+            machine=self.machine,
+            description="Untriaged report",
+            priority=ProblemReport.Priority.UNTRIAGED,
+            occurred_at=now,
+        )
+        small = create_problem_report(
+            machine=self.machine,
+            description="Small report",
+            priority=ProblemReport.Priority.MINOR,
+            occurred_at=now,
+        )
+        big = create_problem_report(
+            machine=self.machine,
+            description="Big report",
+            priority=ProblemReport.Priority.MAJOR,
+            occurred_at=now,
+        )
+
+        response = self.client.get(self.list_url)
+        reports = list(response.context["reports"])
+        pks = [r.pk for r in reports]
+
+        self.assertEqual(
+            pks,
+            [untriaged.pk, unplayable.pk, big.pk, small.pk, task.pk],
+        )
+
+    def test_location_ordering_within_same_priority(self):
+        """Reports with same priority sort by location sort_order, not name.
+
+        Uses locations where alphabetical order differs from sort_order to
+        verify we're sorting by sort_order.
+        """
+        # "Zebra Room" sorts alphabetically last but has sort_order=1 (first)
+        # "Alpha Room" sorts alphabetically first but has sort_order=2 (second)
+        zebra_loc = Location.objects.create(name="Zebra Room", slug="zebra-room", sort_order=1)
+        alpha_loc = Location.objects.create(name="Alpha Room", slug="alpha-room", sort_order=2)
+
+        zebra_machine = create_machine(slug="zebra-machine", location=zebra_loc)
+        alpha_machine = create_machine(slug="alpha-machine", location=alpha_loc)
+
+        now = timezone.now()
+        alpha_report = create_problem_report(
+            machine=alpha_machine,
+            description="Alpha location report",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            occurred_at=now,
+        )
+        zebra_report = create_problem_report(
+            machine=zebra_machine,
+            description="Zebra location report",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            occurred_at=now,
+        )
+
+        response = self.client.get(self.list_url)
+        reports = list(response.context["reports"])
+        pks = [r.pk for r in reports]
+
+        # Zebra Room (sort_order=1) should come before Alpha Room (sort_order=2)
+        self.assertLess(pks.index(zebra_report.pk), pks.index(alpha_report.pk))
+
+    def test_closed_reports_ignore_priority_and_location(self):
+        """Closed reports should sort only by occurred_at, ignoring priority and location."""
+        loc1 = Location.objects.create(name="First Floor", slug="first-floor", sort_order=1)
+        loc2 = Location.objects.create(name="Second Floor", slug="second-floor", sort_order=2)
+
+        machine1 = create_machine(slug="machine-floor1", location=loc1)
+        machine2 = create_machine(slug="machine-floor2", location=loc2)
+
+        now = timezone.now()
+        # Older, higher priority, better location — but should come second
+        older_high = create_problem_report(
+            machine=machine1,
+            description="Older high priority",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            status=ProblemReport.Status.CLOSED,
+            occurred_at=now - timedelta(days=5),
+        )
+        # Newer, lower priority, worse location — but should come first
+        newer_low = create_problem_report(
+            machine=machine2,
+            description="Newer low priority",
+            priority=ProblemReport.Priority.TASK,
+            status=ProblemReport.Status.CLOSED,
+            occurred_at=now,
+        )
+
+        response = self.client.get(self.list_url)
+        reports = list(response.context["reports"])
+        pks = [r.pk for r in reports]
+
+        # Newer should come first regardless of priority or location
+        self.assertLess(pks.index(newer_low.pk), pks.index(older_high.pk))

@@ -15,6 +15,9 @@ from the_flip.apps.core.test_utils import (
 )
 from the_flip.apps.maintenance.models import ProblemReport, ProblemReportMedia
 
+# Default priority for maintainer form submissions (select always sends a value)
+_DEFAULT_PRIORITY = ProblemReport.Priority.MINOR
+
 
 @tag("views")
 class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase):
@@ -32,6 +35,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
 
         data = {
             "description": "Problem with media",
+            "priority": _DEFAULT_PRIORITY,
             "media_file": create_uploaded_image(),
         }
         response = self.client.post(self.create_url, data)
@@ -52,6 +56,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
 
         data = {
             "description": "No media attached",
+            "priority": _DEFAULT_PRIORITY,
         }
         response = self.client.post(self.create_url, data)
 
@@ -82,6 +87,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
                 self.create_url,
                 {
                     "description": "Problem with video",
+                    "priority": _DEFAULT_PRIORITY,
                     "media_file": video_file,
                 },
             )

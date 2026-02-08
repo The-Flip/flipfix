@@ -9,6 +9,7 @@
         <span class="badge {% if entry.status == entry.Status.OPEN %}badge--warning{% else %}badge--success{% endif %}">
           {{ entry.get_status_display }}
         </span>
+        {% problem_report_priority_pill entry %}
       </div>
       <span class="timeline__meta">{{ entry|problem_report_meta }}</span>
     </div>

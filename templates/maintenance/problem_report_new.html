@@ -57,21 +57,23 @@
         {% form_label form.description %}
         {{ form.description }}
         {% field_errors form.description %}
-        <!-- File upload (accumulates across multiple selections) -->
-        <div class="form-hint space-above-sm" data-file-accumulator>
-          <input type="file"
-                 name="{{ form.media_file.html_name }}"
-                 class="hidden"
-                 multiple
-                 accept="image/*,video/*,.heic,.heif"
-                 data-file-input>
-          <a href="#" class="file-upload-link" data-file-trigger>
-            {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-          </a>
-          {% field_errors form.media_file %}
-          <!-- Uploaded files preview -->
-          <div class="file-preview-row" data-file-preview></div>
-        </div>
+      </div>
+      <!-- PRIORITY -->
+      {% form_field form.priority %}
+      <!-- File upload (accumulates across multiple selections) -->
+      <div class="form-hint space-above-sm" data-file-accumulator>
+        <input type="file"
+               name="{{ form.media_file.html_name }}"
+               class="hidden"
+               multiple
+               accept="image/*,video/*,.heic,.heif"
+               data-file-input>
+        <a href="#" class="file-upload-link" data-file-trigger>
+          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+        </a>
+        {% field_errors form.media_file %}
+        <!-- Uploaded files preview -->
+        <div class="file-preview-row" data-file-preview></div>
       </div>
       <!-- FORM ACTIONS -->
       <div class="form-actions">

@@ -20,62 +20,8 @@
   <div class="sidebar__subtitle">{{ object.model|manufacturer_year }}</div>
   <div class="flex flex-wrap stack-tight space-above-sm"
        data-update-url="{% url 'machine-inline-update' object.slug %}">
-    <div class="dropdown">
-      <button type="button"
-              id="status-pill"
-              class="pill {{ object.operational_status|machine_status_css_class }}"
-              aria-haspopup="true"
-              aria-expanded="false"
-              onclick="toggleDropdown(this)">
-        {% icon object.operational_status|machine_status_icon class="meta status-icon" %}
-        <span class="status-label">{{ object.get_operational_status_display }}</span>
-        {% icon "caret-down" class="meta" %}
-      </button>
-      <div class="dropdown__menu dropdown__menu--left hidden">
-        {% for value, label in object.OperationalStatus.choices %}
-          <button type="button"
-                  class="dropdown__item"
-                  data-field="operational_status"
-                  data-value="{{ value }}"
-                  data-label="{{ label }}"
-                  onclick="updateMachineField(this)">{{ label }}</button>
-        {% endfor %}
-      </div>
-    </div>
-    <div class="dropdown">
-      <button type="button"
-              id="location-pill"
-              class="pill pill--neutral"
-              aria-haspopup="true"
-              aria-expanded="false"
-              onclick="toggleDropdown(this)">
-        {% icon "location-dot" class="meta" %}
-        <span class="location-label">
-          {% if object.location %}
-            {{ object.location.name }}
-          {% else %}
-            No Location
-          {% endif %}
-        </span>
-        {% icon "caret-down" class="meta" %}
-      </button>
-      <div class="dropdown__menu dropdown__menu--left hidden">
-        <button type="button"
-                class="dropdown__item"
-                data-field="location"
-                data-value=""
-                data-label="No Location"
-                onclick="updateMachineField(this)">No Location</button>
-        {% for loc in locations %}
-          <button type="button"
-                  class="dropdown__item"
-                  data-field="location"
-                  data-value="{{ loc.slug }}"
-                  data-label="{{ loc.name }}"
-                  onclick="updateMachineField(this)">{{ loc.name }}</button>
-        {% endfor %}
-      </div>
-    </div>
+    {% settable_machine_status_pill object %}
+    {% settable_machine_location_pill object locations %}
   </div>
 {% endsidebar_section %}
 {% sidebar_section %}

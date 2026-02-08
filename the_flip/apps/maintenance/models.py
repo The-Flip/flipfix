@@ -37,6 +37,7 @@ class ProblemReportQuerySet(models.QuerySet):
         return (
             Q(description__icontains=query)
             | Q(status__icontains=query)
+            | Q(priority__icontains=query)
             | Q(reported_by_name__icontains=query)
             | Q(reported_by_user__username__icontains=query)
             | Q(reported_by_user__first_name__icontains=query)
@@ -112,6 +113,25 @@ class ProblemReport(TimeStampedMixin):
         NO_CREDITS = "no_credits", "No Credits"
         OTHER = "other", "Other"
 
+    class Priority(models.TextChoices):
+        """Priority level, determining sort order in lists.
+
+        UNTRIAGED is auto-assigned to visitor submissions and cannot be
+        set by maintainers.  Use :meth:`maintainer_settable` to get the
+        choices maintainers may select.
+        """
+
+        UNTRIAGED = "untriaged", "Untriaged"
+        UNPLAYABLE = "unplayable", "Unplayable"
+        MAJOR = "major", "Major"
+        MINOR = "minor", "Minor"
+        TASK = "task", "Task"
+
+        @classmethod
+        def maintainer_settable(cls) -> list[tuple[str, str]]:
+            """Return priority choices that maintainers can explicitly set."""
+            return [(val, label) for val, label in cls.choices if val != cls.UNTRIAGED]
+
     machine = models.ForeignKey(
         MachineInstance,
         on_delete=models.CASCADE,
@@ -127,6 +147,12 @@ class ProblemReport(TimeStampedMixin):
         max_length=50,
         choices=ProblemType.choices,
         default=ProblemType.OTHER,
+        db_index=True,
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.MINOR,
         db_index=True,
     )
     description = models.TextField(blank=True)

@@ -1,0 +1,22 @@
+{% load core_extras %}
+<div class="dropdown">
+  <button type="button"
+          class="pill {{ machine.operational_status|machine_status_css_class }}"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="toggleDropdown(this)">
+    {% icon machine.operational_status|machine_status_icon class="meta status-icon" %}
+    <span class="status-label">{{ machine.get_operational_status_display }}</span>
+    {% icon "caret-down" class="meta" %}
+  </button>
+  <div class="dropdown__menu dropdown__menu--left hidden">
+    {% for value, label in machine.OperationalStatus.choices %}
+      <button type="button"
+              class="dropdown__item{% if value == machine.operational_status %} dropdown__item--selected{% endif %}"
+              data-field="operational_status"
+              data-value="{{ value }}"
+              data-label="{{ label }}"
+              onclick="updateMachineField(this)">{{ label }}</button>
+    {% endfor %}
+  </div>
+</div>

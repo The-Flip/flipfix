@@ -1,0 +1,22 @@
+{% load core_extras %}
+<div class="dropdown">
+  <button type="button"
+          class="pill {{ report.priority|problem_priority_css_class }} priority-pill"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onclick="toggleDropdown(this)">
+    {% icon report.priority|problem_priority_icon class="meta priority-icon" %}
+    <span class="priority-label">{{ report.get_priority_display }}</span>
+    {% icon "caret-down" class="meta" %}
+  </button>
+  <div class="dropdown__menu dropdown__menu--left hidden">
+    {% for value, label in priority_choices %}
+      <button type="button"
+              class="dropdown__item{% if value == report.priority %} dropdown__item--selected{% endif %}"
+              data-field="priority"
+              data-value="{{ value }}"
+              data-label="{{ label }}"
+              onclick="updateProblemReportField(this)">{{ label }}</button>
+    {% endfor %}
+  </div>
+</div>
