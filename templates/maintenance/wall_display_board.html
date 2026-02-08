@@ -3,28 +3,6 @@
 {% block title %}Wall Display{% endblock %}
 {% block extra_head %}
   {% if refresh_seconds %}<meta http-equiv="refresh" content="{{ refresh_seconds }}">{% endif %}
-  {# djlint:off #}
-  <style>
-    .wall-display {
-      display: grid;
-      grid-template-columns: repeat({{ columns|length }}, 1fr);
-      gap: var(--space-4);
-      padding: var(--space-4);
-      min-height: 100vh;
-    }
-    .wall-display--error {
-      place-items: center;
-    }
-    .wall-column__header {
-      position: sticky;
-      top: 0;
-      background: var(--color-bg);
-      padding: var(--space-2) 0;
-      margin: 0 0 var(--space-3) 0;
-      z-index: 1;
-    }
-</style>
-  {# djlint:on #}
 {% endblock %}
 {% block body %}
   {% if error %}

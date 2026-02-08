@@ -388,6 +388,24 @@ body {
   padding: var(--space-4);
 }
 
+/* Wall display: responsive column grid for location-grouped views */
+.wall-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4);
+  min-height: 100vh;
+}
+
+.wall-display--error {
+  place-items: center;
+}
+
+.wall-column__header {
+  padding: var(--space-2) 0;
+  margin: 0 0 var(--space-3) 0;
+}
+
 /* Wall display card: <a> wrapping a .card */
 .wall-entry {
   display: block;
