@@ -338,10 +338,18 @@ class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
 
         content = convert_storage_to_authoring(action.content)
 
-        request.session["form_prefill"] = {
+        prefill_data = {
             "field": get_prefill_field(action.record_type),
             "content": content,
         }
+
+        extra_initial = {}
+        if action.priority:
+            extra_initial["priority"] = action.priority
+        if extra_initial:
+            prefill_data["extra_initial"] = extra_initial
+
+        request.session["form_prefill"] = prefill_data
 
         if action.record_type == "page":
             if action.tags:

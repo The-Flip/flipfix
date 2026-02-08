@@ -18,6 +18,8 @@
            class="nav-link {% if 'log-' in request.resolver_match.url_name %}nav-link--active{% endif %}">Logs</a>
         <a href="{% url 'part-request-list' %}"
            class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}">Parts</a>
+        <a href="{% url 'wiki-home' %}"
+           class="nav-link {% if 'wiki' in request.resolver_match.url_name %}nav-link--active{% endif %}">Docs</a>
         {% if user.is_superuser %}
           <div class="dropdown">
             <button type="button"

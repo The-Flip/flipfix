@@ -17,7 +17,8 @@ Markers:
     - ``action:button``: renders a button wherever placed (independent of content markers).
       Carries the action attributes: ``name``, ``type``, ``label`` (required),
       ``machine`` (optional), ``tags`` (optional, for ``type="page"``),
-      ``title`` (optional, for ``type="page"``).
+      ``title`` (optional, for ``type="page"``),
+      ``priority`` (optional, for ``type="problem"``).
 """
 
 from __future__ import annotations
@@ -43,6 +44,9 @@ _ATTR_RE = re.compile(r'(?P<key>\w+)="(?P<value>[^"]*)"')
 
 # Required attributes on action:button markers
 _BUTTON_REQUIRED_ATTRS = {"name", "type", "label"}
+
+# Valid priority values for type="problem" (matches ProblemReport.Priority.maintainer_settable)
+_VALID_PRIORITIES = {"unplayable", "major", "minor", "task"}
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +111,7 @@ class ActionBlock:
     content: str
     tags: str = ""
     title: str = ""
+    priority: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +131,11 @@ def _validate_button_attrs(attrs: dict[str, str]) -> str | None:
         return f"missing required attributes: {', '.join(sorted(missing))}"
     if attrs["type"] not in _RECORD_TYPES:
         return f"invalid type '{attrs['type']}' (must be one of {', '.join(sorted(_RECORD_TYPES))})"
+    priority = attrs.get("priority", "")
+    if priority and priority not in _VALID_PRIORITIES:
+        return (
+            f"invalid priority '{priority}' (must be one of {', '.join(sorted(_VALID_PRIORITIES))})"
+        )
     return None
 
 
@@ -283,6 +293,7 @@ def prepare_for_rendering(content: str) -> tuple[str, dict[str, ActionBlock]]:
             content=cb.content,
             tags=attrs.get("tags", ""),
             title=attrs.get("title", ""),
+            priority=attrs.get("priority", ""),
         )
         return token
 
@@ -383,6 +394,7 @@ def extract_action_content(content: str, action_name: str) -> ActionBlock | None
             content=cb.content,
             tags=attrs.get("tags", ""),
             title=attrs.get("title", ""),
+            priority=attrs.get("priority", ""),
         )
 
     # No button found for this name

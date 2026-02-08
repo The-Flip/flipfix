@@ -39,6 +39,10 @@ class FormPrefillMixin:
 
         {"field": "description", "content": "..."}
 
+    An optional ``extra_initial`` dict can supply additional initial values::
+
+        {"field": "description", "content": "...", "extra_initial": {"priority": "task"}}
+
     The mixin pops the data on GET so the session is cleaned up automatically.
 
     Views can extend ``get_initial()`` to pop additional session keys
@@ -50,6 +54,8 @@ class FormPrefillMixin:
         prefill = self.request.session.pop("form_prefill", None)
         if prefill:
             initial[prefill["field"]] = prefill["content"]
+            if prefill.get("extra_initial"):
+                initial.update(prefill["extra_initial"])
         return initial
 
 

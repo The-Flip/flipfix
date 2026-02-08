@@ -195,6 +195,12 @@ class PrepareForRenderingTests(TestCase):
         processed, tokens = prepare_for_rendering(content)
         self.assertEqual(tokens, {})
 
+    def test_button_invalid_priority_skipped(self):
+        content = _make_content("x") + _make_button("x", priority="banana")
+        processed, tokens = prepare_for_rendering(content)
+        self.assertEqual(tokens, {})
+        self.assertNotIn("action:button", processed)
+
     def test_button_attrs_populate_action_block(self):
         content = _make_content("intake") + _make_button("intake", "log", "blackout", "Start Log")
         _processed, tokens = prepare_for_rendering(content)
@@ -235,6 +241,18 @@ class PrepareForRenderingTests(TestCase):
         _processed, tokens = prepare_for_rendering(content)
         block = next(iter(tokens.values()))
         self.assertEqual(block.title, "My Title")
+
+    def test_button_priority_populated(self):
+        content = _make_content("x") + _make_button("x", priority="task")
+        _processed, tokens = prepare_for_rendering(content)
+        block = next(iter(tokens.values()))
+        self.assertEqual(block.priority, "task")
+
+    def test_button_priority_defaults_to_empty(self):
+        content = _make_content("x") + _make_button("x")
+        _processed, tokens = prepare_for_rendering(content)
+        block = next(iter(tokens.values()))
+        self.assertEqual(block.priority, "")
 
 
 # ---------------------------------------------------------------------------
@@ -382,6 +400,10 @@ class ExtractActionContentTests(TestCase):
         content = _make_content("x") + '<!-- action:button name="x" type="invalid" label="Go" -->'
         self.assertIsNone(extract_action_content(content, "x"))
 
+    def test_extract_returns_none_with_invalid_priority(self):
+        content = _make_content("x") + _make_button("x", priority="banana")
+        self.assertIsNone(extract_action_content(content, "x"))
+
     def test_extract_page_type_with_tags_and_title(self):
         content = _make_content("eval") + _make_button(
             "eval", record_type="page", machine="", tags="@source", title="Evaluation"
@@ -391,6 +413,12 @@ class ExtractActionContentTests(TestCase):
         self.assertEqual(block.record_type, "page")
         self.assertEqual(block.tags, "@source")
         self.assertEqual(block.title, "Evaluation")
+
+    def test_extract_problem_type_with_priority(self):
+        content = _make_content("x") + _make_button("x", priority="task")
+        block = extract_action_content(content, "x")
+        self.assertIsNotNone(block)
+        self.assertEqual(block.priority, "task")
 
 
 # ---------------------------------------------------------------------------
@@ -683,6 +711,22 @@ class WikiActionPrefillViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.client.get(url)
         self.assertNotIn("form_prefill_title", self.client.session)
 
+    def test_priority_stored_in_session_extra_initial(self):
+        page = self._create_page(_make_content("x") + _make_button("x", priority="task"))
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "x"})
+        self.client.get(url)
+        prefill = self.client.session.get("form_prefill")
+        self.assertEqual(prefill["extra_initial"], {"priority": "task"})
+
+    def test_no_priority_omits_extra_initial(self):
+        page = self._create_page(_make_action("x"))
+        self.client.force_login(self.maintainer_user)
+        url = reverse("wiki-action-prefill", kwargs={"page_pk": page.pk, "action_name": "x"})
+        self.client.get(url)
+        prefill = self.client.session.get("form_prefill")
+        self.assertNotIn("extra_initial", prefill)
+
 
 # ---------------------------------------------------------------------------
 # Integration: FormPrefillMixin
@@ -700,6 +744,20 @@ class FormPrefillMixinTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
         session.save()
         response = self.client.get(reverse("problem-report-create"))
         self.assertContains(response, "Pre-filled text")
+
+    def test_extra_initial_prefills_priority(self):
+        self.client.force_login(self.maintainer_user)
+        session = self.client.session
+        session["form_prefill"] = {
+            "field": "description",
+            "content": "Task text",
+            "extra_initial": {"priority": "task"},
+        }
+        session.save()
+        response = self.client.get(reverse("problem-report-create"))
+        self.assertContains(response, "Task text")
+        # Priority "task" should be pre-selected in the dropdown
+        self.assertContains(response, '<option value="task" selected')
 
     def test_log_entry_form_prefilled(self):
         self.client.force_login(self.maintainer_user)

@@ -29,14 +29,15 @@ Some other text...
 
 **Attributes** on `action:button`:
 
-| Attribute | Required | Description                                                                                       |
-| --------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `name`    | required | Identifier linking it to start/end                                                                |
-| `type`    | required | `problem`, `log`, `partrequest`, or `page`                                                        |
-| `label`   | required | Button text                                                                                       |
-| `machine` | optional | Machine slug to pre-select (not used for `type="page"`)                                           |
-| `tags`    | optional | Comma-separated tags for new page (`type="page"` only). `@source` resolves to source page's tags. |
-| `title`   | optional | Pre-fill the title field (`type="page"` only)                                                     |
+| Attribute  | Required | Description                                                                                       |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `name`     | required | Identifier linking it to start/end                                                                |
+| `type`     | required | `problem`, `log`, `partrequest`, or `page`                                                        |
+| `label`    | required | Button text                                                                                       |
+| `machine`  | optional | Machine slug to pre-select (not used for `type="page"`)                                           |
+| `priority` | optional | Pre-select priority (`type="problem"` only). Values: `unplayable`, `major`, `minor`, `task`.      |
+| `tags`     | optional | Comma-separated tags for new page (`type="page"` only). `@source` resolves to source page's tags. |
+| `title`    | optional | Pre-fill the title field (`type="page"` only)                                                     |
 
 Multiple named action blocks per page are supported.
 
