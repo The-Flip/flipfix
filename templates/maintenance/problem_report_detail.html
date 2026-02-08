@@ -54,7 +54,7 @@
   {% if report.status == report.Status.OPEN %}
     <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn btn--log btn--full">
+      <button type="submit" class="btn btn--log btn--full" data-toggle-status-btn>
         {% icon "check" class="meta" %}
         Close Problem Report
       </button>
@@ -62,7 +62,9 @@
   {% else %}
     <form method="post">
       {% csrf_token %}
-      <button type="submit" class="btn btn--report btn--full">
+      <button type="submit"
+              class="btn btn--report btn--full"
+              data-toggle-status-btn>
         {% icon "rotate-left" class="meta" %}
         Re-Open Problem Report
       </button>

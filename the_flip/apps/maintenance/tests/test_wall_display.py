@@ -10,7 +10,7 @@ from the_flip.apps.core.test_utils import (
     create_machine,
     create_problem_report,
 )
-from the_flip.apps.maintenance.models import ProblemReport
+from the_flip.apps.maintenance.models import ProblemReport, ProblemReportMedia
 
 
 @tag("views")
@@ -171,9 +171,6 @@ class WallDisplayBoardViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
 
     def test_shows_media_count(self):
         report = create_problem_report(machine=self.floor_machine, description="Has photos")
-        # Create media items via the model
-        from the_flip.apps.maintenance.models import ProblemReportMedia
-
         ProblemReportMedia.objects.create(problem_report=report, file="test1.jpg")
         ProblemReportMedia.objects.create(problem_report=report, file="test2.jpg")
         self.client.force_login(self.maintainer_user)
@@ -246,8 +243,6 @@ class WallDisplayQuerySetTests(TestDataMixin, TestCase):
 
     def test_annotates_media_count(self):
         report = create_problem_report(machine=self.floor_machine)
-        from the_flip.apps.maintenance.models import ProblemReportMedia
-
         ProblemReportMedia.objects.create(problem_report=report, file="a.jpg")
         ProblemReportMedia.objects.create(problem_report=report, file="b.jpg")
         qs = ProblemReport.objects.for_wall_display(["floor"])

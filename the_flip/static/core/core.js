@@ -313,8 +313,8 @@ function updateMachineField(button) {
   const value = button.dataset.value;
   const label = button.dataset.label;
   const dropdownMenu = button.closest('.dropdown__menu');
-  const wrapper = dropdownMenu.parentElement.parentElement;
-  const updateUrl = wrapper.dataset.updateUrl;
+  const wrapper = dropdownMenu.closest('[data-update-url]');
+  const updateUrl = wrapper ? wrapper.dataset.updateUrl : null;
   if (!updateUrl) return;
 
   dropdownMenu.classList.add('hidden');
@@ -419,7 +419,7 @@ function updateProblemStatusUI(value, label, data, updateUrl, reportPk, machineN
     }
   });
 
-  const closeBtn = document.querySelector('.two-column__sidebar form button[type="submit"]');
+  const closeBtn = document.querySelector('[data-toggle-status-btn]');
   if (closeBtn) {
     if (isOpen) {
       closeBtn.innerHTML =
