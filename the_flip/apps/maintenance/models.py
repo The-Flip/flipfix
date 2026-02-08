@@ -24,13 +24,14 @@ class ProblemReportQuerySet(models.QuerySet):
         """Return only open problem reports."""
         return self.filter(status=ProblemReport.Status.OPEN)
 
-    def _build_description_and_reporter_q(self, query: str) -> Q:
-        """Build Q object for searching description and reporter fields.
+    def _build_report_fields_q(self, query: str) -> Q:
+        """Build Q object for searching core problem report fields.
 
         This is the core search pattern shared across all problem report search
         contexts. It matches:
         - Problem description
         - Status (open/closed)
+        - Priority (untriaged, unplayable, major, minor, task)
         - Reporter name (free-text field)
         - Reporter user's username, first name, last name (via FK)
         """
@@ -118,7 +119,7 @@ class ProblemReportQuerySet(models.QuerySet):
             return self
 
         return self.filter(
-            self._build_description_and_reporter_q(query)
+            self._build_report_fields_q(query)
             | Q(machine__model__name__icontains=query)
             | Q(machine__name__icontains=query)
             | self._build_log_entry_q(query)
@@ -139,7 +140,7 @@ class ProblemReportQuerySet(models.QuerySet):
             return self
 
         return self.filter(
-            self._build_description_and_reporter_q(query) | self._build_log_entry_q(query)
+            self._build_report_fields_q(query) | self._build_log_entry_q(query)
         ).distinct()
 
 
