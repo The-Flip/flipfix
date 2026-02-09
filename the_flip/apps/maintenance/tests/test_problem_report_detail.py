@@ -282,6 +282,50 @@ class ProblemReportDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
 
 @tag("views")
+class ProblemReportDetailSearchBarVisibilityTests(
+    SuppressRequestLogsMixin, TestDataMixin, TestCase
+):
+    """Tests for conditional search bar visibility on problem report detail."""
+
+    def setUp(self):
+        super().setUp()
+        self.report = create_problem_report(
+            machine=self.machine,
+            description="Test problem",
+        )
+        self.detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
+
+    def test_search_bar_hidden_when_few_log_entries(self):
+        """Search bar should not appear when there are 5 or fewer log entries."""
+        for i in range(5):
+            create_log_entry(machine=self.machine, problem_report=self.report, text=f"Log {i}")
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url)
+
+        self.assertNotContains(response, 'type="search"')
+
+    def test_search_bar_shown_when_many_log_entries(self):
+        """Search bar should appear when there are more than 5 log entries."""
+        for i in range(6):
+            create_log_entry(machine=self.machine, problem_report=self.report, text=f"Log {i}")
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, 'type="search"')
+
+    def test_search_bar_shown_when_query_active_with_few_entries(self):
+        """Search bar should appear when a search query is active, even with few entries."""
+        create_log_entry(machine=self.machine, problem_report=self.report, text="Only entry")
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url, {"q": "test"})
+
+        self.assertContains(response, 'type="search"')
+
+
+@tag("views")
 class ProblemReportPriorityUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for AJAX priority updates on the problem report detail view."""
 

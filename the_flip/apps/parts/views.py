@@ -300,7 +300,8 @@ class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, Vi
             "machine": part_request.machine,
             "page_obj": page_obj,
             "updates": page_obj.object_list,
-            "search_form": SearchForm(initial={"q": search_query}),
+            "update_count": paginator.count,
+            "search_query": search_query,
         }
         return render(request, self.template_name, context)
 

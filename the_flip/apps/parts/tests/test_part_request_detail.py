@@ -56,6 +56,54 @@ class PartRequestDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
 
 
 @tag("views")
+class PartRequestDetailSearchBarVisibilityTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for conditional search bar visibility on part request detail."""
+
+    def setUp(self):
+        super().setUp()
+        self.part_request = create_part_request(
+            text="Test part request",
+            requested_by=self.maintainer,
+        )
+        self.detail_url = reverse("part-request-detail", kwargs={"pk": self.part_request.pk})
+
+    def test_search_bar_hidden_when_few_updates(self):
+        """Search bar should not appear when there are 5 or fewer updates."""
+        for i in range(5):
+            create_part_request_update(
+                part_request=self.part_request, text=f"Update {i}", posted_by=self.maintainer
+            )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url)
+
+        self.assertNotContains(response, 'type="search"')
+
+    def test_search_bar_shown_when_many_updates(self):
+        """Search bar should appear when there are more than 5 updates."""
+        for i in range(6):
+            create_part_request_update(
+                part_request=self.part_request, text=f"Update {i}", posted_by=self.maintainer
+            )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, 'type="search"')
+
+    def test_search_bar_shown_when_query_active_with_few_updates(self):
+        """Search bar should appear when a search query is active, even with few updates."""
+        create_part_request_update(
+            part_request=self.part_request, text="Only update", posted_by=self.maintainer
+        )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.detail_url, {"q": "test"})
+
+        self.assertContains(response, 'type="search"')
+
+
+@tag("views")
 class PartRequestDetailViewTextUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for PartRequestDetailView AJAX text updates."""
 

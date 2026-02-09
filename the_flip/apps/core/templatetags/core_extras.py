@@ -345,6 +345,32 @@ def empty_state(empty_message: str, search_message: str, is_search: bool = False
     }
 
 
+CHILD_LIST_SEARCH_THRESHOLD = 5
+"""Minimum number of child items before showing the search bar on detail pages."""
+
+
+@register.inclusion_tag("components/child_list_search.html")
+def child_list_search(total_count: int, search_value: str = "", placeholder: str = "Search..."):
+    """Conditionally render a search bar for child items on detail pages.
+
+    The search bar is shown when there are enough items to warrant searching,
+    or when a search query is already active (so the user can clear it).
+
+    Usage:
+        {% child_list_search total_count=log_count search_value=search_query placeholder="Search logs..." %}
+
+    Args:
+        total_count: Total number of child items (unfiltered)
+        search_value: Current search query string
+        placeholder: Placeholder text for the search input
+    """
+    return {
+        "show": total_count > CHILD_LIST_SEARCH_THRESHOLD or bool(search_value),
+        "value": search_value,
+        "placeholder": placeholder,
+    }
+
+
 @register.inclusion_tag("components/pill.html")
 def pill(label: str, variant: str = "neutral", icon: str = ""):
     """Render a pill/badge component.

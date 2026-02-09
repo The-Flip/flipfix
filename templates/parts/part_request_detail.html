@@ -101,7 +101,7 @@
   {% include "core/partials/media_card_editable.html" with media_items=part_request.media.all alt="Part request photo" model_name="PartRequestMedia" %}
   <!-- UPDATES SECTION -->
   <div class="space-above-lg">
-    <div class="section-header">
+    <div class="section-header{% if not updates %} section-header--divider{% endif %}">
       <h3 class="section-header__title">Updates</h3>
       <a href="{% url 'part-request-update-create' part_request.pk %}"
          class="btn btn--log btn--sm">
@@ -109,15 +109,7 @@
         Add Update
       </a>
     </div>
-    <div class="space-above-sm">
-      <form method="get" action="">
-        <input type="search"
-               name="q"
-               value="{{ search_form.q.value|default:'' }}"
-               placeholder="Search updates..."
-               class="form-input form-input--sm">
-      </form>
-    </div>
+    {% child_list_search total_count=update_count search_value=search_query placeholder="Search updates..." %}
     <div id="log-container"
          class="space-above-sm"
          data-fetch-url="{% url 'part-request-updates' part_request.pk %}">
@@ -130,13 +122,7 @@
       <div id="log-pagination"
            data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
     {% else %}
-      <p class="text-muted">
-        {% if search_form.q.value %}
-          No updates match your search.
-        {% else %}
-          No updates yet.
-        {% endif %}
-      </p>
+    {% empty_state empty_message="No updates yet." search_message="No updates match your search." is_search=search_query %}
     {% endif %}
     <div id="log-loading" class="hidden">Loading…</div>
     <div id="log-sentinel"></div>

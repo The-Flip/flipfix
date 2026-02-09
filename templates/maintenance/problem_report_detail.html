@@ -80,7 +80,7 @@
   {% include "core/partials/media_card_editable.html" with media_items=report.media.all alt="Problem report photo" model_name="ProblemReportMedia" %}
   <!-- LOG ENTRIES SECTION -->
   <div class="space-above-lg">
-    <div class="section-header">
+    <div class="section-header{% if not log_entries %} section-header--divider{% endif %}">
       <h3 class="section-header__title">Log Entries</h3>
       <a href="{% url 'log-create-problem-report' report.pk %}"
          class="btn btn--log btn--sm">
@@ -88,15 +88,7 @@
         Add Log
       </a>
     </div>
-    <div class="space-above-sm">
-      <form method="get" action="">
-        <input type="search"
-               name="q"
-               value="{{ search_form.q.value|default:'' }}"
-               placeholder="Search logs..."
-               class="form-input form-input--sm">
-      </form>
-    </div>
+    {% child_list_search total_count=log_count search_value=search_query placeholder="Search logs..." %}
     <div id="log-container"
          class="space-above-sm"
          data-fetch-url="{% url 'problem-report-log-entries' report.pk %}">
@@ -109,13 +101,7 @@
       <div id="log-pagination"
            data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
     {% else %}
-      <p class="text-muted">
-        {% if search_form.q.value %}
-          No log entries match your search.
-        {% else %}
-          No log entries yet.
-        {% endif %}
-      </p>
+    {% empty_state empty_message="No log entries yet." search_message="No log entries match your search." is_search=search_query %}
     {% endif %}
     <div id="log-loading" class="hidden">Loading…</div>
     <div id="log-sentinel"></div>

@@ -1809,6 +1809,11 @@ body {
   gap: var(--space-3);
 }
 
+.section-header--divider {
+  border-bottom: 1px solid var(--color-gray-200);
+  padding-bottom: var(--space-2);
+}
+
 .section-header__title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);

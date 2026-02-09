@@ -472,7 +472,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
 
     def render_response(self, request, report):
         # Get log entries for this problem report with pagination
-        search_query = request.GET.get("q", "")
+        search_query = request.GET.get("q", "").strip()
         log_entries = (
             LogEntry.objects.filter(problem_report=report)
             .search_for_problem_report(search_query)
@@ -488,7 +488,8 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             "machine": report.machine,
             "page_obj": page_obj,
             "log_entries": page_obj.object_list,
-            "search_form": SearchForm(initial={"q": search_query}),
+            "log_count": paginator.count,
+            "search_query": search_query,
         }
         return render(request, self.template_name, context)
 
