@@ -125,7 +125,13 @@
   }
 
   /**
-   * Update all pill triggers for a field within the same update-url scope.
+   * Update all triggers for a field within the same update-url scope.
+   *
+   * Handles both pill-style triggers (default) and button-style triggers
+   * (identified by ``data-trigger-style="button"``).  Button triggers use
+   * ``data-btn-class`` for variant styling and ``.status-icon`` for icon
+   * updates; pill triggers use ``data-pill-class`` and ``[data-pill-icon]``.
+   *
    * @param {string} updateUrl - The update URL to scope to
    * @param {string} field - The pill field name
    * @param {string} value - The new value
@@ -134,29 +140,51 @@
    */
   function syncPillUI(updateUrl, field, value, label, item) {
     const pillClass = item.dataset.pillClass;
+    const btnClass = item.dataset.btnClass;
     const iconClass = item.dataset.icon;
 
     const wrappers = document.querySelectorAll(`[data-update-url="${updateUrl}"]`);
     wrappers.forEach((w) => {
-      w.querySelectorAll(`[data-pill-field="${field}"]`).forEach((pill) => {
-        // Update label
-        const labelEl = pill.querySelector('[data-pill-label]');
-        if (labelEl) labelEl.textContent = label;
-
-        // Update pill class (strip old pill-- variants, apply new one)
-        if (pillClass) {
-          const kept = [...pill.classList].filter((c) => !c.startsWith('pill--'));
-          pill.className = kept.join(' ') + ' ' + pillClass;
-        }
-
-        // Update icon
-        if (iconClass) {
-          const iconEl = pill.querySelector('[data-pill-icon]');
-          if (iconEl) {
-            const kept = [...iconEl.classList].filter(
-              (c) => !c.startsWith('fa-') || c === 'fa-solid'
+      w.querySelectorAll(`[data-pill-field="${field}"]`).forEach((trigger) => {
+        if (trigger.dataset.triggerStyle === 'button') {
+          // Button trigger: swap btn--* variant class
+          if (btnClass) {
+            const kept = [...trigger.classList].filter(
+              (c) => !c.startsWith('btn--status-') && !c.startsWith('btn--priority-')
             );
-            iconEl.className = kept.join(' ') + ' fa-' + iconClass;
+            trigger.className = kept.join(' ') + ' ' + btnClass;
+          }
+          // Update icon
+          if (iconClass) {
+            const iconEl = trigger.querySelector('.status-icon');
+            if (iconEl) {
+              const kept = [...iconEl.classList].filter(
+                (c) => !c.startsWith('fa-') || c === 'fa-solid'
+              );
+              iconEl.className = kept.join(' ') + ' fa-' + iconClass;
+            }
+          }
+          // Update tooltip
+          const prefix = trigger.dataset.titlePrefix;
+          if (prefix) trigger.title = prefix + label;
+        } else {
+          // Pill trigger: existing logic
+          const labelEl = trigger.querySelector('[data-pill-label]');
+          if (labelEl) labelEl.textContent = label;
+
+          if (pillClass) {
+            const kept = [...trigger.classList].filter((c) => !c.startsWith('pill--'));
+            trigger.className = kept.join(' ') + ' ' + pillClass;
+          }
+
+          if (iconClass) {
+            const iconEl = trigger.querySelector('[data-pill-icon]');
+            if (iconEl) {
+              const kept = [...iconEl.classList].filter(
+                (c) => !c.startsWith('fa-') || c === 'fa-solid'
+              );
+              iconEl.className = kept.join(' ') + ' fa-' + iconClass;
+            }
           }
         }
       });

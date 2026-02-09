@@ -17,64 +17,8 @@
     <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
     <div class="mobile-actions"
          data-update-url="{% url 'machine-inline-update' machine.slug %}">
-      <div class="dropdown">
-        <button type="button"
-                class="btn btn--dropdown status-btn {{ machine.operational_status|machine_status_btn_class }}"
-                data-pill-field="operational_status"
-                data-action="update_status"
-                aria-haspopup="true"
-                aria-expanded="false"
-                aria-label="Change status"
-                title="Status: {{ machine.get_operational_status_display }}"
-                onclick="toggleDropdown(this)">
-          {% icon machine.operational_status|machine_status_icon class="status-icon" %}
-          {% icon "caret-down" class="btn__caret" %}
-        </button>
-        <div class="dropdown__menu dropdown__menu--left hidden" role="menu">
-          {% for value, label in machine.OperationalStatus.choices %}
-            <div role="menuitemradio"
-                 aria-checked="{% if value == machine.operational_status %}true{% else %}false{% endif %}"
-                 tabindex="-1"
-                 class="dropdown__item{% if value == machine.operational_status %} dropdown__item--selected{% endif %}"
-                 data-value="{{ value }}"
-                 data-label="{{ label }}"
-                 data-pill-class="{{ value|machine_status_css_class }}"
-                 data-icon="{{ value|machine_status_icon }}">{{ label }}</div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="dropdown">
-        <button type="button"
-                class="btn btn--dropdown btn--secondary location-btn"
-                data-pill-field="location"
-                data-action="update_location"
-                aria-haspopup="true"
-                aria-expanded="false"
-                aria-label="Change location"
-                title="Location: {% if machine.location %}{{ machine.location.name }}{% else %}None{% endif %}"
-                onclick="toggleDropdown(this)">
-          {% icon "location-dot" %}
-          {% icon "caret-down" class="btn__caret" %}
-        </button>
-        <div class="dropdown__menu dropdown__menu--left hidden" role="menu">
-          {% if locations %}
-            {% for loc in locations %}
-              <div role="menuitemradio"
-                   aria-checked="{% if machine.location and machine.location.slug == loc.slug %}true{% else %}false{% endif %}"
-                   tabindex="-1"
-                   class="dropdown__item{% if machine.location and machine.location.slug == loc.slug %} dropdown__item--selected{% endif %}"
-                   data-value="{{ loc.slug }}"
-                   data-label="{{ loc.name }}">{{ loc.name }}</div>
-            {% endfor %}
-          {% endif %}
-          <div role="menuitemradio"
-               aria-checked="{% if not machine.location %}true{% else %}false{% endif %}"
-               tabindex="-1"
-               class="dropdown__item{% if not machine.location %} dropdown__item--selected{% endif %}"
-               data-value=""
-               data-label="No Location">No Location</div>
-        </div>
-      </div>
+      {% settable_machine_status_pill machine trigger_style="button" %}
+      {% settable_machine_location_pill machine locations trigger_style="button" %}
       <a href="{% url 'machine-edit' machine.slug %}"
          class="btn btn--icon-only btn--secondary"
          aria-label="Edit machine"

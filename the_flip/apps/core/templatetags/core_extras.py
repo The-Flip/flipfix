@@ -529,6 +529,11 @@ def _settable_pill_context(
     items: list[dict],
     pill_class: str = "pill--neutral",
     icon_name: str | None = None,
+    trigger_style: str = "pill",
+    btn_class: str = "",
+    aria_label: str = "",
+    title: str = "",
+    title_prefix: str = "",
 ) -> dict:
     """Build template context for a settable dropdown pill.
 
@@ -542,10 +547,18 @@ def _settable_pill_context(
         current_value: Current field value (for selected/checked state).
         display_value: Display label shown on the pill trigger.
         items: List of dicts, each with ``value``, ``label``, and optionally
-            ``pill_class`` and ``icon``.
+            ``pill_class``, ``btn_class``, and ``icon``.
         pill_class: CSS class for the pill trigger (default ``pill--neutral``).
         icon_name: Icon name (without ``fa-`` prefix) for the trigger, or
             ``None`` for no icon.
+        trigger_style: ``"pill"`` (default) or ``"button"`` for icon-only
+            button rendering used in mobile action bars.
+        btn_class: Full CSS class string for button-style triggers
+            (e.g. ``"btn btn--dropdown btn--status-good"``).
+        aria_label: Accessible label for icon-only button triggers.
+        title: Tooltip text for button triggers.
+        title_prefix: Prefix for dynamic title updates via JS
+            (e.g. ``"Status: "``). Rendered as ``data-title-prefix``.
     """
     for item in items:
         item["selected"] = str(item["value"]) == str(current_value)
@@ -556,6 +569,11 @@ def _settable_pill_context(
         "icon_name": icon_name,
         "display_value": display_value,
         "items": items,
+        "trigger_style": trigger_style,
+        "btn_class": btn_class,
+        "aria_label": aria_label,
+        "title": title,
+        "title_prefix": title_prefix,
     }
 
 
@@ -616,12 +634,36 @@ def settable_problem_priority_pill(report):
 
 
 @register.inclusion_tag("components/settable_pill.html")
-def settable_machine_status_pill(machine):
-    """Render a settable operational-status dropdown pill for a machine.
+def settable_machine_status_pill(machine, trigger_style="pill"):
+    """Render a settable operational-status dropdown for a machine.
 
-    Usage:
+    Usage::
+
         {% settable_machine_status_pill machine %}
+        {% settable_machine_status_pill machine trigger_style="button" %}
+
+    With ``trigger_style="button"`` renders an icon-only button suitable
+    for mobile action bars instead of the default pill with label text.
     """
+    items = [
+        {
+            "value": v,
+            "label": label,
+            "pill_class": machine_status_css_class(v),
+            "icon": machine_status_icon(v),
+            "btn_class": machine_status_btn_class(v),
+        }
+        for v, label in type(machine).OperationalStatus.choices
+    ]
+    btn_cls = ""
+    aria_label = ""
+    title = ""
+    title_prefix = ""
+    if trigger_style == "button":
+        btn_cls = f"btn btn--dropdown {machine_status_btn_class(machine.operational_status)}"
+        aria_label = "Change status"
+        title_prefix = "Status: "
+        title = f"{title_prefix}{machine.get_operational_status_display()}"
     return _settable_pill_context(
         field="operational_status",
         action="update_status",
@@ -629,29 +671,40 @@ def settable_machine_status_pill(machine):
         display_value=machine.get_operational_status_display(),
         pill_class=machine_status_css_class(machine.operational_status),
         icon_name=machine_status_icon(machine.operational_status),
-        items=[
-            {
-                "value": v,
-                "label": label,
-                "pill_class": machine_status_css_class(v),
-                "icon": machine_status_icon(v),
-            }
-            for v, label in type(machine).OperationalStatus.choices
-        ],
+        items=items,
+        trigger_style=trigger_style,
+        btn_class=btn_cls,
+        aria_label=aria_label,
+        title=title,
+        title_prefix=title_prefix,
     )
 
 
 @register.inclusion_tag("components/settable_pill.html")
-def settable_machine_location_pill(machine, locations):
-    """Render a settable location dropdown pill for a machine.
+def settable_machine_location_pill(machine, locations, trigger_style="pill"):
+    """Render a settable location dropdown for a machine.
 
-    Usage:
+    Usage::
+
         {% settable_machine_location_pill machine locations %}
+        {% settable_machine_location_pill machine locations trigger_style="button" %}
+
+    With ``trigger_style="button"`` renders an icon-only button suitable
+    for mobile action bars instead of the default pill with label text.
     """
     current = machine.location.slug if machine.location else ""
     display = machine.location.name if machine.location else "No Location"
     items = [{"value": loc.slug, "label": loc.name} for loc in locations]
     items.append({"value": "", "label": "No Location"})
+    btn_cls = ""
+    aria_label = ""
+    title = ""
+    title_prefix = ""
+    if trigger_style == "button":
+        btn_cls = "btn btn--dropdown btn--secondary"
+        aria_label = "Change location"
+        title_prefix = "Location: "
+        title = f"{title_prefix}{display}"
     return _settable_pill_context(
         field="location",
         action="update_location",
@@ -659,6 +712,11 @@ def settable_machine_location_pill(machine, locations):
         display_value=display,
         icon_name="location-dot",
         items=items,
+        trigger_style=trigger_style,
+        btn_class=btn_cls,
+        aria_label=aria_label,
+        title=title,
+        title_prefix=title_prefix,
     )
 
 

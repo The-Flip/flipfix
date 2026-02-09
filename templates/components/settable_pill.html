@@ -1,18 +1,37 @@
 {% load core_extras %}
 <div class="dropdown">
-  <button type="button"
-          class="pill {{ pill_class }}"
-          data-pill-field="{{ field }}"
-          data-action="{{ action }}"
-          aria-haspopup="true"
-          aria-expanded="false"
-          onclick="toggleDropdown(this)">
-    {% if icon_name %}
-      {% icon icon_name class="meta" data_pill_icon="" %}
-    {% endif %}
-    <span data-pill-label>{{ display_value }}</span>
-    {% icon "caret-down" class="meta" %}
-  </button>
+  {% if trigger_style == "button" %}
+    <button type="button"
+            class="{{ btn_class }}"
+            data-pill-field="{{ field }}"
+            data-action="{{ action }}"
+            data-trigger-style="button"
+            aria-haspopup="true"
+            aria-expanded="false"
+            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+            {% if title %}title="{{ title }}"{% endif %}
+            {% if title_prefix %}data-title-prefix="{{ title_prefix }}"{% endif %}
+            onclick="toggleDropdown(this)">
+      {% if icon_name %}
+        {% icon icon_name class="status-icon" %}
+      {% endif %}
+      {% icon "caret-down" class="btn__caret" %}
+    </button>
+  {% else %}
+    <button type="button"
+            class="pill {{ pill_class }}"
+            data-pill-field="{{ field }}"
+            data-action="{{ action }}"
+            aria-haspopup="true"
+            aria-expanded="false"
+            onclick="toggleDropdown(this)">
+      {% if icon_name %}
+        {% icon icon_name class="meta" data_pill_icon="" %}
+      {% endif %}
+      <span data-pill-label>{{ display_value }}</span>
+      {% icon "caret-down" class="meta" %}
+    </button>
+  {% endif %}
   <div class="dropdown__menu dropdown__menu--left hidden" role="menu">
     {% for item in items %}
       <div role="menuitemradio"
@@ -22,6 +41,7 @@
            data-value="{{ item.value }}"
            data-label="{{ item.label }}"
            {% if item.pill_class %}data-pill-class="{{ item.pill_class }}"{% endif %}
+           {% if item.btn_class %}data-btn-class="{{ item.btn_class }}"{% endif %}
            {% if item.icon %}data-icon="{{ item.icon }}"{% endif %}>{{ item.label }}</div>
     {% endfor %}
   </div>
