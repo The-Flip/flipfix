@@ -31,6 +31,22 @@ This project uses IIFEs (Immediately Invoked Function Expressions) rather than E
 
 For a low-JS project like this, IIFEs are the pragmatic choice. If the project grows to need significant JS sharing between modules, consider adding a bundler (esbuild) and switching to ES modules.
 
+### Making Modules Testable
+
+Modules that reference `document` at the top level (e.g., `document.addEventListener(...)` outside any function) will crash when loaded in Node for testing. Guard these calls:
+
+```javascript
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    /* ... */
+  });
+}
+```
+
+References to `document` inside function bodies are safe — they only execute when called, not at parse time. Default parameters like `function init(root = document)` are also safe because they're lazily evaluated.
+
+For the full IIFE export pattern and test file conventions, see [TestingJavascript.md](TestingJavascript.md).
+
 ## Script Loading
 
 Always use `defer` when including scripts:

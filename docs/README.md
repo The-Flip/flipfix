@@ -12,7 +12,9 @@ The development documentation for The Flip maintenance system.
 - **[Javascript.md](Javascript.md)** - JavaScript patterns, JS component catalog, custom events
 - **[Forms.md](Forms.md)** - Form rendering, markup patterns, optional field marking, CSS classes
 - **[Django_Python.md](Django_Python.md)** - Python coding rules (mixins, secrets, linting, file organization)
-- **[Testing.md](Testing.md)** - Test patterns, utilities, tagging, runner configuration
+- **[Testing.md](Testing.md)** - Test runner configuration and CI
+  - **[TestingPython.md](TestingPython.md)** - Python test patterns, utilities, tagging, fixtures
+  - **[TestingJavascript.md](TestingJavascript.md)** - JavaScript test patterns, IIFE exports, vitest conventions
 - **[Deployment.md](Deployment.md)** - Deployment pipeline (PR environments, production)
 - **[Operations.md](Operations.md)** - Operations guide (monitoring, rollback, backups)
 - **[Discord.md](Discord.md)** - Discord integration setup
