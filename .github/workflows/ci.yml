@@ -110,6 +110,18 @@ jobs:
     - name: Audit dependencies for vulnerabilities
       run: pip-audit
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Install JS dependencies
+      run: npm ci
+
+    - name: Run JS tests
+      run: npm test
+
     # Slower checks last
     - name: Run tests
       env:

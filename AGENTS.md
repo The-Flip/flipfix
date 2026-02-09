@@ -104,6 +104,7 @@ make shell          # Django shell
 # Testing
 make test           # Run fast suite (excludes integration)
 make test-all       # Run full suite (includes integration checks)
+make test-js        # Run JavaScript tests (requires: npm install)
 
 # Code Quality
 make lint           # Format and lint code (auto-fixes issues)
@@ -183,6 +184,7 @@ Always follow these rules:
 - **Use `functools.partial` for deferred calls**: use `partial(func, kwarg=val)` with keyword arguments (not positional) for `transaction.on_commit()` and similar callbacks.
 - **Migration safety**: when modifying models, consider migration reversibility, data backfills, and performance impacts (table locking, index creation on large tables). Describe the migration plan before implementing.
 - **Dependency compatibility**: "latest stable" is the default, but verify compatibility with existing pins before bumping. Check changelogs for breaking changes when jumping major versions.
+- **JavaScript targets ES2020**: **NEVER** use `var`. See `docs/Javascript.md` for full conventions.
 
 ## Key Conventions
 

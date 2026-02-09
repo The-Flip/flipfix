@@ -3,7 +3,7 @@
  *
  * Enables interactive task list checkboxes in [data-text-card] containers.
  * Checkboxes rendered outside data-text-card remain disabled (read-only).
- * For task list continuation on Enter, see task_list_enter.js.
+ * For task list continuation on Enter, see markdown_shortcuts.js.
  *
  * Auto-initializes on elements with [data-text-card] attribute.
  *

@@ -114,7 +114,7 @@ class MarkdownTextareaTests(TestCase):
         widget = MarkdownTextarea()
         self.assertEqual(widget.attrs["data-text-textarea"], "")
         self.assertEqual(widget.attrs["data-link-autocomplete"], "")
-        self.assertEqual(widget.attrs["data-task-list-enter"], "")
+        self.assertEqual(widget.attrs["data-markdown-shortcuts"], "")
         # reverse_lazy returns a lazy string; str() to compare
         self.assertEqual(str(widget.attrs["data-link-api-url"]), "/api/link-targets/")
 

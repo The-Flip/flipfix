@@ -114,9 +114,7 @@
   </form>
 {% endblock %}
 {% block extra_scripts %}
-  <script src="{% static 'core/dropdown_keyboard.js' %}" defer></script>
-  <script src="{% static 'core/link_autocomplete.js' %}" defer></script>
-  <script src="{% static 'core/task_list_enter.js' %}" defer></script>
+  {% include "core/partials/markdown_textarea_scripts.html" %}
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/maintainer_chip_input.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>

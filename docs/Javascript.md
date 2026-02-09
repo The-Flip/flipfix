@@ -4,6 +4,13 @@ This guide covers JavaScript patterns and components for this project.
 
 The project uses vanilla JavaScript with IIFEs (no bundler), data-attribute auto-initialization, and custom events for cross-component communication.
 
+## Language Target
+
+This project targets **ES2020**. Use modern syntax throughout:
+
+- **NEVER** use `var`; instead, use `const` and `let`
+- Arrow functions, template literals, destructuring, optional chaining (`?.`), nullish coalescing (`??`), `for...of`, etc. are all fine.
+
 ## Module Pattern
 
 This project uses IIFEs (Immediately Invoked Function Expressions) rather than ES modules:
@@ -31,6 +38,8 @@ Always use `defer` when including scripts:
 ```html
 <script src="{% static 'core/my_script.js' %}" defer></script>
 ```
+
+**Load order matters** when one module calls a global from another. For example, `dropdown_keyboard.js` must load before `link_autocomplete.js` because the latter calls `window.attachDropdownKeyboard`. The script partials in `templates/core/partials/` enforce correct ordering.
 
 ## Cross-Module Communication
 
@@ -127,13 +136,13 @@ All JavaScript files are in `the_flip/static/core/`.
 
 ### Inline Editing
 
-| File                 | Purpose                                                                       |
-| -------------------- | ----------------------------------------------------------------------------- |
-| text_edit.js         | Inline text editing with markdown preview                                     |
-| task_list_enter.js   | Enter key auto-continues task lists on `[data-task-list-enter]` textareas     |
-| checkbox_toggle.js   | Interactive task list checkboxes on `[data-text-card]` detail pages           |
-| save_status.js       | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events |
-| sidebar_card_edit.js | Sidebar dropdown editing (machine, problem)                                   |
+| File                  | Purpose                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| text_edit.js          | Inline text editing with markdown preview                                                       |
+| markdown_shortcuts.js | Smart wrapping, Cmd+B/I/K, Tab indent, task list Enter on `[data-markdown-shortcuts]` textareas |
+| checkbox_toggle.js    | Interactive task list checkboxes on `[data-text-card]` detail pages                             |
+| save_status.js        | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events                   |
+| sidebar_card_edit.js  | Sidebar dropdown editing (machine, problem)                                                     |
 
 ### Lists & Navigation
 
@@ -144,7 +153,7 @@ All JavaScript files are in `the_flip/static/core/`.
 
 ### Factories
 
-These are utility functions called by other components rather than auto-initializing on page load. Import by including the script, then call the factory function.
+These are utility functions called by other components rather than auto-initializing on page load. Include the script before its consumer, then call the factory function. Factories use a dual-export pattern: `window.funcName` for browser access and `module.exports` for test imports.
 
 | File                   | Purpose                           |
 | ---------------------- | --------------------------------- |

@@ -68,15 +68,14 @@ The widget provides these data attributes automatically:
 - `data-text-textarea` — marks textarea for text editing features
 - `data-link-autocomplete` — enables `[[link]]` autocomplete
 - `data-link-api-url` — API endpoint for link suggestions (via `reverse_lazy`)
-- `data-task-list-enter` — enables Enter key task list continuation
+- `data-markdown-shortcuts` — enables smart wrapping, keyboard shortcuts, Tab indentation, and task list Enter continuation
 
 Only specify per-field attrs like `rows` or `placeholder`. Custom attrs merge with and can override defaults.
 
-Templates using this widget must include the companion scripts:
+Templates using this widget must include the companion scripts partial:
 
 ```html
-<script src="{% static 'core/link_autocomplete.js' %}" defer></script>
-<script src="{% static 'core/task_list_enter.js' %}" defer></script>
+{% include "core/partials/markdown_textarea_scripts.html" %}
 ```
 
 ## Rendering Forms in Templates

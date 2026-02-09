@@ -3,9 +3,10 @@
 ## Running Tests
 
 ```bash
-make test              # Run tests (excludes integration)
-make test-all          # Run full suite including integration tests
+make test              # Run Python tests (excludes integration)
+make test-all          # Run full Python suite including integration tests
 make test-models       # Run model tests only
+make test-js           # Run JavaScript tests (requires: npm install)
 ```
 
 ### In CI
@@ -149,6 +150,67 @@ import secrets
 
 def setUp(self):
     self.test_token = secrets.token_hex(16)
+```
+
+## JavaScript Tests
+
+JavaScript modules that enhance markdown textareas are tested with [Vitest](https://vitest.dev/). Tests run in Node, not in the browser.
+
+### Setup
+
+```bash
+npm install              # One-time: installs vitest
+make test-js             # Run JS tests
+```
+
+### Architecture
+
+JS modules use an IIFE pattern that conditionally exports pure functions for testing:
+
+```javascript
+(function (exports) {
+  'use strict';
+
+  function myPureFunction(value, start, end) {
+    // String manipulation, returns { value, selectionStart, selectionEnd }
+  }
+
+  // DOM wiring (browser only)
+  if (typeof document !== 'undefined') {
+    // Event listeners, DOMContentLoaded, etc.
+  }
+
+  // Test exports (Node only)
+  if (exports) {
+    exports.myPureFunction = myPureFunction;
+  }
+})(typeof module !== 'undefined' ? module.exports : null);
+```
+
+This keeps the production behavior identical (IIFE, no globals) while making pure logic testable. DOM wiring is excluded from Node — integration-level tests use jsdom where needed.
+
+### Test File Location
+
+Test files live alongside their source in `the_flip/static/core/`:
+
+```text
+the_flip/static/core/
+├── markdown_shortcuts.js          # Source
+├── markdown_shortcuts.test.js     # Tests
+```
+
+### Writing JS Tests
+
+```javascript
+import { describe, it, expect } from 'vitest';
+const { myPureFunction } = require('./my_module.js');
+
+describe('myPureFunction', () => {
+  it('does the expected thing', () => {
+    const result = myPureFunction('hello', 0, 5);
+    expect(result.value).toBe('expected output');
+  });
+});
 ```
 
 ## Testing on_commit Callbacks

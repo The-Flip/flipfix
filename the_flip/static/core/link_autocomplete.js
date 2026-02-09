@@ -15,11 +15,14 @@
  *   </textarea>
  */
 
-(function () {
+(function (exports) {
   'use strict';
 
   // Debounce delay for API searches
   const DEBOUNCE_MS = 300;
+
+  // Delay before closing on blur — allows click/focus events to fire first
+  const BLUR_DELAY_MS = 150;
 
   // Types endpoint — prefetched once per page load
   const TYPES_URL = '/api/link-types/';
@@ -210,7 +213,6 @@
       selectedType = type;
       selectedLabel = label || type;
       stage = 'search';
-      typeActiveIndex = -1;
       typeList.classList.add('hidden');
       searchStage.classList.remove('hidden');
       searchInput.value = '';
@@ -311,10 +313,22 @@
     }
 
     function insertLink(linkText) {
-      // Replace the [[ trigger with the full link
-      const before = textarea.value.substring(0, triggerStart);
-      const after = textarea.value.substring(textarea.selectionStart);
-      textarea.value = before + linkText + after;
+      // Replace the [[ trigger text with the full link.
+      // Uses execCommand('insertText') to preserve the browser's undo stack.
+      // Must focus textarea first — execCommand operates on the focused element,
+      // and focus may be on the search input when the user selects a result.
+      // textarea retains selectionStart even without focus
+      const replaceEnd = textarea.selectionStart;
+      textarea.focus();
+      textarea.selectionStart = triggerStart;
+      textarea.selectionEnd = replaceEnd;
+
+      if (!document.execCommand('insertText', false, linkText)) {
+        // Fallback for environments without execCommand (e.g. jsdom in tests)
+        const before = textarea.value.substring(0, triggerStart);
+        const after = textarea.value.substring(replaceEnd);
+        textarea.value = before + linkText + after;
+      }
 
       // Position cursor after the inserted link
       const newPosition = triggerStart + linkText.length;
@@ -418,9 +432,27 @@
     });
 
     function goBackToTypeSelection() {
-      showTypeSelection();
+      // Clean up search stage
+      if (keyboardNav) {
+        keyboardNav.destroy();
+        keyboardNav = null;
+      }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+
+      stage = 'type';
+      selectedType = null;
+      selectedLabel = null;
+
+      // Show type list without rebuilding — items are still in the DOM
+      // and typeActiveIndex preserves which type was previously selected
+      typeList.classList.remove('hidden');
+      searchStage.classList.add('hidden');
+      updateTypeActiveState();
+
       textarea.focus();
-      // Reset cursor to after [[
       textarea.setSelectionRange(triggerStart + 2, triggerStart + 2);
     }
 
@@ -455,7 +487,7 @@
           if (!searchInput.matches(':focus')) {
             closeDropdown();
           }
-        }, 150);
+        }, BLUR_DELAY_MS);
       }
     });
 
@@ -465,13 +497,26 @@
           if (!textarea.matches(':focus') && !searchInput.matches(':focus')) {
             closeDropdown();
           }
-        }, 150);
+        }, BLUR_DELAY_MS);
       }
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const textareas = document.querySelectorAll('[data-link-autocomplete]');
-    textareas.forEach((textarea) => initLinkAutocomplete(textarea));
-  });
-})();
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[data-link-autocomplete]').forEach(initLinkAutocomplete);
+      });
+    } else {
+      document.querySelectorAll('[data-link-autocomplete]').forEach(initLinkAutocomplete);
+    }
+  }
+
+  if (exports) {
+    exports.initLinkAutocomplete = initLinkAutocomplete;
+    exports._resetCache = () => {
+      linkTypesCache = null;
+      linkTypesFetching = null;
+    };
+  }
+})(typeof module !== 'undefined' ? module.exports : null);

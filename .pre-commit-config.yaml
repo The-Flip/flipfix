@@ -105,3 +105,12 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-push]
+
+      # Run JS tests before push (skips if Node.js not installed)
+      - id: js-tests
+        name: js-tests
+        entry: bash -c 'command -v node >/dev/null 2>&1 || { echo "⚠️  SKIPPING JS TESTS — Node.js is not installed"; exit 0; }; npm test'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

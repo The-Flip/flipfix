@@ -36,13 +36,12 @@ class MarkdownTextarea(forms.Textarea):
     """Textarea pre-configured for markdown editing.
 
     Provides the data attributes needed by link_autocomplete.js and
-    task_list_enter.js. Forms using this widget only need to specify
+    markdown_shortcuts.js. Forms using this widget only need to specify
     per-field attrs like ``rows`` or ``placeholder``.
 
-    Templates must include the companion scripts::
+    Templates must include the companion scripts partial::
 
-        <script src="{% static 'core/link_autocomplete.js' %}" defer></script>
-        <script src="{% static 'core/task_list_enter.js' %}" defer></script>
+        {% include "core/partials/markdown_textarea_scripts.html" %}
     """
 
     def __init__(self, attrs=None):
@@ -50,7 +49,7 @@ class MarkdownTextarea(forms.Textarea):
             "data-text-textarea": "",
             "data-link-autocomplete": "",
             "data-link-api-url": reverse_lazy("api-link-targets"),
-            "data-task-list-enter": "",
+            "data-markdown-shortcuts": "",
         }
         if attrs:
             defaults.update(attrs)

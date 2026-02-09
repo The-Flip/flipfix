@@ -6,7 +6,13 @@ The only markdown field this does NOT apply to is the public problem report subm
 
 ## How to Use It
 
-Type `[[` in any text field to insert links to other records. You'll get an autocomplete that helps you find any record in the system.
+Type `[[` in any text field to insert links to other records. You'll get an autocomplete that helps you find any record in the system. It will create markdown like:
+
+```
+[[machine:attack-from-mars]]
+```
+
+When rendered, it turns into a clickable URL to that record.
 
 ## Examples
 
@@ -278,8 +284,7 @@ Add `data-link-autocomplete` and `data-link-api-url` to the textarea widget:
 The template must also include the JS:
 
 ```html
-<script src="{% static 'core/dropdown_keyboard.js' %}"></script>
-<script src="{% static 'core/link_autocomplete.js' %}"></script>
+{% include "core/partials/markdown_textarea_scripts.html" %}
 ```
 
 ### 4. Signal: clean up references on delete

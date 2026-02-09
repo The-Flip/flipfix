@@ -6,7 +6,7 @@ You can stick buttons on FlipFix wiki pages that take a portion of the wiki page
 
 For example you might want to stick a button on the [NewMachineIntakeChecklist.md](NewMachineIntakeChecklist.md) that says something like "Start Intake". When you click it, it opens the Create Problem Report form, prepopulated with the name of that machine and the checklist portion of the page as the Problem Report's Description.
 
-- This pairs nicely with the [MarkdownChecklists.md](MarkdownChecklists.md), so you can check off items.
+- This pairs nicely with the [interactive checkboxes](MarkdownEditing.md#interactive-checkboxes), so you can check off items.
 - Once the record is created, there's no further connection with the wiki content. It's a one-time snapshot.
 
 ## Syntax
