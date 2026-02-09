@@ -78,62 +78,68 @@ function toggleDropdown(button) {
 }
 
 // Close dropdowns when clicking outside
-document.addEventListener('click', function (event) {
-  if (!event.target.closest('.dropdown')) {
-    document.querySelectorAll('.dropdown__menu').forEach(function (menu) {
-      menu.classList.add('hidden');
-      const btn = menu.closest('.dropdown').querySelector('[aria-expanded]');
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-    });
-  }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.dropdown')) {
+      document.querySelectorAll('.dropdown__menu').forEach(function (menu) {
+        menu.classList.add('hidden');
+        const btn = menu.closest('.dropdown').querySelector('[aria-expanded]');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+}
 
 // Close dropdowns on Escape key
-document.addEventListener('keydown', function (event) {
-  if (event.key === 'Escape') {
-    document.querySelectorAll('.dropdown__menu').forEach(function (menu) {
-      menu.classList.add('hidden');
-      const btn = menu.closest('.dropdown').querySelector('[aria-expanded]');
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-    });
-  }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('.dropdown__menu').forEach(function (menu) {
+        menu.classList.add('hidden');
+        const btn = menu.closest('.dropdown').querySelector('[aria-expanded]');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+}
 
 /* ==========================================================================
    Clickable Cards
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
-  function bindCard(card) {
-    const targetUrl = card.dataset.url;
-    if (!targetUrl || card.dataset.clickableBound === 'true') return;
-    card.dataset.clickableBound = 'true';
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    function bindCard(card) {
+      const targetUrl = card.dataset.url;
+      if (!targetUrl || card.dataset.clickableBound === 'true') return;
+      card.dataset.clickableBound = 'true';
 
-    const navigate = () => {
-      window.location.href = targetUrl;
-    };
+      const navigate = () => {
+        window.location.href = targetUrl;
+      };
 
-    card.addEventListener('click', navigate);
-    card.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        navigate();
+      card.addEventListener('click', navigate);
+      card.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          navigate();
+        }
+      });
+    }
+
+    document.querySelectorAll('.js-clickable-card').forEach(bindCard);
+
+    document.addEventListener('card:initialize', (event) => {
+      const node = event.detail;
+      if (node && node.classList && node.classList.contains('js-clickable-card')) {
+        bindCard(node);
+      }
+      if (node && node.querySelectorAll) {
+        node.querySelectorAll('.js-clickable-card').forEach(bindCard);
       }
     });
-  }
-
-  document.querySelectorAll('.js-clickable-card').forEach(bindCard);
-
-  document.addEventListener('card:initialize', (event) => {
-    const node = event.detail;
-    if (node && node.classList && node.classList.contains('js-clickable-card')) {
-      bindCard(node);
-    }
-    if (node && node.querySelectorAll) {
-      node.querySelectorAll('.js-clickable-card').forEach(bindCard);
-    }
   });
-});
+}
 
 /* ==========================================================================
    Smart Dates (relative time formatting)
@@ -205,7 +211,9 @@ function applySmartDates(root = document) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => applySmartDates());
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => applySmartDates());
+}
 
 /* ==========================================================================
    Timeline Injection
@@ -511,4 +519,14 @@ function launchConfetti() {
 function fireConfetti() {
   confetti({ particleCount: 100, spread: 70, origin: { x: 0.1, y: 0.6 } });
   confetti({ particleCount: 100, spread: 70, origin: { x: 0.9, y: 0.6 } });
+}
+
+// Test exports (Node only)
+if (typeof module !== 'undefined') {
+  module.exports = {
+    toDateTimeLocalValue,
+    isSameDay,
+    formatTime,
+    formatRelative,
+  };
 }

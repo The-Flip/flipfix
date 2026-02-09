@@ -1,6 +1,7 @@
 {% load core_extras %}
 <div class="dropdown">
   <button type="button"
+          id="status-pill"
           class="pill {{ machine.operational_status|machine_status_css_class }}"
           aria-haspopup="true"
           aria-expanded="false"

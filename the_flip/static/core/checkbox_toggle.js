@@ -20,13 +20,8 @@
  * supporting this is too complex given that indented code blocks are no
  * longer commonly used.
  */
-(function () {
+(function (exports) {
   'use strict';
-
-  function getCsrfToken() {
-    const cookie = document.cookie.match(/csrftoken=([^;]+)/);
-    return cookie ? cookie[1] : '';
-  }
 
   /**
    * Toggle the Nth task list marker in raw markdown text.
@@ -73,80 +68,93 @@
     return result.join('');
   }
 
-  function initTextCard(card) {
-    const textarea = card.querySelector('[data-text-textarea]');
-    if (!textarea) {
-      console.error('[checkbox_toggle] No textarea found in card:', card);
-      return;
+  // DOM wiring (browser only)
+  if (typeof document !== 'undefined') {
+    function getCsrfToken() {
+      const cookie = document.cookie.match(/csrftoken=([^;]+)/);
+      return cookie ? cookie[1] : '';
     }
 
-    const checkboxes = card.querySelectorAll('input[data-checkbox-index]');
-    if (checkboxes.length === 0) return;
+    function initTextCard(card) {
+      const textarea = card.querySelector('[data-text-textarea]');
+      if (!textarea) {
+        console.error('[checkbox_toggle] No textarea found in card:', card);
+        return;
+      }
 
-    // Enable checkboxes (they render disabled by default for list views)
-    checkboxes.forEach((cb) => {
-      cb.disabled = false;
-    });
+      const checkboxes = card.querySelectorAll('input[data-checkbox-index]');
+      if (checkboxes.length === 0) return;
 
-    // Serialize saves to prevent out-of-order responses from corrupting state
-    let saveQueue = Promise.resolve();
+      // Enable checkboxes (they render disabled by default for list views)
+      checkboxes.forEach((cb) => {
+        cb.disabled = false;
+      });
 
-    // Attach click handler to each checkbox
-    checkboxes.forEach((cb) => {
-      cb.addEventListener('change', () => {
-        const index = parseInt(cb.getAttribute('data-checkbox-index'), 10);
-        const previousText = textarea.value;
-        const newText = toggleCheckboxInMarkdown(previousText, index);
-        textarea.value = newText;
+      // Serialize saves to prevent out-of-order responses from corrupting state
+      let saveQueue = Promise.resolve();
 
-        // POST the update
-        const formData = new FormData();
-        formData.append('action', 'update_text');
-        formData.append('text', newText);
-        formData.append('csrfmiddlewaretoken', getCsrfToken());
+      // Attach click handler to each checkbox
+      checkboxes.forEach((cb) => {
+        cb.addEventListener('change', () => {
+          const index = parseInt(cb.getAttribute('data-checkbox-index'), 10);
+          const previousText = textarea.value;
+          const newText = toggleCheckboxInMarkdown(previousText, index);
+          textarea.value = newText;
 
-        document.dispatchEvent(new CustomEvent('save:start'));
+          // POST the update
+          const formData = new FormData();
+          formData.append('action', 'update_text');
+          formData.append('text', newText);
+          formData.append('csrfmiddlewaretoken', getCsrfToken());
 
-        saveQueue = saveQueue.then(async () => {
-          try {
-            const response = await fetch(window.location.href, {
-              method: 'POST',
-              body: formData,
-            });
-            if (!response.ok) {
-              console.error(
-                `[checkbox_toggle] Save failed: ${response.status} ${response.statusText}`
-              );
+          document.dispatchEvent(new CustomEvent('save:start'));
+
+          saveQueue = saveQueue.then(async () => {
+            try {
+              const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+              });
+              if (!response.ok) {
+                console.error(
+                  `[checkbox_toggle] Save failed: ${response.status} ${response.statusText}`
+                );
+                // Revert only if no newer edits have been applied
+                if (textarea.value === newText) {
+                  cb.checked = !cb.checked;
+                  textarea.value = previousText;
+                }
+                document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: false } }));
+              } else {
+                document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: true } }));
+              }
+            } catch (err) {
+              console.error('[checkbox_toggle] Save error:', err);
               // Revert only if no newer edits have been applied
               if (textarea.value === newText) {
                 cb.checked = !cb.checked;
                 textarea.value = previousText;
               }
               document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: false } }));
-            } else {
-              document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: true } }));
             }
-          } catch (err) {
-            console.error('[checkbox_toggle] Save error:', err);
-            // Revert only if no newer edits have been applied
-            if (textarea.value === newText) {
-              cb.checked = !cb.checked;
-              textarea.value = previousText;
-            }
-            document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: false } }));
-          }
+          });
         });
       });
-    });
+    }
+
+    function init() {
+      document.querySelectorAll('[data-text-card]').forEach(initTextCard);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   }
 
-  function init() {
-    document.querySelectorAll('[data-text-card]').forEach(initTextCard);
+  // Test exports (Node only)
+  if (exports) {
+    exports.toggleCheckboxInMarkdown = toggleCheckboxInMarkdown;
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
+})(typeof module !== 'undefined' ? module.exports : null);

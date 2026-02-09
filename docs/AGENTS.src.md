@@ -81,7 +81,8 @@ STOP and read the relevant doc before writing code. Code that doesn't follow doc
 | Defining models or querysets     | [`docs/Models.md`](docs/Models.md)                       |
 | Catalog of existing models       | [`docs/Datamodel.md`](docs/Datamodel.md)                 |
 | Django and Python patterns       | [`docs/Django_Python.md`](docs/Django_Python.md)         |
-| Writing tests                    | [`docs/Testing.md`](docs/Testing.md)                     |
+| Writing Python tests             | [`docs/TestingPython.md`](docs/TestingPython.md)         |
+| Writing JavaScript tests         | [`docs/TestingJavascript.md`](docs/TestingJavascript.md) |
 | System architecture              | [`docs/Architecture.md`](docs/Architecture.md)           |
 | Directory layout                 | [`docs/Project_Structure.md`](docs/Project_Structure.md) |
 | `[[type:ref]]` markdown links    | [`docs/MarkdownLinks.md`](docs/MarkdownLinks.md)         |
@@ -90,7 +91,10 @@ Follow the patterns in these docs exactly. Do not introduce new conventions with
 
 ## Testing
 
-For any change, identify and run the smallest meaningful test set. Expect new/updated tests when fixing bugs or adding behavior, and prefer regression tests over broad refactors.
+- For any change, identify and run the smallest meaningful test set.
+- **TDD**
+  - When fixing a bug, write a failing test first that reproduces the bug, then fix the code to make it pass.
+  - For new behavior, include tests. Consider writing the test first, though sometimes that's more trouble than it's worth.
 
 ## PR Workflow
 
