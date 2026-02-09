@@ -7,7 +7,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Case, Count, F, IntegerField, Prefetch, Q, Value, When
+from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.urls import reverse
 from django.utils import timezone
 from simple_history.models import HistoricalRecords
@@ -70,45 +70,6 @@ class ProblemReportQuerySet(models.QuerySet):
             for i, (value, _) in enumerate(ProblemReport.Priority.choices)
         ]
 
-    def for_global_list(self, search_query: str = ""):
-        """Build the queryset for the global problem report list.
-
-        Applies search filtering, eager-loads related objects, and orders by:
-
-        1. Open before closed (``-status`` descending: "open" > "closed")
-        2. Within open: priority order derived from ``Priority`` choices definition
-        3. Within same priority: location sort_order (floor first, then workshop)
-        4. Within same location: occurred_at newest first
-        5. Closed: only by occurred_at newest first (priority/location ignored)
-        """
-        latest_log_prefetch = Prefetch(
-            "log_entries",
-            queryset=LogEntry.objects.order_by("-occurred_at"),
-            to_attr="prefetched_log_entries",
-        )
-
-        # Closed reports get a high constant so priority/location don't affect their order.
-        priority_sort = Case(
-            When(status=ProblemReport.Status.CLOSED, then=Value(999)),
-            *self._priority_whens(),
-            default=Value(999),
-            output_field=IntegerField(),
-        )
-        location_sort = Case(
-            When(status=ProblemReport.Status.CLOSED, then=Value(999)),
-            When(machine__location__isnull=True, then=Value(998)),
-            default=F("machine__location__sort_order"),
-            output_field=IntegerField(),
-        )
-
-        return (
-            self.select_related("machine", "machine__model", "machine__location")
-            .prefetch_related(latest_log_prefetch, "media")
-            .search(search_query)
-            .annotate(priority_sort=priority_sort, location_sort=location_sort)
-            .order_by("-status", "priority_sort", "location_sort", "-occurred_at")
-        )
-
     def for_wall_display(self, location_slugs: list[str]):
         """Build the queryset for the wall display board.
 
@@ -128,6 +89,31 @@ class ProblemReportQuerySet(models.QuerySet):
             )
             .select_related("machine", "machine__model", "machine__location")
             .annotate(media_count=Count("media"), priority_sort=priority_sort)
+            .order_by("priority_sort", "-occurred_at")
+        )
+
+    def for_open_by_location(self):
+        """Build the queryset for the global problem report column board.
+
+        Returns only open reports across all locations, with full media and
+        latest log entry prefetched for rich card display.  Ordered by
+        priority then newest first (within each location column).
+        """
+        latest_log_prefetch = Prefetch(
+            "log_entries",
+            queryset=LogEntry.objects.order_by("-occurred_at"),
+            to_attr="prefetched_log_entries",
+        )
+        priority_sort = Case(
+            *self._priority_whens(),
+            default=Value(999),
+            output_field=IntegerField(),
+        )
+        return (
+            self.filter(status=ProblemReport.Status.OPEN)
+            .select_related("machine", "machine__model", "machine__location")
+            .prefetch_related(latest_log_prefetch, "media")
+            .annotate(priority_sort=priority_sort)
             .order_by("priority_sort", "-occurred_at")
         )
 

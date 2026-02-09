@@ -388,28 +388,27 @@ body {
   padding: var(--space-4);
 }
 
-/* Wall display: responsive column grid for location-grouped views */
-.wall-display {
+/* Column grid: responsive column layout for grouped views */
+.column-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-4);
-  padding: var(--space-4);
-  min-height: 100vh;
 }
 
-.wall-display--error {
-  place-items: center;
-}
-
-.wall-column__header {
+.column-grid__header {
   padding: var(--space-2) 0;
   margin: 0 0 var(--space-3) 0;
 }
 
-/* Wall display card: <a> wrapping a .card */
-.wall-entry {
+.column-grid__entry {
   display: block;
   margin-bottom: var(--space-3);
+}
+
+/* Wall display: full-screen overrides */
+.wall-display {
+  padding: var(--space-4);
+  min-height: 100vh;
 }
 
 .card__header {
@@ -1914,6 +1913,17 @@ body {
 
 .filter-bar__search--full {
   width: 100%;
+}
+
+[data-expandable-search] {
+  position: relative;
+}
+
+.expandable-search__toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
 }
 
 /* --- Markdown Content --- */

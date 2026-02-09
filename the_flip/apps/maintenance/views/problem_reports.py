@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from datetime import timedelta
 from functools import partial
 
@@ -26,6 +25,7 @@ from the_flip.apps.core.attribution import (
     resolve_maintainer_for_create,
     resolve_maintainer_for_edit,
 )
+from the_flip.apps.core.columns import build_location_columns
 from the_flip.apps.core.datetime import apply_browser_timezone, validate_not_future
 from the_flip.apps.core.ip import get_real_ip
 from the_flip.apps.core.markdown_links import (
@@ -36,7 +36,6 @@ from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
-    InfiniteScrollMixin,
     MediaUploadMixin,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
@@ -54,49 +53,25 @@ from the_flip.apps.maintenance.models import (
 
 
 class ProblemReportListView(CanAccessMaintainerPortalMixin, TemplateView):
-    """Global list of all problem reports across all machines. Maintainer-only access."""
+    """Global column board of open problem reports, grouped by location."""
 
     template_name = "maintenance/problem_report_list.html"
+    max_results_per_column = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        search_query = self.request.GET.get("q", "").strip()
-        reports = ProblemReport.objects.for_global_list(search_query)
-
-        paginator = Paginator(reports, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(self.request.GET.get("page"))
-
-        # Stats for sidebar
-        stats = [
-            {
-                "value": ProblemReport.objects.filter(status=ProblemReport.Status.OPEN).count(),
-                "label": "Open",
-            },
-            {
-                "value": ProblemReport.objects.filter(status=ProblemReport.Status.CLOSED).count(),
-                "label": "Closed",
-            },
-        ]
-
-        context.update(
-            {
-                "page_obj": page_obj,
-                "reports": page_obj.object_list,
-                "search_form": SearchForm(initial={"q": search_query}),
-                "stats": stats,
-            }
+        query = self.request.GET.get("q", "").strip()
+        reports = ProblemReport.objects.search(query).for_open_by_location()
+        context["columns"] = build_location_columns(
+            reports,
+            Location.objects.all(),
+            include_empty_columns=False,
+            max_results_per_column=self.max_results_per_column,
         )
+        context["card_template"] = "maintenance/partials/column_problem_report_entry.html"
+        context["search_form"] = SearchForm(initial={"q": query})
+        context["query"] = query
         return context
-
-
-class ProblemReportListPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, View):
-    """AJAX endpoint for infinite scrolling in the global problem report list."""
-
-    item_template = "maintenance/partials/global_problem_report_entry.html"
-
-    def get_queryset(self):
-        search_query = self.request.GET.get("q", "").strip()
-        return ProblemReport.objects.for_global_list(search_query)
 
 
 class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
@@ -608,6 +583,7 @@ class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
     """Full-screen wall display showing open problems by location."""
 
     template_name = "maintenance/wall_display_board.html"
+    max_results_per_column = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -646,15 +622,8 @@ class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
         locations = [locations_by_slug[s] for s in location_slugs]
 
         reports = ProblemReport.objects.for_wall_display(location_slugs)
-
-        # Group reports by location in a single pass (queryset is ordered by
-        # priority, so locations interleave — groupby would break).
-        reports_by_location: dict[int, list[ProblemReport]] = defaultdict(list)
-        for report in reports:
-            reports_by_location[report.machine.location_id].append(report)
-
-        columns = [(location, reports_by_location.get(location.pk, [])) for location in locations]
-
-        context["columns"] = columns
+        context["columns"] = build_location_columns(
+            reports, locations, max_results_per_column=self.max_results_per_column
+        )
         context["refresh_seconds"] = refresh_seconds
         return context

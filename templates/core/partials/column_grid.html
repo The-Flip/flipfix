@@ -1,0 +1,13 @@
+<div class="column-grid {{ grid_classes }}">
+  {% for column in columns %}
+    <div>
+      <h2 class="column-grid__header">{{ column.label }}</h2>
+      {% for entry in column.items %}
+        {% include card_template with entry=entry %}
+      {% empty %}
+        <p class="text-muted">{{ empty_message|default:"No items." }}</p>
+      {% endfor %}
+      {% if column.overflow_count %}<p class="text-muted body-small">+{{ column.overflow_count }} more</p>{% endif %}
+    </div>
+  {% endfor %}
+</div>

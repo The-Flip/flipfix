@@ -50,7 +50,6 @@ from the_flip.apps.maintenance.views.problem_reports import (
     ProblemReportCreateView,
     ProblemReportDetailView,
     ProblemReportEditView,
-    ProblemReportListPartialView,
     ProblemReportListView,
     ProblemReportLogEntriesPartialView,
     PublicProblemReportCreateView,
@@ -169,11 +168,6 @@ urlpatterns = [
         ProblemReportListView.as_view(),
         name="problem-report-list",
     ),  # List all problem reports
-    path(
-        "problem-reports/entries/",
-        ProblemReportListPartialView.as_view(),
-        name="problem-report-list-entries",
-    ),  # AJAX: infinite scroll for problem report list
     path(
         "problem-reports/new/",
         ProblemReportCreateView.as_view(),

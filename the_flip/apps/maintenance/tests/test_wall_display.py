@@ -192,7 +192,7 @@ class WallDisplayBoardViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
     def test_empty_location_shows_no_problems_message(self):
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.board_url, {"location": ["floor"]})
-        self.assertContains(response, "No open problems.")
+        self.assertContains(response, "No open problems 🥳")
 
 
 @tag("models")

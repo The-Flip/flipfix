@@ -1,42 +1,68 @@
-{% extends "maintenance/global_list_base.html" %}
-{% load static core_extras %}
-{% block list_title %}Problem Reports{% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'problem-report-create' %}" class="btn btn--report">
-    {% icon "plus" class="meta" %}
-    New Report
-  </a>
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}Problems · {{ block.super }}{% endblock %}
+{% block content %}
+  <div data-expandable-search>
+    <div class="expandable-search__toggle{% if query %} hidden{% endif %}">
+      <button type="button"
+              class="btn btn--secondary btn--sm"
+              aria-label="Search problems">{% icon "magnifying-glass" %}</button>
+    </div>
+    <div class="filter-bar{% if not query %} hidden{% endif %}">
+      <div class="filter-bar__search filter-bar__search--full">
+        <form method="get" action="">
+          <input type="search"
+                 name="q"
+                 placeholder="Search problems..."
+                 value="{{ search_form.q.value|default:'' }}"
+                 class="filter-bar__search-input">
+          {% icon "magnifying-glass" class="filter-bar__search-icon" %}
+        </form>
+      </div>
+    </div>
+  </div>
+  {% if columns %}
+    {% include "core/partials/column_grid.html" with card_template=card_template empty_message="No open problems." %}
+  {% elif query %}
+    <p class="text-muted">No open problems match your search.</p>
+  {% else %}
+    <p class="text-muted">No open problems 🥳</p>
+  {% endif %}
 {% endblock %}
-{% block sidebar_stats %}
-  <div class="sidebar__label">Problem Reports</div>
-  {% stat_grid stats=stats %}
-{% endblock %}
-{% block sidebar_actions %}
-  <a href="{% url 'problem-report-create' %}"
-     class="btn btn--report btn--full">
-    {% icon "plus" class="meta" %}
-    New Problem Report
-  </a>
-{% endblock %}
-{% block infinite_scroll_url %}
-  {% url 'problem-report-list-entries' %}
-{% endblock %}
-{% block list_content %}
-  {% if reports %}
-    {% timeline id="log-list" %}
-    {% for entry in reports %}
-      {% include "maintenance/partials/global_problem_report_entry.html" with entry=entry %}
-    {% endfor %}
-  {% endtimeline %}
-  <div id="log-pagination"
-       data-next-page="{% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}0{% endif %}"></div>
-{% else %}
-  <p class="text-muted">
-    {% if search_form.q.value %}
-      No problem reports match your search.
-    {% else %}
-      No problem reports yet.
-    {% endif %}
-  </p>
-{% endif %}
+{% block extra_scripts %}
+  <script>
+    (function () {
+      'use strict';
+      document.querySelectorAll('[data-expandable-search]').forEach(function (container) {
+        var toggle = container.querySelector('.expandable-search__toggle');
+        var bar = container.querySelector('.filter-bar');
+        var input = bar.querySelector('input[type="search"]');
+        function openSearch() {
+          toggle.classList.add('hidden');
+          bar.classList.remove('hidden');
+          input.focus();
+        }
+        function closeSearch() {
+          if (new URLSearchParams(window.location.search).has('q')) {
+            window.location.href = window.location.pathname;
+            return;
+          }
+          input.value = '';
+          bar.classList.add('hidden');
+          toggle.classList.remove('hidden');
+        }
+        toggle.querySelector('button').addEventListener('click', openSearch);
+        if (input.value) {
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            closeSearch();
+          }
+        });
+      });
+    })();
+  </script>
 {% endblock %}
