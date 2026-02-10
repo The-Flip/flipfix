@@ -89,8 +89,12 @@ function initTemplateSelector(container) {
       preselectUrl = ''; // Only preselect once
     }
 
+    // Don't toggle visibility while user is editing template content —
+    // the lock hint must stay visible.
+    if (locked) return;
+
     // Show/hide the entire container
-    if (templates.length > 0 && !locked) {
+    if (templates.length > 0) {
       container.classList.remove('hidden');
     } else {
       container.classList.add('hidden');
