@@ -159,3 +159,32 @@ class WikiTagOrder(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tag} (order={self.order})"
+
+
+class TemplateOptionIndex(models.Model):
+    """Index of wiki template options for create-form dropdowns.
+
+    Auto-maintained from ``template:action`` markers where ``action``
+    contains "option".  Rows are rebuilt on every wiki page save by
+    ``sync_template_option_index()``.  Never edited manually.
+    """
+
+    page = models.ForeignKey(
+        WikiPage, on_delete=models.CASCADE, related_name="template_option_index"
+    )
+    template_name = models.CharField(max_length=200)
+    record_type = models.CharField(max_length=50, db_index=True)
+    machine_slug = models.CharField(max_length=200, blank=True)
+    location_slug = models.CharField(max_length=200, blank=True)
+    priority = models.CharField(max_length=20, blank=True)
+    label = models.CharField(max_length=200)
+
+    class Meta:
+        unique_together = [("page", "template_name")]
+        indexes = [
+            models.Index(fields=["record_type", "priority", "machine_slug", "location_slug"]),
+        ]
+        ordering = ["label"]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.record_type})"

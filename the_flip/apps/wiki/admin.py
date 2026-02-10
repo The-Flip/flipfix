@@ -1,7 +1,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import WikiPage, WikiPageTag, WikiTagOrder
+from .models import TemplateOptionIndex, WikiPage, WikiPageTag, WikiTagOrder
 
 
 class WikiPageTagInline(admin.TabularInline):
@@ -82,3 +82,36 @@ class WikiTagOrderAdmin(admin.ModelAdmin):
     list_editable = ("order",)
     search_fields = ("tag",)
     ordering = ("order",)
+
+
+@admin.register(TemplateOptionIndex)
+class TemplateOptionIndexAdmin(admin.ModelAdmin):
+    list_display = (
+        "page",
+        "template_name",
+        "record_type",
+        "priority",
+        "machine_slug",
+        "location_slug",
+        "label",
+    )
+    list_filter = ("record_type", "priority")
+    search_fields = ("label", "template_name", "page__title")
+    readonly_fields = (
+        "page",
+        "template_name",
+        "record_type",
+        "machine_slug",
+        "location_slug",
+        "priority",
+        "label",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("page")

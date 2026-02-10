@@ -2,7 +2,11 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.core.markdown import _convert_task_list_items, render_markdown_html
+from the_flip.apps.core.markdown import (
+    _convert_task_list_items,
+    fenced_code_ranges,
+    render_markdown_html,
+)
 
 # Tests use the pipeline function directly; the template filter is a thin mark_safe wrapper.
 render_markdown = render_markdown_html
@@ -347,3 +351,32 @@ class TaskListCheckboxTests(TestCase):
         # First should be unchecked, second checked
         self.assertIn('data-checkbox-index="0"', result)
         self.assertIn('data-checkbox-index="1"', result)
+
+
+@tag("views")
+class FencedCodeRangesTests(TestCase):
+    """Tests for fenced_code_ranges (character-position ranges of code fences)."""
+
+    def test_single_backtick_fence(self):
+        content = "before\n```\ncode\n```\nafter\n"
+        ranges = fenced_code_ranges(content)
+        self.assertEqual(len(ranges), 1)
+        start, end = ranges[0]
+        # The range should cover the entire fenced block including markers
+        self.assertEqual(content[start:end].strip(), "```\ncode\n```")
+
+    def test_multiple_fenced_code_blocks(self):
+        content = "```\nfirst\n```\ntext\n```\nsecond\n```\n"
+        ranges = fenced_code_ranges(content)
+        self.assertEqual(len(ranges), 2)
+
+    def test_no_fenced_code_blocks(self):
+        content = "Just plain text with no fences."
+        self.assertEqual(fenced_code_ranges(content), [])
+
+    def test_tilde_fence(self):
+        content = "~~~\ntilde code\n~~~\n"
+        ranges = fenced_code_ranges(content)
+        self.assertEqual(len(ranges), 1)
+        start, end = ranges[0]
+        self.assertIn("tilde code", content[start:end])

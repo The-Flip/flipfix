@@ -43,11 +43,18 @@ class FormPrefillMixin:
 
         {"field": "description", "content": "...", "extra_initial": {"priority": "task"}}
 
+    An optional ``template_content_url`` identifies the wiki template that
+    produced the prefill, so the template selector dropdown can pre-select it::
+
+        {"field": "description", "content": "...", "template_content_url": "/api/wiki/..."}
+
     The mixin pops the data on GET so the session is cleaned up automatically.
 
     Views can extend ``get_initial()`` to pop additional session keys
     (e.g. ``WikiPageCreateView`` adds ``form_prefill_tags`` and ``form_prefill_title``).
     """
+
+    _prefill_template_url: str = ""
 
     def get_initial(self):
         initial = super().get_initial()
@@ -56,7 +63,14 @@ class FormPrefillMixin:
             initial[prefill["field"]] = prefill["content"]
             if prefill.get("extra_initial"):
                 initial.update(prefill["extra_initial"])
+            self._prefill_template_url = prefill.get("template_content_url", "")
         return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self._prefill_template_url:
+            context["prefill_template_url"] = self._prefill_template_url
+        return context
 
 
 class CanAccessMaintainerPortalMixin(LoginRequiredMixin, UserPassesTestMixin):

@@ -2199,8 +2199,8 @@ body {
   cursor: default;
 }
 
-/* --- Wiki Action Buttons --- */
-.wiki-action {
+/* --- Wiki Template Buttons --- */
+.wiki-template-action {
   margin-block: var(--space-4);
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-gray-200);

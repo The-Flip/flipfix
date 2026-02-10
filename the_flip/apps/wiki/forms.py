@@ -10,6 +10,7 @@ from the_flip.apps.core.markdown_links import (
     sync_references,
 )
 
+from .actions import sync_template_option_index, validate_template_syntax
 from .models import UNTAGGED_SENTINEL, WikiPage, WikiPageTag
 
 
@@ -89,15 +90,19 @@ class WikiPageForm(StyledFormMixin, forms.ModelForm):
         return title
 
     def clean_content(self):
-        """Convert authoring format links to storage format.
+        """Convert authoring format links to storage format and validate template syntax.
 
-        This validates that all linked targets exist. If any don't,
-        a ValidationError is raised listing the broken links.
+        Raises ValidationError if linked targets don't exist or if template
+        markers have structural/attribute errors.
         """
         content = self.cleaned_data.get("content", "")
         if content:
             # convert_authoring_to_storage raises ValidationError if links are broken
             content = convert_authoring_to_storage(content)
+            # Validate template marker syntax
+            template_errors = validate_template_syntax(content)
+            if template_errors:
+                raise forms.ValidationError(template_errors)
         return content
 
     def save(self, commit=True):
@@ -111,6 +116,8 @@ class WikiPageForm(StyledFormMixin, forms.ModelForm):
             self._save_tags(page)
             # Sync reference tables based on links in content
             sync_references(page, page.content)
+            # Rebuild template option index from template:action markers
+            self.template_sync_result = sync_template_option_index(page)
 
         return page
 

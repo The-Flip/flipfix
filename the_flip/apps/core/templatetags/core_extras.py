@@ -995,6 +995,38 @@ def tag_chip_input_field(
     }
 
 
+@register.inclusion_tag("components/template_selector.html", takes_context=True)
+def template_selector_field(
+    context,
+    record_type: str,
+    machine_slug: str = "",
+    location_slug: str = "",
+):
+    """Render a template selector dropdown for create forms.
+
+    Hidden by JS when no templates match. Fetches options from the wiki
+    template list API (URL resolved in the component template).
+
+    Reads ``prefill_template_url`` from the parent context (set by
+    ``FormPrefillMixin``) to pre-select a template on button-click flows.
+
+    Usage:
+        {% template_selector_field record_type="problem" machine_slug=machine.slug location_slug=machine.location.slug %}
+        {% template_selector_field record_type="page" %}
+
+    Args:
+        record_type: "problem", "log", "partrequest", or "page"
+        machine_slug: Current machine slug (optional, blank = any)
+        location_slug: Current location slug (optional, blank = any)
+    """
+    return {
+        "record_type": record_type,
+        "machine_slug": machine_slug,
+        "location_slug": location_slug,
+        "preselect_url": context.get("prefill_template_url", ""),
+    }
+
+
 # -----------------------------------------------------------------------------
 # Sidebar template tags
 # -----------------------------------------------------------------------------

@@ -51,6 +51,20 @@ function initMachineAutocomplete(container) {
       errorMessages.forEach((el) => el.remove());
     }
     hideDropdown();
+
+    // Notify other components (e.g. template selector) that a machine was selected
+    const form = container.closest('form');
+    if (form) {
+      form.dispatchEvent(
+        new CustomEvent('machine:changed', {
+          detail: {
+            slug: machine.slug,
+            locationSlug: machine.location_slug || '',
+          },
+          bubbles: true,
+        })
+      );
+    }
   }
 
   function renderDropdown(list) {

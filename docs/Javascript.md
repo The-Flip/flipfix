@@ -178,6 +178,12 @@ These are utility functions called by other components rather than auto-initiali
 | dropdown_keyboard.js   | Keyboard navigation for dropdowns |
 | searchable_dropdown.js | Searchable dropdown creation      |
 
+### Forms
+
+| File                 | Purpose                                                  |
+| -------------------- | -------------------------------------------------------- |
+| template_selector.js | Template dropdown on create forms, fetched from wiki API |
+
 ### Page-Specific
 
 | File                | Purpose                                           |
@@ -188,12 +194,13 @@ These are utility functions called by other components rather than auto-initiali
 
 Events document the contract between components:
 
-| Event                 | Dispatched by                       | Listened by             | Purpose                                                               |
-| --------------------- | ----------------------------------- | ----------------------- | --------------------------------------------------------------------- |
-| `card:initialize`     | infinite_scroll.js                  | core.js                 | Re-bind clickable cards after dynamic content                         |
-| `maintainer:selected` | maintainer_autocomplete.js          | log_entry_detail.js     | Maintainer selected from autocomplete                                 |
-| `media:uploaded`      | media_grid.js                       | video_transcode_poll.js | Video uploaded, start polling                                         |
-| `media:ready`         | video_transcode_poll.js             | media_grid.js           | Video transcoding complete                                            |
-| `pill:updated`        | settable_pill.js                    | page-specific listeners | Settable pill value changed (`detail: { field, value, label, data }`) |
-| `save:start`          | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save started                                          |
-| `save:end`            | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save finished (`detail: { ok: bool }`)                |
+| Event                 | Dispatched by                       | Listened by             | Purpose                                                                |
+| --------------------- | ----------------------------------- | ----------------------- | ---------------------------------------------------------------------- |
+| `card:initialize`     | infinite_scroll.js                  | core.js                 | Re-bind clickable cards after dynamic content                          |
+| `maintainer:selected` | maintainer_autocomplete.js          | log_entry_detail.js     | Maintainer selected from autocomplete                                  |
+| `media:uploaded`      | media_grid.js                       | video_transcode_poll.js | Video uploaded, start polling                                          |
+| `media:ready`         | video_transcode_poll.js             | media_grid.js           | Video transcoding complete                                             |
+| `pill:updated`        | settable_pill.js                    | page-specific listeners | Settable pill value changed (`detail: { field, value, label, data }`)  |
+| `machine:changed`     | machine_autocomplete.js             | template_selector.js    | Machine selected; refetch templates (`detail: { slug, locationSlug }`) |
+| `save:start`          | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save started                                           |
+| `save:end`            | checkbox_toggle.js, wiki_reorder.js | save_status.js          | Background AJAX save finished (`detail: { ok: bool }`)                 |

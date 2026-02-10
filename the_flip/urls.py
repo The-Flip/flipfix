@@ -63,7 +63,6 @@ from the_flip.apps.maintenance.views.transcoding import (
 )
 from the_flip.apps.parts import views as parts_views
 from the_flip.apps.wiki.views import (
-    WikiActionPrefillView,
     WikiHomeView,
     WikiPageCreateView,
     WikiPageDeleteView,
@@ -73,6 +72,9 @@ from the_flip.apps.wiki.views import (
     WikiReorderView,
     WikiSearchView,
     WikiTagAutocompleteView,
+    WikiTemplateContentView,
+    WikiTemplateListView,
+    WikiTemplatePrefillView,
 )
 from the_flip.views import serve_media
 
@@ -384,10 +386,10 @@ urlpatterns = [
     path("wiki/create/", WikiPageCreateView.as_view(), name="wiki-page-create"),  # Create page
     path("wiki/reorder/", WikiReorderView.as_view(), name="wiki-reorder"),  # Reorder nav
     path(
-        "wiki/actions/<int:page_pk>/<str:action_name>/",
-        WikiActionPrefillView.as_view(),
-        name="wiki-action-prefill",
-    ),  # Action block → pre-fill create form
+        "wiki/templates/<int:page_pk>/<str:template_name>/",
+        WikiTemplatePrefillView.as_view(),
+        name="wiki-template-prefill",
+    ),  # Template block → pre-fill create form
     path(
         "wiki/doc/<path:path>", WikiPageDetailView.as_view(), name="wiki-page-detail"
     ),  # Wiki page detail (path = tag/slug or just slug)
@@ -401,6 +403,16 @@ urlpatterns = [
     path(
         "api/wiki/reorder/", WikiReorderSaveView.as_view(), name="api-wiki-reorder"
     ),  # AJAX: save wiki nav reorder
+    path(
+        "api/wiki/templates/",
+        WikiTemplateListView.as_view(),
+        name="api-wiki-template-list",
+    ),  # AJAX: list matching template options for create forms
+    path(
+        "api/wiki/templates/<int:page_pk>/<str:template_name>/content/",
+        WikiTemplateContentView.as_view(),
+        name="api-wiki-template-content",
+    ),  # AJAX: fetch template block content
 ]
 
 # Serve user-uploaded media files

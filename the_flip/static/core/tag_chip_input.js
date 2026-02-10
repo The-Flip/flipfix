@@ -34,6 +34,7 @@
 
     let allTags = [];
     const selectedTags = new Set();
+    let _programmatic = false;
 
     // Prefetch all tags on init (typically small dataset)
     fetch(endpoint)
@@ -144,7 +145,9 @@
       // Clear search and hide dropdown
       searchInput.value = '';
       hideDropdown();
-      searchInput.focus();
+      if (!_programmatic) {
+        searchInput.focus();
+      }
     }
 
     function removeChip(chip, tag) {
@@ -223,6 +226,22 @@
         hideDropdown();
       }
     });
+
+    // Expose public API on the container element for programmatic use
+    container.tagChipInput = {
+      addTag(tag) {
+        _programmatic = true;
+        addTagChip(tag);
+        _programmatic = false;
+      },
+      clearAll() {
+        chipContainer.querySelectorAll('.pill').forEach((chip) => {
+          const tag = chip.dataset.tag;
+          selectedTags.delete(tag);
+          chip.remove();
+        });
+      },
+    };
   }
 
   document.addEventListener('DOMContentLoaded', () => {

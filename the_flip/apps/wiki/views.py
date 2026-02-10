@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.html import format_html, format_html_join
 from django.views import View
 from django.views.generic import (
     CreateView,
@@ -22,10 +25,37 @@ from django.views.generic import (
 from the_flip.apps.core.markdown_links import save_inline_markdown_field
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin, FormPrefillMixin
 
-from .actions import build_create_url, extract_action_content, get_prefill_field
+from .actions import (
+    TemplateSyncResult,
+    build_create_url,
+    extract_template_content,
+    get_prefill_field,
+    sync_template_option_index,
+    validate_template_syntax,
+)
 from .forms import WikiPageForm
-from .models import UNTAGGED_SENTINEL, WikiPage, WikiPageTag, WikiTagOrder
+from .models import UNTAGGED_SENTINEL, TemplateOptionIndex, WikiPage, WikiPageTag, WikiTagOrder
 from .selectors import build_nav_tree
+
+
+def _add_template_sync_toast(request, result: TemplateSyncResult) -> None:
+    """Add a Django messages toast if template registrations changed."""
+    if not result.changed:
+        return
+
+    if result.registered:
+        links = format_html_join(
+            ", ",
+            '<a href="{}">{}</a>',
+            ((build_create_url(block), block.label) for block in result.registered),
+        )
+        count = len(result.registered)
+        noun = "template" if count == 1 else "templates"
+        msg = format_html("{} {} registered: {}", count, noun, links)
+    else:
+        msg = format_html("Templates removed from index.")
+
+    messages.info(request, msg)
 
 
 def parse_wiki_path(path: str) -> tuple[str, str]:
@@ -100,6 +130,10 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
 
         if action == "update_text":
             raw_text = request.POST.get("text", "")
+            # Validate template marker syntax before saving
+            template_errors = validate_template_syntax(raw_text)
+            if template_errors:
+                return JsonResponse({"success": False, "errors": template_errors}, status=400)
             self.object.updated_by = request.user
             try:
                 save_inline_markdown_field(
@@ -107,6 +141,9 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
                 )
             except ValidationError as e:
                 return JsonResponse({"success": False, "errors": e.messages}, status=400)
+            # Sync template option index (page reloads on success, picks up toast)
+            result = sync_template_option_index(self.object)
+            _add_template_sync_toast(request, result)
             return JsonResponse({"success": True})
 
         return JsonResponse({"error": "Unknown action"}, status=400)
@@ -214,7 +251,9 @@ class WikiPageCreateView(
         """Set created_by and updated_by before saving."""
         form.instance.created_by = self.request.user
         form.instance.updated_by = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        _add_template_sync_toast(self.request, form.template_sync_result)
+        return response
 
     def get_context_data(self, **kwargs):
         """Add nav tree and page title."""
@@ -245,7 +284,9 @@ class WikiPageEditView(
     def form_valid(self, form):
         """Set updated_by before saving."""
         form.instance.updated_by = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        _add_template_sync_toast(self.request, form.template_sync_result)
+        return response
 
     def get_context_data(self, **kwargs):
         """Add nav tree and page title."""
@@ -300,12 +341,12 @@ class WikiTagAutocompleteView(CanAccessMaintainerPortalMixin, View):
         return JsonResponse({"tags": list(tags)})
 
 
-def _resolve_action_tags(raw_tags: str, source_page: WikiPage) -> list[str]:
-    """Resolve action button tags, expanding ``@source`` to the source page's tags.
+def _resolve_template_tags(raw_tags: str, source_page: WikiPage) -> list[str]:
+    """Resolve template tags, expanding ``@source`` to the source page's tags.
 
     Args:
         raw_tags: Comma-separated tag values, possibly including ``@source``.
-        source_page: The wiki page containing the action button.
+        source_page: The wiki page containing the template.
 
     Returns:
         Deduplicated list of tag strings, preserving insertion order.
@@ -325,14 +366,14 @@ def _resolve_action_tags(raw_tags: str, source_page: WikiPage) -> list[str]:
     return list(dict.fromkeys(result))
 
 
-class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
-    """Extract wiki action block content and redirect to a pre-filled create form."""
+class WikiTemplatePrefillView(CanAccessMaintainerPortalMixin, View):
+    """Extract wiki template block content and redirect to a pre-filled create form."""
 
-    def get(self, request, page_pk, action_name):
+    def get(self, request, page_pk, template_name):
         page = get_object_or_404(WikiPage, pk=page_pk)
-        action = extract_action_content(page.content, action_name)
+        action = extract_template_content(page.content, template_name)
         if action is None:
-            raise Http404(f"Action block '{action_name}' not found")
+            raise Http404(f"Template block '{template_name}' not found")
 
         from the_flip.apps.core.markdown_links import convert_storage_to_authoring
 
@@ -341,6 +382,10 @@ class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
         prefill_data = {
             "field": get_prefill_field(action.record_type),
             "content": content,
+            "template_content_url": reverse(
+                "api-wiki-template-content",
+                kwargs={"page_pk": page_pk, "template_name": template_name},
+            ),
         }
 
         extra_initial = {}
@@ -353,7 +398,7 @@ class WikiActionPrefillView(CanAccessMaintainerPortalMixin, View):
 
         if action.record_type == "page":
             if action.tags:
-                tags = _resolve_action_tags(action.tags, page)
+                tags = _resolve_template_tags(action.tags, page)
                 if tags:
                     request.session["form_prefill_tags"] = tags
             if action.title:
@@ -404,3 +449,79 @@ class WikiReorderSaveView(CanAccessMaintainerPortalMixin, View):
             return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
 
         return JsonResponse({"status": "success"})
+
+
+class WikiTemplateListView(CanAccessMaintainerPortalMixin, View):
+    """JSON endpoint listing template options matching filters.
+
+    Query parameters:
+        record_type (required): problem, log, partrequest, page
+        priority: filter by priority (blank matches all)
+        machine_slug: filter by machine slug (blank matches all)
+        location_slug: filter by location slug (blank matches all)
+    """
+
+    def get(self, request, *args, **kwargs):
+        record_type = request.GET.get("record_type", "")
+        if not record_type:
+            return JsonResponse({"error": "record_type is required"}, status=400)
+
+        qs = TemplateOptionIndex.objects.filter(record_type=record_type).select_related("page")
+
+        priority = request.GET.get("priority", "")
+        if priority:
+            qs = qs.filter(Q(priority=priority) | Q(priority=""))
+        # No priority filter means show only templates that work for any priority
+
+        machine_slug = request.GET.get("machine_slug", "")
+        if machine_slug:
+            qs = qs.filter(Q(machine_slug=machine_slug) | Q(machine_slug=""))
+        else:
+            qs = qs.filter(machine_slug="")
+
+        location_slug = request.GET.get("location_slug", "")
+        if location_slug:
+            qs = qs.filter(Q(location_slug=location_slug) | Q(location_slug=""))
+        else:
+            qs = qs.filter(location_slug="")
+
+        templates = [
+            {
+                "label": t.label,
+                "page_title": t.page.title,
+                "content_url": reverse(
+                    "api-wiki-template-content",
+                    kwargs={"page_pk": t.page_id, "template_name": t.template_name},
+                ),
+            }
+            for t in qs
+        ]
+
+        return JsonResponse({"templates": templates})
+
+
+class WikiTemplateContentView(CanAccessMaintainerPortalMixin, View):
+    """JSON endpoint returning the content of a single template block."""
+
+    def get(self, request, page_pk, template_name):
+        page = get_object_or_404(WikiPage, pk=page_pk)
+        action = extract_template_content(page.content, template_name)
+        if action is None:
+            raise Http404(f"Template block '{template_name}' not found")
+
+        from the_flip.apps.core.markdown_links import convert_storage_to_authoring
+
+        data: dict[str, str | list[str]] = {
+            "content": convert_storage_to_authoring(action.content),
+        }
+
+        if action.record_type == "page":
+            if action.tags:
+                data["tags"] = _resolve_template_tags(action.tags, page)
+            if action.title:
+                data["title"] = action.title
+
+        if action.priority:
+            data["priority"] = action.priority
+
+        return JsonResponse(data)

@@ -1,0 +1,14 @@
+<div class="form-field hidden"
+     data-template-selector
+     data-template-list-url="{% url 'api-wiki-template-list' %}"
+     data-record-type="{{ record_type }}"
+     {% if machine_slug %}data-machine-slug="{{ machine_slug }}"{% endif %}
+     {% if location_slug %}data-location-slug="{{ location_slug }}"{% endif %}
+     {% if preselect_url %}data-preselect-url="{{ preselect_url }}"{% endif %}>
+  <label class="form-label">
+    Template <span class="text-muted text-xs">(optional)</span>
+  </label>
+  <select class="form-input">
+    <option value="">Choose a template...</option>
+  </select>
+</div>

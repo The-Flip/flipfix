@@ -76,6 +76,7 @@
         {% field_errors form.machine_slug %}
       </div>
     {% endif %}
+    {% template_selector_field record_type="log" machine_slug=machine.slug|default:"" location_slug=machine.location.slug|default:"" %}
     <div class="form-field">
       {% form_label form.text %}
       {{ form.text }}
@@ -118,6 +119,7 @@
   <script src="{% static 'core/machine_autocomplete.js' %}" defer></script>
   <script src="{% static 'core/maintainer_chip_input.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
+  <script src="{% static 'core/template_selector.js' %}" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Set browser timezone for form submission (handles DST correctly)

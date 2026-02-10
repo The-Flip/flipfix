@@ -17,6 +17,9 @@
       {% form_non_field_errors form %}
       {% form_field form.title %}
       {% tag_chip_input_field initial_tags=form.get_initial_tags help_text="Tag paths like 'machines/blackout' or 'guides'. Leave empty for untagged." %}
+      {% if is_create %}
+        {% template_selector_field record_type="page" %}
+      {% endif %}
       {% form_field form.content %}
       <div class="form-actions">
         {% if is_create %}
@@ -47,4 +50,5 @@
 {% block extra_scripts %}
   {% include "core/partials/markdown_textarea_scripts.html" %}
   <script src="{% static 'core/tag_chip_input.js' %}" defer></script>
+  <script src="{% static 'core/template_selector.js' %}" defer></script>
 {% endblock %}

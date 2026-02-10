@@ -110,6 +110,7 @@ class MachineAutocompleteView(CanAccessMaintainerPortalMixin, View):
                     "slug": machine.slug,
                     "name": machine.name,
                     "location": machine.location.name if machine.location else "",
+                    "location_slug": machine.location.slug if machine.location else "",
                 }
             )
 
