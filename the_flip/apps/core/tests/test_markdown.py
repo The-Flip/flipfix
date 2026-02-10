@@ -380,3 +380,11 @@ class FencedCodeRangesTests(TestCase):
         self.assertEqual(len(ranges), 1)
         start, end = ranges[0]
         self.assertIn("tilde code", content[start:end])
+
+    def test_no_trailing_newline(self):
+        """Content without trailing newline exercises the len(content) fallback."""
+        content = "```\ncode\n```"
+        ranges = fenced_code_ranges(content)
+        self.assertEqual(len(ranges), 1)
+        start, end = ranges[0]
+        self.assertEqual(content[start:end], "```\ncode\n```")

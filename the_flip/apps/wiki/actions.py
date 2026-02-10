@@ -604,29 +604,32 @@ def sync_template_option_index(page) -> TemplateSyncResult:
     Returns:
         A ``TemplateSyncResult`` summarising what changed.
     """
-    from the_flip.apps.wiki.models import TemplateOptionIndex
+    from django.db import transaction
 
-    # Delete existing rows
-    old_count = TemplateOptionIndex.objects.filter(page=page).delete()[0]
+    from the_flip.apps.wiki.models import TemplateOptionIndex
 
     # Parse new option blocks
     option_blocks = _parse_option_blocks(page.content)
 
-    if option_blocks:
-        TemplateOptionIndex.objects.bulk_create(
-            [
-                TemplateOptionIndex(
-                    page=page,
-                    template_name=block.name,
-                    record_type=block.record_type,
-                    machine_slug=block.machine_slug,
-                    location_slug=block.location_slug,
-                    priority=block.priority,
-                    label=block.label,
-                )
-                for block in option_blocks
-            ]
-        )
+    with transaction.atomic():
+        # Delete existing rows
+        old_count = TemplateOptionIndex.objects.filter(page=page).delete()[0]
+
+        if option_blocks:
+            TemplateOptionIndex.objects.bulk_create(
+                [
+                    TemplateOptionIndex(
+                        page=page,
+                        template_name=block.name,
+                        record_type=block.record_type,
+                        machine_slug=block.machine_slug,
+                        location_slug=block.location_slug,
+                        priority=block.priority,
+                        label=block.label,
+                    )
+                    for block in option_blocks
+                ]
+            )
 
     # removed_count = rows that existed before but aren't in the new set
     removed_count = max(0, old_count - len(option_blocks))

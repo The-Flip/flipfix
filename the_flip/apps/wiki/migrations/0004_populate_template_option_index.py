@@ -6,8 +6,8 @@ from django.db import migrations
 def populate_index(apps, schema_editor):
     """Backfill TemplateOptionIndex for all existing wiki pages."""
     from the_flip.apps.wiki.actions import sync_template_option_index
-    from the_flip.apps.wiki.models import WikiPage
 
+    WikiPage = apps.get_model("wiki", "WikiPage")
     for page in WikiPage.objects.all():
         sync_template_option_index(page)
 

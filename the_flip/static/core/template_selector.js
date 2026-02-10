@@ -32,7 +32,7 @@ function initTemplateSelector(container) {
   const textarea = form.querySelector('[data-text-textarea]');
   if (!textarea) return;
 
-  let machineSlugg = container.dataset.machineSlug || '';
+  let machineSlug = container.dataset.machineSlug || '';
   let locationSlug = container.dataset.locationSlug || '';
   let lastTemplateContent = null;
   let locked = false;
@@ -47,7 +47,7 @@ function initTemplateSelector(container) {
 
   function buildListUrl() {
     const params = new URLSearchParams({ record_type: recordType });
-    if (machineSlugg) params.set('machine_slug', machineSlugg);
+    if (machineSlug) params.set('machine_slug', machineSlug);
     if (locationSlug) params.set('location_slug', locationSlug);
     if (prioritySelect && prioritySelect.value) {
       params.set('priority', prioritySelect.value);
@@ -222,9 +222,9 @@ function initTemplateSelector(container) {
 
   // Machine changed (from machine autocomplete)
   form.addEventListener('machine:changed', (event) => {
-    machineSlugg = event.detail.slug || '';
+    machineSlug = event.detail.slug || '';
     locationSlug = event.detail.locationSlug || '';
-    container.dataset.machineSlug = machineSlugg;
+    container.dataset.machineSlug = machineSlug;
     container.dataset.locationSlug = locationSlug;
     fetchTemplates();
   });

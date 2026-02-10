@@ -180,7 +180,12 @@ class TemplateOptionIndex(models.Model):
     label = models.CharField(max_length=200)
 
     class Meta:
-        unique_together = [("page", "template_name")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["page", "template_name"],
+                name="templateoptionindex_unique_page_template",
+            ),
+        ]
         indexes = [
             models.Index(fields=["record_type", "priority", "machine_slug", "location_slug"]),
         ]

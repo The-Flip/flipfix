@@ -240,6 +240,7 @@
           selectedTags.delete(tag);
           chip.remove();
         });
+        hideDropdown();
       },
     };
   }

@@ -11,7 +11,7 @@ There's different templates for different record create scenarios...
 - for specific **record types**:
   - New Parts Request -> a parts request order form
   - New Log Entry -> a cleaning checklist
-  - New Wiki Page -> New Acquisition Checklist"
+  - New Wiki Page -> New Acquisition Checklist
 - for specific **machines**:
   - Gorgar -> New Log Entry -> Checklist for Cleaning Gorgar's Statue
 - for specific **machine locations**:
@@ -65,13 +65,13 @@ Attributes on `template:action`:
 
 ### Buttons on Wiki Pages
 
-A `<!--template:action action="button" ...->` renders a clickable button on the wiki page. Clicking the button opens the appropriate create form with the template content pre-filled in the description.
+A `<!--template:action action="button" ...-->` renders a clickable button on the wiki page. Clicking the button opens the appropriate create form with the template content pre-filled in the description.
 
 If the template specifies a `machine`, the form opens scoped to that machine. If it specifies a `priority`, that priority is pre-selected.
 
 ### Template Selector on Create Forms
 
-A `<!--template:action action="option" ...->` registers the template in create form dropdowns. When creating a record, a template dropdown appears if any templates match the current context. The dropdown filters based on:
+A `<!--template:action action="option" ...-->` registers the template in create form dropdowns. When creating a record, a template dropdown appears if any templates match the current context. The dropdown filters based on:
 
 - **Record type** — the kind of record being created (problem report, log entry, etc.)
 - **Priority** — the currently selected priority
