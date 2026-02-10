@@ -1,4 +1,6 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load maintenance_tags %}
 {% editable_sidebar_card editable=editable edit_type="problem" current_value=problem_report.pk current_machine_slug=current_machine_slug csrf_token=csrf_token %}
 {% if problem_report %}
   <a href="{% url 'problem-report-detail' problem_report.pk %}"

@@ -1,5 +1,8 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load maintenance_tags %}
 {% block title %}
   {% if entry.machine %}{{ entry.machine.short_display_name }} ·{% endif %}
   Log #{{ entry.pk }} · {{ block.super }}

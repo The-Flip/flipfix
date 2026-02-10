@@ -1,7 +1,7 @@
 {# Editable media card with upload button, grid, and file input #}
 {# Usage: {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" model_name="LogEntryMedia" %} #}
 {# Requires: Include media_grid.js and video_transcode_poll.js in page scripts #}
-{% load core_extras %}
+{% load video_tags %}
 <div class="card card--padded space-above-lg"
      data-media-card
      data-alt-text="{{ alt|default:'Photo' }}"

@@ -1,5 +1,10 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load form_tags %}
+{% load accounts_form_tags %}
+{% load wiki_form_tags %}
 {% block title %}
   {% if is_edit %}
     Edit

@@ -1,5 +1,6 @@
 {% extends "wiki/base.html" %}
-{% load core_extras %}
+{% load ui_tags %}
+{% load list_tags %}
 {% block title %}
   {% if search_query %}Search: {{ search_query }} ·{% endif %}
   Docs · {{ block.super }}

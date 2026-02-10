@@ -75,6 +75,7 @@ STOP and read the relevant doc before writing code. Code that doesn't follow doc
 | System architecture              | [`docs/Architecture.md`](docs/Architecture.md)           |
 | Directory layout                 | [`docs/Project_Structure.md`](docs/Project_Structure.md) |
 | `[[type:ref]]` markdown links    | [`docs/MarkdownLinks.md`](docs/MarkdownLinks.md)         |
+| Template tags & components       | [`docs/TemplateTags.md`](docs/TemplateTags.md)           |
 
 Follow the patterns in these docs exactly. Do not introduce new conventions without asking. Update docs when changing behavior.
 
@@ -224,39 +225,26 @@ Always follow these rules:
 
 ## Template Components
 
-This project uses Django's `@register.inclusion_tag` and `@register.simple_block_tag` for reusable UI components. Components are defined in `the_flip/apps/core/templatetags/core_extras.py` and templates live in `templates/components/`.
+This project uses Django's `@register.inclusion_tag` and `@register.simple_block_tag` for reusable UI components. Tag libraries are split by concern across multiple files. See [`docs/TemplateTags.md`](docs/TemplateTags.md) for the full reference.
 
-### Available Components
+### Tag Library Organization
 
-Load with `{% load core_extras %}`, then use:
+| Library | Location | What it contains |
+|---------|----------|------------------|
+| `ui_tags` | core | Atomic primitives: `icon`, `pill`, `smart_date`, `month_name`, `addstr` |
+| `video_tags` | core | `video_player`, `video_thumbnail` |
+| `sidebar_tags` | core | `sidebar_section`, `editable_sidebar_card` |
+| `list_tags` | core | `empty_state`, `child_list_search`, `stat_grid`, `timeline`, `timeline_entry` |
+| `form_tags` | core | `form_field`, `form_fields`, `form_label`, `form_non_field_errors`, `field_errors`, `field_help_text`, `getfield` |
+| `markdown_tags` | core | `render_markdown`, `storage_to_authoring` |
+| `catalog_tags` | catalog | Machine status pills/filters, `manufacturer_year` |
+| `maintenance_tags` | maintenance | Problem/log pills/filters, `problem_report_summary`, `log_entry_meta` |
+| `parts_tags` | parts | `settable_part_request_status_pill` |
+| `accounts_tags` | accounts | `display_name_with_username` |
+| `accounts_form_tags` | accounts | `maintainer_autocomplete_field`, `maintainer_chip_input_field` |
+| `wiki_form_tags` | wiki | `template_selector_field`, `tag_chip_input_field` |
 
-| Component                           | Type          | Usage                                                                                                                                                                                                                                                                               |
-| ----------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `two_column_layout`                 | Template      | `{% extends "layouts/two_column.html" %}` with blocks: `mobile_actions`, `sidebar`, `main`. Sidebar block is auto-wrapped in sticky card.                                                                                                                                           |
-| `sidebar_section`                   | Block tag     | `{% sidebar_section label="Stats" %}...{% endsidebar_section %}` - Section within sidebar                                                                                                                                                                                           |
-| `editable_sidebar_card`             | Block tag     | `{% editable_sidebar_card editable=True edit_type="machine" current_value=slug csrf_token=csrf_token %}...{% endeditable_sidebar_card %}` - Sidebar card with edit dropdown                                                                                                         |
-| `stat_grid`                         | Inclusion tag | `{% stat_grid stats=stats_list %}` where stats is list of `{value, label, variant}` dicts                                                                                                                                                                                           |
-| `empty_state`                       | Inclusion tag | `{% empty_state empty_message="No items." search_message="No results." is_search=query %}` - Empty/no results message                                                                                                                                                               |
-| `child_list_search`                 | Inclusion tag | `{% child_list_search total_count=log_count search_value=search_query placeholder="Search logs..." %}` - Conditionally shown search input for child items on detail pages (hidden when total_count <= 5 unless search is active). Optional: `placeholder`                           |
-| `timeline`                          | Block tag     | `{% timeline %}...{% endtimeline %}` - Timeline container with vertical line                                                                                                                                                                                                        |
-| `timeline_entry`                    | Block tag     | `{% timeline_entry icon="bug" variant="problem" %}...{% endtimeline_entry %}`                                                                                                                                                                                                       |
-| `pill`                              | Inclusion tag | `{% pill label="Open" variant="open" %}` - Status pill/badge                                                                                                                                                                                                                        |
-| `problem_report_priority_pill`      | Inclusion tag | `{% problem_report_priority_pill report %}` - Read-only priority pill for problem reports                                                                                                                                                                                           |
-| `settable_problem_status_pill`      | Inclusion tag | `{% settable_problem_status_pill report %}` - Clickable status dropdown pill for problem reports (AJAX update)                                                                                                                                                                      |
-| `settable_problem_priority_pill`    | Inclusion tag | `{% settable_problem_priority_pill report %}` - Clickable priority dropdown pill for problem reports (AJAX update, excludes Untriaged)                                                                                                                                              |
-| `settable_machine_status_pill`      | Inclusion tag | `{% settable_machine_status_pill machine %}` - Clickable status dropdown pill for machines (AJAX update)                                                                                                                                                                            |
-| `settable_machine_location_pill`    | Inclusion tag | `{% settable_machine_location_pill machine locations %}` - Clickable location dropdown pill for machines (AJAX update)                                                                                                                                                              |
-| `settable_part_request_status_pill` | Inclusion tag | `{% settable_part_request_status_pill part_request %}` - Clickable status dropdown pill for part requests (AJAX update)                                                                                                                                                             |
-| `icon`                              | Simple tag    | `{% icon "check" %}` - Font Awesome icon with auto `aria-hidden`. Optional: `class`, `label`, `style`                                                                                                                                                                               |
-| `form_label`                        | Simple tag    | `{% form_label field %}` - Renders label with "(optional)" for non-required fields                                                                                                                                                                                                  |
-| `form_field`                        | Inclusion tag | `{% form_field field %}` - Renders field with label, input, help text, errors. Optional: `id`, `class_`                                                                                                                                                                             |
-| `form_fields`                       | Inclusion tag | `{% form_fields form %}` - Renders all visible fields in a form                                                                                                                                                                                                                     |
-| `form_non_field_errors`             | Inclusion tag | `{% form_non_field_errors form %}` - Renders non-field errors if any                                                                                                                                                                                                                |
-| `field_errors`                      | Inclusion tag | `{% field_errors form.field_name %}` - Renders field errors only (for custom field markup)                                                                                                                                                                                          |
-| `field_help_text`                   | Inclusion tag | `{% field_help_text form.field_name %}` - Renders field help text only (for custom field markup)                                                                                                                                                                                    |
-| `maintainer_autocomplete_field`     | Inclusion tag | `{% maintainer_autocomplete_field form.name %}` - Autocomplete input for user search. Optional: `label`, `placeholder`, `size`, `show_label`, `required`                                                                                                                            |
-| `maintainer_chip_input_field`       | Inclusion tag | `{% maintainer_chip_input_field label="Who did the work?" initial_maintainers=entry.maintainers.all initial_freetext=entry.maintainer_names %}` - Multi-select chip input for maintainer selection. Displays selected maintainers as removable chips with autocomplete to add more. |
-| `template_selector_field`           | Inclusion tag | `{% template_selector_field record_type="problem" machine_slug=machine.slug location_slug=machine.location.slug %}` - Template dropdown on create forms. Hidden by JS when no templates match.                                                                                      |
+Templates load only what they need: `{% load ui_tags %}`, `{% load form_tags %}`, etc.
 
 **Form Field Marking**: Do NOT mark required fields with asterisks. The `form_field` component auto-appends "(optional)" to fields with `required=False`. For manual markup, add "(optional)" to the label or use `{% form_label field %}`. See `docs/Forms.md` for full form guidance.
 
@@ -268,26 +256,7 @@ Load with `{% load core_extras %}`, then use:
 
 ### Creating New Components
 
-1. Add function to `the_flip/apps/core/templatetags/core_extras.py`:
-   - Use `@register.inclusion_tag("components/name.html")` for components that render a template
-   - Use `@register.simple_block_tag` for components that wrap content
-2. Create template in `templates/components/` (for inclusion tags)
-3. Document in this table
-
-### Template Filters
-
-| Filter                       | Description                                                                              | Usage                                                        |
-| ---------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `getfield`                   | Get form field by name                                                                   | `{{ form\|getfield:"name" }}`                                |
-| `render_markdown`            | Convert markdown to sanitized HTML with auto-linked URLs and wiki links (`[[type:ref]]`) | `{{ text\|render_markdown }}`                                |
-| `storage_to_authoring`       | Convert storage-format links to authoring format for editing                             | `{{ content\|storage_to_authoring }}`                        |
-| `smart_date`                 | Render timestamp as `<time>` element for JS formatting                                   | `{{ timestamp\|smart_date }}`                                |
-| `month_name`                 | Convert month number (1-12) to name                                                      | `{{ month_num\|month_name }}`                                |
-| `display_name_with_username` | Returns "First Last (username)" or just "username"                                       | `{{ user\|display_name_with_username }}`                     |
-| `machine_status_btn_class`   | Button CSS class for machine status                                                      | `{{ machine.operational_status\|machine_status_btn_class }}` |
-| `machine_status_css_class`   | Pill CSS class for machine status                                                        | `{{ machine.operational_status\|machine_status_css_class }}` |
-| `machine_status_icon`        | Font Awesome icon for machine status                                                     | `{{ machine.operational_status\|machine_status_icon }}`      |
-| `manufacturer_year`          | Returns "Manufacturer · Year" string                                                     | `{{ machine.model\|manufacturer_year }}`                     |
-| `log_entry_meta`             | Maintainer names + timestamp                                                             | `{{ entry\|log_entry_meta }}`                                |
-| `problem_report_meta`        | Reporter name + timestamp                                                                | `{{ report\|problem_report_meta }}`                          |
-| `problem_report_summary`     | Concise summary: type + description                                                      | `{{ report\|problem_report_summary }}`                       |
+1. Determine which library the tag belongs to (see [`docs/TemplateTags.md`](docs/TemplateTags.md) for the organizing principles)
+2. Add function to the appropriate `templatetags/<library>.py` file
+3. For inclusion tags, create template in `templates/components/`
+4. Document in [`docs/TemplateTags.md`](docs/TemplateTags.md)

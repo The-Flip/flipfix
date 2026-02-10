@@ -1,4 +1,6 @@
-{% load core_extras %}
+{% load list_tags %}
+{% load markdown_tags %}
+{% load maintenance_tags %}
 {% timeline_entry icon="screwdriver-wrench" variant="log" %}
 <article class="card card--log timeline__card">
   <a href="{% url 'log-detail' entry.pk %}" class="timeline__card-link">

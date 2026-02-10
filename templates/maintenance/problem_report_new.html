@@ -1,5 +1,9 @@
 {% extends "base.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load form_tags %}
+{% load accounts_form_tags %}
+{% load wiki_form_tags %}
 {% block title %}New Problem Report · {{ block.super }}{% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->

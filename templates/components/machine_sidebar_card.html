@@ -1,4 +1,6 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load catalog_tags %}
 {% editable_sidebar_card editable=editable edit_type="machine" current_value=machine.slug csrf_token=csrf_token %}
 <a href="{% url 'maintainer-machine-detail' machine.slug %}"
    class="sidebar-card sidebar-card--neutral">

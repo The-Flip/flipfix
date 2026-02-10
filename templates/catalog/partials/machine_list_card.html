@@ -1,4 +1,6 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load catalog_tags %}
+{% load maintenance_tags %}
 <article class="machine-card"
          data-search-text="{{ machine.name }} {{ machine.model.year }} {{ machine.model.manufacturer }} {{ machine.get_operational_status_display }}{% if machine.location %} {{ machine.location.name }}{% endif %}{% if machine.latest_open_report %} {{ machine.latest_open_report.0.description }}{% endif %}">
   <a href="{% url 'maintainer-machine-detail' machine.slug %}"

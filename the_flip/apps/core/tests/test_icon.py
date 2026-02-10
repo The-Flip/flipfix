@@ -2,7 +2,7 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.core.templatetags.core_extras import icon
+from the_flip.apps.core.templatetags.ui_tags import icon
 
 
 @tag("views")
@@ -87,7 +87,7 @@ class IconTagTests(TestCase):
         Regression test: machine_status_icon filter returns unprefixed names
         (e.g., "check" not "fa-check") so the icon() tag can add the prefix.
         """
-        from the_flip.apps.core.templatetags.core_extras import machine_status_icon
+        from the_flip.apps.catalog.templatetags.catalog_tags import machine_status_icon
 
         # Verify filter returns unprefixed names
         self.assertEqual(machine_status_icon("good"), "check")

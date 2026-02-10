@@ -1,4 +1,4 @@
-{% load core_extras %}
+{% load ui_tags %}
 <span class="pill {% if report.status == report.Status.OPEN %}pill--status-broken{% else %}pill--status-good{% endif %}">
   {% if report.status == report.Status.OPEN %}
     {% icon "circle-exclamation" class="meta" %}

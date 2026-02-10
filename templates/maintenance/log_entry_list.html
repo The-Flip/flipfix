@@ -1,5 +1,6 @@
 {% extends "maintenance/global_list_base.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
 {% block list_title %}Logs{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'log-create-global' %}" class="btn btn--log">
