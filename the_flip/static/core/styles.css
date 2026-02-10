@@ -405,10 +405,16 @@ body {
   margin-bottom: var(--space-3);
 }
 
-/* Wall display: full-screen overrides */
-.wall-display {
+/* Wall display: full-screen, never-wrap column layout */
+.column-grid.wall-display {
+  display: flex;
   padding: var(--space-4);
   min-height: 100vh;
+}
+
+.column-grid.wall-display > * {
+  flex: 1;
+  min-width: 0;
 }
 
 .card__header {
