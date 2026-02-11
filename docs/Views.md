@@ -133,19 +133,28 @@ List views use infinite scroll instead of traditional pagination:
 
 ## Multi-Model Feeds
 
-When displaying activity from multiple models (logs, problems, parts) on a single timeline, use the merge-sort feed pattern in `catalog/feed.py`:
+When displaying activity from multiple models (logs, problems, parts) on a single timeline, use the unified feed in `core/feed.py`:
 
 1. **Fetch limit+1 from each table** - Detects pagination without COUNT query ("countless pagination")
 2. **Combine and sort in memory** - All models have `occurred_at`, sort descending
 3. **Slice to page size** - Return just the requested page
 4. **Return (items, has_next) tuple** - `has_next` derived from whether we fetched more than page_size
 
-```python
-from the_flip.apps.catalog.feed import get_machine_feed_page, FEED_CONFIGS
+Pass `machine=` for a machine-scoped feed (uses `search_for_machine`) or omit it for the global feed (uses `search`, includes machine in `select_related`).
 
-entries, has_next = get_machine_feed_page(
+```python
+from the_flip.apps.core.feed import get_feed_page, FEED_CONFIGS
+
+# Machine-scoped feed
+entries, has_next = get_feed_page(
     machine=self.machine,
     entry_types=feed_config.entry_types,
+    page_num=page_num,
+    search_query=search_query,
+)
+
+# Global feed (all machines)
+entries, has_next = get_feed_page(
     page_num=page_num,
     search_query=search_query,
 )
