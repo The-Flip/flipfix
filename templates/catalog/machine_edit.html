@@ -1,5 +1,9 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load form_tags %}
+{% load catalog_tags %}
 {% block title %}Edit {{ object.name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>

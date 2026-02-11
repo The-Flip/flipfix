@@ -1,5 +1,9 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load list_tags %}
+{% load maintenance_tags %}
 {% block title %}
   {% if report.machine %}{{ report.machine.short_display_name }} ·{% endif %}
   Problem Report #{{ report.pk }} · {{ block.super }}

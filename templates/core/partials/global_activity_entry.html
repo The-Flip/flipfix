@@ -1,4 +1,3 @@
-{% load core_extras %}
 {% if entry.entry_type == "log" %}
   {% include "maintenance/partials/global_log_entry.html" with entry=entry %}
 {% elif entry.entry_type == "problem_report" %}

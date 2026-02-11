@@ -1,5 +1,7 @@
 {% extends "wiki/base.html" %}
-{% load core_extras %}
+{% load ui_tags %}
+{% load markdown_tags %}
+{% load accounts_tags %}
 {% load static %}
 {% load wiki_extras %}
 {% block title %}{{ page.title }} · Docs · {{ block.super }}{% endblock %}

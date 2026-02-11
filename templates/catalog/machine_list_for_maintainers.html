@@ -1,5 +1,8 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load list_tags %}
 {% block title %}Machines · {{ block.super }}{% endblock %}
 {% block mobile_actions %}
   {% if user.is_superuser %}

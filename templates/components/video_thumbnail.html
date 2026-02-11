@@ -1,6 +1,7 @@
 {# Video thumbnail component for list views - handles all transcode states #}
 {# Usage: {% video_thumbnail media=media model_name="LogEntryMedia" %} #}
-{% load core_extras %}
+{% load ui_tags %}
+{% load video_tags %}
 {% if media.transcode_status == media.TranscodeStatus.READY and media.poster_file %}
   <img src="{{ media.poster_file.url }}" alt="Video poster">
 {% elif media.transcode_status == "" %}

@@ -1,6 +1,6 @@
 {# History icon linking to admin history view #}
 {# Usage: {% include "components/history_link.html" with history_url=problem.get_admin_history_url %} #}
-{% load core_extras %}
+{% load ui_tags %}
 {% if user.is_superuser and history_url %}
   <a href="{{ history_url }}" class="sidebar__corner-link" title="History">{% icon "clock-rotate-left" label="History" %}</a>
 {% endif %}

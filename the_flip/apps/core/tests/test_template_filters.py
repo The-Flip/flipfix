@@ -2,8 +2,8 @@
 
 from django.test import TestCase, tag
 
-from the_flip.apps.core.templatetags.core_extras import (
-    display_name_with_username,
+from the_flip.apps.accounts.templatetags.accounts_tags import display_name_with_username
+from the_flip.apps.catalog.templatetags.catalog_tags import (
     machine_status_btn_class,
     machine_status_css_class,
     machine_status_icon,
