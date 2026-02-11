@@ -51,6 +51,7 @@ class PartRequestStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
         self.assertEqual(response.status_code, 200)
         json_data = response.json()
+        self.assertTrue(json_data["success"])
         self.assertEqual(json_data["status"], "success")
         self.assertEqual(json_data["new_status"], PartRequest.Status.ORDERED)
         self.assertEqual(json_data["new_status_display"], "Ordered")
@@ -88,6 +89,7 @@ class PartRequestStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
         self.assertEqual(response.status_code, 400)
         json_data = response.json()
+        self.assertFalse(json_data["success"])
         self.assertIn("error", json_data)
 
     def test_status_update_noop_same_status(self):
@@ -102,6 +104,7 @@ class PartRequestStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
         self.assertEqual(response.status_code, 200)
         json_data = response.json()
+        self.assertTrue(json_data["success"])
         self.assertEqual(json_data["status"], "noop")
 
         # Verify no update was created
@@ -122,4 +125,5 @@ class PartRequestStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, Test
 
         self.assertEqual(response.status_code, 400)
         json_data = response.json()
+        self.assertFalse(json_data["success"])
         self.assertIn("error", json_data)

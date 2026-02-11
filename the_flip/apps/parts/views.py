@@ -515,48 +515,59 @@ class PartRequestStatusUpdateView(CanAccessMaintainerPortalMixin, View):
     """AJAX-only endpoint to update part request status."""
 
     def post(self, request, *args, **kwargs):
-        part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
+        self.part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
         action = request.POST.get("action")
 
-        if action == "update_status":
-            new_status = request.POST.get("status")
-            if new_status not in PartRequest.Status.values:
-                return JsonResponse({"error": "Invalid status"}, status=400)
+        action_handlers = {
+            "update_status": self._handle_update_status,
+        }
 
-            if part_request.status == new_status:
-                return JsonResponse({"status": "noop"})
+        if action in action_handlers:
+            return action_handlers[action](request)
 
-            # Get old status display before change
-            old_display = part_request.get_status_display()
-            new_display = PartRequest.Status(new_status).label
+        return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
 
-            # Get the maintainer for the current user
-            maintainer = get_object_or_404(Maintainer, user=request.user)
+    # -- Action handlers -------------------------------------------------------
 
-            # Create an update that will cascade the status change
-            update = PartRequestUpdate.objects.create(
-                part_request=part_request,
-                posted_by=maintainer,
-                text=f"Status changed: {old_display} → {new_display}",
-                new_status=new_status,
-            )
+    def _handle_update_status(self, request):
+        """AJAX: change status, creating an audit trail record."""
+        new_status = request.POST.get("status")
+        if new_status not in PartRequest.Status.values:
+            return JsonResponse({"success": False, "error": "Invalid status"}, status=400)
 
-            # Render the new update entry for injection into the page
-            update_html = render_to_string(
-                "parts/partials/part_update_entry.html",
-                {"update": update},
-            )
+        if self.part_request.status == new_status:
+            return JsonResponse({"success": True, "status": "noop"})
 
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "new_status": new_status,
-                    "new_status_display": new_display,
-                    "update_html": update_html,
-                }
-            )
+        # Get old status display before change
+        old_display = self.part_request.get_status_display()
+        new_display = PartRequest.Status(new_status).label
 
-        return JsonResponse({"error": "Unknown action"}, status=400)
+        # Get the maintainer for the current user
+        maintainer = get_object_or_404(Maintainer, user=request.user)
+
+        # Create an update that will cascade the status change
+        update = PartRequestUpdate.objects.create(
+            part_request=self.part_request,
+            posted_by=maintainer,
+            text=f"Status changed: {old_display} → {new_display}",
+            new_status=new_status,
+        )
+
+        # Render the new update entry for injection into the page
+        update_html = render_to_string(
+            "parts/partials/part_update_entry.html",
+            {"update": update},
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "status": "success",
+                "new_status": new_status,
+                "new_status_display": new_display,
+                "update_html": update_html,
+            }
+        )
 
 
 class PartRequestUpdateDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, View):
