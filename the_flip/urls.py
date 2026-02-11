@@ -53,13 +53,15 @@ from the_flip.apps.maintenance.views.problem_reports import (
     ProblemReportListView,
     ProblemReportLogEntriesPartialView,
     PublicProblemReportCreateView,
-    WallDisplayBoardView,
-    WallDisplaySetupView,
 )
 from the_flip.apps.maintenance.views.qr_codes import MachineBulkQRCodeView, MachineQRView
 from the_flip.apps.maintenance.views.transcoding import (
     ReceiveTranscodedMediaView,
     ServeSourceMediaView,
+)
+from the_flip.apps.maintenance.views.wall_display import (
+    WallDisplayBoardView,
+    WallDisplaySetupView,
 )
 from the_flip.apps.parts import views as parts_views
 from the_flip.apps.wiki.views import (
