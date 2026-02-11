@@ -3,6 +3,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
+from the_flip.apps.core.admin import MediaInline
 from the_flip.apps.parts.models import (
     PartRequest,
     PartRequestMedia,
@@ -11,13 +12,10 @@ from the_flip.apps.parts.models import (
 )
 
 
-class PartRequestMediaInline(admin.TabularInline):
+class PartRequestMediaInline(MediaInline):
     """Inline admin for part request media."""
 
     model = PartRequestMedia
-    extra = 0
-    fields = ["media_type", "file", "thumbnail_file", "transcode_status"]
-    readonly_fields = ["thumbnail_file", "transcode_status"]
 
 
 class PartRequestUpdateInline(admin.TabularInline):
@@ -65,13 +63,10 @@ class PartRequestMediaAdmin(SimpleHistoryAdmin):
     ordering = ["-created_at"]
 
 
-class PartRequestUpdateMediaInline(admin.TabularInline):
+class PartRequestUpdateMediaInline(MediaInline):
     """Inline admin for part request update media."""
 
     model = PartRequestUpdateMedia
-    extra = 0
-    fields = ["media_type", "file", "thumbnail_file", "transcode_status"]
-    readonly_fields = ["thumbnail_file", "transcode_status"]
 
 
 @admin.register(PartRequestUpdate)
