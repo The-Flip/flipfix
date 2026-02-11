@@ -11,9 +11,11 @@ class PartsConfig(AppConfig):
     verbose_name = "Parts Management"
 
     def ready(self):
-        from . import signals
+        from the_flip.apps.core.models import register_reference_cleanup
 
-        del signals  # imported for side effects (signal registration)
+        from .models import PartRequest, PartRequestUpdate
+
+        register_reference_cleanup(PartRequest, PartRequestUpdate)
 
         self._register_link_types()
         self._register_media_models()

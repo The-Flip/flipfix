@@ -17,9 +17,13 @@ class MaintenanceConfig(AppConfig):
 
             logging.getLogger(__name__).warning("HEIF support unavailable; HEIC decode may fail.")
 
-        from . import signals
+        from the_flip.apps.core.models import register_reference_cleanup
 
-        del signals  # imported for side effects (signal registration)
+        from .models import LogEntry, ProblemReport
+
+        register_reference_cleanup(ProblemReport, LogEntry)
+
+        from . import signals  # noqa: F401 — registers @receiver handlers
 
         self._register_link_types()
         self._register_media_models()

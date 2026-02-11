@@ -1,19 +1,16 @@
 """Signals for the maintenance app.
 
-Handles:
-- Automatic log entry creation when machine status/location changes
-- RecordReference cleanup on deletion
+Handles automatic log entry creation when machine status/location changes.
+RecordReference cleanup is handled by register_reference_cleanup() in apps.py.
 """
 
-from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_delete, post_save, pre_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
-from the_flip.apps.core.models import RecordReference
 
-from .models import LogEntry, ProblemReport
+from .models import LogEntry
 
 # =============================================================================
 # Auto log entry signals — create LogEntry records for machine changes
@@ -113,16 +110,3 @@ def _add_maintainer_if_exists(log_entry, user):
             log_entry.maintainers.add(maintainer)
     except Maintainer.DoesNotExist:
         pass
-
-
-# =============================================================================
-# Reference cleanup signals
-# =============================================================================
-
-
-@receiver(post_delete, sender=ProblemReport)
-@receiver(post_delete, sender=LogEntry)
-def cleanup_maintenance_references(sender, instance, **kwargs):
-    """Clean up RecordReference rows when a maintenance record is deleted."""
-    ct = ContentType.objects.get_for_model(sender)
-    RecordReference.objects.filter(source_type=ct, source_id=instance.pk).delete()

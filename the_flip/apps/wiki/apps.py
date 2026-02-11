@@ -9,7 +9,13 @@ class WikiConfig(AppConfig):
     def ready(self):
         from . import signals
 
-        del signals  # imported for side effects (signal registration)
+        del signals  # imported for side effects (tag sentinel signals)
+
+        from the_flip.apps.core.models import register_reference_cleanup
+
+        from .models import WikiPage
+
+        register_reference_cleanup(WikiPage)
 
         self._register_link_types()
 

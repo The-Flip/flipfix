@@ -224,3 +224,28 @@ class RecordReference(models.Model):
         return (
             f"{self.source_type.model}:{self.source_id} → {self.target_type.model}:{self.target_id}"
         )
+
+
+def register_reference_cleanup(*model_classes: type[models.Model]) -> None:
+    """Connect post_delete signals to clean up RecordReference rows for the given models.
+
+    Call from AppConfig.ready() for every model whose text fields can contain
+    ``[[type:ref]]`` markdown links (i.e. any model passed to ``sync_references``).
+
+    Example::
+
+        from the_flip.apps.core.models import register_reference_cleanup
+        from .models import ProblemReport, LogEntry
+
+        class MaintenanceConfig(AppConfig):
+            def ready(self):
+                register_reference_cleanup(ProblemReport, LogEntry)
+    """
+    from django.db.models.signals import post_delete
+
+    def _cleanup_references(sender, instance, **kwargs):
+        ct = ContentType.objects.get_for_model(sender)
+        RecordReference.objects.filter(source_type=ct, source_id=instance.pk).delete()
+
+    for model_class in model_classes:
+        post_delete.connect(_cleanup_references, sender=model_class)

@@ -1,19 +1,9 @@
-"""Wiki signals: reference cleanup, tag sentinel management."""
+"""Wiki signals: tag sentinel management."""
 
-from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from the_flip.apps.core.models import RecordReference
-
 from .models import UNTAGGED_SENTINEL, WikiPage, WikiPageTag
-
-
-@receiver(post_delete, sender=WikiPage)
-def cleanup_wiki_references(sender, instance, **kwargs):
-    """Clean up RecordReference rows when a WikiPage is deleted."""
-    ct = ContentType.objects.get_for_model(sender)
-    RecordReference.objects.filter(source_type=ct, source_id=instance.pk).delete()
 
 
 @receiver(post_save, sender=WikiPage)
