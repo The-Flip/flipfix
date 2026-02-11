@@ -56,7 +56,7 @@ class PartRequestMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase):
         part_request = PartRequest.objects.first()
         self.assertEqual(part_request.media.count(), 0)
 
-    @patch("the_flip.apps.parts.views.enqueue_transcode")
+    @patch("the_flip.apps.parts.views.part_requests.enqueue_transcode")
     def test_form_video_upload_enqueues_transcode(self, mock_enqueue):
         """Video uploaded via form submission triggers transcoding."""
         self.client.force_login(self.maintainer_user)
