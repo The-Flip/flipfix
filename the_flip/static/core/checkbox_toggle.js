@@ -70,11 +70,6 @@
 
   // DOM wiring (browser only)
   if (typeof document !== 'undefined') {
-    function getCsrfToken() {
-      const cookie = document.cookie.match(/csrftoken=([^;]+)/);
-      return cookie ? cookie[1] : '';
-    }
-
     function initTextCard(card) {
       const textarea = card.querySelector('[data-text-textarea]');
       if (!textarea) {

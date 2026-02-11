@@ -2,7 +2,7 @@
  * Media grid upload and management functionality.
  *
  * Auto-initializes on DOMContentLoaded for all elements with [data-media-card].
- * Requires CSRF_TOKEN to be set globally or passed via data attribute.
+ * Requires core.js (for getCsrfToken).
  *
  * Events:
  * - Dispatches 'media:uploaded' on document when video uploads complete (for polling)
@@ -142,23 +142,6 @@
         attachDeleteHandler(newDeleteBtn, container);
       }
     });
-  }
-
-  /**
-   * Get CSRF token from global variable or cookie.
-   * @returns {string} The CSRF token
-   */
-  function getCsrfToken() {
-    // Try global variable first (set by Django template)
-    if (typeof CSRF_TOKEN !== 'undefined') {
-      return CSRF_TOKEN;
-    }
-    // Fall back to cookie
-    const cookie = document.cookie.match(/csrftoken=([^;]+)/);
-    if (!cookie) {
-      console.warn('CSRF token not found - POST requests may fail');
-    }
-    return cookie ? cookie[1] : '';
   }
 
   /**
