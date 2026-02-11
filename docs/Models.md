@@ -101,7 +101,25 @@ The project uses this pattern in:
 - `ProblemReportQuerySet` - `open()`, `search()`, `search_for_machine()`
 - `LogEntryQuerySet` - `search()`, `search_for_machine()`, `search_for_problem_report()`
 - `PartRequestQuerySet` - `active()`, `pending()`, `search()`, `search_for_machine()`
-- `PartRequestUpdateQuerySet` - `search()`, `search_for_machine()`
+- `PartRequestUpdateQuerySet` - `search()`, `search_for_machine()`, `search_for_part_request()`
+
+### SearchableQuerySetMixin
+
+QuerySets with search methods inherit from `SearchableQuerySetMixin`:
+
+```python
+from the_flip.apps.core.models import SearchableQuerySetMixin
+
+class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
+    ...
+```
+
+The mixin provides two helpers that DRY up the strip → empty-guard → filter → distinct boilerplate every search method needs:
+
+- `_clean_query(query)` — strips whitespace, coerces `None` to `""`
+- `_apply_search(query, q)` — returns `self` unchanged for empty queries, otherwise `self.filter(q).distinct()`
+
+This ensures consistent behavior: whitespace is always stripped, empty queries always return the unfiltered queryset, and `.distinct()` is never forgotten (needed to deduplicate rows from JOINs).
 
 ### Composable Search Methods
 
@@ -123,7 +141,7 @@ When building search Q objects, include these fields consistently:
 Each QuerySet has a `_build_*_q()` method for its own fields:
 
 ```python
-class LogEntryQuerySet(models.QuerySet):
+class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def _build_text_and_maintainer_q(self, query: str) -> Q:
         """Build Q object for this model's core searchable fields."""
         return (
@@ -140,7 +158,7 @@ class LogEntryQuerySet(models.QuerySet):
 When a model has a FK to another model, create a separate helper to search that linked model's fields. This enables bidirectional search—users can find records from either side of the relationship:
 
 ```python
-class LogEntryQuerySet(models.QuerySet):
+class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def _build_problem_report_q(self, query: str) -> Q:
         """Build Q object for searching linked problem report fields."""
         return (
@@ -155,7 +173,7 @@ class LogEntryQuerySet(models.QuerySet):
 The parent model should have a corresponding helper for its children:
 
 ```python
-class ProblemReportQuerySet(models.QuerySet):
+class ProblemReportQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def _build_log_entry_q(self, query: str) -> Q:
         """Build Q object for searching linked log entry fields."""
         return (
@@ -169,38 +187,37 @@ class ProblemReportQuerySet(models.QuerySet):
 
 #### Composing Search Methods
 
-Compose the helpers into public search methods:
+Compose the helpers into public search methods using `_clean_query` and `_apply_search`:
 
 ```python
-class LogEntryQuerySet(models.QuerySet):
+class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def search(self, query: str = ""):
         """Global search: all fields including machine name."""
-        query = (query or "").strip()
-        if not query:
-            return self
-        return self.filter(
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
             self._build_text_and_maintainer_q(query)
             | Q(machine__model__name__icontains=query)
             | Q(machine__name__icontains=query)
-            | self._build_problem_report_q(query)
-        ).distinct()
+            | self._build_problem_report_q(query),
+        )
 
     def search_for_machine(self, query: str = ""):
         """Machine-scoped: excludes machine name, includes linked records."""
-        query = (query or "").strip()
-        if not query:
-            return self
-        return self.filter(
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
             self._build_text_and_maintainer_q(query)
-            | self._build_problem_report_q(query)
-        ).distinct()
+            | self._build_problem_report_q(query),
+        )
 
     def search_for_problem_report(self, query: str = ""):
         """Problem-report-scoped: only this model's own fields."""
-        query = (query or "").strip()
-        if not query:
-            return self
-        return self.filter(self._build_text_and_maintainer_q(query)).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_maintainer_q(query),
+        )
 ```
 
 **Key principles:**
@@ -211,9 +228,9 @@ class LogEntryQuerySet(models.QuerySet):
    - Exclude redundant fields (machine name when on machine page)
    - Include linked record fields when context makes them relevant
 4. **Bidirectional linked search** - If A links to B, searching A should find matches in B's fields, and vice versa
-5. **Empty queries return `self`** - Let callers decide what to show when there's no search term
+5. **Empty queries return `self`** - Let callers decide what to show when there's no search term (enforced by `SearchableQuerySetMixin`)
 6. **Search methods are pure filters** - They don't apply ordering; caller is responsible for `.order_by()`
-7. **Always call `.distinct()`** - Joins on related fields can duplicate rows
+7. **`.distinct()` is always applied** - Joins on related fields can duplicate rows (enforced by `SearchableQuerySetMixin`)
 
 **When to create scoped variants:**
 

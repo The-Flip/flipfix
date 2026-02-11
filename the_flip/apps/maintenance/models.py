@@ -14,10 +14,10 @@ from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.models import AbstractMedia, TimeStampedMixin
+from the_flip.apps.core.models import AbstractMedia, SearchableQuerySetMixin, TimeStampedMixin
 
 
-class ProblemReportQuerySet(models.QuerySet):
+class ProblemReportQuerySet(SearchableQuerySetMixin, models.QuerySet):
     """Custom queryset for ProblemReport with common filters."""
 
     def open(self):
@@ -127,16 +127,14 @@ class ProblemReportQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
             self._build_report_fields_q(query)
             | Q(machine__model__name__icontains=query)
             | Q(machine__name__icontains=query)
-            | self._build_log_entry_q(query)
-        ).distinct()
+            | self._build_log_entry_q(query),
+        )
 
     def search_for_machine(self, query: str = ""):
         """
@@ -148,13 +146,11 @@ class ProblemReportQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
-            self._build_report_fields_q(query) | self._build_log_entry_q(query)
-        ).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_report_fields_q(query) | self._build_log_entry_q(query),
+        )
 
 
 class ProblemReport(TimeStampedMixin):
@@ -262,7 +258,7 @@ class ProblemReport(TimeStampedMixin):
         return "Anonymous"
 
 
-class LogEntryQuerySet(models.QuerySet):
+class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
     """Custom queryset for LogEntry with common filters."""
 
     def _build_text_and_maintainer_q(self, query: str) -> Q:
@@ -282,27 +278,6 @@ class LogEntryQuerySet(models.QuerySet):
             | Q(maintainer_names__icontains=query)
         )
 
-    def search(self, query: str = ""):
-        """
-        Global search across multiple fields.
-
-        Searches: text, machine name, maintainer names/usernames,
-        and linked problem report description.
-
-        Returns unfiltered queryset if query is empty/whitespace.
-        Caller is responsible for ordering.
-        """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
-            self._build_text_and_maintainer_q(query)
-            | Q(machine__model__name__icontains=query)
-            | Q(machine__name__icontains=query)
-            | Q(problem_report__description__icontains=query)
-        ).distinct()
-
     def _build_problem_report_q(self, query: str) -> Q:
         """Build Q object for searching linked problem report fields.
 
@@ -316,6 +291,25 @@ class LogEntryQuerySet(models.QuerySet):
             | Q(problem_report__reported_by_user__last_name__icontains=query)
         )
 
+    def search(self, query: str = ""):
+        """
+        Global search across multiple fields.
+
+        Searches: text, machine name, maintainer names/usernames,
+        and linked problem report description.
+
+        Returns unfiltered queryset if query is empty/whitespace.
+        Caller is responsible for ordering.
+        """
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_maintainer_q(query)
+            | Q(machine__model__name__icontains=query)
+            | Q(machine__name__icontains=query)
+            | Q(problem_report__description__icontains=query),
+        )
+
     def search_for_machine(self, query: str = ""):
         """
         Machine-scoped search: excludes machine name, includes problem report fields.
@@ -327,13 +321,11 @@ class LogEntryQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
-            self._build_text_and_maintainer_q(query) | self._build_problem_report_q(query)
-        ).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_maintainer_q(query) | self._build_problem_report_q(query),
+        )
 
     def search_for_problem_report(self, query: str = ""):
         """
@@ -345,11 +337,11 @@ class LogEntryQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(self._build_text_and_maintainer_q(query)).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_maintainer_q(query),
+        )
 
 
 class LogEntry(TimeStampedMixin):

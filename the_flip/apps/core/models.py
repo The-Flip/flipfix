@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q
 
 from the_flip.apps.core.image_processing import (
     THUMB_IMAGE_DIMENSION,
@@ -26,6 +27,46 @@ class TimeStampedMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class SearchableQuerySetMixin:
+    """Mixin that DRYs up the strip → empty-guard → filter → distinct pattern.
+
+    Every search method in the project follows the same boilerplate::
+
+        query = (query or "").strip()
+        if not query:
+            return self
+        return self.filter(...).distinct()
+
+    This mixin extracts that into two helpers so each search method
+    only contains the domain-specific Q logic::
+
+        def search(self, query: str = ""):
+            query = self._clean_query(query)
+            return self._apply_search(
+                query,
+                self._build_core_q(query) | Q(machine__name__icontains=query),
+            )
+    """
+
+    @staticmethod
+    def _clean_query(query: str) -> str:
+        """Normalize a search query: coerce None and strip whitespace."""
+        return (query or "").strip()
+
+    def _apply_search(self, query: str, q: Q) -> models.QuerySet:
+        """Apply standard search normalization and filtering.
+
+        Returns self unchanged for empty/blank queries. Otherwise
+        filters by *q* and returns distinct results.
+
+        Callers must pass the already-cleaned query (via ``_clean_query``)
+        so that the Q objects use the stripped value.
+        """
+        if not query:
+            return self  # type: ignore[return-value]
+        return self.filter(q).distinct()  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------

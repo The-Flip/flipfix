@@ -11,10 +11,10 @@ from simple_history.models import HistoricalRecords
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
-from the_flip.apps.core.models import AbstractMedia, TimeStampedMixin
+from the_flip.apps.core.models import AbstractMedia, SearchableQuerySetMixin, TimeStampedMixin
 
 
-class PartRequestQuerySet(models.QuerySet):
+class PartRequestQuerySet(SearchableQuerySetMixin, models.QuerySet):
     """Custom queryset for PartRequest model."""
 
     def active(self):
@@ -56,16 +56,14 @@ class PartRequestQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
             self._build_text_and_requester_q(query)
             | models.Q(machine__model__name__icontains=query)
             | models.Q(machine__name__icontains=query)
-            | self._build_update_q(query)
-        ).distinct()
+            | self._build_update_q(query),
+        )
 
     def search_for_machine(self, query: str = ""):
         """
@@ -78,13 +76,11 @@ class PartRequestQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
-            self._build_text_and_requester_q(query) | self._build_update_q(query)
-        ).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_requester_q(query) | self._build_update_q(query),
+        )
 
 
 class PartRequest(TimeStampedMixin):
@@ -206,7 +202,7 @@ class PartRequestMedia(AbstractMedia):
         return reverse("admin:parts_partrequestmedia_history", args=[self.pk])
 
 
-class PartRequestUpdateQuerySet(models.QuerySet):
+class PartRequestUpdateQuerySet(SearchableQuerySetMixin, models.QuerySet):
     """Custom queryset for PartRequestUpdate model."""
 
     def _build_text_and_poster_q(self, query: str):
@@ -243,13 +239,11 @@ class PartRequestUpdateQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(
-            self._build_text_and_poster_q(query) | self._build_part_request_q(query)
-        ).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_poster_q(query) | self._build_part_request_q(query),
+        )
 
     def search_for_part_request(self, query: str = ""):
         """
@@ -261,11 +255,11 @@ class PartRequestUpdateQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
-        return self.filter(self._build_text_and_poster_q(query)).distinct()
+        query = self._clean_query(query)
+        return self._apply_search(
+            query,
+            self._build_text_and_poster_q(query),
+        )
 
     def search(self, query: str = ""):
         """
@@ -276,17 +270,14 @@ class PartRequestUpdateQuerySet(models.QuerySet):
         Returns unfiltered queryset if query is empty/whitespace.
         Caller is responsible for ordering.
         """
-        query = (query or "").strip()
-        if not query:
-            return self
-
+        query = self._clean_query(query)
         machine_q = models.Q(part_request__machine__name__icontains=query) | models.Q(
             part_request__machine__short_name__icontains=query
         )
-
-        return self.filter(
-            self._build_text_and_poster_q(query) | self._build_part_request_q(query) | machine_q
-        ).distinct()
+        return self._apply_search(
+            query,
+            self._build_text_and_poster_q(query) | self._build_part_request_q(query) | machine_q,
+        )
 
 
 class PartRequestUpdate(TimeStampedMixin):
