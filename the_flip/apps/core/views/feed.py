@@ -6,8 +6,8 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from the_flip.apps.core.feed import PageCursor, get_feed_page
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
-from the_flip.apps.maintenance.forms import SearchForm
 from the_flip.apps.maintenance.models import ProblemReport
 from the_flip.apps.parts.models import PartRequest
 
