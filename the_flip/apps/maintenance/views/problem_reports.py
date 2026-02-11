@@ -36,6 +36,7 @@ from the_flip.apps.core.media import is_video_file
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
+    InfiniteScrollMixin,
     MediaUploadMixin,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
@@ -74,33 +75,19 @@ class ProblemReportListView(CanAccessMaintainerPortalMixin, TemplateView):
         return context
 
 
-class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
+class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, View):
     """AJAX endpoint for infinite scrolling log entries on a problem report detail page."""
 
-    template_name = "maintenance/partials/problem_report_log_entry.html"
+    item_template = "maintenance/partials/problem_report_log_entry.html"
 
-    def get(self, request, *args, **kwargs):
-        problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
-        log_entries = (
+    def get_queryset(self):
+        problem_report = get_object_or_404(ProblemReport, pk=self.kwargs["pk"])
+        return (
             LogEntry.objects.filter(problem_report=problem_report)
-            .search_for_problem_report(request.GET.get("q", ""))
+            .search_for_problem_report(self.request.GET.get("q", ""))
             .select_related("machine")
             .prefetch_related("maintainers__user", "media")
             .order_by("-occurred_at")
-        )
-
-        paginator = Paginator(log_entries, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        items_html = "".join(
-            render_to_string(self.template_name, {"entry": entry}, request=request)
-            for entry in page_obj.object_list
-        )
-        return JsonResponse(
-            {
-                "items": items_html,
-                "has_next": page_obj.has_next(),
-                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
-            }
         )
 
 
