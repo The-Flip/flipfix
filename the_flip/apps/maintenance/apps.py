@@ -22,6 +22,16 @@ class MaintenanceConfig(AppConfig):
         del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
+        self._register_media_models()
+
+    @staticmethod
+    def _register_media_models():
+        from the_flip.apps.core.models import register_media_model
+
+        from .models import LogEntryMedia, ProblemReportMedia
+
+        register_media_model(LogEntryMedia)
+        register_media_model(ProblemReportMedia)
 
     @staticmethod
     def _register_link_types():

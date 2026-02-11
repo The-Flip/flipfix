@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -113,33 +113,39 @@ class AbstractMedia(TimeStampedMixin):
 
 # ---------------------------------------------------------------------------
 # Media model registry
+#
+# Apps register their AbstractMedia subclasses via AppConfig.ready(), keeping
+# core free of hardcoded knowledge about other apps.  Compare the same pattern
+# in core/markdown_links.py for link-type registration.
 # ---------------------------------------------------------------------------
 
-# Maps model names to import paths for lazy loading. Add new media models here.
-_MEDIA_MODEL_REGISTRY: dict[str, str] = {
-    "LogEntryMedia": "the_flip.apps.maintenance.models.LogEntryMedia",
-    "ProblemReportMedia": "the_flip.apps.maintenance.models.ProblemReportMedia",
-    "PartRequestMedia": "the_flip.apps.parts.models.PartRequestMedia",
-    "PartRequestUpdateMedia": "the_flip.apps.parts.models.PartRequestUpdateMedia",
-}
+_MEDIA_MODEL_REGISTRY: dict[str, type[AbstractMedia]] = {}
 
 
-def get_media_model(model_name: str):
+def register_media_model(model_class: type[AbstractMedia]) -> None:
+    """Register a media model. Called from each app's AppConfig.ready()."""
+    name = model_class.__name__
+    if name in _MEDIA_MODEL_REGISTRY:
+        raise ValueError(f"Media model '{name}' is already registered")
+    _MEDIA_MODEL_REGISTRY[name] = model_class
+
+
+def clear_media_model_registry() -> None:
+    """Reset registry state. For tests only."""
+    _MEDIA_MODEL_REGISTRY.clear()
+
+
+def get_media_model(model_name: str) -> Any:
+    """Get a concrete media model class by name.
+
+    Returns a concrete AbstractMedia subclass. Typed as ``Any`` because
+    django-stubs removes the manager from abstract models, yet callers
+    need ``.objects`` and ``.DoesNotExist`` on the returned class.
     """
-    Get a media model class by name.
-
-    Used by the transcode worker and upload receiver to handle multiple media types.
-    """
-    if model_name not in _MEDIA_MODEL_REGISTRY:
-        raise ValueError(f"Unknown media model: {model_name}")
-
-    import_path = _MEDIA_MODEL_REGISTRY[model_name]
-    module_path, class_name = import_path.rsplit(".", 1)
-
-    from importlib import import_module
-
-    module = import_module(module_path)
-    return getattr(module, class_name)
+    try:
+        return _MEDIA_MODEL_REGISTRY[model_name]
+    except KeyError:
+        raise ValueError(f"Unknown media model: {model_name}") from None
 
 
 # ---------------------------------------------------------------------------

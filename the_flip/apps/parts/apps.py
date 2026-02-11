@@ -16,6 +16,16 @@ class PartsConfig(AppConfig):
         del signals  # imported for side effects (signal registration)
 
         self._register_link_types()
+        self._register_media_models()
+
+    @staticmethod
+    def _register_media_models():
+        from the_flip.apps.core.models import register_media_model
+
+        from .models import PartRequestMedia, PartRequestUpdateMedia
+
+        register_media_model(PartRequestMedia)
+        register_media_model(PartRequestUpdateMedia)
 
     @staticmethod
     def _register_link_types():
