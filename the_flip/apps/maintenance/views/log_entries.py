@@ -26,6 +26,7 @@ from the_flip.apps.core.datetime import (
     parse_datetime_with_browser_timezone,
     validate_not_future,
 )
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
     sync_references,
@@ -39,7 +40,7 @@ from the_flip.apps.core.mixins import (
     can_access_maintainer_portal,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
-from the_flip.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm, SearchForm
+from the_flip.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm
 from the_flip.apps.maintenance.models import (
     LogEntry,
     LogEntryMedia,

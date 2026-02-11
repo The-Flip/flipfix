@@ -24,6 +24,7 @@ from the_flip.apps.core.attribution import (
     resolve_maintainer_for_edit,
 )
 from the_flip.apps.core.datetime import apply_browser_timezone, validate_not_future
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
     sync_references,
@@ -36,7 +37,6 @@ from the_flip.apps.core.mixins import (
     MediaUploadMixin,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
-from the_flip.apps.maintenance.forms import SearchForm
 from the_flip.apps.parts.forms import (
     PartRequestEditForm,
     PartRequestForm,

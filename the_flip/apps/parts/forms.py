@@ -6,12 +6,13 @@ from django.utils import timezone
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
     MarkdownTextarea,
+    MultiFileField,
+    MultiFileInput,
     StyledFormMixin,
     normalize_uploaded_files,
     validate_media_files,
 )
 from the_flip.apps.core.markdown_links import convert_authoring_to_storage
-from the_flip.apps.maintenance.forms import MultiFileField, MultiFileInput
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 

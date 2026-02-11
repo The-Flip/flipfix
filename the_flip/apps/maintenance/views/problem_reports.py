@@ -27,6 +27,7 @@ from the_flip.apps.core.attribution import (
 )
 from the_flip.apps.core.columns import build_location_columns
 from the_flip.apps.core.datetime import apply_browser_timezone, validate_not_future
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.ip import get_real_ip
 from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
@@ -43,7 +44,6 @@ from the_flip.apps.maintenance.forms import (
     MaintainerProblemReportForm,
     ProblemReportEditForm,
     ProblemReportForm,
-    SearchForm,
 )
 from the_flip.apps.maintenance.models import (
     LogEntry,

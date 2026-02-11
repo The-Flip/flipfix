@@ -19,8 +19,9 @@ from the_flip.apps.catalog.forms import (
 )
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.core.feed import FEED_CONFIGS, PageCursor, get_feed_page
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
-from the_flip.apps.maintenance.forms import ProblemReportForm, SearchForm
+from the_flip.apps.maintenance.forms import ProblemReportForm
 from the_flip.apps.maintenance.models import ProblemReport
 
 # Maximum stats shown in sidebar grid (Total + up to 3 location counts)

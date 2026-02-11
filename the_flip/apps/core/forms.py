@@ -32,6 +32,53 @@ WIDGET_CSS_CLASSES = {
 }
 
 
+class MultiFileInput(forms.ClearableFileInput):
+    """Clearable file input that allows selecting multiple files."""
+
+    allow_multiple_selected = True
+
+
+class MultiFileField(forms.FileField):
+    """FileField that returns a list of uploaded files when multiple are provided."""
+
+    widget = MultiFileInput
+
+    def to_python(self, data):
+        if not data:
+            return []
+        if isinstance(data, list | tuple):
+            return list(data)
+        # Single file falls back to base implementation
+        single = super().to_python(data)
+        return [single] if single else []
+
+    def validate(self, data):
+        # Skip base class validation; validate each file individually
+        if not data:
+            return
+        errors = []
+        for f in data:
+            try:
+                super().validate(f)
+                self.run_validators(f)
+            except forms.ValidationError as exc:
+                errors.extend(exc.error_list)
+        if errors:
+            raise forms.ValidationError(errors)
+
+
+class SearchForm(forms.Form):
+    """Reusable search form for list pages."""
+
+    q = forms.CharField(
+        label="",
+        required=False,
+        widget=forms.TextInput(
+            attrs={"type": "search", "placeholder": "Search...", "class": "search-input"}
+        ),
+    )
+
+
 class MarkdownTextarea(forms.Textarea):
     """Textarea pre-configured for markdown editing.
 
