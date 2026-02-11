@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -135,10 +135,12 @@ def clear_media_model_registry() -> None:
     _MEDIA_MODEL_REGISTRY.clear()
 
 
-def get_media_model(model_name: str) -> type[AbstractMedia]:
-    """Get a media model class by name.
+def get_media_model(model_name: str) -> Any:
+    """Get a concrete media model class by name.
 
-    Used by the transcode worker and upload receiver to handle multiple media types.
+    Returns a concrete AbstractMedia subclass. Typed as ``Any`` because
+    django-stubs removes the manager from abstract models, yet callers
+    need ``.objects`` and ``.DoesNotExist`` on the returned class.
     """
     try:
         return _MEDIA_MODEL_REGISTRY[model_name]
