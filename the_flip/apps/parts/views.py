@@ -430,15 +430,15 @@ class PartRequestUpdateCreateView(SharedAccountMixin, CanAccessMaintainerPortalM
         return super().form_invalid(form)
 
 
-class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
+class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, View):
     """AJAX endpoint for infinite scrolling updates on a part request detail page."""
 
-    template_name = "parts/partials/part_update_entry.html"
+    item_template = "parts/partials/part_update_entry.html"
 
-    def get(self, request, *args, **kwargs):
-        part_request = get_object_or_404(PartRequest, pk=kwargs["pk"])
-        search_query = request.GET.get("q", "").strip()
-        updates = (
+    def get_queryset(self):
+        part_request = get_object_or_404(PartRequest, pk=self.kwargs["pk"])
+        search_query = self.request.GET.get("q", "").strip()
+        return (
             PartRequestUpdate.objects.filter(part_request=part_request)
             .search_for_part_request(search_query)
             .select_related("posted_by__user")
@@ -446,19 +446,8 @@ class PartRequestUpdatesPartialView(CanAccessMaintainerPortalMixin, View):
             .order_by("-occurred_at")
         )
 
-        paginator = Paginator(updates, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        items_html = "".join(
-            render_to_string(self.template_name, {"update": update})
-            for update in page_obj.object_list
-        )
-        return JsonResponse(
-            {
-                "items": items_html,
-                "has_next": page_obj.has_next(),
-                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
-            }
-        )
+    def get_item_context(self, item):
+        return {"update": item}
 
 
 class PartRequestStatusUpdateView(CanAccessMaintainerPortalMixin, View):
