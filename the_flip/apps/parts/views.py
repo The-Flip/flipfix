@@ -34,6 +34,7 @@ from the_flip.apps.core.mixins import (
     FormPrefillMixin,
     InfiniteScrollMixin,
     MediaUploadMixin,
+    SharedAccountMixin,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import SearchForm
@@ -120,7 +121,9 @@ class PartRequestListPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollM
         )
 
 
-class PartRequestCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
+class PartRequestCreateView(
+    FormPrefillMixin, SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView
+):
     """Create a new part request."""
 
     template_name = "parts/part_request_new.html"
@@ -143,12 +146,6 @@ class PartRequestCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, Fo
             context["selected_machine"] = MachineInstance.objects.filter(slug=selected_slug).first()
         elif self.machine:
             context["selected_machine"] = self.machine
-
-        # Check if current user is on a shared/terminal account
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            is_shared_account = self.request.user.maintainer.is_shared_account
-        context["is_shared_account"] = is_shared_account
         return context
 
     def get_initial(self):
@@ -157,9 +154,8 @@ class PartRequestCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, Fo
             initial["machine_slug"] = self.machine.slug
 
         # Pre-fill requester_name with current user's display name (for non-shared accounts)
-        if hasattr(self.request.user, "maintainer"):
-            if not self.request.user.maintainer.is_shared_account:
-                initial["requester_name"] = str(self.request.user.maintainer)
+        if not self.is_shared_account and hasattr(self.request.user, "maintainer"):
+            initial["requester_name"] = str(self.request.user.maintainer)
         return initial
 
     @transaction.atomic
@@ -366,7 +362,7 @@ class PartRequestEditView(CanAccessMaintainerPortalMixin, UpdateView):
         return reverse("part-request-detail", kwargs={"pk": self.object.pk})
 
 
-class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
+class PartRequestUpdateCreateView(SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView):
     """Add an update/comment to a part request."""
 
     template_name = "parts/part_update_new.html"
@@ -382,21 +378,14 @@ class PartRequestUpdateCreateView(CanAccessMaintainerPortalMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["part_request"] = self.part_request
-
-        # Check if current user is on a shared/terminal account
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            is_shared_account = self.request.user.maintainer.is_shared_account
-        context["is_shared_account"] = is_shared_account
         return context
 
     def get_initial(self):
         initial = super().get_initial()
 
         # Pre-fill poster_name with current user's display name (for non-shared accounts)
-        if hasattr(self.request.user, "maintainer"):
-            if not self.request.user.maintainer.is_shared_account:
-                initial["poster_name"] = str(self.request.user.maintainer)
+        if not self.is_shared_account and hasattr(self.request.user, "maintainer"):
+            initial["poster_name"] = str(self.request.user.maintainer)
         return initial
 
     @transaction.atomic

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from functools import partial
+from functools import cached_property, partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -70,6 +70,35 @@ class FormPrefillMixin:
         context = super().get_context_data(**kwargs)
         if self._prefill_template_url:
             context["prefill_template_url"] = self._prefill_template_url
+        return context
+
+
+class SharedAccountMixin:
+    """Add ``is_shared_account`` to template context.
+
+    Views that change behavior for shared terminal accounts (e.g., requiring
+    explicit maintainer selection instead of pre-filling the current user)
+    can use this mixin instead of repeating the check in every view.
+
+    Also exposes ``self.is_shared_account`` as a cached property for use
+    in ``get_initial()`` or ``form_valid()``.
+    """
+
+    request: HttpRequest  # Provided by View
+
+    @cached_property
+    def is_shared_account(self) -> bool:
+        """Whether the current user is on a shared terminal account."""
+        user = self.request.user
+        return (
+            user.is_authenticated
+            and hasattr(user, "maintainer")
+            and user.maintainer.is_shared_account
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_shared_account"] = self.is_shared_account
         return context
 
 

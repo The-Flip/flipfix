@@ -36,6 +36,7 @@ from the_flip.apps.core.mixins import (
     FormPrefillMixin,
     InfiniteScrollMixin,
     MediaUploadMixin,
+    SharedAccountMixin,
     can_access_maintainer_portal,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
@@ -64,7 +65,9 @@ def get_log_entry_queryset(search_query: str = ""):
     return queryset
 
 
-class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
+class MachineLogCreateView(
+    FormPrefillMixin, SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView
+):
     """Create a new log entry for a machine or problem report."""
 
     template_name = "maintenance/log_entry_new.html"
@@ -96,15 +99,10 @@ class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, For
     def get_initial(self):
         initial = super().get_initial()
         # Pre-fill maintainer name only for individual accounts (not shared accounts)
-        if self.request.user.is_authenticated:
-            is_shared = (
-                hasattr(self.request.user, "maintainer")
-                and self.request.user.maintainer.is_shared_account
+        if not self.is_shared_account:
+            initial["submitter_name"] = (
+                self.request.user.get_full_name() or self.request.user.get_username()
             )
-            if not is_shared:
-                initial["submitter_name"] = (
-                    self.request.user.get_full_name() or self.request.user.get_username()
-                )
         if self.machine:
             initial["machine_slug"] = self.machine.slug
         # occurred_at default is set by JavaScript to use browser's local timezone
@@ -115,15 +113,9 @@ class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, For
         context["machine"] = self.machine
         context["problem_report"] = self.problem_report
         context["is_global"] = self.is_global
-        # Check if current user is a shared account (show autocomplete for maintainer selection)
-        # Also pass current maintainer for pre-filling chip input
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            maintainer = self.request.user.maintainer
-            is_shared_account = maintainer.is_shared_account
-            if not is_shared_account:
-                context["initial_maintainers"] = [maintainer]
-        context["is_shared_account"] = is_shared_account
+        # Pre-fill chip input with current maintainer (unless shared account)
+        if not self.is_shared_account and hasattr(self.request.user, "maintainer"):
+            context["initial_maintainers"] = [self.request.user.maintainer]
         context["maintainer_errors"] = getattr(self, "maintainer_errors", [])
         selected_slug = (
             self.request.POST.get("machine_slug") if self.request.method == "POST" else ""

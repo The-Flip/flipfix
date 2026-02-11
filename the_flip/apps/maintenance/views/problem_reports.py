@@ -37,6 +37,7 @@ from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
     MediaUploadMixin,
+    SharedAccountMixin,
 )
 from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
@@ -147,7 +148,9 @@ class PublicProblemReportCreateView(FormView):
         return redirect("public-problem-report-create", slug=self.machine.slug)
 
 
-class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
+class ProblemReportCreateView(
+    FormPrefillMixin, SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView
+):
     """Maintainer-facing problem report creation (global or machine-scoped)."""
 
     template_name = "maintenance/problem_report_new.html"
@@ -164,21 +167,15 @@ class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, 
         if self.machine:
             initial["machine_slug"] = self.machine.slug
         # Pre-fill reporter_name with current user's display name (unless shared account)
-        if hasattr(self.request.user, "maintainer"):
-            if not self.request.user.maintainer.is_shared_account:
-                initial["reporter_name"] = (
-                    self.request.user.get_full_name() or self.request.user.username
-                )
+        if not self.is_shared_account:
+            initial["reporter_name"] = (
+                self.request.user.get_full_name() or self.request.user.username
+            )
         return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
-        # Check if current user is a shared account (show autocomplete for reporter selection)
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            is_shared_account = self.request.user.maintainer.is_shared_account
-        context["is_shared_account"] = is_shared_account
         selected_slug = (
             self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
         )
