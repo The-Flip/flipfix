@@ -13,10 +13,8 @@ mkdir -p static_collected
 
 # Tests are run in CI before merge - no need to run again here
 
-# Run migrations
-echo "Running migrations..."
-DJANGO_SETTINGS_MODULE=the_flip.settings.web python manage.py migrate
-echo "✓ Migrations complete"
+# Migrations run at deploy time (startCommand in railpack.web.json)
+# NOT during build — Railway's database isn't reliably reachable during builds
 
 # Collect static files
 echo "Collecting static files..."
