@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
@@ -33,14 +32,13 @@ from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
     sync_references,
 )
-from the_flip.apps.core.media import is_video_file
+from the_flip.apps.core.media import attach_media_files
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
     MediaUploadMixin,
     SharedAccountMixin,
 )
-from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     MaintainerProblemReportForm,
     ProblemReportEditForm,
@@ -230,24 +228,9 @@ class ProblemReportCreateView(
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = ProblemReportMedia.objects.create(
-                    problem_report=report,
-                    media_type=ProblemReportMedia.MediaType.VIDEO
-                    if is_video
-                    else ProblemReportMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=ProblemReportMedia.TranscodeStatus.PENDING if is_video else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(
-                            enqueue_transcode, media_id=media.id, model_name="ProblemReportMedia"
-                        )
-                    )
+            attach_media_files(
+                media_files=media_files, parent=report, media_model=ProblemReportMedia
+            )
 
         messages.success(
             self.request,

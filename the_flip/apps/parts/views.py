@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from functools import partial
-
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -29,7 +27,7 @@ from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
     sync_references,
 )
-from the_flip.apps.core.media import is_video_file
+from the_flip.apps.core.media import attach_media_files
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
@@ -37,7 +35,6 @@ from the_flip.apps.core.mixins import (
     MediaUploadMixin,
     SharedAccountMixin,
 )
-from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.parts.forms import (
     PartRequestEditForm,
     PartRequestForm,
@@ -195,26 +192,9 @@ class PartRequestCreateView(
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = PartRequestMedia.objects.create(
-                    part_request=part_request,
-                    media_type=PartRequestMedia.MediaType.VIDEO
-                    if is_video
-                    else PartRequestMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=PartRequestMedia.TranscodeStatus.PENDING if is_video else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(
-                            enqueue_transcode,
-                            media_id=media.id,
-                            model_name="PartRequestMedia",
-                        )
-                    )
+            attach_media_files(
+                media_files=media_files, parent=part_request, media_model=PartRequestMedia
+            )
 
         messages.success(
             self.request,
@@ -419,28 +399,9 @@ class PartRequestUpdateCreateView(SharedAccountMixin, CanAccessMaintainerPortalM
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = PartRequestUpdateMedia.objects.create(
-                    update=update,
-                    media_type=PartRequestUpdateMedia.MediaType.VIDEO
-                    if is_video
-                    else PartRequestUpdateMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=PartRequestUpdateMedia.TranscodeStatus.PENDING
-                    if is_video
-                    else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(
-                            enqueue_transcode,
-                            media_id=media.id,
-                            model_name="PartRequestUpdateMedia",
-                        )
-                    )
+            attach_media_files(
+                media_files=media_files, parent=update, media_model=PartRequestUpdateMedia
+            )
 
         if update.new_status:
             messages.success(

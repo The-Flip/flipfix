@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
-from functools import cached_property, partial
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, cast
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
-from the_flip.apps.core.tasks import enqueue_transcode
+from the_flip.apps.core.media import attach_media_files
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
+    from django.core.files.uploadedfile import UploadedFile
     from django.db import models
     from django.db.models import QuerySet
     from django.http import HttpRequest
@@ -163,35 +162,12 @@ class MediaUploadMixin:
         if "media_file" not in request.FILES:
             return JsonResponse({"success": False, "error": "No file provided"}, status=400)
 
-        upload = request.FILES["media_file"]
-        content_type = (getattr(upload, "content_type", "") or "").lower()
-        ext = Path(getattr(upload, "name", "")).suffix.lower()
-        is_video = content_type.startswith("video/") or ext in {
-            ".mp4",
-            ".mov",
-            ".m4v",
-            ".hevc",
-        }
-
+        upload = cast("UploadedFile", request.FILES["media_file"])
         media_model = self.get_media_model()
         parent = self.get_media_parent()
 
-        # Get the FK field name from the model's parent_field_name class attribute
-        parent_field_name = media_model.parent_field_name
-
-        create_kwargs: dict[str, Any] = {
-            parent_field_name: parent,
-            "media_type": media_model.MediaType.VIDEO if is_video else media_model.MediaType.PHOTO,
-            "file": upload,
-            "transcode_status": media_model.TranscodeStatus.PENDING if is_video else "",
-        }
-
-        media = media_model.objects.create(**create_kwargs)
-
-        if is_video:
-            transaction.on_commit(
-                partial(enqueue_transcode, media_id=media.id, model_name=media_model.__name__)
-            )
+        created = attach_media_files(media_files=[upload], parent=parent, media_model=media_model)
+        media = created[0]
 
         return JsonResponse(
             {

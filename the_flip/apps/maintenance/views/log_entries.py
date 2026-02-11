@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
@@ -31,7 +30,7 @@ from the_flip.apps.core.markdown_links import (
     save_inline_markdown_field,
     sync_references,
 )
-from the_flip.apps.core.media import is_video_file
+from the_flip.apps.core.media import attach_media_files
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
@@ -40,7 +39,6 @@ from the_flip.apps.core.mixins import (
     SharedAccountMixin,
     can_access_maintainer_portal,
 )
-from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm
 from the_flip.apps.maintenance.models import (
     LogEntry,
@@ -193,22 +191,7 @@ class MachineLogCreateView(
             log_entry.save(update_fields=["maintainer_names"])
 
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = LogEntryMedia.objects.create(
-                    log_entry=log_entry,
-                    media_type=LogEntryMedia.MediaType.VIDEO
-                    if is_video
-                    else LogEntryMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=LogEntryMedia.TranscodeStatus.PENDING if is_video else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(enqueue_transcode, media_id=media.id, model_name="LogEntryMedia")
-                    )
+            attach_media_files(media_files=media_files, parent=log_entry, media_model=LogEntryMedia)
 
         # Close problem report if checkbox was checked
         if self.problem_report and self.request.POST.get("close_problem"):
