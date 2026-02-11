@@ -53,15 +53,30 @@ from the_flip.apps.maintenance.views.problem_reports import (
     ProblemReportListView,
     ProblemReportLogEntriesPartialView,
     PublicProblemReportCreateView,
-    WallDisplayBoardView,
-    WallDisplaySetupView,
 )
 from the_flip.apps.maintenance.views.qr_codes import MachineBulkQRCodeView, MachineQRView
 from the_flip.apps.maintenance.views.transcoding import (
     ReceiveTranscodedMediaView,
     ServeSourceMediaView,
 )
-from the_flip.apps.parts import views as parts_views
+from the_flip.apps.maintenance.views.wall_display import (
+    WallDisplayBoardView,
+    WallDisplaySetupView,
+)
+from the_flip.apps.parts.views.part_request_updates import (
+    PartRequestUpdateCreateView,
+    PartRequestUpdateDetailView,
+    PartRequestUpdateEditView,
+)
+from the_flip.apps.parts.views.part_requests import (
+    PartRequestCreateView,
+    PartRequestDetailView,
+    PartRequestEditView,
+    PartRequestListPartialView,
+    PartRequestListView,
+    PartRequestStatusUpdateView,
+    PartRequestUpdatesPartialView,
+)
 from the_flip.apps.wiki.views import (
     WikiHomeView,
     WikiPageCreateView,
@@ -315,54 +330,54 @@ urlpatterns = [
     # Parts requests
     #
     path(
-        "parts/", parts_views.PartRequestListView.as_view(), name="part-request-list"
+        "parts/", PartRequestListView.as_view(), name="part-request-list"
     ),  # List all part requests
     path(
         "parts/entries/",
-        parts_views.PartRequestListPartialView.as_view(),
+        PartRequestListPartialView.as_view(),
         name="part-request-list-entries",
     ),  # AJAX: infinite scroll for part request list
     path(
-        "parts/new/", parts_views.PartRequestCreateView.as_view(), name="part-request-create"
+        "parts/new/", PartRequestCreateView.as_view(), name="part-request-create"
     ),  # Create part request (no machine pre-selected)
     path(
         "parts/new/<slug:slug>/",
-        parts_views.PartRequestCreateView.as_view(),
+        PartRequestCreateView.as_view(),
         name="part-request-create-machine",
     ),  # Create part request for specific machine
     path(
         "parts/<int:pk>/",
-        parts_views.PartRequestDetailView.as_view(),
+        PartRequestDetailView.as_view(),
         name="part-request-detail",
     ),  # Part request detail page
     path(
         "parts/<int:pk>/edit/",
-        parts_views.PartRequestEditView.as_view(),
+        PartRequestEditView.as_view(),
         name="part-request-edit",
     ),  # Edit part request metadata
     path(
         "parts/<int:pk>/update/",
-        parts_views.PartRequestUpdateCreateView.as_view(),
+        PartRequestUpdateCreateView.as_view(),
         name="part-request-update-create",
     ),  # Create update/comment on part request (form page)
     path(
         "parts/<int:pk>/status/",
-        parts_views.PartRequestStatusUpdateView.as_view(),
+        PartRequestStatusUpdateView.as_view(),
         name="part-request-status-update",
     ),  # AJAX: update part request status from dropdown
     path(
         "parts/<int:pk>/updates/",
-        parts_views.PartRequestUpdatesPartialView.as_view(),
+        PartRequestUpdatesPartialView.as_view(),
         name="part-request-updates",
     ),  # AJAX: infinite scroll for updates on part request detail
     path(
         "parts/updates/<int:pk>/",
-        parts_views.PartRequestUpdateDetailView.as_view(),
+        PartRequestUpdateDetailView.as_view(),
         name="part-request-update-detail",
     ),  # Part request update detail page
     path(
         "parts/updates/<int:pk>/edit/",
-        parts_views.PartRequestUpdateEditView.as_view(),
+        PartRequestUpdateEditView.as_view(),
         name="part-request-update-edit",
     ),  # Edit part request update metadata
     #
