@@ -233,24 +233,27 @@ class PartRequestDetailView(CanAccessMaintainerPortalMixin, MediaUploadMixin, Vi
         )
         action = request.POST.get("action")
 
-        # Handle AJAX text update
-        if action == "update_text":
-            text = request.POST.get("text", "")
-            try:
-                save_inline_markdown_field(self.part_request, "text", text)
-            except ValidationError as e:
-                return JsonResponse({"success": False, "errors": e.messages}, status=400)
-            return JsonResponse({"success": True})
+        action_handlers = {
+            "update_text": self._handle_update_text,
+            "upload_media": self.handle_upload_media,
+            "delete_media": self.handle_delete_media,
+        }
 
-        # Handle AJAX media upload
-        if action == "upload_media":
-            return self.handle_upload_media(request)
+        if action in action_handlers:
+            return action_handlers[action](request)
 
-        # Handle AJAX media delete
-        if action == "delete_media":
-            return self.handle_delete_media(request)
+        return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
 
-        return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
+    # -- Action handlers -------------------------------------------------------
+
+    def _handle_update_text(self, request):
+        """AJAX: update the text field with inline markdown."""
+        text = request.POST.get("text", "")
+        try:
+            save_inline_markdown_field(self.part_request, "text", text)
+        except ValidationError as e:
+            return JsonResponse({"success": False, "errors": e.messages}, status=400)
+        return JsonResponse({"success": True})
 
     def render_response(self, request, part_request):
         from django.shortcuts import render
