@@ -698,13 +698,12 @@ class DiscordBot(discord.Client):
 
 def _format_record_type(record_type: RecordType) -> str:
     """Format record type for display."""
-    type_labels = {
-        RecordType.LOG_ENTRY: "Log Entry",
-        RecordType.PROBLEM_REPORT: "Problem Report",
-        RecordType.PART_REQUEST: "Part Request",
-        RecordType.PART_REQUEST_UPDATE: "Part Request Update",
-    }
-    return type_labels.get(record_type, record_type.value.replace("_", " ").title())
+    from the_flip.apps.discord.bot_handlers import get_bot_handler
+
+    handler = get_bot_handler(record_type.value)
+    if handler:
+        return handler.display_name
+    return record_type.value.replace("_", " ").title()
 
 
 def _get_parent_type_label(child_record_type: RecordType) -> str:
@@ -712,11 +711,14 @@ def _get_parent_type_label(child_record_type: RecordType) -> str:
 
     Log entries link to problem reports; part request updates link to part requests.
     """
-    parent_labels = {
-        RecordType.LOG_ENTRY: "Problem Report",
-        RecordType.PART_REQUEST_UPDATE: "Part Request",
-    }
-    return parent_labels.get(child_record_type, "Record")
+    from the_flip.apps.discord.bot_handlers import get_bot_handler
+
+    handler = get_bot_handler(child_record_type.value)
+    if handler and handler.parent_handler_name:
+        parent_handler = get_bot_handler(handler.parent_handler_name)
+        if parent_handler:
+            return parent_handler.display_name
+    return "Record"
 
 
 async def _get_machine_name(slug: str | None) -> str | None:

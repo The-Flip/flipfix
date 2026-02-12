@@ -21,7 +21,7 @@ class WebhookDeliveryTests(TestCase):
     def test_skips_when_no_webhook_url(self):
         """Skips delivery when no webhook URL is configured."""
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report", report.pk)
 
         self.assertEqual(result.status, "skipped")
         self.assertIn("no webhook URL", result.reason)
@@ -33,7 +33,7 @@ class WebhookDeliveryTests(TestCase):
     def test_skips_when_webhooks_disabled(self):
         """Skips delivery when webhooks are globally disabled."""
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report", report.pk)
 
         self.assertEqual(result.status, "skipped")
         self.assertIn("globally disabled", result.reason)
@@ -50,7 +50,7 @@ class WebhookDeliveryTests(TestCase):
         mock_post.return_value = mock_response
 
         report = create_problem_report(machine=self.machine)
-        result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
+        result = deliver_webhook("problem_report", report.pk)
 
         self.assertEqual(result.status, "success")
         mock_post.assert_called_once()
@@ -67,7 +67,7 @@ class WebhookDeliveryTests(TestCase):
         report = create_problem_report(machine=self.machine)
         # Capture expected warning log to avoid noise in test output
         with self.assertLogs("the_flip.apps.discord.tasks", level="WARNING"):
-            result = deliver_webhook("problem_report_created", report.pk, "ProblemReport")
+            result = deliver_webhook("problem_report", report.pk)
 
         self.assertEqual(result.status, "error")
         self.assertIn("Connection error", result.reason)
