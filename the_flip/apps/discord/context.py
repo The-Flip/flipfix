@@ -734,32 +734,24 @@ def _is_flipfix_url(url: str) -> bool:
 def _parse_flipfix_url(url: str) -> tuple[RecordType, int, str | None] | None:
     """Parse a Flipfix URL to extract record type and ID.
 
-    Expected URL patterns (matching Django URL config):
-    - /logs/123/ -> (RecordType.LOG_ENTRY, 123, None)
-    - /problem-reports/456/ -> (RecordType.PROBLEM_REPORT, 456, None)
-    - /parts/789/ -> (RecordType.PART_REQUEST, 789, None)
+    Iterates over registered bot handlers to match URL patterns.
+    Returns (RecordType, record_id, machine_id) or None if no match.
 
     The third element (machine_id) is always None since detail pages don't
     include machine slugs in their URLs.
     """
+    from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
+
     try:
         parsed = urlparse(url)
         path = parsed.path.rstrip("/")
 
-        # Pattern: /logs/<id>
-        match = re.match(r"/logs/(\d+)$", path)
-        if match:
-            return (RecordType.LOG_ENTRY, int(match.group(1)), None)
-
-        # Pattern: /problem-reports/<id>
-        match = re.match(r"/problem-reports/(\d+)$", path)
-        if match:
-            return (RecordType.PROBLEM_REPORT, int(match.group(1)), None)
-
-        # Pattern: /parts/<id>
-        match = re.match(r"/parts/(\d+)$", path)
-        if match:
-            return (RecordType.PART_REQUEST, int(match.group(1)), None)
+        for handler in get_all_bot_handlers():
+            if handler.url_pattern is None:
+                continue
+            match = handler.url_pattern.match(path)
+            if match:
+                return (handler.record_type, int(match.group(1)), None)
 
         return None
     except Exception:

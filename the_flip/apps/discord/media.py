@@ -13,16 +13,9 @@ from typing import TYPE_CHECKING
 
 import httpx
 from decouple import config
+from django.db.models import Model
 
 from the_flip.apps.core.media import ALLOWED_VIDEO_EXTENSIONS
-from the_flip.apps.maintenance.models import (
-    LogEntry,
-    ProblemReport,
-)
-from the_flip.apps.parts.models import (
-    PartRequest,
-    PartRequestUpdate,
-)
 
 if TYPE_CHECKING:
     import discord
@@ -65,24 +58,28 @@ def _dedupe_by_url(attachments: list[discord.Attachment]) -> list[discord.Attach
     return unique
 
 
-def _get_media_model_name(
-    record: LogEntry | ProblemReport | PartRequest | PartRequestUpdate,
-) -> str:
-    """Get the media model name for the web service API."""
-    if isinstance(record, LogEntry):
-        return "LogEntryMedia"
-    elif isinstance(record, ProblemReport):
-        return "ProblemReportMedia"
-    elif isinstance(record, PartRequest):
-        return "PartRequestMedia"
-    elif isinstance(record, PartRequestUpdate):
-        return "PartRequestUpdateMedia"
-    else:
-        raise ValueError(f"Unknown record type: {type(record)}")
+def _get_media_model_name(record: Model) -> str:
+    """Get the media model name for the web service API.
+
+    Looks up the bot handler for the record type to find the media model name.
+    """
+    from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
+
+    record_class_name = type(record).__name__
+    for handler in get_all_bot_handlers():
+        if not handler.media_model_name:
+            continue
+        # Media model names follow the pattern "XMedia" where X is the model class name
+        # e.g., "LogEntryMedia" -> "LogEntry", "ProblemReportMedia" -> "ProblemReport"
+        expected_class = handler.media_model_name.replace("Media", "")
+        if record_class_name == expected_class:
+            return handler.media_model_name
+
+    raise ValueError(f"No media model name configured for: {record_class_name}")
 
 
 async def download_and_create_media(
-    record: LogEntry | ProblemReport | PartRequest | PartRequestUpdate,
+    record: Model,
     attachments: list[discord.Attachment],
 ) -> tuple[int, int]:
     """Download attachments from Discord and upload to web service.

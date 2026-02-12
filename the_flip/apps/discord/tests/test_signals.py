@@ -38,7 +38,7 @@ class WebhookSignalTests(TestCase):
 
         mock_async.assert_called()
         call_args = mock_async.call_args
-        self.assertEqual(call_args[0][1], "problem_report_created")
+        self.assertEqual(call_args[0][1], "problem_report")
         self.assertEqual(call_args[0][2], report.pk)
 
     @patch("the_flip.apps.discord.tasks.async_task")
@@ -50,8 +50,8 @@ class WebhookSignalTests(TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             log_entry = create_log_entry(machine=self.machine, created_by=maintainer_user)
 
-        # Find the log_entry_created call
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "log_entry_created"]
+        # Find the log_entry call
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "log_entry"]
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], log_entry.pk)
 
@@ -76,8 +76,8 @@ class PartRequestWebhookSignalTests(TestCase):
                 machine=self.machine,
             )
 
-        # Find the part_request_created call
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_created"]
+        # Find the part_request call
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request"]
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], part_request.pk)
 
@@ -96,8 +96,8 @@ class PartRequestWebhookSignalTests(TestCase):
                 text="Update text",
             )
 
-        # Find the part_request_update_created call
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_update_created"]
+        # Find the part_request_update call
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_update"]
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][2], update.pk)
 
@@ -119,10 +119,10 @@ class PartRequestWebhookSignalTests(TestCase):
                 new_status=PartRequest.Status.ORDERED,
             )
 
-        # Should only fire update_created (status info is included in the update message)
-        event_types = [c[0][1] for c in mock_async.call_args_list]
-        self.assertIn("part_request_update_created", event_types)
-        self.assertNotIn("part_request_status_changed", event_types)
+        # Should only fire part_request_update (status info is included in the update message)
+        handler_names = [c[0][1] for c in mock_async.call_args_list]
+        self.assertIn("part_request_update", handler_names)
+        self.assertNotIn("part_request_status_changed", handler_names)
 
 
 @tag("tasks")
@@ -145,8 +145,8 @@ class DiscordOriginatedRecordTests(TestCase):
             # Mark as Discord-originated BEFORE transaction commits
             DiscordMessageMapping.mark_processed("discord_msg_123", report)
 
-        # Should NOT have fired problem_report_created webhook
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "problem_report_created"]
+        # Should NOT have fired problem_report webhook
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "problem_report"]
         self.assertEqual(len(calls), 0, "Webhook should not fire for Discord-originated record")
 
     @patch("the_flip.apps.discord.tasks.async_task")
@@ -159,8 +159,8 @@ class DiscordOriginatedRecordTests(TestCase):
             # Mark as Discord-originated BEFORE transaction commits
             DiscordMessageMapping.mark_processed("discord_msg_456", log_entry)
 
-        # Should NOT have fired log_entry_created webhook
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "log_entry_created"]
+        # Should NOT have fired log_entry webhook
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "log_entry"]
         self.assertEqual(len(calls), 0, "Webhook should not fire for Discord-originated record")
 
     @patch("the_flip.apps.discord.tasks.async_task")
@@ -177,6 +177,6 @@ class DiscordOriginatedRecordTests(TestCase):
             # Mark as Discord-originated BEFORE transaction commits
             DiscordMessageMapping.mark_processed("discord_msg_789", part_request)
 
-        # Should NOT have fired part_request_created webhook
-        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request_created"]
+        # Should NOT have fired part_request webhook
+        calls = [c for c in mock_async.call_args_list if c[0][1] == "part_request"]
         self.assertEqual(len(calls), 0, "Webhook should not fire for Discord-originated record")

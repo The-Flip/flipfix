@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import requests
 from django_q.tasks import async_task
@@ -12,20 +11,7 @@ from django_q.tasks import async_task
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.logging import bind_log_context, current_log_context, reset_log_context
 
-if TYPE_CHECKING:
-    from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-    from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
-
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class WebhookModelConfig:
-    """Configuration for webhook model queries."""
-
-    import_path: str
-    select_related: tuple[str, ...]
-    prefetch_related: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -37,7 +23,7 @@ class WebhookDeliveryResult:
     status_code: int | None = None  # HTTP status code on success
 
 
-def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
+def dispatch_webhook(handler_name: str, object_id: int) -> None:
     """Queue a webhook delivery task for the given event.
 
     This function is called synchronously from signal handlers and
@@ -51,25 +37,31 @@ def dispatch_webhook(event_type: str, object_id: int, model_name: str) -> None:
     if not config.DISCORD_WEBHOOKS_ENABLED or not config.DISCORD_WEBHOOK_URL:
         return
 
+    from the_flip.apps.discord.webhook_handlers import get_webhook_handler
+
+    handler = get_webhook_handler(handler_name)
+    if not handler:
+        logger.warning("discord_unknown_webhook_handler", extra={"handler_name": handler_name})
+        return
+
     # Skip creation webhooks for Discord-originated records (avoids echo).
     # Only suppress *_created events - future update events should still post.
-    if event_type.endswith("_created"):
-        model_class = _get_model_class(model_name)
-        if model_class and DiscordMessageMapping.has_mapping_for(model_class, object_id):
+    if handler.event_type.endswith("_created"):
+        model_class = handler.get_model_class()
+        if DiscordMessageMapping.has_mapping_for(model_class, object_id):
             return
 
     async_task(
         "the_flip.apps.discord.tasks.deliver_webhook",
-        event_type,
+        handler_name,
         object_id,
-        model_name,
         current_log_context(),
         timeout=60,
     )
 
 
 def deliver_webhook(
-    event_type: str, object_id: int, model_name: str, log_context: dict | None = None
+    handler_name: str, object_id: int, log_context: dict | None = None
 ) -> WebhookDeliveryResult:
     """Deliver webhook for a given event to the configured Discord webhook URL.
 
@@ -89,87 +81,39 @@ def deliver_webhook(
         if not config.DISCORD_WEBHOOKS_ENABLED:
             return WebhookDeliveryResult(status="skipped", reason="webhooks globally disabled")
 
-        # Fetch the object
-        obj = _get_object(model_name, object_id)
+        # Look up the handler
+        from the_flip.apps.discord.webhook_handlers import get_webhook_handler
+
+        handler = get_webhook_handler(handler_name)
+        if not handler:
+            return WebhookDeliveryResult(status="error", reason=f"Unknown handler: {handler_name}")
+
+        # Fetch the object with optimized queries
+        obj = handler.get_object(object_id)
         if obj is None:
             return WebhookDeliveryResult(
-                status="error", reason=f"{model_name} {object_id} not found"
+                status="error", reason=f"{handler_name} {object_id} not found"
             )
 
-        # Deliver webhook
-        return _deliver_to_url(webhook_url, event_type, obj)
+        # Format and deliver
+        return _deliver_to_url(webhook_url, handler, obj)
     finally:
         if token:
             reset_log_context(token)
 
 
-# Registry of webhook models with their optimized query configurations
-_WEBHOOK_MODEL_REGISTRY: dict[str, WebhookModelConfig] = {
-    "ProblemReport": WebhookModelConfig(
-        import_path="the_flip.apps.maintenance.models.ProblemReport",
-        select_related=("machine",),
-        prefetch_related=(),
-    ),
-    "LogEntry": WebhookModelConfig(
-        import_path="the_flip.apps.maintenance.models.LogEntry",
-        select_related=("machine", "problem_report"),
-        prefetch_related=("maintainers", "maintainers__discord_link"),
-    ),
-    "PartRequest": WebhookModelConfig(
-        import_path="the_flip.apps.parts.models.PartRequest",
-        select_related=("machine", "requested_by__user", "requested_by__discord_link"),
-        prefetch_related=(),
-    ),
-    "PartRequestUpdate": WebhookModelConfig(
-        import_path="the_flip.apps.parts.models.PartRequestUpdate",
-        select_related=("part_request__machine", "posted_by__user", "posted_by__discord_link"),
-        prefetch_related=(),
-    ),
-}
-
-
-def _get_model_class(model_name: str):
-    """Get the model class for a model name, or None if unknown."""
-    config = _WEBHOOK_MODEL_REGISTRY.get(model_name)
-    if not config:
-        logger.warning("discord_unknown_webhook_model", extra={"model_name": model_name})
-        return None
-
-    from importlib import import_module
-
-    module_path, class_name = config.import_path.rsplit(".", 1)
-    module = import_module(module_path)
-    return getattr(module, class_name)
-
-
-def _get_object(model_name: str, object_id: int):
-    """Fetch the object by model name and ID with optimized related queries."""
-    model_class = _get_model_class(model_name)
-    if model_class is None:
-        return None
-
-    config = _WEBHOOK_MODEL_REGISTRY[model_name]
-
-    # Build optimized query
-    queryset = model_class.objects.all()
-    if config.select_related:
-        queryset = queryset.select_related(*config.select_related)
-    if config.prefetch_related:
-        queryset = queryset.prefetch_related(*config.prefetch_related)
-
-    return queryset.filter(pk=object_id).first()
-
-
 def _deliver_to_url(
     url: str,
-    event_type: str,
-    obj: ProblemReport | LogEntry | PartRequest | PartRequestUpdate,
+    handler: object,
+    obj: object,
 ) -> WebhookDeliveryResult:
     """Deliver a webhook to a URL."""
-    from the_flip.apps.discord.formatters import format_discord_message
+    from the_flip.apps.discord.webhook_handlers import WebhookHandler
+
+    assert isinstance(handler, WebhookHandler)
 
     try:
-        payload = format_discord_message(event_type, obj)
+        payload = handler.format_webhook_message(obj)
         response = requests.post(
             url,
             json=payload,

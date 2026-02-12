@@ -12,14 +12,16 @@ from the_flip.apps.core.test_utils import (
     create_part_request,
     create_problem_report,
 )
+from the_flip.apps.discord.bot_handlers.log_entry import LogEntryBotHandler
+from the_flip.apps.discord.bot_handlers.part_request_update import PartRequestUpdateBotHandler
 from the_flip.apps.discord.models import DiscordMessageMapping
-from the_flip.apps.discord.records import (
-    _create_log_entry,
-    _create_part_request_update,
-    _resolve_occurred_at,
-)
+from the_flip.apps.discord.records import _resolve_occurred_at
 from the_flip.apps.discord.types import DiscordUserInfo
 from the_flip.apps.maintenance.models import LogEntry
+
+# Instantiate handlers for direct unit testing of create_from_suggestion()
+_log_entry_handler = LogEntryBotHandler()
+_part_request_update_handler = PartRequestUpdateBotHandler()
 
 
 @tag("tasks")
@@ -35,11 +37,11 @@ class LogEntryParentLinkingTests(TestCase):
         """Log entry created with parent_record_id links to that problem report."""
         problem_report = create_problem_report(machine=self.machine)
 
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed the issue",
             maintainer=self.maintainer,
-            discord_display_name=None,
+            display_name="",
             parent_record_id=problem_report.pk,
             occurred_at=django_timezone.now(),
         )
@@ -49,11 +51,11 @@ class LogEntryParentLinkingTests(TestCase):
 
     def test_log_entry_without_parent_has_no_problem_report(self):
         """Log entry created without parent_record_id has no linked problem report."""
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed something",
             maintainer=self.maintainer,
-            discord_display_name=None,
+            display_name="",
             parent_record_id=None,
             occurred_at=django_timezone.now(),
         )
@@ -62,11 +64,11 @@ class LogEntryParentLinkingTests(TestCase):
 
     def test_log_entry_with_nonexistent_parent_has_no_problem_report(self):
         """Log entry with invalid parent_record_id gracefully has no link (logs warning)."""
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed something",
             maintainer=self.maintainer,
-            discord_display_name=None,
+            display_name="",
             parent_record_id=99999,  # Non-existent ID
             occurred_at=django_timezone.now(),
         )
@@ -76,11 +78,11 @@ class LogEntryParentLinkingTests(TestCase):
 
     def test_log_entry_uses_maintainer_when_provided(self):
         """Log entry associates maintainer when provided."""
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed the flipper",
             maintainer=self.maintainer,
-            discord_display_name="Discord User",
+            display_name="Discord User",
             parent_record_id=None,
             occurred_at=django_timezone.now(),
         )
@@ -90,12 +92,12 @@ class LogEntryParentLinkingTests(TestCase):
         self.assertEqual(log_entry.maintainer_names, "")
 
     def test_log_entry_uses_fallback_name_when_no_maintainer(self):
-        """Log entry uses discord_display_name as fallback when no maintainer."""
-        log_entry = _create_log_entry(
+        """Log entry uses display_name as fallback when no maintainer."""
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed the flipper",
             maintainer=None,
-            discord_display_name="Discord User",
+            display_name="Discord User",
             parent_record_id=None,
             occurred_at=django_timezone.now(),
         )
@@ -105,11 +107,11 @@ class LogEntryParentLinkingTests(TestCase):
 
     def test_log_entry_uses_discord_fallback_when_no_display_name(self):
         """Log entry uses 'Discord' as fallback when no maintainer or display name."""
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed the flipper",
             maintainer=None,
-            discord_display_name=None,
+            display_name="",
             parent_record_id=None,
             occurred_at=django_timezone.now(),
         )
@@ -133,10 +135,12 @@ class PartRequestUpdateParentLinkingTests(TestCase):
             requested_by=self.maintainer,
         )
 
-        update = _create_part_request_update(
+        update = _part_request_update_handler.create_from_suggestion(
             parent_record_id=part_request.pk,
             description="Parts arrived!",
+            machine=None,
             maintainer=self.maintainer,
+            display_name="",
             occurred_at=django_timezone.now(),
         )
 
@@ -146,10 +150,12 @@ class PartRequestUpdateParentLinkingTests(TestCase):
     def test_update_with_nonexistent_parent_raises(self):
         """Part request update with invalid parent_record_id raises ValueError."""
         with self.assertRaises(ValueError) as ctx:
-            _create_part_request_update(
+            _part_request_update_handler.create_from_suggestion(
                 parent_record_id=99999,  # Non-existent ID
                 description="Parts arrived!",
+                machine=None,
                 maintainer=self.maintainer,
+                display_name="",
                 occurred_at=django_timezone.now(),
             )
 
@@ -501,11 +507,11 @@ class TimestampPreservationTests(TestCase):
         # Discord message posted at 2pm
         discord_timestamp = datetime(2025, 1, 15, 14, 0, 0, tzinfo=UTC)
 
-        log_entry = _create_log_entry(
+        log_entry = _log_entry_handler.create_from_suggestion(
             machine=self.machine,
             description="Fixed the flipper",
             maintainer=self.maintainer,
-            discord_display_name=None,
+            display_name="",
             parent_record_id=None,
             occurred_at=discord_timestamp,
         )
