@@ -16,7 +16,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from the_flip.apps.discord.context import ContextMessage, FlipfixRecord, GatheredContext
-from the_flip.apps.discord.llm import RecordType
 
 
 @dataclass(frozen=True)
@@ -163,7 +162,7 @@ class ExpectedSuggestion:
     - source_message_ids: Multi-message source tracking
     """
 
-    record_type: RecordType
+    record_type: str
     slug: str
     children: list[ExpectedChild] | None = None  # Expected child records
     parent_record_id: int | None = None  # Expected link to existing Flipfix record

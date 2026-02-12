@@ -14,7 +14,6 @@ core/markdown_links.py (link types) and core/models.py (media models).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -26,25 +25,13 @@ if TYPE_CHECKING:
     from the_flip.apps.catalog.models import MachineInstance
 
 
-class EntryType(StrEnum):
-    """Entry types for feed items. StrEnum allows direct template comparison."""
-
-    LOG = "log"
-    PROBLEM_REPORT = "problem_report"
-    PART_REQUEST = "part_request"
-    PART_REQUEST_UPDATE = "part_request_update"
-
-
-ALL_ENTRY_TYPES: tuple[str, ...] = tuple(EntryType)
-
-
 @dataclass(frozen=True)
 class FeedConfig:
     """Configuration for a machine feed filter tab."""
 
-    title_suffix: str  # Appended to browser title, e.g. "· Logs"
+    title_suffix: str  # Appended to browser title, e.g. "- Logs"
     breadcrumb_label: str | None  # Final breadcrumb text, None for activity feed
-    entry_types: tuple[str, ...]  # Which entry types to include (immutable)
+    entry_types: tuple[str, ...]  # Which entry types to include; () means all registered
     empty_message: str  # Shown when feed has no entries
     search_empty_message: str  # Shown when search has no results
 
@@ -53,28 +40,28 @@ FEED_CONFIGS: dict[str, FeedConfig] = {
     "all": FeedConfig(
         title_suffix="",
         breadcrumb_label=None,
-        entry_types=ALL_ENTRY_TYPES,
+        entry_types=(),  # empty = all registered types
         empty_message="No activity yet.",
         search_empty_message="No activity matches your search.",
     ),
     "logs": FeedConfig(
-        title_suffix=" · Logs",
+        title_suffix=" \u00b7 Logs",
         breadcrumb_label="Logs",
-        entry_types=(EntryType.LOG,),
+        entry_types=("log",),
         empty_message="No log entries yet.",
         search_empty_message="No log entries match your search.",
     ),
     "problems": FeedConfig(
-        title_suffix=" · Problem Reports",
+        title_suffix=" \u00b7 Problem Reports",
         breadcrumb_label="Problems",
-        entry_types=(EntryType.PROBLEM_REPORT,),
+        entry_types=("problem_report",),
         empty_message="No problem reports yet.",
         search_empty_message="No problem reports match your search.",
     ),
     "parts": FeedConfig(
-        title_suffix=" · Part Requests",
+        title_suffix=" \u00b7 Part Requests",
         breadcrumb_label="Parts",
-        entry_types=(EntryType.PART_REQUEST,),
+        entry_types=("part_request",),
         empty_message="No parts requests yet.",
         search_empty_message="No parts requests match your search.",
     ),
@@ -103,16 +90,20 @@ class FeedEntrySource:
     """Describes how to fetch one type of entry for the unified feed.
 
     Each source specifies:
-    - entry_type: tag set on entries for template dispatch
+    - entry_type: string tag set on entries (e.g. "log", "problem_report")
     - get_base_queryset: returns queryset with model-specific select_related/prefetch_related
     - machine_filter_field: field name for .filter(**{field: machine})
     - global_select_related: additional select_related fields for global (non-machine) scope
+    - machine_template: template path for rendering in machine-scoped feeds
+    - global_template: template path for rendering in global (all-machines) feeds
     """
 
     entry_type: str
     get_base_queryset: Callable[[], QuerySet[Any]]
     machine_filter_field: str
     global_select_related: tuple[str, ...]
+    machine_template: str
+    global_template: str
 
 
 # ---------------------------------------------------------------------------
@@ -124,10 +115,10 @@ class FeedEntrySource:
 # media-model registration.
 #
 # To add a new entry type to the feed:
-# 1. Add an EntryType member above
-# 2. In the owning app's AppConfig.ready(), call register_feed_source()
-# 3. Create the entry template(s)
-# 4. Update the dispatcher templates (activity_entry.html, global_activity_entry.html)
+# 1. In the owning app's AppConfig.ready(), call register_feed_source()
+#    with template paths for machine and global feeds
+# 2. Create the entry templates
+# That's it — no enums, dispatchers, or other files to edit.
 # ---------------------------------------------------------------------------
 
 _feed_source_registry: dict[str, FeedEntrySource] = {}
@@ -140,6 +131,11 @@ def register_feed_source(source: FeedEntrySource) -> None:
     _feed_source_registry[source.entry_type] = source
 
 
+def get_all_entry_types() -> tuple[str, ...]:
+    """Return all registered entry type keys. Resolves after AppConfig.ready()."""
+    return tuple(_feed_source_registry.keys())
+
+
 def clear_feed_source_registry() -> None:
     """Reset registry state. For tests only."""
     _feed_source_registry.clear()
@@ -150,7 +146,7 @@ def get_feed_page(
     page_size: int = settings.LIST_PAGE_SIZE,
     search_query: str | None = None,
     machine: MachineInstance | None = None,
-    entry_types: tuple[str, ...] = ALL_ENTRY_TYPES,
+    entry_types: tuple[str, ...] = (),
 ) -> tuple[list[Any], bool]:
     """Get a paginated page of activity entries.
 
@@ -159,11 +155,16 @@ def get_feed_page(
     When machine is None, returns entries across all machines with global
     search (includes machine name matching).
 
+    An empty ``entry_types`` tuple means "all registered types".
+
     Uses merge-sort style pagination: fetches just enough from each table
     to construct the requested page.
 
     Returns (page_items, has_next) tuple.
     """
+    if not entry_types:
+        entry_types = get_all_entry_types()
+
     offset = (page_num - 1) * page_size
     # Fetch one extra to detect if more pages exist (countless pagination pattern)
     fetch_limit = offset + page_size + 1
@@ -210,8 +211,10 @@ def _fetch_entries(
     queryset = queryset.order_by("-occurred_at")
     entries = list(queryset[:limit])
 
-    # Tag entries for template dispatch (all models get entry_type attribute)
+    # Tag entries with metadata from their source for template rendering
     for entry in entries:
         entry.entry_type = source.entry_type  # type: ignore[attr-defined]
+        entry.machine_template = source.machine_template  # type: ignore[attr-defined]
+        entry.global_template = source.global_template  # type: ignore[attr-defined]
 
     return entries

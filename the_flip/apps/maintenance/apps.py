@@ -33,7 +33,7 @@ class MaintenanceConfig(AppConfig):
     def _register_feed_sources():
         from django.db.models import Prefetch
 
-        from the_flip.apps.core.feed import EntryType, FeedEntrySource, register_feed_source
+        from the_flip.apps.core.feed import FeedEntrySource, register_feed_source
 
         from .models import LogEntry, ProblemReport
 
@@ -54,18 +54,22 @@ class MaintenanceConfig(AppConfig):
 
         register_feed_source(
             FeedEntrySource(
-                entry_type=EntryType.LOG,
+                entry_type="log",
                 get_base_queryset=_log_entry_queryset,
                 machine_filter_field="machine",
                 global_select_related=("machine", "machine__model"),
+                machine_template="maintenance/partials/log_entry.html",
+                global_template="maintenance/partials/global_log_entry.html",
             )
         )
         register_feed_source(
             FeedEntrySource(
-                entry_type=EntryType.PROBLEM_REPORT,
+                entry_type="problem_report",
                 get_base_queryset=_problem_report_queryset,
                 machine_filter_field="machine",
                 global_select_related=("machine", "machine__model"),
+                machine_template="maintenance/partials/problem_report_entry.html",
+                global_template="maintenance/partials/global_problem_report_entry.html",
             )
         )
 

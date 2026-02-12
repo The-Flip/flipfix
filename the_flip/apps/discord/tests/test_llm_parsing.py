@@ -7,7 +7,6 @@ from django.test import TestCase, tag
 from the_flip.apps.discord.llm import (
     ChildSuggestion,
     RecordSuggestion,
-    RecordType,
     _parse_tool_response,
     flatten_suggestions,
 )
@@ -53,11 +52,11 @@ class ParseToolResponseTests(TestCase):
 
         self.assertEqual(len(result), 2)
         self.assertIsInstance(result[0], RecordSuggestion)
-        self.assertEqual(result[0].record_type, RecordType.LOG_ENTRY)
+        self.assertEqual(result[0].record_type, "log_entry")
         self.assertEqual(result[0].slug, "godzilla")
         self.assertEqual(result[0].source_message_ids, ["123456789"])
         self.assertEqual(result[0].author_id, "111222333")
-        self.assertEqual(result[1].record_type, RecordType.PROBLEM_REPORT)
+        self.assertEqual(result[1].record_type, "problem_report")
         self.assertEqual(result[1].slug, "metallica")
         self.assertEqual(result[1].author_id, "444555666")
 
@@ -93,7 +92,7 @@ class ParseToolResponseTests(TestCase):
         result = _parse_tool_response(response)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].record_type, RecordType.LOG_ENTRY)
+        self.assertEqual(result[0].record_type, "log_entry")
 
     def test_filters_out_suggestions_missing_required_fields(self):
         """Suggestions missing required fields are filtered out."""
@@ -121,7 +120,7 @@ class ParseToolResponseTests(TestCase):
         result = _parse_tool_response(response)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].record_type, RecordType.PART_REQUEST)
+        self.assertEqual(result[0].record_type, "part_request")
 
     def test_filters_out_log_entry_without_machine_id_or_parent(self):
         """Log entries require machine_id OR parent_record_id."""
@@ -159,7 +158,7 @@ class ParseToolResponseTests(TestCase):
         result = _parse_tool_response(response)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].record_type, RecordType.LOG_ENTRY)
+        self.assertEqual(result[0].record_type, "log_entry")
         self.assertIsNone(result[0].slug)
         self.assertEqual(result[0].parent_record_id, 42)
 
@@ -198,7 +197,7 @@ class ParseToolResponseTests(TestCase):
         result = _parse_tool_response(response)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].record_type, RecordType.PART_REQUEST)
+        self.assertEqual(result[0].record_type, "part_request")
         self.assertIsNone(result[0].slug)
 
     def test_returns_empty_list_when_no_tool_use_block(self):
@@ -306,10 +305,10 @@ class ParseToolResponseTests(TestCase):
         self.assertEqual(
             record_types,
             {
-                RecordType.LOG_ENTRY,
-                RecordType.PROBLEM_REPORT,
-                RecordType.PART_REQUEST,
-                RecordType.PART_REQUEST_UPDATE,
+                "log_entry",
+                "problem_report",
+                "part_request",
+                "part_request_update",
             },
         )
 
@@ -432,7 +431,7 @@ class ParseToolResponseTests(TestCase):
         result = _parse_tool_response(response)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].record_type, RecordType.PART_REQUEST_UPDATE)
+        self.assertEqual(result[0].record_type, "part_request_update")
         self.assertEqual(result[0].parent_record_id, 42)
 
     def test_filters_out_suggestion_missing_author_id(self):
@@ -612,7 +611,7 @@ class FlattenSuggestionsTests(TestCase):
         """Suggestions without children remain as single items."""
         suggestions = [
             RecordSuggestion(
-                record_type=RecordType.LOG_ENTRY,
+                record_type="log_entry",
                 description="Fixed something",
                 source_message_ids=["123"],
                 author_id="111222333",
@@ -630,7 +629,7 @@ class FlattenSuggestionsTests(TestCase):
         """Problem report with children creates parent + log_entry child."""
         suggestions = [
             RecordSuggestion(
-                record_type=RecordType.PROBLEM_REPORT,
+                record_type="problem_report",
                 description="Flipper broken",
                 source_message_ids=["123"],
                 author_id="111222333",
@@ -650,10 +649,10 @@ class FlattenSuggestionsTests(TestCase):
         self.assertEqual(len(result), 2)
         # First is parent (problem report)
         self.assertIsNone(result[0].parent_index)
-        self.assertEqual(result[0].suggestion.record_type, RecordType.PROBLEM_REPORT)
+        self.assertEqual(result[0].suggestion.record_type, "problem_report")
         # Second is child (log entry)
         self.assertEqual(result[1].parent_index, 0)
-        self.assertEqual(result[1].suggestion.record_type, RecordType.LOG_ENTRY)
+        self.assertEqual(result[1].suggestion.record_type, "log_entry")
         self.assertEqual(result[1].suggestion.description, "Fixed - coil was loose")
         self.assertEqual(result[1].suggestion.author_id, "444555666")
         # Child inherits slug from parent
@@ -663,7 +662,7 @@ class FlattenSuggestionsTests(TestCase):
         """Part request with children creates parent + part_request_update children."""
         suggestions = [
             RecordSuggestion(
-                record_type=RecordType.PART_REQUEST,
+                record_type="part_request",
                 description="Need flipper coil",
                 source_message_ids=["123"],
                 author_id="111222333",
@@ -687,20 +686,20 @@ class FlattenSuggestionsTests(TestCase):
 
         self.assertEqual(len(result), 3)
         # First is parent
-        self.assertEqual(result[0].suggestion.record_type, RecordType.PART_REQUEST)
+        self.assertEqual(result[0].suggestion.record_type, "part_request")
         # Second and third are children
         self.assertEqual(result[1].parent_index, 0)
-        self.assertEqual(result[1].suggestion.record_type, RecordType.PART_REQUEST_UPDATE)
+        self.assertEqual(result[1].suggestion.record_type, "part_request_update")
         self.assertEqual(result[1].suggestion.description, "Ordered from Marco")
         self.assertEqual(result[2].parent_index, 0)
-        self.assertEqual(result[2].suggestion.record_type, RecordType.PART_REQUEST_UPDATE)
+        self.assertEqual(result[2].suggestion.record_type, "part_request_update")
         self.assertEqual(result[2].suggestion.description, "Parts arrived")
 
     def test_multiple_suggestions_mixed(self):
         """Multiple suggestions, some with children, are flattened correctly."""
         suggestions = [
             RecordSuggestion(
-                record_type=RecordType.PROBLEM_REPORT,
+                record_type="problem_report",
                 description="Problem 1",
                 source_message_ids=["100"],
                 author_id="111",
@@ -714,7 +713,7 @@ class FlattenSuggestionsTests(TestCase):
                 ],
             ),
             RecordSuggestion(
-                record_type=RecordType.LOG_ENTRY,
+                record_type="log_entry",
                 description="Standalone log",
                 source_message_ids=["200"],
                 author_id="333",
@@ -739,7 +738,7 @@ class FlattenSuggestionsTests(TestCase):
         """Child suggestions have parent_record_id=None (set at creation time)."""
         suggestions = [
             RecordSuggestion(
-                record_type=RecordType.PROBLEM_REPORT,
+                record_type="problem_report",
                 description="Problem",
                 source_message_ids=["123"],
                 author_id="111",

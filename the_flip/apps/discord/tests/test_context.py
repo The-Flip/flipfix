@@ -11,7 +11,7 @@ from the_flip.apps.discord.context import (
     _parse_flipfix_url,
     _parse_webhook_embed,
 )
-from the_flip.apps.discord.llm import RecordType, _escape_yaml_string, build_yaml_prompt
+from the_flip.apps.discord.llm import _escape_yaml_string, build_yaml_prompt
 
 
 def _make_url(url_name: str, pk: int) -> str:
@@ -47,19 +47,19 @@ class ParseFlipfixUrlTests(TestCase):
         """Parses log entry URL pattern."""
         url = _make_url("log-detail", 123)
         result = _parse_flipfix_url(url)
-        self.assertEqual(result, (RecordType.LOG_ENTRY, 123, None))
+        self.assertEqual(result, ("log_entry", 123, None))
 
     def test_parses_problem_report_url(self):
         """Parses problem report URL pattern."""
         url = _make_url("problem-report-detail", 456)
         result = _parse_flipfix_url(url)
-        self.assertEqual(result, (RecordType.PROBLEM_REPORT, 456, None))
+        self.assertEqual(result, ("problem_report", 456, None))
 
     def test_parses_part_request_url(self):
         """Parses part request URL pattern."""
         url = _make_url("part-request-detail", 789)
         result = _parse_flipfix_url(url)
-        self.assertEqual(result, (RecordType.PART_REQUEST, 789, None))
+        self.assertEqual(result, ("part_request", 789, None))
 
     def test_returns_none_for_unknown_pattern(self):
         """Returns None for unrecognized URL patterns."""
@@ -70,7 +70,7 @@ class ParseFlipfixUrlTests(TestCase):
         """Handles URLs without trailing slashes."""
         url = _make_url("log-detail", 123).rstrip("/")
         result = _parse_flipfix_url(url)
-        self.assertEqual(result, (RecordType.LOG_ENTRY, 123, None))
+        self.assertEqual(result, ("log_entry", 123, None))
 
 
 @tag("tasks")
@@ -91,7 +91,7 @@ class ParseWebhookEmbedTests(TestCase):
 
         self.assertIsNotNone(result)
         flipfix_record, author, content = result
-        self.assertEqual(flipfix_record.record_type, RecordType.LOG_ENTRY)
+        self.assertEqual(flipfix_record.record_type, "log_entry")
         self.assertEqual(flipfix_record.record_id, 123)
         self.assertEqual(author, "Bob")
         self.assertEqual(content, "Fixed the flipper coil.")
@@ -106,7 +106,7 @@ class ParseWebhookEmbedTests(TestCase):
 
         self.assertIsNotNone(result)
         flipfix_record, author, content = result
-        self.assertEqual(flipfix_record.record_type, RecordType.PROBLEM_REPORT)
+        self.assertEqual(flipfix_record.record_type, "problem_report")
         self.assertEqual(author, "")
         self.assertEqual(content, "Machine is broken")
 
@@ -301,7 +301,7 @@ class BuildYamlPromptTests(TestCase):
                     content="Work was logged",
                     timestamp="2025-01-15T15:00:00Z",
                     flipfix_record=FlipfixRecord(
-                        record_type=RecordType.LOG_ENTRY,
+                        record_type="log_entry",
                         record_id=42,
                         machine_id="godzilla",
                     ),

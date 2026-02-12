@@ -174,7 +174,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         """All source_message_ids are marked as processed."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -182,7 +182,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         author_id = "123456789012345678"  # Discord snowflake format
         source_ids = ["111111111", "222222222", "333333333"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.PROBLEM_REPORT,
+            record_type="problem_report",
             description="Flipper broken across multiple messages",
             source_message_ids=source_ids,
             author_id=author_id,
@@ -218,14 +218,14 @@ class MultiMessageSourceTrackingTests(TestCase):
         """Single source_message_id is marked as processed."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
         author_id = "234567890123456789"  # Discord snowflake format
         source_ids = ["999999999"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.PROBLEM_REPORT,
+            record_type="problem_report",
             description="Something broken",
             source_message_ids=source_ids,
             author_id=author_id,
@@ -248,7 +248,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         """Log entry created via create_record links to parent problem report."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -258,7 +258,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         author_id = "345678901234567890"  # Discord snowflake format
         source_ids = ["444444444"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.LOG_ENTRY,
+            record_type="log_entry",
             description="Fixed the issue reported earlier",
             source_message_ids=source_ids,
             author_id=author_id,
@@ -286,7 +286,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         """Log entry without slug inherits machine from parent problem report."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -296,7 +296,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         author_id = "345678901234567890"
         source_ids = ["555555555"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.LOG_ENTRY,
+            record_type="log_entry",
             description="Fixed the issue",
             source_message_ids=source_ids,
             author_id=author_id,
@@ -325,7 +325,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         """Part request update created via create_record links to parent."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -341,7 +341,7 @@ class MultiMessageSourceTrackingTests(TestCase):
         author_id = "456789012345678901"  # Discord snowflake format
         source_ids = ["555555555"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.PART_REQUEST_UPDATE,
+            record_type="part_request_update",
             description="Parts arrived today!",
             source_message_ids=source_ids,
             author_id=author_id,
@@ -522,7 +522,7 @@ class TimestampPreservationTests(TestCase):
         """Record created from multiple messages uses latest timestamp."""
         from asgiref.sync import async_to_sync
 
-        from the_flip.apps.discord.llm import RecordSuggestion, RecordType
+        from the_flip.apps.discord.llm import RecordSuggestion
         from the_flip.apps.discord.records import create_record
         from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -534,7 +534,7 @@ class TimestampPreservationTests(TestCase):
         author_id = "123456789012345678"
         source_ids = ["msg1", "msg2", "msg3"]
         suggestion = RecordSuggestion(
-            record_type=RecordType.PROBLEM_REPORT,
+            record_type="problem_report",
             description="Flipper problem discussed over time",
             source_message_ids=source_ids,
             author_id=author_id,

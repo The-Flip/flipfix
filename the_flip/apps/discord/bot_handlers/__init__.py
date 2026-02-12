@@ -23,8 +23,6 @@ from typing import Any
 
 from django.db.models import Model
 
-from the_flip.apps.discord.llm import RecordType
-
 logger = logging.getLogger(__name__)
 
 # Registry of bot record handlers, keyed by handler name (e.g., "log_entry")
@@ -93,9 +91,9 @@ class BotRecordHandler:
         return apps.get_model(self.model_path)
 
     @property
-    def record_type(self) -> RecordType:
-        """Return the RecordType enum value for this handler."""
-        return RecordType(self.name)
+    def record_type(self) -> str:
+        """Return the record type string for this handler (same as name)."""
+        return self.name
 
 
 def register(handler: BotRecordHandler) -> None:

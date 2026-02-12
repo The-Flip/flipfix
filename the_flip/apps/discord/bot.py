@@ -16,7 +16,6 @@ from the_flip.apps.discord.context import ContextMessage, gather_context
 from the_flip.apps.discord.llm import (
     FlattenedSuggestion,
     RecordSuggestion,
-    RecordType,
     analyze_gathered_context,
     flatten_suggestions,
 )
@@ -696,24 +695,24 @@ class DiscordBot(discord.Client):
         return await get_config()
 
 
-def _format_record_type(record_type: RecordType) -> str:
+def _format_record_type(record_type: str) -> str:
     """Format record type for display."""
     from the_flip.apps.discord.bot_handlers import get_bot_handler
 
-    handler = get_bot_handler(record_type.value)
+    handler = get_bot_handler(record_type)
     if handler:
         return handler.display_name
-    return record_type.value.replace("_", " ").title()
+    return record_type.replace("_", " ").title()
 
 
-def _get_parent_type_label(child_record_type: RecordType) -> str:
+def _get_parent_type_label(child_record_type: str) -> str:
     """Get the parent record type label for a child record type.
 
     Log entries link to problem reports; part request updates link to part requests.
     """
     from the_flip.apps.discord.bot_handlers import get_bot_handler
 
-    handler = get_bot_handler(child_record_type.value)
+    handler = get_bot_handler(child_record_type)
     if handler and handler.parent_handler_name:
         parent_handler = get_bot_handler(handler.parent_handler_name)
         if parent_handler:

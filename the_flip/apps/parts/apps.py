@@ -25,7 +25,7 @@ class PartsConfig(AppConfig):
     def _register_feed_sources():
         from django.db.models import Prefetch
 
-        from the_flip.apps.core.feed import EntryType, FeedEntrySource, register_feed_source
+        from the_flip.apps.core.feed import FeedEntrySource, register_feed_source
 
         from .models import PartRequest, PartRequestUpdate
 
@@ -46,18 +46,22 @@ class PartsConfig(AppConfig):
 
         register_feed_source(
             FeedEntrySource(
-                entry_type=EntryType.PART_REQUEST,
+                entry_type="part_request",
                 get_base_queryset=_part_request_queryset,
                 machine_filter_field="machine",
                 global_select_related=("machine", "machine__model"),
+                machine_template="parts/partials/part_request_activity_entry.html",
+                global_template="parts/partials/part_list_entry.html",
             )
         )
         register_feed_source(
             FeedEntrySource(
-                entry_type=EntryType.PART_REQUEST_UPDATE,
+                entry_type="part_request_update",
                 get_base_queryset=_part_request_update_queryset,
                 machine_filter_field="part_request__machine",
                 global_select_related=("part_request__machine",),
+                machine_template="parts/partials/part_update_activity_entry.html",
+                global_template="parts/partials/part_update_activity_entry.html",
             )
         )
 
