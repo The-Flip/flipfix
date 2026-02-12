@@ -97,6 +97,47 @@ class ProfileViewTests(TestCase):
         response = self.client.post(self.profile_url, data, follow=True)
         self.assertRedirects(response, self.profile_url)
 
+    def test_profile_form_fields_render(self):
+        """Profile form should render all form fields correctly."""
+        self.client.force_login(self.user)
+        response = self.client.get(self.profile_url)
+        # Check that form fields are rendered with proper structure
+        self.assertContains(response, 'name="email"')
+        self.assertContains(response, 'name="first_name"')
+        self.assertContains(response, 'name="last_name"')
+
+    def test_profile_displays_user_with_no_names(self):
+        """Profile page should handle user with no first or last name."""
+        user_no_name = create_user(username="noname", email="noname@example.com")
+        self.client.force_login(user_no_name)
+        response = self.client.get(self.profile_url)
+        self.assertEqual(response.status_code, 200)
+        # Should show username in sidebar
+        self.assertContains(response, "noname")
+
+    def test_profile_cancel_button_links_to_home(self):
+        """Cancel button should link to home page."""
+        self.client.force_login(self.user)
+        response = self.client.get(self.profile_url)
+        home_url = reverse("home")
+        self.assertContains(response, f'href="{home_url}"')
+        self.assertContains(response, "Cancel")
+
+    def test_profile_save_button_present(self):
+        """Save Changes button should be present."""
+        self.client.force_login(self.user)
+        response = self.client.get(self.profile_url)
+        self.assertContains(response, "Save Changes")
+        self.assertContains(response, 'type="submit"')
+
+    def test_profile_password_change_link_present(self):
+        """Password change link should be in sidebar and mobile actions."""
+        self.client.force_login(self.user)
+        response = self.client.get(self.profile_url)
+        password_change_url = reverse("password_change")
+        self.assertContains(response, f'href="{password_change_url}"')
+        self.assertContains(response, "Change Password")
+
 
 @tag("views")
 class PasswordChangeViewTests(TestCase):

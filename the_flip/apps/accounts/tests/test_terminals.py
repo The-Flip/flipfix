@@ -321,3 +321,102 @@ class TerminalReactivateViewTests(SuppressRequestLogsMixin, TestCase):
         messages = list(response.context["messages"])
         self.assertEqual(len(messages), 1)
         self.assertIn("reactivated", str(messages[0]))
+
+
+@tag("views")
+class TerminalTemplateEdgeCaseTests(TerminalTestMixin, TestCase):
+    """Edge case tests for terminal templates."""
+
+    def setUp(self):
+        super().setUp()
+        self.list_url = reverse("terminal-list")
+
+    def test_terminal_list_with_no_last_name(self):
+        """Terminal list should handle terminals with only first name."""
+        terminal_no_last = create_shared_terminal(
+            username="kiosk-1", first_name="Kiosk", last_name=""
+        )
+        self.client.force_login(self.terminal_manager)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, "Kiosk")
+        self.assertEqual(response.status_code, 200)
+
+    def test_terminal_list_with_no_first_name(self):
+        """Terminal list should handle terminals with only last name."""
+        terminal_no_first = create_shared_terminal(
+            username="kiosk-2", first_name="", last_name="Terminal"
+        )
+        self.client.force_login(self.terminal_manager)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, "Terminal")
+        self.assertEqual(response.status_code, 200)
+
+    def test_terminal_list_with_neither_name(self):
+        """Terminal list should handle terminals with no first or last name."""
+        terminal_no_name = create_shared_terminal(
+            username="kiosk-3", first_name="", last_name=""
+        )
+        self.client.force_login(self.terminal_manager)
+        response = self.client.get(self.list_url)
+        # Should fallback to username
+        self.assertContains(response, "kiosk-3")
+        self.assertEqual(response.status_code, 200)
+
+    def test_terminal_form_shows_is_create_flag(self):
+        """Terminal form should set is_create flag correctly."""
+        self.client.force_login(self.terminal_manager)
+        # Create form should have is_create=True
+        add_url = reverse("terminal-add")
+        response = self.client.get(add_url)
+        self.assertContains(response, "Add Terminal")
+        self.assertContains(response, "Create Terminal")
+
+        # Edit form should have is_create=False
+        edit_url = reverse("terminal-edit", kwargs={"pk": self.terminal.pk})
+        response = self.client.get(edit_url)
+        self.assertContains(response, "Edit Terminal")
+        self.assertContains(response, "Save Changes")
+        self.assertNotContains(response, "Create Terminal")
+
+    def test_terminal_form_breadcrumb_changes(self):
+        """Breadcrumbs should differ between create and edit."""
+        self.client.force_login(self.terminal_manager)
+        # Create form breadcrumb
+        add_url = reverse("terminal-add")
+        response = self.client.get(add_url)
+        self.assertContains(response, "New Account")
+
+        # Edit form breadcrumb shows terminal name
+        edit_url = reverse("terminal-edit", kwargs={"pk": self.terminal.pk})
+        response = self.client.get(edit_url)
+        self.assertContains(response, "Workshop Terminal")
+
+    def test_terminal_list_login_button_hidden_for_inactive(self):
+        """Login button should be hidden for deactivated terminals."""
+        self.terminal.user.is_active = False
+        self.terminal.user.save()
+
+        self.client.force_login(self.terminal_manager)
+        response = self.client.get(self.list_url)
+        # Should not contain login form for this terminal
+        self.assertNotContains(
+            response, f'action="{reverse("terminal-login", kwargs={"pk": self.terminal.pk})}"'
+        )
+
+    def test_terminal_list_shows_edit_button(self):
+        """Terminal list should show edit button for all terminals."""
+        self.client.force_login(self.terminal_manager)
+        response = self.client.get(self.list_url)
+        edit_url = reverse("terminal-edit", kwargs={"pk": self.terminal.pk})
+        self.assertContains(response, f'href="{edit_url}"')
+        self.assertContains(response, "Edit")
+
+    def test_terminal_form_has_password_manager_attrs(self):
+        """Terminal form should have all password manager prevention attributes."""
+        self.client.force_login(self.terminal_manager)
+        add_url = reverse("terminal-add")
+        response = self.client.get(add_url)
+        # Check for all three password manager prevention attributes
+        self.assertContains(response, 'autocomplete="off"')
+        self.assertContains(response, "data-1p-ignore")
+        self.assertContains(response, 'data-lpignore="true"')

@@ -49,6 +49,7 @@ class MachineInlineUpdateViewTests(TestCase):
         data = response.json()
 
         # Verify settable pill response contract
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["location_display"], "Floor")
 
@@ -73,6 +74,7 @@ class MachineInlineUpdateViewTests(TestCase):
         data = response.json()
 
         # Verify settable pill response contract
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["location_display"], "Workshop")
 
@@ -114,7 +116,9 @@ class MachineInlineUpdateViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "noop")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["status"], "noop")
 
         # No new log entry
         self.assertEqual(LogEntry.objects.filter(machine=self.machine).count(), initial_log_count)
@@ -144,6 +148,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
         # Verify settable pill response contract
         data = response.json()
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["operational_status_display"], "Broken")
         self.assertIn("log_entry_html", data)
@@ -203,3 +208,75 @@ class MachineInlineUpdateViewTests(TestCase):
         self.assertEqual(log.created_by, shared_terminal.user)
         # Shared terminal should NOT be added as maintainer
         self.assertEqual(log.maintainers.count(), 0)
+
+
+@tag("views")
+class MachineEditViewTemplateTests(TestCase):
+    """Tests for machine edit template rendering."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.maintainer_user = create_maintainer_user()
+        self.superuser = create_user(username="admin", is_superuser=True, is_staff=True)
+        self.machine = create_machine(slug="test-machine")
+        self.edit_url = reverse("machine-edit", kwargs={"slug": self.machine.slug})
+
+    def test_machine_edit_template_used(self):
+        """Machine edit should use correct template."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "catalog/machine_edit.html")
+
+    def test_history_link_visible_for_superuser(self):
+        """History link should be visible for superusers."""
+        self.client.force_login(self.superuser)
+        response = self.client.get(self.edit_url)
+        # History link should be present
+        self.assertContains(response, "History")
+
+    def test_history_link_hidden_for_non_superuser(self):
+        """History link should be hidden for non-superuser maintainers."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        # History link should not be present (user is not superuser)
+        self.assertNotContains(response, 'class="sidebar__corner-link"')
+
+    def test_edit_model_link_present(self):
+        """Edit Model link should be present in sidebar."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        model_edit_url = reverse("machine-model-edit", kwargs={"slug": self.machine.model.slug})
+        self.assertContains(response, model_edit_url)
+        self.assertContains(response, "Edit Model")
+
+    def test_qr_code_link_present(self):
+        """QR Code link should be present in sidebar."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        qr_url = reverse("machine-qr", kwargs={"slug": self.machine.slug})
+        self.assertContains(response, qr_url)
+        self.assertContains(response, "QR Code")
+
+    def test_breadcrumbs_include_machine_name(self):
+        """Breadcrumbs should include machine name and edit label."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        self.assertContains(response, "Machines")
+        self.assertContains(response, self.machine.short_display_name)
+        self.assertContains(response, "<span>Edit</span>")
+
+    def test_cancel_button_links_to_machine_detail(self):
+        """Cancel button should link back to machine detail page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        detail_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+        self.assertContains(response, f'href="{detail_url}"')
+        self.assertContains(response, "Cancel")
+
+    def test_save_changes_button_present(self):
+        """Save Changes button should be present."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.edit_url)
+        self.assertContains(response, "Save Changes")
+        self.assertContains(response, 'type="submit"')

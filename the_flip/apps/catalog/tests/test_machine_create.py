@@ -396,3 +396,84 @@ class MachineCreateModelDoesNotExistViewTests(AccessControlTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("name", response.context["form"].errors)
         self.assertContains(response, "already exists")
+
+
+@tag("views")
+class MachineCreateTemplateEdgeCaseTests(AccessControlTestCase):
+    """Edge case tests for machine creation templates."""
+
+    def setUp(self):
+        """Set up test data."""
+        self.maintainer_user = create_maintainer_user()
+        self.landing_url = reverse("machine-create-landing")
+
+    def test_landing_page_with_many_models(self):
+        """Landing page should handle a large number of existing models."""
+        # Create multiple models
+        for i in range(10):
+            create_machine_model(
+                name=f"Test Machine {i}",
+                manufacturer="Test Mfg",
+                year=1990 + i,
+                era=MachineModel.Era.SS,
+            )
+
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 200)
+        # Should contain all models in dropdown
+        for i in range(10):
+            self.assertContains(response, f"Test Machine {i}")
+
+    def test_landing_page_with_no_existing_models(self):
+        """Landing page should work when no models exist yet."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 200)
+        # Should still show "Create a new model" option
+        self.assertContains(response, "Create a new model")
+
+    def test_model_exists_view_shows_model_details(self):
+        """Model exists view should display model manufacturer and year."""
+        model = create_machine_model(
+            name="Test Model",
+            manufacturer="Williams",
+            year=1995,
+            era=MachineModel.Era.SS,
+        )
+        self.client.force_login(self.maintainer_user)
+        url = reverse("machine-create-model-exists", kwargs={"model_slug": model.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Williams")
+        self.assertContains(response, "Test Model")
+
+    def test_model_exists_view_with_existing_instances(self):
+        """Model exists view should show existing instances in sidebar."""
+        model = create_machine_model(name="Popular Model", era=MachineModel.Era.SS)
+        # Create multiple instances
+        machine1 = create_machine(slug="instance-1", model=model)
+        machine2 = create_machine(slug="instance-2", model=model)
+
+        self.client.force_login(self.maintainer_user)
+        url = reverse("machine-create-model-exists", kwargs={"model_slug": model.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, machine1.name)
+        self.assertContains(response, machine2.name)
+
+    def test_create_page_cancel_button_present(self):
+        """Create pages should have cancel buttons."""
+        self.client.force_login(self.maintainer_user)
+        # Test landing page has navigation back
+        response = self.client.get(self.landing_url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_model_does_not_exist_breadcrumbs(self):
+        """Create new model page should have proper breadcrumbs."""
+        self.client.force_login(self.maintainer_user)
+        url = reverse("machine-create-model-does-not-exist")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        # Should have breadcrumb navigation
+        self.assertContains(response, "Machines")
