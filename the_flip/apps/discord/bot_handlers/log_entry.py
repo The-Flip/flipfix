@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class LogEntryBotHandler(BotRecordHandler):
     name = "log_entry"
     display_name = "Log Entry"
+    model_path = "maintenance.LogEntry"
     machine_required = True
     parent_handler_name = "problem_report"
     child_type_name = None

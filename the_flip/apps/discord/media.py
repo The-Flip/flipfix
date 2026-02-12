@@ -62,20 +62,17 @@ def _get_media_model_name(record: Model) -> str:
     """Get the media model name for the web service API.
 
     Looks up the bot handler for the record type to find the media model name.
+    Matches by model class identity rather than naming convention.
     """
     from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
 
-    record_class_name = type(record).__name__
     for handler in get_all_bot_handlers():
         if not handler.media_model_name:
             continue
-        # Media model names follow the pattern "XMedia" where X is the model class name
-        # e.g., "LogEntryMedia" -> "LogEntry", "ProblemReportMedia" -> "ProblemReport"
-        expected_class = handler.media_model_name.replace("Media", "")
-        if record_class_name == expected_class:
+        if isinstance(record, handler.get_model_class()):
             return handler.media_model_name
 
-    raise ValueError(f"No media model name configured for: {record_class_name}")
+    raise ValueError(f"No media model name configured for: {type(record).__name__}")
 
 
 async def download_and_create_media(

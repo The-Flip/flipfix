@@ -6,11 +6,17 @@ and URL parsing for webhook embed context.
 
 This package is completely separate from webhook_handlers/. You never need
 to touch these files when adding webhook-only record types (e.g., wiki pages).
+
+To add a new bot handler:
+1. Create a new handler file in this package
+2. Done. Auto-discovery imports all modules at startup.
 """
 
 from __future__ import annotations
 
+import importlib
 import logging
+import pkgutil
 import re
 from datetime import datetime
 from typing import Any
@@ -35,6 +41,7 @@ class BotRecordHandler:
     # --- Identity (must be set by subclass) ---
     name: str  # e.g., "log_entry" — matches webhook handler name
     display_name: str  # e.g., "Log Entry" — for wizard UI
+    model_path: str  # e.g., "maintenance.LogEntry" — app_label.ModelName
 
     # --- LLM schema ---
     machine_required: bool = False
@@ -79,6 +86,12 @@ class BotRecordHandler:
         """Return the URL path for the created record's detail page."""
         raise NotImplementedError
 
+    def get_model_class(self):
+        """Get the Django model class this handler creates."""
+        from django.apps import apps
+
+        return apps.get_model(self.model_path)
+
     @property
     def record_type(self) -> RecordType:
         """Return the RecordType enum value for this handler."""
@@ -100,3 +113,13 @@ def get_bot_handler(name: str) -> BotRecordHandler | None:
 def get_all_bot_handlers() -> list[BotRecordHandler]:
     """Return all registered bot record handlers."""
     return list(_registry.values())
+
+
+def discover() -> None:
+    """Auto-discover and import all handler modules in this package.
+
+    Imports every module in bot_handlers/ to trigger their module-level
+    register() calls. Called from DiscordConfig.ready().
+    """
+    for module_info in pkgutil.iter_modules(__path__):
+        importlib.import_module(f".{module_info.name}", __package__)

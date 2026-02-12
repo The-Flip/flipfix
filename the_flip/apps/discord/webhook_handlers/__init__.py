@@ -5,13 +5,14 @@ to Discord: signal registration, query optimization, and message formatting.
 
 To add a new record type (e.g., wiki pages):
 1. Create a new handler file in this package
-2. Import it in discord/apps.py
-3. Done. No other files need changing.
+2. Done. Auto-discovery imports all modules at startup.
 """
 
 from __future__ import annotations
 
+import importlib
 import logging
+import pkgutil
 from functools import partial
 from typing import Any
 
@@ -131,3 +132,13 @@ def _make_signal_handler(handler: WebhookHandler):
             )
 
     return signal_handler
+
+
+def discover() -> None:
+    """Auto-discover and import all handler modules in this package.
+
+    Imports every module in webhook_handlers/ to trigger their module-level
+    register() calls. Called from DiscordConfig.ready().
+    """
+    for module_info in pkgutil.iter_modules(__path__):
+        importlib.import_module(f".{module_info.name}", __package__)

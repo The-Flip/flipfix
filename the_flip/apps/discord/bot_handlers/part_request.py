@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class PartRequestBotHandler(BotRecordHandler):
     name = "part_request"
     display_name = "Part Request"
+    model_path = "parts.PartRequest"
     machine_required = False
     parent_handler_name = None
     child_type_name = "part_request_update"

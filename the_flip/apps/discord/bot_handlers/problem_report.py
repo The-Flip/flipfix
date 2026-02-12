@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 class ProblemReportBotHandler(BotRecordHandler):
     name = "problem_report"
     display_name = "Problem Report"
+    model_path = "maintenance.ProblemReport"
     machine_required = True
     parent_handler_name = None
     child_type_name = "log_entry"
