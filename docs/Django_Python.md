@@ -66,17 +66,19 @@ logger.exception("event_name", extra={"error": str(e), "context": value})
 
 **For non-model enums (API schemas, constants, etc.):**
 
-- Use `StrEnum` when values need to be strings (e.g., for JSON serialization, LLM tool schemas)
+- Use `StrEnum` when values need to be strings (e.g., for JSON serialization)
 - Use base `Enum` when values can be any type
 
 ```python
 from enum import StrEnum
 
-class RecordType(StrEnum):
-    """Valid record types for Discord bot suggestions."""
-    LOG_ENTRY = "log_entry"
-    PROBLEM_REPORT = "problem_report"
+class Color(StrEnum):
+    """Embed colors for Discord notifications."""
+    BLUE = "blue"
+    GREEN = "green"
 ```
+
+**Prefer registries over enums for extensible type sets.** When the set of values grows as new features are added (e.g., record types, feed entry types), use a registry pattern instead of an enum. Enums require editing a central file every time a new type is added; registries let each app register its own types in `AppConfig.ready()`. See `core/feed.py` (feed sources), `core/markdown_links.py` (link types), and `discord/bot_handlers/` (bot record handlers) for examples.
 
 ## Constants
 

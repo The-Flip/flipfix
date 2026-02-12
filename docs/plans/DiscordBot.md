@@ -134,7 +134,7 @@ async def analyze_with_llm(context: MessageContext) -> list[RecordSuggestion]:
     # Returns list of suggestions like:
     # [
     #     RecordSuggestion(
-    #         record_type=RecordType.LOG_ENTRY,
+    #         record_type="log_entry",
     #         machine_slug="godzilla",
     #         description="Fixed flipper coil that was sticking",
     #         related_problem_report_id=42,  # From webhook URL
