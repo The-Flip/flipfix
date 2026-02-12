@@ -17,17 +17,49 @@ class PartsConfig(AppConfig):
 
         register_reference_cleanup(PartRequest, PartRequestUpdate)
 
+        self._register_feed_sources()
         self._register_link_types()
         self._register_media_models()
 
     @staticmethod
-    def _register_media_models():
-        from the_flip.apps.core.models import register_media_model
+    def _register_feed_sources():
+        from django.db.models import Prefetch
 
-        from .models import PartRequestMedia, PartRequestUpdateMedia
+        from the_flip.apps.core.feed import EntryType, FeedEntrySource, register_feed_source
 
-        register_media_model(PartRequestMedia)
-        register_media_model(PartRequestUpdateMedia)
+        from .models import PartRequest, PartRequestUpdate
+
+        def _part_request_queryset():
+            latest_update_prefetch = Prefetch(
+                "updates",
+                queryset=PartRequestUpdate.objects.order_by("-occurred_at"),
+                to_attr="prefetched_updates",
+            )
+            return PartRequest.objects.select_related("requested_by__user").prefetch_related(
+                "media", latest_update_prefetch
+            )
+
+        def _part_request_update_queryset():
+            return PartRequestUpdate.objects.select_related(
+                "posted_by__user", "part_request"
+            ).prefetch_related("media")
+
+        register_feed_source(
+            FeedEntrySource(
+                entry_type=EntryType.PART_REQUEST,
+                get_base_queryset=_part_request_queryset,
+                machine_filter_field="machine",
+                global_select_related=("machine", "machine__model"),
+            )
+        )
+        register_feed_source(
+            FeedEntrySource(
+                entry_type=EntryType.PART_REQUEST_UPDATE,
+                get_base_queryset=_part_request_update_queryset,
+                machine_filter_field="part_request__machine",
+                global_select_related=("part_request__machine",),
+            )
+        )
 
     @staticmethod
     def _register_link_types():
@@ -93,3 +125,12 @@ class PartsConfig(AppConfig):
                 sort_order=60,
             )
         )
+
+    @staticmethod
+    def _register_media_models():
+        from the_flip.apps.core.models import register_media_model
+
+        from .models import PartRequestMedia, PartRequestUpdateMedia
+
+        register_media_model(PartRequestMedia)
+        register_media_model(PartRequestUpdateMedia)

@@ -5,8 +5,10 @@ machine-scoped and global (all machines) views. Machine-scoped feeds filter
 by machine and exclude machine name from search. Global feeds include machine
 info in select_related for display.
 
-Each record type is registered as a FeedEntrySource, so adding a new type
-means adding one source definition rather than editing two parallel modules.
+Each record type is registered as a FeedEntrySource via AppConfig.ready(),
+so adding a new type means registering one source definition in the owning
+app rather than editing this module.  Compare the same pattern in
+core/markdown_links.py (link types) and core/models.py (media models).
 """
 
 from __future__ import annotations
@@ -16,18 +18,12 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
-from django.db.models import Prefetch, QuerySet
-
-from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
+from django.db.models import QuerySet
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from the_flip.apps.catalog.models import MachineInstance
-
-# Type alias for feed entries (all have occurred_at attribute)
-FeedEntry = LogEntry | ProblemReport | PartRequest | PartRequestUpdate
 
 
 class EntryType(StrEnum):
@@ -119,81 +115,34 @@ class FeedEntrySource:
     global_select_related: tuple[str, ...]
 
 
-# --- Queryset factories for each entry type ---
+# ---------------------------------------------------------------------------
+# Feed source registry
 #
-# These return base querysets with model-specific select_related/prefetch_related.
-# The caller adds machine filtering or global select_related as appropriate.
-
-
-def _log_entry_queryset() -> QuerySet[LogEntry]:
-    return LogEntry.objects.select_related("problem_report").prefetch_related(
-        "maintainers__user", "media"
-    )
-
-
-def _problem_report_queryset() -> QuerySet[ProblemReport]:
-    latest_log_prefetch = Prefetch(
-        "log_entries",
-        queryset=LogEntry.objects.order_by("-occurred_at"),
-        to_attr="prefetched_log_entries",
-    )
-    return ProblemReport.objects.select_related("reported_by_user").prefetch_related(
-        latest_log_prefetch, "media"
-    )
-
-
-def _part_request_queryset() -> QuerySet[PartRequest]:
-    latest_update_prefetch = Prefetch(
-        "updates",
-        queryset=PartRequestUpdate.objects.order_by("-occurred_at"),
-        to_attr="prefetched_updates",
-    )
-    return PartRequest.objects.select_related("requested_by__user").prefetch_related(
-        "media", latest_update_prefetch
-    )
-
-
-def _part_request_update_queryset() -> QuerySet[PartRequestUpdate]:
-    return PartRequestUpdate.objects.select_related(
-        "posted_by__user", "part_request"
-    ).prefetch_related("media")
-
-
-# --- Source registry ---
+# Apps register their FeedEntrySource instances via AppConfig.ready(), keeping
+# core free of hardcoded knowledge about other apps.  Compare the same pattern
+# in core/markdown_links.py for link-type registration and core/models.py for
+# media-model registration.
 #
 # To add a new entry type to the feed:
-# 1. Add an EntryType member
-# 2. Write a queryset factory function above
-# 3. Register a FeedEntrySource here
-# 4. Create the entry template(s)
-# 5. Update the dispatcher templates (activity_entry.html, global_activity_entry.html)
+# 1. Add an EntryType member above
+# 2. In the owning app's AppConfig.ready(), call register_feed_source()
+# 3. Create the entry template(s)
+# 4. Update the dispatcher templates (activity_entry.html, global_activity_entry.html)
+# ---------------------------------------------------------------------------
 
-FEED_SOURCES: dict[str, FeedEntrySource] = {
-    EntryType.LOG: FeedEntrySource(
-        entry_type=EntryType.LOG,
-        get_base_queryset=_log_entry_queryset,
-        machine_filter_field="machine",
-        global_select_related=("machine", "machine__model"),
-    ),
-    EntryType.PROBLEM_REPORT: FeedEntrySource(
-        entry_type=EntryType.PROBLEM_REPORT,
-        get_base_queryset=_problem_report_queryset,
-        machine_filter_field="machine",
-        global_select_related=("machine", "machine__model"),
-    ),
-    EntryType.PART_REQUEST: FeedEntrySource(
-        entry_type=EntryType.PART_REQUEST,
-        get_base_queryset=_part_request_queryset,
-        machine_filter_field="machine",
-        global_select_related=("machine", "machine__model"),
-    ),
-    EntryType.PART_REQUEST_UPDATE: FeedEntrySource(
-        entry_type=EntryType.PART_REQUEST_UPDATE,
-        get_base_queryset=_part_request_update_queryset,
-        machine_filter_field="part_request__machine",
-        global_select_related=("part_request__machine",),
-    ),
-}
+_feed_source_registry: dict[str, FeedEntrySource] = {}
+
+
+def register_feed_source(source: FeedEntrySource) -> None:
+    """Register a feed entry source. Called from each app's AppConfig.ready()."""
+    if source.entry_type in _feed_source_registry:
+        raise ValueError(f"Feed source '{source.entry_type}' is already registered")
+    _feed_source_registry[source.entry_type] = source
+
+
+def clear_feed_source_registry() -> None:
+    """Reset registry state. For tests only."""
+    _feed_source_registry.clear()
 
 
 def get_feed_page(
@@ -202,7 +151,7 @@ def get_feed_page(
     search_query: str | None = None,
     machine: MachineInstance | None = None,
     entry_types: tuple[str, ...] = ALL_ENTRY_TYPES,
-) -> tuple[list[FeedEntry], bool]:
+) -> tuple[list[Any], bool]:
     """Get a paginated page of activity entries.
 
     When machine is provided, returns entries scoped to that machine using
@@ -219,10 +168,10 @@ def get_feed_page(
     # Fetch one extra to detect if more pages exist (countless pagination pattern)
     fetch_limit = offset + page_size + 1
 
-    all_entries: list[FeedEntry] = []
+    all_entries: list[Any] = []
 
     for entry_type in entry_types:
-        source = FEED_SOURCES.get(entry_type)
+        source = _feed_source_registry.get(entry_type)
         if source:
             all_entries.extend(_fetch_entries(source, machine, search_query, fetch_limit))
 

@@ -25,8 +25,49 @@ class MaintenanceConfig(AppConfig):
 
         from . import signals  # noqa: F401 — registers @receiver handlers
 
+        self._register_feed_sources()
         self._register_link_types()
         self._register_media_models()
+
+    @staticmethod
+    def _register_feed_sources():
+        from django.db.models import Prefetch
+
+        from the_flip.apps.core.feed import EntryType, FeedEntrySource, register_feed_source
+
+        from .models import LogEntry, ProblemReport
+
+        def _log_entry_queryset():
+            return LogEntry.objects.select_related("problem_report").prefetch_related(
+                "maintainers__user", "media"
+            )
+
+        def _problem_report_queryset():
+            latest_log_prefetch = Prefetch(
+                "log_entries",
+                queryset=LogEntry.objects.order_by("-occurred_at"),
+                to_attr="prefetched_log_entries",
+            )
+            return ProblemReport.objects.select_related("reported_by_user").prefetch_related(
+                latest_log_prefetch, "media"
+            )
+
+        register_feed_source(
+            FeedEntrySource(
+                entry_type=EntryType.LOG,
+                get_base_queryset=_log_entry_queryset,
+                machine_filter_field="machine",
+                global_select_related=("machine", "machine__model"),
+            )
+        )
+        register_feed_source(
+            FeedEntrySource(
+                entry_type=EntryType.PROBLEM_REPORT,
+                get_base_queryset=_problem_report_queryset,
+                machine_filter_field="machine",
+                global_select_related=("machine", "machine__model"),
+            )
+        )
 
     @staticmethod
     def _register_media_models():
