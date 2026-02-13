@@ -22,7 +22,6 @@ from the_flip.apps.catalog.views import (
     MachineFeedPartialView,
     MachineFeedView,
     MachineListView,
-    MachineListViewForPublic,
     MachineModelUpdateView,
     MachineUpdateView,
 )
@@ -166,9 +165,6 @@ urlpatterns = [
     #
     # Public pages (no login required)
     #
-    path(
-        "m/", MachineListViewForPublic.as_view(), name="public-machine-list"
-    ),  # Public machine list
     path(
         "m/<slug:slug>/", MachineDetailViewForPublic.as_view(), name="public-machine-detail"
     ),  # Public machine detail

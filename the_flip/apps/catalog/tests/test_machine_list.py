@@ -1,6 +1,6 @@
 """Tests for machine list views."""
 
-from django.test import TestCase, tag
+from django.test import tag
 from django.urls import reverse
 
 from the_flip.apps.core.test_utils import (
@@ -40,24 +40,3 @@ class MaintainerMachineListViewTests(AccessControlTestCase):
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, 200)
-
-
-@tag("views")
-class PublicMachineListViewTests(TestCase):
-    """Tests for public-facing machine list view."""
-
-    def setUp(self):
-        """Set up test data for public views."""
-        self.machine = create_machine(slug="public-machine")
-        self.list_url = reverse("public-machine-list")
-
-    def test_public_list_view_accessible(self):
-        """Public list view should be accessible to anonymous users."""
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "catalog/machine_list_public.html")
-
-    def test_public_list_view_displays_machine(self):
-        """Public list view should display visible machines."""
-        response = self.client.get(self.list_url)
-        self.assertContains(response, self.machine.name)
