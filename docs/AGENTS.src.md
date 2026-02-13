@@ -289,7 +289,7 @@ This project uses Django's `@register.inclusion_tag` and `@register.simple_block
 | `parts_tags`         | parts       | `settable_part_request_status_pill`                                                                               |
 | `accounts_tags`      | accounts    | `display_name_with_username`                                                                                      |
 | `accounts_form_tags` | accounts    | `maintainer_autocomplete_field`, `maintainer_chip_input_field`                                                    |
-| `wiki_tags`          | wiki        | `render_wiki_content`                                                                                             |
+| `wiki_tags`          | wiki        | `render_wiki_content`, `deslugify`                                                                                |
 | `wiki_form_tags`     | wiki        | `template_selector_field`, `tag_chip_input_field`                                                                 |
 
 Templates load only what they need: `{% load ui_tags %}`, `{% load form_tags %}`, etc.

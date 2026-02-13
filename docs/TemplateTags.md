@@ -139,9 +139,10 @@ These live in each app's `templatetags/` directory.
 
 #### `wiki_tags` — Wiki display tags (`wiki/templatetags/`)
 
-| Component             | Type       | Description                                             |
-| --------------------- | ---------- | ------------------------------------------------------- |
-| `render_wiki_content` | Simple tag | Render wiki page content with markdown + action buttons |
+| Component             | Type       | Description                                                  |
+| --------------------- | ---------- | ------------------------------------------------------------ |
+| `render_wiki_content` | Simple tag | Render wiki page content with markdown + action buttons      |
+| `deslugify`           | Filter     | Convert slug to title: `"using-flipfix"` → `"Using Flipfix"` |
 
 #### `wiki_form_tags` — Wiki form components (`wiki/templatetags/`)
 
