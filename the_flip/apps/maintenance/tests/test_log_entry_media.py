@@ -270,6 +270,22 @@ class LogEntryMediaDeleteTests(
         self.assertTrue(json_data["success"])
         self.assertEqual(LogEntryMedia.objects.count(), 0)
 
+    def test_delete_media_non_numeric_id(self):
+        """Non-numeric media_id returns 404, not unhandled 500."""
+        self.client.force_login(self.maintainer_user)
+
+        data = {
+            "action": "delete_media",
+            "media_id": "abc",
+        }
+        response = self.client.post(self.detail_url, data)
+
+        self.assertEqual(response.status_code, 404)
+        json_data = response.json()
+        self.assertFalse(json_data["success"])
+        # Original media should be untouched
+        self.assertEqual(LogEntryMedia.objects.count(), 1)
+
     def test_delete_media_wrong_entry(self):
         """Cannot delete media from another log entry."""
         other_entry = create_log_entry(machine=self.machine, text="Other entry")

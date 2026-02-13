@@ -77,9 +77,7 @@
       });
       if (!res.ok) throw new Error('Save failed');
       const data = await res.json();
-      document.dispatchEvent(
-        new CustomEvent('save:end', { detail: { ok: data.status === 'success' } })
-      );
+      document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: data.success } }));
     } catch {
       document.dispatchEvent(new CustomEvent('save:end', { detail: { ok: false } }));
     }

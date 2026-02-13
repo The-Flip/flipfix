@@ -226,7 +226,7 @@ class MediaUploadMixin:
 
             return JsonResponse({"success": True})
 
-        except media_model.DoesNotExist:
+        except (media_model.DoesNotExist, ValueError):
             return JsonResponse({"success": False, "error": "Media not found"}, status=404)
 
 

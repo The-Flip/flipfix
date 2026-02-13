@@ -146,7 +146,7 @@ class WikiPageDetailView(WikiPagePathMixin, CanAccessMaintainerPortalMixin, Deta
             _add_template_sync_toast(request, result)
             return JsonResponse({"success": True})
 
-        return JsonResponse({"error": "Unknown action"}, status=400)
+        return JsonResponse({"success": False, "error": "Unknown action"}, status=400)
 
     def get_context_data(self, **kwargs):
         """Add wiki-specific context."""
@@ -425,10 +425,10 @@ class WikiReorderSaveView(CanAccessMaintainerPortalMixin, View):
         try:
             data = json.loads(request.body)
         except (json.JSONDecodeError, ValueError):
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
         if not isinstance(data, dict):
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
         page_orders = data.get("pages", [])
         tag_orders = data.get("tags", [])
@@ -446,9 +446,9 @@ class WikiReorderSaveView(CanAccessMaintainerPortalMixin, View):
                         defaults={"order": item["order"]},
                     )
         except (KeyError, TypeError, ValueError) as e:
-            return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
+            return JsonResponse({"success": False, "error": f"Invalid payload: {e}"}, status=400)
 
-        return JsonResponse({"status": "success"})
+        return JsonResponse({"success": True})
 
 
 class WikiTemplateListView(CanAccessMaintainerPortalMixin, View):

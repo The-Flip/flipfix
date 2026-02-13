@@ -69,7 +69,7 @@ class WikiReorderSaveTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
             }
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        self.assertTrue(response.json()["success"])
 
         self.assertEqual(WikiPageTag.objects.get(tag="", slug="beta").order, 0)
         self.assertEqual(WikiPageTag.objects.get(tag="", slug="alpha").order, 1)
@@ -126,6 +126,7 @@ class WikiReorderSaveTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])
 
     def test_requires_login(self):
         from django.test import Client
@@ -150,7 +151,7 @@ class WikiReorderSaveTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     def test_empty_payload_succeeds(self):
         response = self._post({"pages": [], "tags": []})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "success")
+        self.assertTrue(response.json()["success"])
 
     def test_malformed_page_items_returns_400(self):
         response = self._post({"pages": [{"wrong": "keys"}], "tags": []})
