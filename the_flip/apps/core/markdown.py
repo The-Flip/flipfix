@@ -7,6 +7,7 @@ the ``render_markdown`` template filter and the wiki action rendering tag.
 import re
 
 import nh3
+from django.utils.safestring import mark_safe
 from markdown_it import MarkdownIt
 
 # CommonMark-compliant markdown parser.
@@ -133,8 +134,7 @@ def render_markdown_html(text: str) -> str:
         text: Raw markdown text (may contain ``[[type:ref]]`` links).
 
     Returns:
-        Sanitized HTML string. The caller is responsible for wrapping
-        in ``mark_safe()`` if needed for template rendering.
+        Sanitized HTML ``SafeString``, safe for direct use in templates.
     """
     if not text:
         return ""
@@ -147,4 +147,4 @@ def render_markdown_html(text: str) -> str:
     # Sanitize to prevent XSS
     safe_html = nh3.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES)
     # Convert task list markers to checkboxes (after sanitization for security)
-    return _convert_task_list_items(safe_html)
+    return mark_safe(_convert_task_list_items(safe_html))  # noqa: S308 — HTML sanitized by nh3

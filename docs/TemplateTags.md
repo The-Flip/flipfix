@@ -137,6 +137,12 @@ These live in each app's `templatetags/` directory.
 | `maintainer_autocomplete_field` | Inclusion tag | Autocomplete input for user search               |
 | `maintainer_chip_input_field`   | Inclusion tag | Multi-select chip input for maintainer selection |
 
+#### `wiki_tags` — Wiki display tags (`wiki/templatetags/`)
+
+| Component             | Type       | Description                                             |
+| --------------------- | ---------- | ------------------------------------------------------- |
+| `render_wiki_content` | Simple tag | Render wiki page content with markdown + action buttons |
+
 #### `wiki_form_tags` — Wiki form components (`wiki/templatetags/`)
 
 | Component                 | Type          | Description                         |

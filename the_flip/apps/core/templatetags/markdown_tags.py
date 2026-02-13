@@ -1,7 +1,6 @@
 """Markdown pipeline: render_markdown, storage_to_authoring."""
 
 from django import template
-from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -30,4 +29,4 @@ def render_markdown(text):
     """Convert markdown text to sanitized HTML."""
     from the_flip.apps.core.markdown import render_markdown_html
 
-    return mark_safe(render_markdown_html(text))  # noqa: S308 - HTML sanitized by nh3
+    return render_markdown_html(text)

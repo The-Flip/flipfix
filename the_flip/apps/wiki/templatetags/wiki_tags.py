@@ -21,7 +21,7 @@ def render_wiki_content(page):
 
     Usage::
 
-        {% load wiki_extras %}
+        {% load wiki_tags %}
         {% render_wiki_content page %}
     """
     content = page.content or ""
@@ -33,5 +33,6 @@ def render_wiki_content(page):
 
     if token_map:
         html = inject_buttons(html, token_map, page.pk)
+        return mark_safe(html)  # noqa: S308 — nh3-sanitized HTML + format_html-escaped buttons
 
-    return mark_safe(html)  # noqa: S308 - HTML sanitized by nh3 + format_html for buttons
+    return html

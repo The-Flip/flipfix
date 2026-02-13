@@ -229,20 +229,21 @@ This project uses Django's `@register.inclusion_tag` and `@register.simple_block
 
 ### Tag Library Organization
 
-| Library | Location | What it contains |
-|---------|----------|------------------|
-| `ui_tags` | core | Atomic primitives: `icon`, `pill`, `smart_date`, `month_name`, `addstr` |
-| `video_tags` | core | `video_player`, `video_thumbnail` |
-| `sidebar_tags` | core | `sidebar_section`, `editable_sidebar_card` |
-| `list_tags` | core | `empty_state`, `child_list_search`, `stat_grid`, `timeline`, `timeline_entry` |
-| `form_tags` | core | `form_field`, `form_fields`, `form_label`, `form_non_field_errors`, `field_errors`, `field_help_text`, `getfield` |
-| `markdown_tags` | core | `render_markdown`, `storage_to_authoring` |
-| `catalog_tags` | catalog | Machine status pills/filters, `manufacturer_year` |
-| `maintenance_tags` | maintenance | Problem/log pills/filters, `problem_report_summary`, `log_entry_meta` |
-| `parts_tags` | parts | `settable_part_request_status_pill` |
-| `accounts_tags` | accounts | `display_name_with_username` |
-| `accounts_form_tags` | accounts | `maintainer_autocomplete_field`, `maintainer_chip_input_field` |
-| `wiki_form_tags` | wiki | `template_selector_field`, `tag_chip_input_field` |
+| Library              | Location    | What it contains                                                                                                  |
+| -------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `ui_tags`            | core        | Atomic primitives: `icon`, `pill`, `smart_date`, `month_name`, `addstr`                                           |
+| `video_tags`         | core        | `video_player`, `video_thumbnail`                                                                                 |
+| `sidebar_tags`       | core        | `sidebar_section`, `editable_sidebar_card`                                                                        |
+| `list_tags`          | core        | `empty_state`, `child_list_search`, `stat_grid`, `timeline`, `timeline_entry`                                     |
+| `form_tags`          | core        | `form_field`, `form_fields`, `form_label`, `form_non_field_errors`, `field_errors`, `field_help_text`, `getfield` |
+| `markdown_tags`      | core        | `render_markdown`, `storage_to_authoring`                                                                         |
+| `catalog_tags`       | catalog     | Machine status pills/filters, `manufacturer_year`                                                                 |
+| `maintenance_tags`   | maintenance | Problem/log pills/filters, `problem_report_summary`, `log_entry_meta`                                             |
+| `parts_tags`         | parts       | `settable_part_request_status_pill`                                                                               |
+| `accounts_tags`      | accounts    | `display_name_with_username`                                                                                      |
+| `accounts_form_tags` | accounts    | `maintainer_autocomplete_field`, `maintainer_chip_input_field`                                                    |
+| `wiki_tags`          | wiki        | `render_wiki_content`                                                                                             |
+| `wiki_form_tags`     | wiki        | `template_selector_field`, `tag_chip_input_field`                                                                 |
 
 Templates load only what they need: `{% load ui_tags %}`, `{% load form_tags %}`, etc.
 

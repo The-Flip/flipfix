@@ -8,13 +8,20 @@ from the_flip.apps.core.markdown import (
     render_markdown_html,
 )
 
-# Tests use the pipeline function directly; the template filter is a thin mark_safe wrapper.
+# Tests use the pipeline function directly; the template filter is a thin wrapper.
 render_markdown = render_markdown_html
 
 
 @tag("views")
 class RenderMarkdownFilterTests(TestCase):
     """Tests for the render_markdown template filter."""
+
+    def test_returns_safe_string(self):
+        """render_markdown_html returns a SafeData instance (safety contract)."""
+        from django.utils.safestring import SafeData
+
+        result = render_markdown("Hello")
+        self.assertIsInstance(result, SafeData)
 
     def test_empty_text_returns_empty_string(self):
         """Empty or None input returns empty string."""

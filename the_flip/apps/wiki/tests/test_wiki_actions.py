@@ -849,6 +849,25 @@ class WikiContentRenderingTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
 
 
 # ---------------------------------------------------------------------------
+# wiki_tags template library
+# ---------------------------------------------------------------------------
+
+
+@tag("views")
+class WikiTagsLibraryTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Smoke test for the wiki_tags template tag library."""
+
+    def test_render_wiki_content_loads_and_renders(self):
+        """{% load wiki_tags %} and {% render_wiki_content page %} work."""
+        page = WikiPage.objects.create(title="Smoke", slug="smoke", content="**bold**")
+        WikiPageTag.objects.create(page=page, tag="docs", slug="smoke")
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("wiki-page-detail", args=["docs/smoke"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<strong>bold</strong>")
+
+
+# ---------------------------------------------------------------------------
 # Integration: prefill view
 # ---------------------------------------------------------------------------
 
