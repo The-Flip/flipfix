@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 
 # ---------------------------------------------------------------------------
@@ -471,9 +471,10 @@ def save_inline_markdown_field(
     targets don't exist.
     """
     text = convert_authoring_to_storage(raw_text) if raw_text else raw_text
-    setattr(instance, field, text)
-    instance.save(update_fields=[field, "updated_at", *extra_update_fields])
-    sync_references(instance, text)
+    with transaction.atomic():
+        setattr(instance, field, text)
+        instance.save(update_fields=[field, "updated_at", *extra_update_fields])
+        sync_references(instance, text)
 
 
 def link_preview(content: str, max_len: int = 30) -> str:
