@@ -276,12 +276,6 @@ class LogEntryDetailView(
     def get_media_model(self):
         return LogEntryMedia
 
-    def get_media_parent(self):
-        return self.object
-
-    def get_inline_edit_object(self):
-        return self.object
-
     def post(self, request, *args, **kwargs):
         """Handle AJAX updates to the log entry."""
         self.object = self.get_object()

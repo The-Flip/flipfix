@@ -140,16 +140,23 @@ class MediaUploadMixin:
 
     Subclasses must implement:
         - get_media_model(): Return the media model class (e.g., LogEntryMedia)
-        - get_media_parent(): Return the parent object for new media
+
+    The parent object defaults to self.object (Django's DetailView convention).
+    Override get_media_parent() if the parent differs from the view's primary object.
     """
+
+    object: models.Model  # Provided by DetailView via MRO
 
     def get_media_model(self) -> Any:
         """Return the media model class to use for uploads."""
         raise NotImplementedError("Subclasses must implement get_media_model()")
 
     def get_media_parent(self) -> models.Model:
-        """Return the parent object to attach media to."""
-        raise NotImplementedError("Subclasses must implement get_media_parent()")
+        """Return the parent object to attach media to.
+
+        Defaults to self.object (Django's DetailView convention).
+        """
+        return self.object
 
     def handle_upload_media(self, request: HttpRequest) -> JsonResponse:
         """
@@ -230,18 +237,22 @@ class InlineTextEditMixin:
     Provides a handle_update_text() method that can be wired into a view's
     action dispatch table, matching the pattern used by MediaUploadMixin.
 
-    Subclasses must implement:
-        - get_inline_edit_object(): Return the model instance being edited
+    The target object defaults to self.object (Django's DetailView convention).
+    Override get_inline_edit_object() if the target differs from the view's primary object.
 
     Subclasses may override:
         - inline_text_field_name: Model field to update (default: "text")
     """
 
+    object: models.Model  # Provided by DetailView via MRO
     inline_text_field_name: str = "text"
 
     def get_inline_edit_object(self) -> models.Model:
-        """Return the model instance for inline text edits."""
-        raise NotImplementedError("Subclasses must implement get_inline_edit_object()")
+        """Return the model instance for inline text edits.
+
+        Defaults to self.object (Django's DetailView convention).
+        """
+        return self.object
 
     def handle_update_text(self, request: HttpRequest) -> JsonResponse:
         """Handle inline text update from AJAX request."""
