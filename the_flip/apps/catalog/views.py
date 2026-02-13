@@ -21,17 +21,16 @@ from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
 from the_flip.apps.core.feed import FEED_CONFIGS, PageCursor, get_feed_page
 from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
-from the_flip.apps.maintenance.forms import ProblemReportForm
 from the_flip.apps.maintenance.models import ProblemReport
 
 # Maximum stats shown in sidebar grid (Total + up to 3 location counts)
 SIDEBAR_STAT_LIMIT = 4
 
 
-class MachineListViewForPublic(ListView):
-    """Public machine list showing status and open problems, sorted by priority."""
+class MachineListView(CanAccessMaintainerPortalMixin, ListView):
+    """Maintainer machine list with location stats in the sidebar."""
 
-    template_name = "catalog/machine_list_public.html"
+    template_name = "catalog/machine_list_for_maintainers.html"
     context_object_name = "machines"
 
     def get_queryset(self):
@@ -81,12 +80,6 @@ class MachineListViewForPublic(ListView):
             )
         )
 
-
-class MachineListView(CanAccessMaintainerPortalMixin, MachineListViewForPublic):
-    """Maintainer machine list with location stats in the sidebar."""
-
-    template_name = "catalog/machine_list_for_maintainers.html"
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         visible_machines = MachineInstance.objects.visible()
@@ -116,11 +109,6 @@ class MachineDetailViewForPublic(DetailView):
     queryset = MachineInstance.objects.visible()
     slug_field = "slug"
     slug_url_kwarg = "slug"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["problem_report_form"] = ProblemReportForm()
-        return context
 
 
 class MachineFeedView(CanAccessMaintainerPortalMixin, TemplateView):
