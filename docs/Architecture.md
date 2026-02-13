@@ -9,27 +9,27 @@ This document describes:
 
 ### `core`
 
-Shared helpers that don't belong to a single domain app: decorators, custom admin mixins, base templates, date utilities, etc.
+Shared helpers that don't belong to a single domain app: decorators, custom admin mixins, base templates, date utilities, etc. As well as cross-domain composition, like global feed/home/dashboard orchestration.
 
 ### `accounts`
 
-Wraps Django's `AUTH_USER_MODEL` with the Maintainer profile. Handles admin customization (list filters, field ordering) and any future features like maintainer onboarding or role management.
+Wraps Django's `AUTH_USER_MODEL` with the Maintainer profile.
 
 ### `catalog`
 
-Owns the catalog of pinball machines: Machine Models and Machine Instances. This includes public-facing metadata (educational content, credits, operational status). This app publishes read APIs/pages that the museum floor uses.
+The catalog of pinball machines: Machine Models and Machine Instances.
 
 ### `maintenance`
 
-Owns Problem Reports and Log Entries. Encapsulates workflows such as auto-closing tasks when machines are marked "good", rate-limiting public problem report submissions.
+Problem Reports and Log Entries.
 
 ### `parts`
 
-Owns requests for replacement parts and their lifecycle tracking (requested → ordered → received).
+Requests for replacement parts.
 
 ### `wiki`
 
-Internal wiki for maintainer documentation. Pages live in a tag-based hierarchy (e.g., `machines/blackout/system-6`). Supports markdown with `[[type:ref]]` cross-links to other records and action buttons that pre-fill create forms for problems, logs, and part requests.
+Wiki for maintainer documentation. Supports templates that pre-fill create forms for problems, logs, and part requests.
 
 ### `discord`
 
@@ -40,15 +40,17 @@ Discord integration with two main features:
 
 ## App Dependencies
 
-| App             | Depends On                                  |
-| --------------- | ------------------------------------------- |
-| **core**        | -                                           |
-| **accounts**    | core                                        |
-| **catalog**     | core                                        |
-| **maintenance** | core, accounts, catalog                     |
-| **parts**       | core, accounts, catalog, maintenance        |
-| **wiki**        | core                                        |
-| **discord**     | core, accounts, catalog, maintenance, parts |
+We try to keep apps separated at all layers, including views and forms. Cross-app imports are sometimes necessary for pragmatic reasons, but should not be the default. The "Model dependencies" column is strict — `models.py` must only contain relational references to the listed apps. The "Also used in views" column lists additional apps referenced at the view/form/template layer where full separation wasn't practical.
+
+| App             | Model dependencies      | Also used in views          |
+| --------------- | ----------------------- | --------------------------- |
+| **core**        | -                       |                             |
+| **accounts**    | core                    |                             |
+| **wiki**        | core                    |                             |
+| **catalog**     | core                    | maintenance                 |
+| **maintenance** | core, accounts, catalog |                             |
+| **parts**       | core, accounts, catalog | maintenance                 |
+| **discord**     | core, accounts          | catalog, maintenance, parts |
 
 ## Services
 
