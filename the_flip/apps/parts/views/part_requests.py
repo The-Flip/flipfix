@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import format_html
-from django.views.generic import FormView, TemplateView, UpdateView, View
+from django.views.generic import DetailView, FormView, TemplateView, UpdateView, View
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import MachineInstance
@@ -202,37 +202,46 @@ class PartRequestCreateView(
 
 
 class PartRequestDetailView(
-    InlineTextEditMixin, CanAccessMaintainerPortalMixin, MediaUploadMixin, View
+    InlineTextEditMixin, CanAccessMaintainerPortalMixin, MediaUploadMixin, DetailView
 ):
     """Detail view for a part request. Maintainer-only access."""
 
+    model = PartRequest
     template_name = "parts/part_request_detail.html"
+    context_object_name = "part_request"
+
+    def get_queryset(self):
+        return PartRequest.objects.select_related(
+            "requested_by__user", "machine", "machine__model"
+        ).prefetch_related("media")
 
     def get_media_model(self):
         return PartRequestMedia
 
-    def get_media_parent(self):
-        return self.part_request
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-    def get_inline_edit_object(self):
-        return self.part_request
-
-    def get(self, request, *args, **kwargs):
-        self.part_request = get_object_or_404(
-            PartRequest.objects.select_related(
-                "requested_by__user", "machine", "machine__model"
-            ).prefetch_related("media"),
-            pk=kwargs["pk"],
+        search_query = self.request.GET.get("q", "").strip()
+        updates = (
+            PartRequestUpdate.objects.filter(part_request=self.object)
+            .search_for_part_request(search_query)
+            .select_related("posted_by__user")
+            .prefetch_related("media")
+            .order_by("-occurred_at")
         )
-        return self.render_response(request, self.part_request)
+
+        paginator = Paginator(updates, settings.LIST_PAGE_SIZE)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+
+        context["machine"] = self.object.machine
+        context["page_obj"] = page_obj
+        context["updates"] = page_obj.object_list
+        context["update_count"] = paginator.count
+        context["search_query"] = search_query
+        return context
 
     def post(self, request, *args, **kwargs):
-        self.part_request = get_object_or_404(
-            PartRequest.objects.select_related(
-                "requested_by__user", "machine", "machine__model"
-            ).prefetch_related("media"),
-            pk=kwargs["pk"],
-        )
+        self.object = self.get_object()
         action = request.POST.get("action")
 
         action_handlers = {
@@ -245,32 +254,6 @@ class PartRequestDetailView(
             return action_handlers[action](request)
 
         return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
-
-    def render_response(self, request, part_request):
-        from django.shortcuts import render
-
-        # Get updates for this part request with pagination
-        search_query = request.GET.get("q", "").strip()
-        updates = (
-            PartRequestUpdate.objects.filter(part_request=part_request)
-            .search_for_part_request(search_query)
-            .select_related("posted_by__user")
-            .prefetch_related("media")
-            .order_by("-occurred_at")
-        )
-
-        paginator = Paginator(updates, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(request.GET.get("page"))
-
-        context = {
-            "part_request": part_request,
-            "machine": part_request.machine,
-            "page_obj": page_obj,
-            "updates": page_obj.object_list,
-            "update_count": paginator.count,
-            "search_query": search_query,
-        }
-        return render(request, self.template_name, context)
 
 
 class PartRequestEditView(CanAccessMaintainerPortalMixin, UpdateView):

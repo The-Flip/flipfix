@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.html import format_html
-from django.views.generic import FormView, UpdateView, View
+from django.views.generic import DetailView, FormView, UpdateView
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.core.attribution import (
@@ -124,43 +124,32 @@ class PartRequestUpdateCreateView(SharedAccountMixin, CanAccessMaintainerPortalM
 
 
 class PartRequestUpdateDetailView(
-    InlineTextEditMixin, CanAccessMaintainerPortalMixin, MediaUploadMixin, View
+    InlineTextEditMixin, CanAccessMaintainerPortalMixin, MediaUploadMixin, DetailView
 ):
     """Detail view for a part request update. Maintainer-only access."""
 
+    model = PartRequestUpdate
     template_name = "parts/part_update_detail.html"
+    context_object_name = "update"
+
+    def get_queryset(self):
+        return PartRequestUpdate.objects.select_related(
+            "part_request__requested_by__user",
+            "part_request__machine",
+            "part_request__machine__model",
+            "posted_by__user",
+        ).prefetch_related("media")
 
     def get_media_model(self):
         return PartRequestUpdateMedia
 
-    def get_media_parent(self):
-        return self.update
-
-    def get_inline_edit_object(self):
-        return self.update
-
-    def get(self, request, *args, **kwargs):
-        self.update = get_object_or_404(
-            PartRequestUpdate.objects.select_related(
-                "part_request__requested_by__user",
-                "part_request__machine",
-                "part_request__machine__model",
-                "posted_by__user",
-            ).prefetch_related("media"),
-            pk=kwargs["pk"],
-        )
-        return self.render_response(request, self.update)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["part_request"] = self.object.part_request
+        return context
 
     def post(self, request, *args, **kwargs):
-        self.update = get_object_or_404(
-            PartRequestUpdate.objects.select_related(
-                "part_request__requested_by__user",
-                "part_request__machine",
-                "part_request__machine__model",
-                "posted_by__user",
-            ).prefetch_related("media"),
-            pk=kwargs["pk"],
-        )
+        self.object = self.get_object()
         action = request.POST.get("action")
 
         action_handlers = {
@@ -173,15 +162,6 @@ class PartRequestUpdateDetailView(
             return action_handlers[action](request)
 
         return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
-
-    def render_response(self, request, update):
-        from django.shortcuts import render
-
-        context = {
-            "update": update,
-            "part_request": update.part_request,
-        }
-        return render(request, self.template_name, context)
 
 
 class PartRequestUpdateEditView(CanAccessMaintainerPortalMixin, UpdateView):
