@@ -23,12 +23,6 @@ _PRIORITY_ICONS = {
     "task": "list-check",
 }
 
-_PRIORITY_BTN_CLASSES = {
-    "untriaged": "btn--priority-untriaged",
-    "unplayable": "btn--priority-unplayable",
-    "major": "btn--priority-major",
-}
-
 
 @register.filter
 def problem_priority_css_class(priority):
@@ -48,16 +42,6 @@ def problem_priority_icon(priority):
         {{ report.priority|problem_priority_icon }}
     """
     return _PRIORITY_ICONS.get(priority, "minus")
-
-
-@register.filter
-def problem_priority_btn_class(priority):
-    """Return button CSS class for ProblemReport.priority.
-
-    Usage:
-        {{ report.priority|problem_priority_btn_class }}
-    """
-    return _PRIORITY_BTN_CLASSES.get(priority, "btn--secondary")
 
 
 # ---- Problem report status mappings -----------------------------------------

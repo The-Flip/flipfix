@@ -248,4 +248,4 @@ def register_reference_cleanup(*model_classes: type[models.Model]) -> None:
         RecordReference.objects.filter(source_type=ct, source_id=instance.pk).delete()
 
     for model_class in model_classes:
-        post_delete.connect(_cleanup_references, sender=model_class)
+        post_delete.connect(_cleanup_references, sender=model_class, weak=False)
