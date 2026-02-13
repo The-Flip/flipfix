@@ -36,6 +36,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from the_flip.apps.core.markdown import fenced_code_ranges
+from the_flip.apps.maintenance.models import ProblemReport
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +58,9 @@ _ACTION_REQUIRED_ATTRS = {"name", "action", "type", "label"}
 # Valid individual parts of the action attribute (comma-separated, order-independent)
 _VALID_ACTION_PARTS = {"button", "option"}
 
-# Valid priority values for type="problem" (matches ProblemReport.Priority.maintainer_settable)
-_VALID_PRIORITIES = {"unplayable", "major", "minor", "task"}
+# Valid priority values for type="problem" — derived from the enum so
+# adding/removing priorities in the model automatically updates validation.
+_VALID_PRIORITIES = {v for v, _ in ProblemReport.Priority.maintainer_settable()}
 
 
 # ---------------------------------------------------------------------------
