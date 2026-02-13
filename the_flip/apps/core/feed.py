@@ -61,7 +61,7 @@ FEED_CONFIGS: dict[str, FeedConfig] = {
     "parts": FeedConfig(
         title_suffix=" \u00b7 Part Requests",
         breadcrumb_label="Parts",
-        entry_types=("part_request",),
+        entry_types=("part_request",),  # updates intentionally excluded (too granular)
         empty_message="No parts requests yet.",
         search_empty_message="No parts requests match your search.",
     ),
