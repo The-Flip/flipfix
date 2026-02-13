@@ -75,7 +75,7 @@ class ProblemReportMediaCreateTests(TemporaryMediaMixin, TestDataMixin, TestCase
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'name="media_file"')
 
-    @patch("the_flip.apps.maintenance.views.problem_reports.enqueue_transcode")
+    @patch("the_flip.apps.core.media.enqueue_transcode")
     def test_form_video_upload_enqueues_transcode(self, mock_enqueue):
         """Video uploaded via form submission triggers transcoding."""
         self.client.force_login(self.maintainer_user)
@@ -170,7 +170,7 @@ class ProblemReportMediaUploadTests(
         self.assertEqual(media.problem_report, self.report)
         self.assertEqual(media.media_type, ProblemReportMedia.MediaType.PHOTO)
 
-    @patch("the_flip.apps.core.mixins.enqueue_transcode")
+    @patch("the_flip.apps.core.media.enqueue_transcode")
     def test_video_upload_enqueues_transcode_with_model_name(self, mock_enqueue):
         """Video upload should call enqueue_transcode with correct model_name.
 

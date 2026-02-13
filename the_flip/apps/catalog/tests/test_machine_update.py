@@ -49,6 +49,7 @@ class MachineInlineUpdateViewTests(TestCase):
         data = response.json()
 
         # Verify settable pill response contract
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["location_display"], "Floor")
 
@@ -73,6 +74,7 @@ class MachineInlineUpdateViewTests(TestCase):
         data = response.json()
 
         # Verify settable pill response contract
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["location_display"], "Workshop")
 
@@ -114,7 +116,9 @@ class MachineInlineUpdateViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["status"], "noop")
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["status"], "noop")
 
         # No new log entry
         self.assertEqual(LogEntry.objects.filter(machine=self.machine).count(), initial_log_count)
@@ -144,6 +148,7 @@ class MachineInlineUpdateViewTests(TestCase):
 
         # Verify settable pill response contract
         data = response.json()
+        self.assertTrue(data["success"])
         self.assertEqual(data["status"], "success")
         self.assertEqual(data["operational_status_display"], "Broken")
         self.assertIn("log_entry_html", data)

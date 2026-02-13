@@ -1,4 +1,5 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load maintenance_tags %}
 <span class="pill {{ report.priority|problem_priority_css_class }}">
   {% icon report.priority|problem_priority_icon class="meta" %}
   {{ report.get_priority_display }}

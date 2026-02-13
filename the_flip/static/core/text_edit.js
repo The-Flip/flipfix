@@ -20,21 +20,16 @@
  *     </div>
  *   </div>
  *
- * CSRF token is read from the csrftoken cookie (set by Django).
+ * Requires core.js (for getCsrfToken).
  *
  * POST payload:
  *   action: 'update_text'
  *   text: <textarea value>
- *   csrfmiddlewaretoken: <CSRF_TOKEN>
+ *   csrfmiddlewaretoken: <token>
  */
 
 (function () {
   'use strict';
-
-  function getCsrfToken() {
-    const cookie = document.cookie.match(/csrftoken=([^;]+)/);
-    return cookie ? cookie[1] : '';
-  }
 
   function initTextCard(card) {
     const editBtn = card.querySelector('[data-text-edit-btn]');

@@ -5,9 +5,9 @@ from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import TemplateView
 
-from the_flip.apps.core.feed import PageCursor, get_global_feed_page
+from the_flip.apps.core.feed import PageCursor, get_feed_page
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
-from the_flip.apps.maintenance.forms import SearchForm
 from the_flip.apps.maintenance.models import ProblemReport
 from the_flip.apps.parts.models import PartRequest
 
@@ -22,7 +22,7 @@ class GlobalActivityFeedView(CanAccessMaintainerPortalMixin, TemplateView):
         search_query = self.request.GET.get("q", "").strip()
 
         # Get first page of entries
-        entries, has_next = get_global_feed_page(
+        entries, has_next = get_feed_page(
             page_num=1,
             search_query=search_query or None,
         )
@@ -61,7 +61,7 @@ class GlobalActivityFeedPartialView(CanAccessMaintainerPortalMixin, View):
 
         search_query = request.GET.get("q", "").strip() or None
 
-        page_items, has_next = get_global_feed_page(
+        page_items, has_next = get_feed_page(
             page_num=page_num,
             search_query=search_query,
         )

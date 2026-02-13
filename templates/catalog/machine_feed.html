@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load list_tags %}
+{% load catalog_tags %}
 {% block title %}{{ machine.short_display_name }}{{ title_suffix }} · {{ block.super }}{% endblock %}
 {% block content %}
   <!-- BREADCRUMBS -->

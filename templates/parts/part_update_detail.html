@@ -1,5 +1,7 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
 {% block title %}
   {% if part_request.machine %}{{ part_request.machine.short_display_name }} ·{% endif %}
   Parts Request #{{ part_request.pk }} · Update #{{ update.pk }} · {{ block.super }}

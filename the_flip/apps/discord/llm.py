@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import anthropic
@@ -21,15 +20,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class RecordType(StrEnum):
-    """Valid record types for Discord bot suggestions."""
-
-    LOG_ENTRY = "log_entry"
-    PROBLEM_REPORT = "problem_report"
-    PART_REQUEST = "part_request"
-    PART_REQUEST_UPDATE = "part_request_update"
-
-
 @dataclass
 class ChildSuggestion:
     """A child record to create alongside a parent (e.g., log_entry under problem_report)."""
@@ -43,7 +33,7 @@ class ChildSuggestion:
 class RecordSuggestion:
     """A suggested record to create from Discord messages."""
 
-    record_type: RecordType
+    record_type: str
     description: str
     source_message_ids: list[str]
     author_id: str  # Discord user ID of the message author
@@ -88,14 +78,32 @@ class AnalysisResult:
         return cls(suggestions=[], error=error)
 
 
+def _get_valid_record_types() -> set[str]:
+    """Return the set of valid record type names from the bot handler registry."""
+    from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
+
+    return {h.name for h in get_all_bot_handlers()}
+
+
+def _get_child_type(parent_record_type: str) -> str | None:
+    """Return the child record type for a parent, or None if it can't have children.
+
+    Derived from the bot handler registry's child_type_name metadata.
+    """
+    from the_flip.apps.discord.bot_handlers import get_bot_handler
+
+    handler = get_bot_handler(parent_record_type)
+    if handler:
+        return handler.child_type_name
+    return None
+
+
 def flatten_suggestions(suggestions: list[RecordSuggestion]) -> list[FlattenedSuggestion]:
     """Flatten nested suggestions into a sequential list for wizard processing.
 
     Parents with children are expanded: parent first, then each child as a separate step.
     Children inherit machine_id from their parent and have their record_type set based
-    on the parent type:
-    - problem_report children → log_entry
-    - part_request children → part_request_update
+    on the parent's child_type_name (declared in the bot handler registry).
 
     Returns FlattenedSuggestion objects that track parent-child relationships.
     """
@@ -106,13 +114,9 @@ def flatten_suggestions(suggestions: list[RecordSuggestion]) -> list[FlattenedSu
         flattened.append(FlattenedSuggestion(suggestion=suggestion, parent_index=None))
 
         if suggestion.children:
-            # Determine child record type based on parent
-            if suggestion.record_type == RecordType.PROBLEM_REPORT:
-                child_type = RecordType.LOG_ENTRY
-            elif suggestion.record_type == RecordType.PART_REQUEST:
-                child_type = RecordType.PART_REQUEST_UPDATE
-            else:
-                # Other record types can't have children
+            child_type = _get_child_type(suggestion.record_type)
+            if not child_type:
+                # This record type can't have children
                 continue
 
             for child in suggestion.children:
@@ -165,21 +169,21 @@ Message fields:
 ## Guidelines
 
 1. **Resolved vs unresolved problems:**
-   - If a problem was FIXED in the conversation → create a single `log_entry` that describes
+   - If a problem was FIXED in the conversation \u2192 create a single `log_entry` that describes
      the issue AND the fix. Don't create a problem_report that's immediately resolved.
-   - If a problem is UNRESOLVED → create a `problem_report`, with `log_entry` children for
+   - If a problem is UNRESOLVED \u2192 create a `problem_report`, with `log_entry` children for
      any work attempts or observations made while investigating.
 
 2. **Consolidate conversational exchanges** - Back-and-forth discussion that forms one logical
    unit should become ONE record, not multiple. For example:
-   - "Maybe needs new coil" → "Where are the coils?" → "In the parts bin" → "Replaced coil, didn't help"
+   - "Maybe needs new coil" \u2192 "Where are the coils?" \u2192 "In the parts bin" \u2192 "Replaced coil, didn't help"
    - This is ONE log entry: "Thought it might need a new coil. Replaced the coil from the parts
      bin but that didn't help."
 
 3. **Separate distinct work attempts** - Create separate log entries for distinct observations
    or work attempts, even if they're from the same person. For example:
-   - "Adjusted EOS switch, flipper still weak" → one log entry
-   - "Maybe needs new coil" → separate log entry (different hypothesis/observation)
+   - "Adjusted EOS switch, flipper still weak" \u2192 one log entry
+   - "Maybe needs new coil" \u2192 separate log entry (different hypothesis/observation)
 
 4. **Part requests** - Create `part_request` for the initial need, with `part_request_update`
    children for status changes ("ordered!", "arrived", "installed").
@@ -204,8 +208,8 @@ Message fields:
 ## Nested Records (children)
 
 Use `children` array for:
-- **problem_report** → `log_entry` children (work attempts on an unresolved problem)
-- **part_request** → `part_request_update` children (status updates like "ordered!")
+- **problem_report** \u2192 `log_entry` children (work attempts on an unresolved problem)
+- **part_request** \u2192 `part_request_update` children (status updates like "ordered!")
 
 Children inherit machine_id from the parent. Each child needs its own description, source_message_ids,
 and author_id.
@@ -218,18 +222,18 @@ and author_id.
 - Preserve technical details and outcomes faithfully
 
 Example 1 - RESOLVED problem becomes single log_entry:
-Messages: "godzilla's right flipper is broken" → "ok I fixed it" → "the flipper pin was bent"
+Messages: "godzilla's right flipper is broken" \u2192 "ok I fixed it" \u2192 "the flipper pin was bent"
 Output: ONE log_entry with description: "Right flipper was broken. Fixed it - the flipper pin
 was bent; we had a spare."
 
 Example 2 - UNRESOLVED problem with work attempts:
-Messages: "Flipper weak" → "Adjusted EOS switch, still weak" → "Maybe needs new coil"
+Messages: "Flipper weak" \u2192 "Adjusted EOS switch, still weak" \u2192 "Maybe needs new coil"
 Output: problem_report "Flipper weak" with children:
   - log_entry: "Adjusted EOS switch, flipper still weak"
   - log_entry: "Maybe needs new coil"
 
 Example 3 - Consolidate conversational exchanges:
-Messages: "Maybe needs new coil" → "Where are the coils?" → "Parts bin" → "Replaced it, didn't help"
+Messages: "Maybe needs new coil" \u2192 "Where are the coils?" \u2192 "Parts bin" \u2192 "Replaced it, didn't help"
 Output: ONE log_entry: "Thought it might need a new coil. Replaced the coil from the parts bin
 but that didn't help."
 """
@@ -255,58 +259,66 @@ _CHILD_SUGGESTION_SCHEMA = {
     "required": ["description", "source_message_ids", "author_id"],
 }
 
-# Tool definition for structured output
-RECORD_SUGGESTIONS_TOOL: ToolParam = {
-    "name": "record_suggestions",
-    "description": "Submit the maintenance record suggestions based on the Discord messages.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "suggestions": {
-                "type": "array",
-                "description": "List of suggested maintenance records. Empty array if no records should be created.",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "record_type": {
-                            "type": "string",
-                            "enum": list(RecordType),
-                            "description": "Type of maintenance record",
+
+def _build_record_suggestions_tool() -> ToolParam:
+    """Build the tool definition with valid record types from the bot handler registry."""
+    return {
+        "name": "record_suggestions",
+        "description": "Submit the maintenance record suggestions based on the Discord messages.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "suggestions": {
+                    "type": "array",
+                    "description": "List of suggested maintenance records. Empty array if no records should be created.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "record_type": {
+                                "type": "string",
+                                "enum": sorted(_get_valid_record_types()),
+                                "description": "Type of maintenance record",
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Details of the work/problem/parts needed",
+                            },
+                            "source_message_ids": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "IDs of Discord messages that contributed to this record",
+                            },
+                            "author_id": {
+                                "type": "string",
+                                "description": "Discord user ID (author_id from the message) to attribute this record to",
+                            },
+                            "machine_id": {
+                                "type": "string",
+                                "description": "The ID of the machine from the provided list. Required for log_entry and problem_report, optional for part_request and part_request_update.",
+                            },
+                            "parent_record_id": {
+                                "type": "integer",
+                                "description": "ID of parent Flipfix record if applicable. For log_entry, this is a problem_report ID. For part_request_update, this is a part_request ID.",
+                            },
+                            "children": {
+                                "type": "array",
+                                "description": "Child records to create with this parent. problem_report can have log_entry children; part_request can have part_request_update children.",
+                                "items": _CHILD_SUGGESTION_SCHEMA,
+                            },
                         },
-                        "description": {
-                            "type": "string",
-                            "description": "Details of the work/problem/parts needed",
-                        },
-                        "source_message_ids": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "IDs of Discord messages that contributed to this record",
-                        },
-                        "author_id": {
-                            "type": "string",
-                            "description": "Discord user ID (author_id from the message) to attribute this record to",
-                        },
-                        "machine_id": {
-                            "type": "string",
-                            "description": "The ID of the machine from the provided list. Required for log_entry and problem_report, optional for part_request and part_request_update.",
-                        },
-                        "parent_record_id": {
-                            "type": "integer",
-                            "description": "ID of parent Flipfix record if applicable. For log_entry, this is a problem_report ID. For part_request_update, this is a part_request ID.",
-                        },
-                        "children": {
-                            "type": "array",
-                            "description": "Child records to create with this parent. problem_report can have log_entry children; part_request can have part_request_update children.",
-                            "items": _CHILD_SUGGESTION_SCHEMA,
-                        },
+                        "required": [
+                            "record_type",
+                            "description",
+                            "source_message_ids",
+                            "author_id",
+                        ],
                     },
-                    "required": ["record_type", "description", "source_message_ids", "author_id"],
                 },
             },
+            "required": ["suggestions"],
         },
-        "required": ["suggestions"],
-    },
-}
+    }
+
 
 TOOL_CHOICE: ToolChoiceToolParam = {"type": "tool", "name": "record_suggestions"}
 
@@ -410,7 +422,7 @@ async def _call_anthropic(
         model=model if model is not None else DEFAULT_MODEL,
         max_tokens=DEFAULT_MAX_TOKENS,
         system=system_prompt if system_prompt is not None else SYSTEM_PROMPT,
-        tools=[RECORD_SUGGESTIONS_TOOL],
+        tools=[_build_record_suggestions_tool()],
         tool_choice=TOOL_CHOICE,
         messages=[{"role": "user", "content": user_message}],
     )
@@ -492,14 +504,10 @@ def _escape_yaml_string(s: str) -> str:
     # the quote escape would become \\", which is wrong.
     s = s.replace("\\", "\\\\")
     s = s.replace('"', '\\"')
-    s = s.replace("\r\n", "\\n")  # Windows line endings → single \n
-    s = s.replace("\r", "\\n")  # Bare carriage returns → \n
+    s = s.replace("\r\n", "\\n")  # Windows line endings \u2192 single \n
+    s = s.replace("\r", "\\n")  # Bare carriage returns \u2192 \n
     s = s.replace("\n", "\\n")
     return s
-
-
-# Set of valid record type values (derived from enum for validation)
-VALID_RECORD_TYPES = set(RecordType)
 
 
 def _validate_child_item(item: dict) -> ChildSuggestion | None:
@@ -532,7 +540,14 @@ def _validate_child_item(item: dict) -> ChildSuggestion | None:
 
 
 def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
-    """Validate and parse a single suggestion item from LLM output."""
+    """Validate and parse a single suggestion item from LLM output.
+
+    Validation rules are derived from the bot handler registry metadata:
+    - machine_required: whether a machine slug is needed
+    - parent_handler_name: whether a parent record ID is needed
+    """
+    from the_flip.apps.discord.bot_handlers import get_bot_handler
+
     # Check required fields exist
     required = ["record_type", "description", "source_message_ids", "author_id"]
     missing = [k for k in required if k not in item]
@@ -543,10 +558,11 @@ def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
         )
         return None
 
-    if item["record_type"] not in VALID_RECORD_TYPES:
+    valid_types = _get_valid_record_types()
+    if item["record_type"] not in valid_types:
         logger.warning(
             "discord_llm_invalid_record_type",
-            extra={"record_type": item["record_type"], "valid_types": list(VALID_RECORD_TYPES)},
+            extra={"record_type": item["record_type"], "valid_types": sorted(valid_types)},
         )
         return None
 
@@ -561,25 +577,27 @@ def _validate_suggestion_item(item: dict) -> RecordSuggestion | None:
         logger.warning("discord_llm_empty_source_message_ids", extra={})
         return None
 
-    record_type = RecordType(item["record_type"])
+    record_type = item["record_type"]
     # LLM uses "machine_id" but we store as "slug" internally
     slug = item.get("machine_id")
     parent_record_id = item.get("parent_record_id")
 
-    # Validate slug requirement:
-    # - problem_report always requires machine_id
-    # - log_entry requires machine_id OR parent_record_id (inherits machine from parent)
-    if record_type == RecordType.PROBLEM_REPORT and not slug:
-        logger.warning("discord_llm_missing_machine_id", extra={"record_type": record_type})
-        return None
-    if record_type == RecordType.LOG_ENTRY and not slug and not parent_record_id:
-        logger.warning("discord_llm_missing_machine_id", extra={"record_type": record_type})
-        return None
+    # Derive validation rules from bot handler metadata
+    handler = get_bot_handler(record_type)
+    if handler:
+        # Machine-required types need either a slug or a parent to inherit from
+        if handler.machine_required and not slug:
+            can_inherit = handler.parent_handler_name is not None and parent_record_id is not None
+            if not can_inherit:
+                logger.warning("discord_llm_missing_machine_id", extra={"record_type": record_type})
+                return None
 
-    # Validate parent_record_id requirement for part_request_update
-    if record_type == RecordType.PART_REQUEST_UPDATE and not parent_record_id:
-        logger.warning("discord_llm_missing_parent_record_id", extra={"record_type": record_type})
-        return None
+        # Child-only types (not machine-required) need a parent record
+        if handler.parent_handler_name and not handler.machine_required and not parent_record_id:
+            logger.warning(
+                "discord_llm_missing_parent_record_id", extra={"record_type": record_type}
+            )
+            return None
 
     # Parse children if present
     children: list[ChildSuggestion] | None = None

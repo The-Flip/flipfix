@@ -91,7 +91,7 @@ The project uses two approaches for rendering form fields:
 **Render all fields at once:**
 
 ```html
-{% load core_extras %}
+{% load form_tags %}
 
 <form method="post" class="form-main">
   {% csrf_token %} {% form_non_field_errors form %} {% form_fields form %}
@@ -105,7 +105,7 @@ The project uses two approaches for rendering form fields:
 **Render individual fields for more control:**
 
 ```html
-{% load core_extras %}
+{% load form_tags %}
 
 <form method="post" class="form-main">
   {% csrf_token %} {% form_non_field_errors form %} {% form_field form.username %} {% form_field

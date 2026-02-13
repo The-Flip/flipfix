@@ -3,21 +3,19 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.views import View
-from django.views.generic import FormView, TemplateView, UpdateView
+from django.views.generic import DetailView, FormView, TemplateView, UpdateView
 
 from the_flip.apps.accounts.models import Maintainer
 from the_flip.apps.catalog.models import Location, MachineInstance
@@ -27,23 +25,22 @@ from the_flip.apps.core.attribution import (
 )
 from the_flip.apps.core.columns import build_location_columns
 from the_flip.apps.core.datetime import apply_browser_timezone, validate_not_future
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.ip import get_real_ip
-from the_flip.apps.core.markdown_links import (
-    save_inline_markdown_field,
-    sync_references,
-)
-from the_flip.apps.core.media import is_video_file
+from the_flip.apps.core.markdown_links import sync_references
+from the_flip.apps.core.media import attach_media_files
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
+    InfiniteScrollMixin,
+    InlineTextEditMixin,
     MediaUploadMixin,
+    SharedAccountMixin,
 )
-from the_flip.apps.core.tasks import enqueue_transcode
 from the_flip.apps.maintenance.forms import (
     MaintainerProblemReportForm,
     ProblemReportEditForm,
     ProblemReportForm,
-    SearchForm,
 )
 from the_flip.apps.maintenance.models import (
     LogEntry,
@@ -74,33 +71,19 @@ class ProblemReportListView(CanAccessMaintainerPortalMixin, TemplateView):
         return context
 
 
-class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, View):
+class ProblemReportLogEntriesPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, View):
     """AJAX endpoint for infinite scrolling log entries on a problem report detail page."""
 
-    template_name = "maintenance/partials/problem_report_log_entry.html"
+    item_template = "maintenance/partials/problem_report_log_entry.html"
 
-    def get(self, request, *args, **kwargs):
-        problem_report = get_object_or_404(ProblemReport, pk=kwargs["pk"])
-        log_entries = (
+    def get_queryset(self):
+        problem_report = get_object_or_404(ProblemReport, pk=self.kwargs["pk"])
+        return (
             LogEntry.objects.filter(problem_report=problem_report)
-            .search_for_problem_report(request.GET.get("q", ""))
+            .search_for_problem_report(self.request.GET.get("q", ""))
             .select_related("machine")
             .prefetch_related("maintainers__user", "media")
             .order_by("-occurred_at")
-        )
-
-        paginator = Paginator(log_entries, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(request.GET.get("page"))
-        items_html = "".join(
-            render_to_string(self.template_name, {"entry": entry}, request=request)
-            for entry in page_obj.object_list
-        )
-        return JsonResponse(
-            {
-                "items": items_html,
-                "has_next": page_obj.has_next(),
-                "next_page": page_obj.next_page_number() if page_obj.has_next() else None,
-            }
         )
 
 
@@ -147,7 +130,9 @@ class PublicProblemReportCreateView(FormView):
         return redirect("public-problem-report-create", slug=self.machine.slug)
 
 
-class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
+class ProblemReportCreateView(
+    FormPrefillMixin, SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView
+):
     """Maintainer-facing problem report creation (global or machine-scoped)."""
 
     template_name = "maintenance/problem_report_new.html"
@@ -164,21 +149,15 @@ class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, 
         if self.machine:
             initial["machine_slug"] = self.machine.slug
         # Pre-fill reporter_name with current user's display name (unless shared account)
-        if hasattr(self.request.user, "maintainer"):
-            if not self.request.user.maintainer.is_shared_account:
-                initial["reporter_name"] = (
-                    self.request.user.get_full_name() or self.request.user.username
-                )
+        if not self.is_shared_account:
+            initial["reporter_name"] = (
+                self.request.user.get_full_name() or self.request.user.username
+            )
         return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["machine"] = self.machine
-        # Check if current user is a shared account (show autocomplete for reporter selection)
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            is_shared_account = self.request.user.maintainer.is_shared_account
-        context["is_shared_account"] = is_shared_account
         selected_slug = (
             self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
         )
@@ -233,24 +212,9 @@ class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, 
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = ProblemReportMedia.objects.create(
-                    problem_report=report,
-                    media_type=ProblemReportMedia.MediaType.VIDEO
-                    if is_video
-                    else ProblemReportMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=ProblemReportMedia.TranscodeStatus.PENDING if is_video else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(
-                            enqueue_transcode, media_id=media.id, model_name="ProblemReportMedia"
-                        )
-                    )
+            attach_media_files(
+                media_files=media_files, parent=report, media_model=ProblemReportMedia
+            )
 
         messages.success(
             self.request,
@@ -263,31 +227,49 @@ class ProblemReportCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, 
         return redirect("problem-report-detail", pk=report.pk)
 
 
-class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, View):
+class ProblemReportDetailView(
+    InlineTextEditMixin, MediaUploadMixin, CanAccessMaintainerPortalMixin, DetailView
+):
     """Detail view for a problem report with status toggle capability. Maintainer-only access."""
 
+    model = ProblemReport
     template_name = "maintenance/problem_report_detail.html"
+    context_object_name = "report"
+    inline_text_field_name = "description"
+
+    def get_queryset(self):
+        return ProblemReport.objects.select_related("machine", "reported_by_user")
 
     def get_media_model(self):
         return ProblemReportMedia
 
-    def get_media_parent(self):
-        return self.report
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-    def get(self, request, *args, **kwargs):
-        report = get_object_or_404(
-            ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
+        search_query = self.request.GET.get("q", "").strip()
+        log_entries = (
+            LogEntry.objects.filter(problem_report=self.object)
+            .search_for_problem_report(search_query)
+            .select_related("machine")
+            .prefetch_related("maintainers__user", "media")
+            .order_by("-occurred_at")
         )
-        return self.render_response(request, report)
+        paginator = Paginator(log_entries, settings.LIST_PAGE_SIZE)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+
+        context["machine"] = self.object.machine
+        context["page_obj"] = page_obj
+        context["log_entries"] = page_obj.object_list
+        context["log_count"] = paginator.count
+        context["search_query"] = search_query
+        return context
 
     def post(self, request, *args, **kwargs):
-        self.report = get_object_or_404(
-            ProblemReport.objects.select_related("machine", "reported_by_user"), pk=kwargs["pk"]
-        )
+        self.object = self.get_object()
         action = request.POST.get("action")
 
         action_handlers = {
-            "update_text": self._handle_update_text,
+            "update_text": self.handle_update_text,
             "update_machine": self._handle_update_machine,
             "update_priority": self._handle_update_priority,
             "update_status": self._handle_update_status,
@@ -307,15 +289,6 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
 
     # -- Action handlers -------------------------------------------------------
 
-    def _handle_update_text(self, request):
-        """AJAX: update the description field with inline markdown."""
-        text = request.POST.get("text", "")
-        try:
-            save_inline_markdown_field(self.report, "description", text)
-        except ValidationError as e:
-            return JsonResponse({"success": False, "errors": e.messages}, status=400)
-        return JsonResponse({"success": True})
-
     def _handle_update_machine(self, request):
         """AJAX: move the report (and its log entries) to a different machine."""
         machine_slug = request.POST.get("machine_slug", "").strip()
@@ -326,15 +299,15 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         if not new_machine:
             return JsonResponse({"success": False, "error": "Machine not found"}, status=404)
 
-        if new_machine.pk == self.report.machine_id:
+        if new_machine.pk == self.object.machine_id:
             return JsonResponse({"success": True, "status": "noop"})
 
-        old_machine = self.report.machine
+        old_machine = self.object.machine
 
         with transaction.atomic():
-            self.report.machine = new_machine
-            self.report.save(update_fields=["machine", "updated_at"])
-            child_log_count = LogEntry.objects.filter(problem_report=self.report).update(
+            self.object.machine = new_machine
+            self.object.save(update_fields=["machine", "updated_at"])
+            child_log_count = LogEntry.objects.filter(problem_report=self.object).update(
                 machine=new_machine
             )
 
@@ -383,16 +356,16 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         settable = dict(ProblemReport.Priority.maintainer_settable())
         if new_priority not in settable:
             return JsonResponse({"success": False, "error": "Invalid priority"}, status=400)
-        if new_priority == self.report.priority:
+        if new_priority == self.object.priority:
             return JsonResponse({"success": True, "status": "noop"})
-        self.report.priority = new_priority
-        self.report.save(update_fields=["priority", "updated_at"])
+        self.object.priority = new_priority
+        self.object.save(update_fields=["priority", "updated_at"])
         return JsonResponse(
             {
                 "success": True,
                 "status": "success",
                 "priority": new_priority,
-                "priority_display": self.report.get_priority_display(),
+                "priority_display": self.object.get_priority_display(),
             }
         )
 
@@ -401,7 +374,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         new_status = request.POST.get("status", "")
         if new_status not in ProblemReport.Status.values:
             return JsonResponse({"success": False, "error": "Invalid status"}, status=400)
-        if new_status == self.report.status:
+        if new_status == self.object.status:
             return JsonResponse({"success": True, "status": "noop"})
 
         log_entry = self._change_report_status(new_status, request.user)
@@ -416,7 +389,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
                 "success": True,
                 "status": "success",
                 "new_status": new_status,
-                "new_status_display": self.report.get_status_display(),
+                "new_status_display": self.object.get_status_display(),
                 "log_entry_html": log_entry_html,
                 "entry_type": "log",
             }
@@ -426,7 +399,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         """Form POST: toggle between open/closed (desktop Close/Re-Open button)."""
         new_status = (
             ProblemReport.Status.CLOSED
-            if self.report.status == ProblemReport.Status.OPEN
+            if self.object.status == ProblemReport.Status.OPEN
             else ProblemReport.Status.OPEN
         )
         self._change_report_status(new_status, request.user)
@@ -436,12 +409,12 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
             request,
             format_html(
                 'Problem report <a href="{}">#{}</a> {}.',
-                reverse("problem-report-detail", kwargs={"pk": self.report.pk}),
-                self.report.pk,
+                reverse("problem-report-detail", kwargs={"pk": self.object.pk}),
+                self.object.pk,
                 action_text,
             ),
         )
-        return redirect("problem-report-detail", pk=self.report.pk)
+        return redirect("problem-report-detail", pk=self.object.pk)
 
     def _change_report_status(self, new_status, user):
         """Change the report status and create a log entry.
@@ -449,7 +422,7 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         Shared by both the AJAX status update and the form POST toggle.
         Returns the created LogEntry.
         """
-        self.report.status = new_status
+        self.object.status = new_status
         log_text = (
             "Closed problem report"
             if new_status == ProblemReport.Status.CLOSED
@@ -457,10 +430,10 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
         )
 
         with transaction.atomic():
-            self.report.save(update_fields=["status", "updated_at"])
+            self.object.save(update_fields=["status", "updated_at"])
             log_entry = LogEntry.objects.create(
-                machine=self.report.machine,
-                problem_report=self.report,
+                machine=self.object.machine,
+                problem_report=self.object,
                 text=log_text,
                 created_by=user,
             )
@@ -469,29 +442,6 @@ class ProblemReportDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, 
                 log_entry.maintainers.add(maintainer)
 
         return log_entry
-
-    def render_response(self, request, report):
-        # Get log entries for this problem report with pagination
-        search_query = request.GET.get("q", "").strip()
-        log_entries = (
-            LogEntry.objects.filter(problem_report=report)
-            .search_for_problem_report(search_query)
-            .select_related("machine")
-            .prefetch_related("maintainers__user", "media")
-            .order_by("-occurred_at")
-        )
-        paginator = Paginator(log_entries, settings.LIST_PAGE_SIZE)
-        page_obj = paginator.get_page(request.GET.get("page"))
-
-        context = {
-            "report": report,
-            "machine": report.machine,
-            "page_obj": page_obj,
-            "log_entries": page_obj.object_list,
-            "log_count": paginator.count,
-            "search_query": search_query,
-        }
-        return render(request, self.template_name, context)
 
 
 class ProblemReportEditView(CanAccessMaintainerPortalMixin, UpdateView):
@@ -560,71 +510,3 @@ class ProblemReportEditView(CanAccessMaintainerPortalMixin, UpdateView):
 
     def get_success_url(self):
         return reverse("problem-report-detail", kwargs={"pk": self.object.pk})
-
-
-# ---------------------------------------------------------------------------
-# Wall display
-# ---------------------------------------------------------------------------
-
-MIN_REFRESH_SECONDS = 10
-
-
-class WallDisplaySetupView(CanAccessMaintainerPortalMixin, TemplateView):
-    """Configuration page for the wall display board."""
-
-    template_name = "maintenance/wall_display_setup.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["locations"] = Location.objects.all()
-        return context
-
-
-class WallDisplayBoardView(CanAccessMaintainerPortalMixin, TemplateView):
-    """Full-screen wall display showing open problems by location."""
-
-    template_name = "maintenance/wall_display_board.html"
-    max_results_per_column = 20
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        location_slugs = self.request.GET.getlist("location")
-
-        if not location_slugs:
-            context["error"] = "No locations specified."
-            context["columns"] = []
-            context["refresh_seconds"] = None
-            return context
-
-        # Parse refresh parameter
-        refresh_seconds = None
-        raw_refresh = self.request.GET.get("refresh")
-        if raw_refresh:
-            try:
-                value = int(raw_refresh)
-                if value >= MIN_REFRESH_SECONDS:
-                    refresh_seconds = value
-            except (ValueError, TypeError):
-                pass
-
-        locations_by_slug = {
-            loc.slug: loc for loc in Location.objects.filter(slug__in=location_slugs)
-        }
-        invalid_slugs = [s for s in location_slugs if s not in locations_by_slug]
-
-        if invalid_slugs:
-            joined = ", ".join(f'"{s}"' for s in invalid_slugs)
-            context["error"] = f"Unknown location: {joined}."
-            context["columns"] = []
-            context["refresh_seconds"] = None
-            return context
-
-        # Preserve URL param order so the setup page's drag order controls columns.
-        locations = [locations_by_slug[s] for s in location_slugs]
-
-        reports = ProblemReport.objects.for_wall_display(location_slugs)
-        context["columns"] = build_location_columns(
-            reports, locations, max_results_per_column=self.max_results_per_column
-        )
-        context["refresh_seconds"] = refresh_seconds
-        return context

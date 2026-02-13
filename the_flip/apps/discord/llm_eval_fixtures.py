@@ -19,7 +19,6 @@ Test Users:
 from __future__ import annotations
 
 from the_flip.apps.discord.context import FlipfixRecord
-from the_flip.apps.discord.llm import RecordType
 from the_flip.apps.discord.llm_eval_types import (
     ExpectedChild,
     ExpectedSuggestion,
@@ -48,10 +47,10 @@ multi_item_todo_list1 = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.godzilla.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.hulk.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.gorgar.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.baseball.slug),
+        ExpectedSuggestion("problem_report", Machine.godzilla.slug),
+        ExpectedSuggestion("problem_report", Machine.hulk.slug),
+        ExpectedSuggestion("problem_report", Machine.gorgar.slug),
+        ExpectedSuggestion("problem_report", Machine.baseball.slug),
     ],
 )
 
@@ -70,10 +69,10 @@ multi_item_todo_list2 = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.star_trek.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.trade_winds.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.star_trip.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.hyperball.slug),
+        ExpectedSuggestion("problem_report", Machine.star_trek.slug),
+        ExpectedSuggestion("problem_report", Machine.trade_winds.slug),
+        ExpectedSuggestion("problem_report", Machine.star_trip.slug),
+        ExpectedSuggestion("problem_report", Machine.hyperball.slug),
     ],
 )
 
@@ -91,9 +90,9 @@ multi_item_completed_work = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.gorgar.slug),
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.blackout.slug),
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.baseball.slug),
+        ExpectedSuggestion("log_entry", Machine.gorgar.slug),
+        ExpectedSuggestion("log_entry", Machine.blackout.slug),
+        ExpectedSuggestion("log_entry", Machine.baseball.slug),
     ],
 )
 
@@ -109,8 +108,8 @@ Also noticed Ballyhoo needs new flippers, the rubber is shot.""",
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.derby_day.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.ballyhoo.slug),
+        ExpectedSuggestion("log_entry", Machine.derby_day.slug),
+        ExpectedSuggestion("problem_report", Machine.ballyhoo.slug),
     ],
 )
 
@@ -125,7 +124,7 @@ work_to_be_done_needs_attention = LLMTestCase(
         _msg(User.maintainer1, "Gorgar needs the left flipper adjusted, it's weak", target=True),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.gorgar.slug),
+        ExpectedSuggestion("problem_report", Machine.gorgar.slug),
     ],
 )
 
@@ -140,7 +139,7 @@ work_to_be_done_should_be_checked = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.blackout.slug),
+        ExpectedSuggestion("problem_report", Machine.blackout.slug),
     ],
 )
 
@@ -155,7 +154,7 @@ work_to_be_done_noticed_issue = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.eight_ball.slug),
+        ExpectedSuggestion("problem_report", Machine.eight_ball.slug),
     ],
 )
 
@@ -166,7 +165,7 @@ completed_work_simple_fix = LLMTestCase(
         _msg(User.maintainer1, "Fixed the stuck ball gate on Hyperball", target=True),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.hyperball.slug),
+        ExpectedSuggestion("log_entry", Machine.hyperball.slug),
     ],
 )
 
@@ -182,7 +181,7 @@ The old one was cracked. Used a FL-11630 from the parts bin.""",
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.hokus_pokus.slug),
+        ExpectedSuggestion("log_entry", Machine.hokus_pokus.slug),
     ],
 )
 
@@ -195,7 +194,7 @@ completed_work_thread_context = LLMTestCase(
         _msg(User.maintainer1, "Fixed it - the EOS switch was bent", target=True),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.carom.slug),
+        ExpectedSuggestion("log_entry", Machine.carom.slug),
     ],
 )
 
@@ -214,7 +213,7 @@ parts_needed_explicit = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PART_REQUEST, Machine.mo_ball.slug),
+        ExpectedSuggestion("part_request", Machine.mo_ball.slug),
     ],
 )
 
@@ -262,9 +261,7 @@ parts_needed_out_of_stock = LLMTestCase(
     ],
     expected=[
         # Part request with child for the order update
-        ExpectedSuggestion(
-            RecordType.PART_REQUEST, Machine.ballyhoo.slug, children=[ExpectedChild()]
-        ),
+        ExpectedSuggestion("part_request", Machine.ballyhoo.slug, children=[ExpectedChild()]),
     ],
 )
 
@@ -316,7 +313,7 @@ context_problem_already_fixed = LLMTestCase(
         _msg(User.maintainer1, "All fixed, the fuse had blown", target=True),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.baseball.slug),
+        ExpectedSuggestion("log_entry", Machine.baseball.slug),
     ],
 )
 
@@ -331,7 +328,7 @@ context_still_broken = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.blackout.slug),
+        ExpectedSuggestion("problem_report", Machine.blackout.slug),
     ],
 )
 
@@ -356,7 +353,7 @@ context_noisy_conversation = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.godzilla.slug),
+        ExpectedSuggestion("log_entry", Machine.godzilla.slug),
     ],
 )
 
@@ -389,7 +386,7 @@ context_parts_arrival = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.star_trek.slug),
+        ExpectedSuggestion("log_entry", Machine.star_trek.slug),
     ],
 )
 
@@ -406,7 +403,7 @@ context_investigation_ongoing = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.star_trek.slug),
+        ExpectedSuggestion("problem_report", Machine.star_trek.slug),
     ],
 )
 
@@ -440,8 +437,8 @@ context_noisy_conversation2 = LLMTestCase(
         ),
     ],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.getaway.slug),
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.getaway.slug),
+        ExpectedSuggestion("log_entry", Machine.getaway.slug),
+        ExpectedSuggestion("problem_report", Machine.getaway.slug),
     ],
 )
 
@@ -470,7 +467,7 @@ nested_unresolved_problem_with_work_attempts = LLMTestCase(
     expected=[
         # Problem report with 2 log_entry children (EOS adjustment + coil observation)
         ExpectedSuggestion(
-            RecordType.PROBLEM_REPORT,
+            "problem_report",
             Machine.gorgar.slug,
             children=[ExpectedChild(), ExpectedChild()],
         ),
@@ -498,7 +495,7 @@ nested_part_request_with_updates = LLMTestCase(
     expected=[
         # Part request with 2 update children (ordered + arrived)
         ExpectedSuggestion(
-            RecordType.PART_REQUEST,
+            "part_request",
             Machine.ballyhoo.slug,
             children=[ExpectedChild(), ExpectedChild()],
         ),
@@ -529,7 +526,7 @@ consolidated_conversation_single_record = LLMTestCase(
     ],
     expected=[
         # Single log entry consolidating the whole exchange
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.godzilla.slug),
+        ExpectedSuggestion("log_entry", Machine.godzilla.slug),
     ],
 )
 
@@ -561,7 +558,7 @@ consolidated_troubleshooting_thread = LLMTestCase(
     ],
     expected=[
         # Single log entry - problem was resolved, consolidate the whole troubleshooting
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.star_trek.slug),
+        ExpectedSuggestion("log_entry", Machine.star_trek.slug),
     ],
 )
 
@@ -592,7 +589,7 @@ thread_fix_in_thread = LLMTestCase(
     messages=[_thread_starter_msg],
     expected=[
         # Single log entry since problem was resolved in thread
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.derby_day.slug),
+        ExpectedSuggestion("log_entry", Machine.derby_day.slug),
     ],
 )
 
@@ -622,7 +619,7 @@ thread_with_preroll = LLMTestCase(
     messages=[_preroll_msg1, _preroll_msg2, _thread_starter_msg2],
     expected=[
         # Problem report since issue is not resolved
-        ExpectedSuggestion(RecordType.PROBLEM_REPORT, Machine.gorgar.slug),
+        ExpectedSuggestion("problem_report", Machine.gorgar.slug),
     ],
 )
 
@@ -653,7 +650,7 @@ reply_chain_fix = LLMTestCase(
     category="reply-chain",
     messages=[_original_msg, _reply_msg, _fix_msg],
     expected=[
-        ExpectedSuggestion(RecordType.LOG_ENTRY, Machine.carom.slug),
+        ExpectedSuggestion("log_entry", Machine.carom.slug),
     ],
 )
 
@@ -681,7 +678,7 @@ reply_chain_parts = LLMTestCase(
     expected=[
         # Part request with child for the order update
         ExpectedSuggestion(
-            RecordType.PART_REQUEST,
+            "part_request",
             Machine.ballyhoo.slug,
             children=[ExpectedChild()],
         ),
@@ -700,7 +697,7 @@ _webhook_problem_report = _msg(
     "Mike Rodriguez",  # Parsed from webhook embed's "— Mike Rodriguez" suffix
     "Left flipper is weak on Gorgar",
     flipfix_record=FlipfixRecord(
-        record_type=RecordType.PROBLEM_REPORT,
+        record_type="problem_report",
         record_id=42,
         machine_id=Machine.gorgar.slug,
     ),
@@ -719,7 +716,7 @@ webhook_reply_creates_linked_log = LLMTestCase(
     expected=[
         # Log entry should link to the existing problem report via parent_record_id
         ExpectedSuggestion(
-            RecordType.LOG_ENTRY,
+            "log_entry",
             Machine.gorgar.slug,
             parent_record_id=42,
         ),
@@ -733,7 +730,7 @@ _webhook_part_request = _msg(
     "Tom Baker",  # Parsed from webhook embed's "— Tom Baker" suffix
     "Need new rollover switch",
     flipfix_record=FlipfixRecord(
-        record_type=RecordType.PART_REQUEST,
+        record_type="part_request",
         record_id=99,
         machine_id=Machine.ballyhoo.slug,
     ),
@@ -751,7 +748,7 @@ webhook_reply_creates_part_update = LLMTestCase(
     messages=[_webhook_part_request, _update_reply_to_webhook],
     expected=[
         ExpectedSuggestion(
-            RecordType.PART_REQUEST_UPDATE,
+            "part_request_update",
             Machine.ballyhoo.slug,
             parent_record_id=99,
         ),
@@ -772,7 +769,7 @@ _webhook_problem_follow_up = _msg(
     "Sarah Chen",  # Parsed from webhook embed's "— Sarah Chen" suffix
     "The ball return mechanism is jammed. Balls are not getting fed down the ramp. I tried lubricating the sliders but that didn't help.",
     flipfix_record=FlipfixRecord(
-        record_type=RecordType.PROBLEM_REPORT,
+        record_type="problem_report",
         record_id=123,
         machine_id=Machine.gorgar.slug,
     ),
@@ -820,7 +817,7 @@ webhook_follow_up_not_reply = LLMTestCase(
     expected=[
         # Log entry should link to the existing problem report via parent_record_id
         ExpectedSuggestion(
-            RecordType.LOG_ENTRY,
+            "log_entry",
             Machine.gorgar.slug,
             parent_record_id=123,
         ),
@@ -845,7 +842,7 @@ author_id_attribution = LLMTestCase(
     messages=[_author_test_msg],
     expected=[
         ExpectedSuggestion(
-            RecordType.LOG_ENTRY,
+            "log_entry",
             Machine.blackout.slug,
             author_id=_author_test_msg.author_id,
         ),
@@ -869,7 +866,7 @@ source_message_ids_tracking = LLMTestCase(
     messages=[_source_msg1, _source_msg2],
     expected=[
         ExpectedSuggestion(
-            RecordType.LOG_ENTRY,
+            "log_entry",
             Machine.star_trek.slug,
             source_message_ids=[_source_msg1.id, _source_msg2.id],
         ),
@@ -896,7 +893,7 @@ multi_author_attribution = LLMTestCase(
         # Problem report should be attributed to visitor who originally reported it
         # Don't assert on children - LLM may or may not create a child for the investigation
         ExpectedSuggestion(
-            RecordType.PROBLEM_REPORT,
+            "problem_report",
             Machine.godzilla.slug,
             author_id=_multi_author_problem.author_id,
         ),

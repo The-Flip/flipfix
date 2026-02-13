@@ -11,7 +11,6 @@ from django.utils.html import format_html
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView, UpdateView
 
-from the_flip.apps.catalog.feed import FEED_CONFIGS, PageCursor, get_machine_feed_page
 from the_flip.apps.catalog.forms import (
     MachineCreateModelDoesNotExistForm,
     MachineCreateModelExistsForm,
@@ -19,8 +18,10 @@ from the_flip.apps.catalog.forms import (
     MachineModelForm,
 )
 from the_flip.apps.catalog.models import Location, MachineInstance, MachineModel
+from the_flip.apps.core.feed import FEED_CONFIGS, PageCursor, get_feed_page
+from the_flip.apps.core.forms import SearchForm
 from the_flip.apps.core.mixins import CanAccessMaintainerPortalMixin
-from the_flip.apps.maintenance.forms import ProblemReportForm, SearchForm
+from the_flip.apps.maintenance.forms import ProblemReportForm
 from the_flip.apps.maintenance.models import ProblemReport
 
 # Maximum stats shown in sidebar grid (Total + up to 3 location counts)
@@ -141,7 +142,7 @@ class MachineFeedView(CanAccessMaintainerPortalMixin, TemplateView):
         search_query = self.request.GET.get("q", "").strip()
 
         # Get first page of entries
-        entries, has_next = get_machine_feed_page(
+        entries, has_next = get_feed_page(
             machine=self.machine,
             entry_types=feed_config.entry_types,
             page_num=1,
@@ -188,7 +189,7 @@ class MachineFeedPartialView(CanAccessMaintainerPortalMixin, View):
             page_num = 1
         search_query = request.GET.get("q", "").strip() or None
 
-        page_items, has_next = get_machine_feed_page(
+        page_items, has_next = get_feed_page(
             machine=machine,
             entry_types=feed_config.entry_types,
             page_num=page_num,

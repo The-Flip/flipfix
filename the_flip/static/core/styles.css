@@ -609,36 +609,6 @@ body {
   background-color: var(--color-problem-light-border);
 }
 
-.btn--priority-untriaged {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning-text);
-  border: 1px solid var(--color-warning-border);
-}
-
-.btn--priority-untriaged:hover {
-  background-color: var(--color-warning-border);
-}
-
-.btn--priority-unplayable {
-  background-color: var(--color-problem-light-bg);
-  color: var(--color-problem);
-  border: 1px solid var(--color-problem-light-border);
-}
-
-.btn--priority-unplayable:hover {
-  background-color: var(--color-problem-light-border);
-}
-
-.btn--priority-major {
-  background-color: var(--color-priority-major-bg);
-  color: var(--color-priority-major-text);
-  border: 1px solid var(--color-priority-major-border);
-}
-
-.btn--priority-major:hover {
-  background-color: var(--color-priority-major-border);
-}
-
 /* --- Pills & Badges --- */
 .pill {
   display: inline-flex;

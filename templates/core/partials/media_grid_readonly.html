@@ -1,7 +1,7 @@
 {# Read-only media thumbnails for list views #}
 {# Usage: {% include "core/partials/media_grid_readonly.html" with media_items=entry.media.all detail_url=url model_name="LogEntryMedia" %} #}
 {# Requires: Include video_transcode_poll.js in page scripts for auto-updates #}
-{% load core_extras %}
+{% load video_tags %}
 {% if media_items %}
   <a href="{{ detail_url }}" class="timeline__media-link">
     <div class="media-grid">

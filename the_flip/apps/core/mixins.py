@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
-from functools import partial
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, cast
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
-from the_flip.apps.core.tasks import enqueue_transcode
+from the_flip.apps.core.markdown_links import save_inline_markdown_field
+from the_flip.apps.core.media import attach_media_files
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
+    from django.core.files.uploadedfile import UploadedFile
     from django.db import models
     from django.db.models import QuerySet
     from django.http import HttpRequest
@@ -73,6 +74,35 @@ class FormPrefillMixin:
         return context
 
 
+class SharedAccountMixin:
+    """Add ``is_shared_account`` to template context.
+
+    Views that change behavior for shared terminal accounts (e.g., requiring
+    explicit maintainer selection instead of pre-filling the current user)
+    can use this mixin instead of repeating the check in every view.
+
+    Also exposes ``self.is_shared_account`` as a cached property for use
+    in ``get_initial()`` or ``form_valid()``.
+    """
+
+    request: HttpRequest  # Provided by View
+
+    @cached_property
+    def is_shared_account(self) -> bool:
+        """Whether the current user is on a shared terminal account."""
+        user = self.request.user
+        return (
+            user.is_authenticated
+            and hasattr(user, "maintainer")
+            and user.maintainer.is_shared_account
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_shared_account"] = self.is_shared_account
+        return context
+
+
 class CanAccessMaintainerPortalMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     Mixin requiring maintainer portal access.
@@ -110,16 +140,23 @@ class MediaUploadMixin:
 
     Subclasses must implement:
         - get_media_model(): Return the media model class (e.g., LogEntryMedia)
-        - get_media_parent(): Return the parent object for new media
+
+    The parent object defaults to self.object (Django's DetailView convention).
+    Override get_media_parent() if the parent differs from the view's primary object.
     """
+
+    object: models.Model  # Provided by DetailView via MRO
 
     def get_media_model(self) -> Any:
         """Return the media model class to use for uploads."""
         raise NotImplementedError("Subclasses must implement get_media_model()")
 
     def get_media_parent(self) -> models.Model:
-        """Return the parent object to attach media to."""
-        raise NotImplementedError("Subclasses must implement get_media_parent()")
+        """Return the parent object to attach media to.
+
+        Defaults to self.object (Django's DetailView convention).
+        """
+        return self.object
 
     def handle_upload_media(self, request: HttpRequest) -> JsonResponse:
         """
@@ -134,35 +171,12 @@ class MediaUploadMixin:
         if "media_file" not in request.FILES:
             return JsonResponse({"success": False, "error": "No file provided"}, status=400)
 
-        upload = request.FILES["media_file"]
-        content_type = (getattr(upload, "content_type", "") or "").lower()
-        ext = Path(getattr(upload, "name", "")).suffix.lower()
-        is_video = content_type.startswith("video/") or ext in {
-            ".mp4",
-            ".mov",
-            ".m4v",
-            ".hevc",
-        }
-
+        upload = cast("UploadedFile", request.FILES["media_file"])
         media_model = self.get_media_model()
         parent = self.get_media_parent()
 
-        # Get the FK field name from the model's parent_field_name class attribute
-        parent_field_name = media_model.parent_field_name
-
-        create_kwargs: dict[str, Any] = {
-            parent_field_name: parent,
-            "media_type": media_model.MediaType.VIDEO if is_video else media_model.MediaType.PHOTO,
-            "file": upload,
-            "transcode_status": media_model.TranscodeStatus.PENDING if is_video else "",
-        }
-
-        media = media_model.objects.create(**create_kwargs)
-
-        if is_video:
-            transaction.on_commit(
-                partial(enqueue_transcode, media_id=media.id, model_name=media_model.__name__)
-            )
+        created = attach_media_files(media_files=[upload], parent=parent, media_model=media_model)
+        media = created[0]
 
         return JsonResponse(
             {
@@ -214,6 +228,42 @@ class MediaUploadMixin:
 
         except media_model.DoesNotExist:
             return JsonResponse({"success": False, "error": "Media not found"}, status=404)
+
+
+class InlineTextEditMixin:
+    """
+    Mixin for views that handle inline text field updates via AJAX POST.
+
+    Provides a handle_update_text() method that can be wired into a view's
+    action dispatch table, matching the pattern used by MediaUploadMixin.
+
+    The target object defaults to self.object (Django's DetailView convention).
+    Override get_inline_edit_object() if the target differs from the view's primary object.
+
+    Subclasses may override:
+        - inline_text_field_name: Model field to update (default: "text")
+    """
+
+    object: models.Model  # Provided by DetailView via MRO
+    inline_text_field_name: str = "text"
+
+    def get_inline_edit_object(self) -> models.Model:
+        """Return the model instance for inline text edits.
+
+        Defaults to self.object (Django's DetailView convention).
+        """
+        return self.object
+
+    def handle_update_text(self, request: HttpRequest) -> JsonResponse:
+        """Handle inline text update from AJAX request."""
+        text = request.POST.get("text", "")
+        try:
+            save_inline_markdown_field(
+                self.get_inline_edit_object(), self.inline_text_field_name, text
+            )
+        except ValidationError as e:
+            return JsonResponse({"success": False, "errors": e.messages}, status=400)
+        return JsonResponse({"success": True})
 
 
 class InfiniteScrollMixin:

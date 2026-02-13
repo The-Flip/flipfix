@@ -77,7 +77,7 @@ For ID-based types, no conversion is needed — the format is the same in both d
 | `core/markdown_links.py`           | `LinkType` dataclass, registry, conversion, rendering, sync      |
 | `core/models.py`                   | `RecordReference` model (generic link tracking via contenttypes) |
 | `core/views/link_targets.py`       | `LinkTypesView` and `LinkTargetsView` API endpoints              |
-| `core/templatetags/core_extras.py` | `render_markdown` filter calls `render_all_links()`              |
+| `core/templatetags/markdown_tags.py` | `render_markdown` filter calls `render_all_links()`              |
 | `static/core/link_autocomplete.js` | `[[` autocomplete UI (fully server-driven)                       |
 
 ## Adding a New Link Target

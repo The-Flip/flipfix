@@ -1,5 +1,9 @@
 {% extends "layouts/two_column.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load form_tags %}
+{% load accounts_form_tags %}
 {% block title %}Edit Update · Parts Request #{{ part_request.pk }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   {% if part_request.machine %}

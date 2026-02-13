@@ -3,7 +3,7 @@
 from django.test import TestCase, tag
 
 from the_flip.apps.catalog.models import MachineInstance, MachineModel
-from the_flip.apps.core.templatetags.core_extras import render_markdown
+from the_flip.apps.core.templatetags.markdown_tags import render_markdown
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 

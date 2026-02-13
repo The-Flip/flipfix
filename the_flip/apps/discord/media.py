@@ -13,16 +13,9 @@ from typing import TYPE_CHECKING
 
 import httpx
 from decouple import config
+from django.db.models import Model
 
 from the_flip.apps.core.media import ALLOWED_VIDEO_EXTENSIONS
-from the_flip.apps.maintenance.models import (
-    LogEntry,
-    ProblemReport,
-)
-from the_flip.apps.parts.models import (
-    PartRequest,
-    PartRequestUpdate,
-)
 
 if TYPE_CHECKING:
     import discord
@@ -65,24 +58,25 @@ def _dedupe_by_url(attachments: list[discord.Attachment]) -> list[discord.Attach
     return unique
 
 
-def _get_media_model_name(
-    record: LogEntry | ProblemReport | PartRequest | PartRequestUpdate,
-) -> str:
-    """Get the media model name for the web service API."""
-    if isinstance(record, LogEntry):
-        return "LogEntryMedia"
-    elif isinstance(record, ProblemReport):
-        return "ProblemReportMedia"
-    elif isinstance(record, PartRequest):
-        return "PartRequestMedia"
-    elif isinstance(record, PartRequestUpdate):
-        return "PartRequestUpdateMedia"
-    else:
-        raise ValueError(f"Unknown record type: {type(record)}")
+def _get_media_model_name(record: Model) -> str:
+    """Get the media model name for the web service API.
+
+    Looks up the bot handler for the record type to find the media model name.
+    Matches by model class identity rather than naming convention.
+    """
+    from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
+
+    for handler in get_all_bot_handlers():
+        if not handler.media_model_name:
+            continue
+        if isinstance(record, handler.get_model_class()):
+            return handler.media_model_name
+
+    raise ValueError(f"No media model name configured for: {type(record).__name__}")
 
 
 async def download_and_create_media(
-    record: LogEntry | ProblemReport | PartRequest | PartRequestUpdate,
+    record: Model,
     attachments: list[discord.Attachment],
 ) -> tuple[int, int]:
     """Download attachments from Discord and upload to web service.

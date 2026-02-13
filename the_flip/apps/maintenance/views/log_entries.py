@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
@@ -26,20 +25,19 @@ from the_flip.apps.core.datetime import (
     parse_datetime_with_browser_timezone,
     validate_not_future,
 )
-from the_flip.apps.core.markdown_links import (
-    save_inline_markdown_field,
-    sync_references,
-)
-from the_flip.apps.core.media import is_video_file
+from the_flip.apps.core.forms import SearchForm
+from the_flip.apps.core.markdown_links import sync_references
+from the_flip.apps.core.media import attach_media_files
 from the_flip.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
     InfiniteScrollMixin,
+    InlineTextEditMixin,
     MediaUploadMixin,
+    SharedAccountMixin,
     can_access_maintainer_portal,
 )
-from the_flip.apps.core.tasks import enqueue_transcode
-from the_flip.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm, SearchForm
+from the_flip.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm
 from the_flip.apps.maintenance.models import (
     LogEntry,
     LogEntryMedia,
@@ -64,7 +62,9 @@ def get_log_entry_queryset(search_query: str = ""):
     return queryset
 
 
-class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, FormView):
+class MachineLogCreateView(
+    FormPrefillMixin, SharedAccountMixin, CanAccessMaintainerPortalMixin, FormView
+):
     """Create a new log entry for a machine or problem report."""
 
     template_name = "maintenance/log_entry_new.html"
@@ -96,15 +96,10 @@ class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, For
     def get_initial(self):
         initial = super().get_initial()
         # Pre-fill maintainer name only for individual accounts (not shared accounts)
-        if self.request.user.is_authenticated:
-            is_shared = (
-                hasattr(self.request.user, "maintainer")
-                and self.request.user.maintainer.is_shared_account
+        if not self.is_shared_account:
+            initial["submitter_name"] = (
+                self.request.user.get_full_name() or self.request.user.get_username()
             )
-            if not is_shared:
-                initial["submitter_name"] = (
-                    self.request.user.get_full_name() or self.request.user.get_username()
-                )
         if self.machine:
             initial["machine_slug"] = self.machine.slug
         # occurred_at default is set by JavaScript to use browser's local timezone
@@ -115,15 +110,9 @@ class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, For
         context["machine"] = self.machine
         context["problem_report"] = self.problem_report
         context["is_global"] = self.is_global
-        # Check if current user is a shared account (show autocomplete for maintainer selection)
-        # Also pass current maintainer for pre-filling chip input
-        is_shared_account = False
-        if hasattr(self.request.user, "maintainer"):
-            maintainer = self.request.user.maintainer
-            is_shared_account = maintainer.is_shared_account
-            if not is_shared_account:
-                context["initial_maintainers"] = [maintainer]
-        context["is_shared_account"] = is_shared_account
+        # Pre-fill chip input with current maintainer (unless shared account)
+        if not self.is_shared_account and hasattr(self.request.user, "maintainer"):
+            context["initial_maintainers"] = [self.request.user.maintainer]
         context["maintainer_errors"] = getattr(self, "maintainer_errors", [])
         selected_slug = (
             self.request.POST.get("machine_slug") if self.request.method == "POST" else ""
@@ -200,22 +189,7 @@ class MachineLogCreateView(FormPrefillMixin, CanAccessMaintainerPortalMixin, For
             log_entry.save(update_fields=["maintainer_names"])
 
         if media_files:
-            for media_file in media_files:
-                is_video = is_video_file(media_file)
-
-                media = LogEntryMedia.objects.create(
-                    log_entry=log_entry,
-                    media_type=LogEntryMedia.MediaType.VIDEO
-                    if is_video
-                    else LogEntryMedia.MediaType.PHOTO,
-                    file=media_file,
-                    transcode_status=LogEntryMedia.TranscodeStatus.PENDING if is_video else "",
-                )
-
-                if is_video:
-                    transaction.on_commit(
-                        partial(enqueue_transcode, media_id=media.id, model_name="LogEntryMedia")
-                    )
+            attach_media_files(media_files=media_files, parent=log_entry, media_model=LogEntryMedia)
 
         # Close problem report if checkbox was checked
         if self.problem_report and self.request.POST.get("close_problem"):
@@ -285,7 +259,9 @@ class LogListPartialView(CanAccessMaintainerPortalMixin, InfiniteScrollMixin, Vi
         return get_log_entry_queryset(search_query)
 
 
-class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, DetailView):
+class LogEntryDetailView(
+    InlineTextEditMixin, MediaUploadMixin, CanAccessMaintainerPortalMixin, DetailView
+):
     """Detail page for a single log entry with media upload support."""
 
     model = LogEntry
@@ -300,246 +276,243 @@ class LogEntryDetailView(MediaUploadMixin, CanAccessMaintainerPortalMixin, Detai
     def get_media_model(self):
         return LogEntryMedia
 
-    def get_media_parent(self):
-        return self.object
-
     def post(self, request, *args, **kwargs):
         """Handle AJAX updates to the log entry."""
         self.object = self.get_object()
         action = request.POST.get("action")
 
-        if action == "update_text":
-            text = request.POST.get("text", "")
-            try:
-                save_inline_markdown_field(self.object, "text", text)
-            except ValidationError as e:
-                return JsonResponse({"success": False, "errors": e.messages}, status=400)
-            return JsonResponse({"success": True})
+        action_handlers = {
+            "update_text": self.handle_update_text,
+            "update_occurred_at": self._handle_update_occurred_at,
+            "upload_media": self.handle_upload_media,
+            "delete_media": self.handle_delete_media,
+            "update_maintainers": self._handle_update_maintainers,
+            "update_problem_report": self._handle_update_problem_report,
+            "update_machine": self._handle_update_machine,
+        }
 
-        elif action == "update_occurred_at":
-            occurred_at_str = request.POST.get("occurred_at", "")
-            if not occurred_at_str:
-                return JsonResponse({"success": False, "error": "No date provided"}, status=400)
+        if action in action_handlers:
+            return action_handlers[action](request)
 
-            occurred_at = parse_datetime_with_browser_timezone(occurred_at_str, request)
-            if not occurred_at:
-                return JsonResponse({"success": False, "error": "Invalid date format"}, status=400)
+        return JsonResponse({"success": False, "error": f"Unknown action: {action}"}, status=400)
 
-            # Validate not in the future
-            # Make aware if naive (when browser_timezone not provided)
-            if timezone.is_naive(occurred_at):
-                occurred_at = timezone.make_aware(occurred_at)
-            if occurred_at > timezone.now():
-                return JsonResponse(
-                    {"success": False, "error": "Date cannot be in the future."}, status=400
-                )
-            self.object.occurred_at = occurred_at
-            self.object.save(update_fields=["occurred_at", "updated_at"])
-            return JsonResponse({"success": True})
+    # -- Action handlers -------------------------------------------------------
 
-        elif action == "upload_media":
-            return self.handle_upload_media(request)
+    def _handle_update_occurred_at(self, request):
+        """AJAX: update the occurred_at timestamp."""
+        occurred_at_str = request.POST.get("occurred_at", "")
+        if not occurred_at_str:
+            return JsonResponse({"success": False, "error": "No date provided"}, status=400)
 
-        elif action == "delete_media":
-            return self.handle_delete_media(request)
+        occurred_at = parse_datetime_with_browser_timezone(occurred_at_str, request)
+        if not occurred_at:
+            return JsonResponse({"success": False, "error": "Invalid date format"}, status=400)
 
-        elif action == "update_maintainers":
-            names_raw = request.POST.get("maintainers", "")
-            names = [name.strip() for name in names_raw.split(",") if name.strip()]
-
-            matched = []
-            unmatched = []
-            for name in names:
-                maintainer = Maintainer.match_by_name(name)
-                if maintainer:
-                    matched.append(maintainer)
-                else:
-                    unmatched.append(name)
-
-            self.object.maintainers.set(matched)
-            self.object.maintainer_names = ", ".join(unmatched)
-            self.object.save(update_fields=["maintainer_names", "updated_at"])
-            return JsonResponse({"success": True})
-
-        elif action == "update_problem_report":
-            # Change the problem report for this log entry
-            # Also changes the machine to match the new problem report
-            problem_report_id = request.POST.get("problem_report_id", "").strip()
-
-            if not problem_report_id or problem_report_id == "none":
-                # Unlink from problem report (become orphan), keep current machine
-                if self.object.problem_report_id is None:
-                    return JsonResponse({"success": True, "status": "noop"})
-
-                old_report = self.object.problem_report
-                self.object.problem_report = None
-                self.object.save(update_fields=["problem_report", "updated_at"])
-
-                # Message: "Log entry unlinked from problem report #{id}."
-                old_report_link = format_html(
-                    '<a href="{}">#{}</a>',
-                    reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
-                    old_report.pk,
-                )
-                messages.success(
-                    request,
-                    format_html("Log entry unlinked from problem report {}.", old_report_link),
-                )
-
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "problem_report_id": None,
-                        "machine_slug": self.object.machine.slug,
-                        "machine_name": self.object.machine.name,
-                    }
-                )
-
-            # Link to a specific problem report
-            new_report = ProblemReport.objects.filter(pk=problem_report_id).first()
-            if not new_report:
-                return JsonResponse(
-                    {"success": False, "error": "Problem report not found"}, status=404
-                )
-
-            if new_report.pk == self.object.problem_report_id:
-                return JsonResponse({"success": True, "status": "noop"})
-
-            # Capture old state before updating
-            old_report = self.object.problem_report
-            old_machine = self.object.machine
-
-            # Update problem report and machine
-            self.object.problem_report = new_report
-            self.object.machine = new_report.machine
-            self.object.save(update_fields=["problem_report", "machine", "updated_at"])
-
-            # Build message based on what changed
-            new_report_link = format_html(
-                '<a href="{}">#{}</a>',
-                reverse("problem-report-detail", kwargs={"pk": new_report.pk}),
-                new_report.pk,
-            )
-            new_machine_link = format_html(
-                '<a href="{}">{}</a>',
-                reverse("maintainer-machine-detail", kwargs={"slug": new_report.machine.slug}),
-                new_report.machine.short_display_name,
-            )
-
-            if old_report is None:
-                # Was orphan, now linked: "Log entry linked to problem #{id} on {machine}."
-                messages.success(
-                    request,
-                    format_html(
-                        "Log entry linked to problem {} on {}.",
-                        new_report_link,
-                        new_machine_link,
-                    ),
-                )
-            elif old_machine.pk == new_report.machine.pk:
-                # Same machine, different PR: "Log entry moved from problem #{old} to problem #{new}."
-                old_report_link = format_html(
-                    '<a href="{}">#{}</a>',
-                    reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
-                    old_report.pk,
-                )
-                messages.success(
-                    request,
-                    format_html(
-                        "Log entry moved from problem {} to problem {}.",
-                        old_report_link,
-                        new_report_link,
-                    ),
-                )
-            else:
-                # Different machine and PR
-                old_report_link = format_html(
-                    '<a href="{}">#{}</a>',
-                    reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
-                    old_report.pk,
-                )
-                old_machine_link = format_html(
-                    '<a href="{}">{}</a>',
-                    reverse("maintainer-machine-detail", kwargs={"slug": old_machine.slug}),
-                    old_machine.short_display_name,
-                )
-                messages.success(
-                    request,
-                    format_html(
-                        "Log entry moved from problem {} on {} to problem {} on {}.",
-                        old_report_link,
-                        old_machine_link,
-                        new_report_link,
-                        new_machine_link,
-                    ),
-                )
-
+        # Validate not in the future
+        # Make aware if naive (when browser_timezone not provided)
+        if timezone.is_naive(occurred_at):
+            occurred_at = timezone.make_aware(occurred_at)
+        if occurred_at > timezone.now():
             return JsonResponse(
-                {
-                    "success": True,
-                    "problem_report_id": new_report.pk,
-                    "machine_slug": new_report.machine.slug,
-                    "machine_name": new_report.machine.name,
-                }
+                {"success": False, "error": "Date cannot be in the future."}, status=400
             )
+        self.object.occurred_at = occurred_at
+        self.object.save(update_fields=["occurred_at", "updated_at"])
+        return JsonResponse({"success": True})
 
-        elif action == "update_machine":
-            # Change the machine for an orphan log entry (not linked to a problem report)
-            if self.object.problem_report_id is not None:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "Cannot directly change machine for log entries linked to a problem report. Change the problem report instead.",
-                    },
-                    status=400,
-                )
+    def _handle_update_maintainers(self, request):
+        """AJAX: update maintainer assignments."""
+        names_raw = request.POST.get("maintainers", "")
+        names = [name.strip() for name in names_raw.split(",") if name.strip()]
 
-            machine_slug = request.POST.get("machine_slug", "").strip()
-            if not machine_slug:
-                return JsonResponse(
-                    {"success": False, "error": "Machine slug required"}, status=400
-                )
+        matched = []
+        unmatched = []
+        for name in names:
+            maintainer = Maintainer.match_by_name(name)
+            if maintainer:
+                matched.append(maintainer)
+            else:
+                unmatched.append(name)
 
-            new_machine = MachineInstance.objects.filter(slug=machine_slug).first()
-            if not new_machine:
-                return JsonResponse({"success": False, "error": "Machine not found"}, status=404)
+        self.object.maintainers.set(matched)
+        self.object.maintainer_names = ", ".join(unmatched)
+        self.object.save(update_fields=["maintainer_names", "updated_at"])
+        return JsonResponse({"success": True})
 
-            if new_machine.pk == self.object.machine_id:
-                return JsonResponse({"success": True, "status": "noop"})
+    def _handle_update_problem_report(self, request):
+        """AJAX: change the problem report (and machine) for this log entry."""
+        problem_report_id = request.POST.get("problem_report_id", "").strip()
 
-            old_machine = self.object.machine
-            self.object.machine = new_machine
-            self.object.save(update_fields=["machine", "updated_at"])
+        if not problem_report_id or problem_report_id == "none":
+            return self._unlink_problem_report(request)
 
-            # Build message with hyperlinked machine names
+        # Link to a specific problem report
+        new_report = ProblemReport.objects.filter(pk=problem_report_id).first()
+        if not new_report:
+            return JsonResponse({"success": False, "error": "Problem report not found"}, status=404)
+
+        if new_report.pk == self.object.problem_report_id:
+            return JsonResponse({"success": True, "status": "noop"})
+
+        # Capture old state before updating
+        old_report = self.object.problem_report
+        old_machine = self.object.machine
+
+        # Update problem report and machine
+        self.object.problem_report = new_report
+        self.object.machine = new_report.machine
+        self.object.save(update_fields=["problem_report", "machine", "updated_at"])
+
+        self._add_problem_report_link_message(request, old_report, old_machine, new_report)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "problem_report_id": new_report.pk,
+                "machine_slug": new_report.machine.slug,
+                "machine_name": new_report.machine.name,
+            }
+        )
+
+    def _unlink_problem_report(self, request):
+        """Unlink from problem report (become orphan), keep current machine."""
+        if self.object.problem_report_id is None:
+            return JsonResponse({"success": True, "status": "noop"})
+
+        old_report = self.object.problem_report
+        self.object.problem_report = None
+        self.object.save(update_fields=["problem_report", "updated_at"])
+
+        old_report_link = format_html(
+            '<a href="{}">#{}</a>',
+            reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
+            old_report.pk,
+        )
+        messages.success(
+            request,
+            format_html("Log entry unlinked from problem report {}.", old_report_link),
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "problem_report_id": None,
+                "machine_slug": self.object.machine.slug,
+                "machine_name": self.object.machine.name,
+            }
+        )
+
+    def _add_problem_report_link_message(self, request, old_report, old_machine, new_report):
+        """Add a success message describing the problem report link change."""
+        new_report_link = format_html(
+            '<a href="{}">#{}</a>',
+            reverse("problem-report-detail", kwargs={"pk": new_report.pk}),
+            new_report.pk,
+        )
+        new_machine_link = format_html(
+            '<a href="{}">{}</a>',
+            reverse("maintainer-machine-detail", kwargs={"slug": new_report.machine.slug}),
+            new_report.machine.short_display_name,
+        )
+
+        if old_report is None:
+            messages.success(
+                request,
+                format_html(
+                    "Log entry linked to problem {} on {}.",
+                    new_report_link,
+                    new_machine_link,
+                ),
+            )
+        elif old_machine.pk == new_report.machine.pk:
+            old_report_link = format_html(
+                '<a href="{}">#{}</a>',
+                reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
+                old_report.pk,
+            )
+            messages.success(
+                request,
+                format_html(
+                    "Log entry moved from problem {} to problem {}.",
+                    old_report_link,
+                    new_report_link,
+                ),
+            )
+        else:
+            old_report_link = format_html(
+                '<a href="{}">#{}</a>',
+                reverse("problem-report-detail", kwargs={"pk": old_report.pk}),
+                old_report.pk,
+            )
             old_machine_link = format_html(
                 '<a href="{}">{}</a>',
                 reverse("maintainer-machine-detail", kwargs={"slug": old_machine.slug}),
                 old_machine.short_display_name,
             )
-            new_machine_link = format_html(
-                '<a href="{}">{}</a>',
-                reverse("maintainer-machine-detail", kwargs={"slug": new_machine.slug}),
-                new_machine.short_display_name,
-            )
             messages.success(
                 request,
                 format_html(
-                    "Log entry moved from {} to {}.",
+                    "Log entry moved from problem {} on {} to problem {} on {}.",
+                    old_report_link,
                     old_machine_link,
+                    new_report_link,
                     new_machine_link,
                 ),
             )
 
+    def _handle_update_machine(self, request):
+        """AJAX: change the machine for an orphan log entry (not linked to a problem report)."""
+        if self.object.problem_report_id is not None:
             return JsonResponse(
                 {
-                    "success": True,
-                    "new_machine_slug": new_machine.slug,
-                    "new_machine_name": new_machine.name,
-                }
+                    "success": False,
+                    "error": "Cannot directly change machine for log entries linked to a problem report. Change the problem report instead.",
+                },
+                status=400,
             )
 
-        return JsonResponse({"success": False, "error": "Invalid action"}, status=400)
+        machine_slug = request.POST.get("machine_slug", "").strip()
+        if not machine_slug:
+            return JsonResponse({"success": False, "error": "Machine slug required"}, status=400)
+
+        new_machine = MachineInstance.objects.filter(slug=machine_slug).first()
+        if not new_machine:
+            return JsonResponse({"success": False, "error": "Machine not found"}, status=404)
+
+        if new_machine.pk == self.object.machine_id:
+            return JsonResponse({"success": True, "status": "noop"})
+
+        old_machine = self.object.machine
+        self.object.machine = new_machine
+        self.object.save(update_fields=["machine", "updated_at"])
+
+        # Build message with hyperlinked machine names
+        old_machine_link = format_html(
+            '<a href="{}">{}</a>',
+            reverse("maintainer-machine-detail", kwargs={"slug": old_machine.slug}),
+            old_machine.short_display_name,
+        )
+        new_machine_link = format_html(
+            '<a href="{}">{}</a>',
+            reverse("maintainer-machine-detail", kwargs={"slug": new_machine.slug}),
+            new_machine.short_display_name,
+        )
+        messages.success(
+            request,
+            format_html(
+                "Log entry moved from {} to {}.",
+                old_machine_link,
+                new_machine_link,
+            ),
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "new_machine_slug": new_machine.slug,
+                "new_machine_name": new_machine.name,
+            }
+        )
 
 
 class LogEntryEditView(CanAccessMaintainerPortalMixin, UpdateView):

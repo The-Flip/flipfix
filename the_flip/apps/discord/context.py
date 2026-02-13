@@ -22,7 +22,6 @@ import discord
 from asgiref.sync import sync_to_async
 
 from the_flip.apps.core.media import ALLOWED_MEDIA_EXTENSIONS
-from the_flip.apps.discord.llm import RecordType
 from the_flip.apps.discord.models import DiscordMessageMapping
 from the_flip.apps.discord.types import DiscordUserInfo
 
@@ -48,7 +47,7 @@ PREROLL_BUDGET_RATIO = 0.25
 class FlipfixRecord:
     """A Flipfix record parsed from a webhook embed."""
 
-    record_type: RecordType
+    record_type: str
     record_id: int
     machine_id: str | None = None
 
@@ -731,35 +730,27 @@ def _is_flipfix_url(url: str) -> bool:
     return _parse_flipfix_url(url) is not None
 
 
-def _parse_flipfix_url(url: str) -> tuple[RecordType, int, str | None] | None:
+def _parse_flipfix_url(url: str) -> tuple[str, int, str | None] | None:
     """Parse a Flipfix URL to extract record type and ID.
 
-    Expected URL patterns (matching Django URL config):
-    - /logs/123/ -> (RecordType.LOG_ENTRY, 123, None)
-    - /problem-reports/456/ -> (RecordType.PROBLEM_REPORT, 456, None)
-    - /parts/789/ -> (RecordType.PART_REQUEST, 789, None)
+    Iterates over registered bot handlers to match URL patterns.
+    Returns (record_type, record_id, machine_id) or None if no match.
 
     The third element (machine_id) is always None since detail pages don't
     include machine slugs in their URLs.
     """
+    from the_flip.apps.discord.bot_handlers import get_all_bot_handlers
+
     try:
         parsed = urlparse(url)
         path = parsed.path.rstrip("/")
 
-        # Pattern: /logs/<id>
-        match = re.match(r"/logs/(\d+)$", path)
-        if match:
-            return (RecordType.LOG_ENTRY, int(match.group(1)), None)
-
-        # Pattern: /problem-reports/<id>
-        match = re.match(r"/problem-reports/(\d+)$", path)
-        if match:
-            return (RecordType.PROBLEM_REPORT, int(match.group(1)), None)
-
-        # Pattern: /parts/<id>
-        match = re.match(r"/parts/(\d+)$", path)
-        if match:
-            return (RecordType.PART_REQUEST, int(match.group(1)), None)
+        for handler in get_all_bot_handlers():
+            if handler.url_pattern is None:
+                continue
+            match = handler.url_pattern.match(path)
+            if match:
+                return (handler.record_type, int(match.group(1)), None)
 
         return None
     except Exception:

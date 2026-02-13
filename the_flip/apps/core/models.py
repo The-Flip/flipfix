@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q
 
 from the_flip.apps.core.image_processing import (
     THUMB_IMAGE_DIMENSION,
@@ -26,6 +27,46 @@ class TimeStampedMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class SearchableQuerySetMixin:
+    """Mixin that DRYs up the strip → empty-guard → filter → distinct pattern.
+
+    Every search method in the project follows the same boilerplate::
+
+        query = (query or "").strip()
+        if not query:
+            return self
+        return self.filter(...).distinct()
+
+    This mixin extracts that into two helpers so each search method
+    only contains the domain-specific Q logic::
+
+        def search(self, query: str = ""):
+            query = self._clean_query(query)
+            return self._apply_search(
+                query,
+                self._build_core_q(query) | Q(machine__name__icontains=query),
+            )
+    """
+
+    @staticmethod
+    def _clean_query(query: str) -> str:
+        """Normalize a search query: coerce None and strip whitespace."""
+        return (query or "").strip()
+
+    def _apply_search(self, query: str, q: Q) -> models.QuerySet:
+        """Apply standard search normalization and filtering.
+
+        Returns self unchanged for empty/blank queries. Otherwise
+        filters by *q* and returns distinct results.
+
+        Callers must pass the already-cleaned query (via ``_clean_query``)
+        so that the Q objects use the stripped value.
+        """
+        if not query:
+            return self  # type: ignore[return-value]
+        return self.filter(q).distinct()  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -113,33 +154,39 @@ class AbstractMedia(TimeStampedMixin):
 
 # ---------------------------------------------------------------------------
 # Media model registry
+#
+# Apps register their AbstractMedia subclasses via AppConfig.ready(), keeping
+# core free of hardcoded knowledge about other apps.  Compare the same pattern
+# in core/markdown_links.py for link-type registration.
 # ---------------------------------------------------------------------------
 
-# Maps model names to import paths for lazy loading. Add new media models here.
-_MEDIA_MODEL_REGISTRY: dict[str, str] = {
-    "LogEntryMedia": "the_flip.apps.maintenance.models.LogEntryMedia",
-    "ProblemReportMedia": "the_flip.apps.maintenance.models.ProblemReportMedia",
-    "PartRequestMedia": "the_flip.apps.parts.models.PartRequestMedia",
-    "PartRequestUpdateMedia": "the_flip.apps.parts.models.PartRequestUpdateMedia",
-}
+_MEDIA_MODEL_REGISTRY: dict[str, type[AbstractMedia]] = {}
 
 
-def get_media_model(model_name: str):
+def register_media_model(model_class: type[AbstractMedia]) -> None:
+    """Register a media model. Called from each app's AppConfig.ready()."""
+    name = model_class.__name__
+    if name in _MEDIA_MODEL_REGISTRY:
+        raise ValueError(f"Media model '{name}' is already registered")
+    _MEDIA_MODEL_REGISTRY[name] = model_class
+
+
+def clear_media_model_registry() -> None:
+    """Reset registry state. For tests only."""
+    _MEDIA_MODEL_REGISTRY.clear()
+
+
+def get_media_model(model_name: str) -> Any:
+    """Get a concrete media model class by name.
+
+    Returns a concrete AbstractMedia subclass. Typed as ``Any`` because
+    django-stubs removes the manager from abstract models, yet callers
+    need ``.objects`` and ``.DoesNotExist`` on the returned class.
     """
-    Get a media model class by name.
-
-    Used by the transcode worker and upload receiver to handle multiple media types.
-    """
-    if model_name not in _MEDIA_MODEL_REGISTRY:
-        raise ValueError(f"Unknown media model: {model_name}")
-
-    import_path = _MEDIA_MODEL_REGISTRY[model_name]
-    module_path, class_name = import_path.rsplit(".", 1)
-
-    from importlib import import_module
-
-    module = import_module(module_path)
-    return getattr(module, class_name)
+    try:
+        return _MEDIA_MODEL_REGISTRY[model_name]
+    except KeyError:
+        raise ValueError(f"Unknown media model: {model_name}") from None
 
 
 # ---------------------------------------------------------------------------
@@ -177,3 +224,28 @@ class RecordReference(models.Model):
         return (
             f"{self.source_type.model}:{self.source_id} → {self.target_type.model}:{self.target_id}"
         )
+
+
+def register_reference_cleanup(*model_classes: type[models.Model]) -> None:
+    """Connect post_delete signals to clean up RecordReference rows for the given models.
+
+    Call from AppConfig.ready() for every model whose text fields can contain
+    ``[[type:ref]]`` markdown links (i.e. any model passed to ``sync_references``).
+
+    Example::
+
+        from the_flip.apps.core.models import register_reference_cleanup
+        from .models import ProblemReport, LogEntry
+
+        class MaintenanceConfig(AppConfig):
+            def ready(self):
+                register_reference_cleanup(ProblemReport, LogEntry)
+    """
+    from django.db.models.signals import post_delete
+
+    def _cleanup_references(sender, instance, **kwargs):
+        ct = ContentType.objects.get_for_model(sender)
+        RecordReference.objects.filter(source_type=ct, source_id=instance.pk).delete()
+
+    for model_class in model_classes:
+        post_delete.connect(_cleanup_references, sender=model_class, weak=False)

@@ -1,5 +1,6 @@
 {% extends "maintenance/global_list_base.html" %}
-{% load static core_extras %}
+{% load static %}
+{% load list_tags %}
 {% block list_title %}Parts Requests{% endblock %}
 {% block mobile_actions %}
   <a href="{% url 'part-request-create' %}" class="btn btn--log">Request a Part</a>

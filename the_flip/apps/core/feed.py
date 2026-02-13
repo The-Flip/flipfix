@@ -1,30 +1,71 @@
-"""Global activity feed: paginated activity entries across all machines.
+"""Unified activity feed: paginated entries across multiple models.
 
-This module provides a single entry point for fetching global activity feeds,
-combining logs, problem reports, and parts entries across all machines.
+Provides a single entry point for fetching activity feeds, supporting both
+machine-scoped and global (all machines) views. Machine-scoped feeds filter
+by machine and exclude machine name from search. Global feeds include machine
+info in select_related for display.
+
+Each record type is registered as a FeedEntrySource via AppConfig.ready(),
+so adding a new type means registering one source definition in the owning
+app rather than editing this module.  Compare the same pattern in
+core/markdown_links.py (link types) and core/models.py (media models).
 """
 
 from __future__ import annotations
 
-from enum import StrEnum
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
-from django.db.models import Prefetch
+from django.db.models import QuerySet
 
-from the_flip.apps.maintenance.models import LogEntry, ProblemReport
-from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-# Type alias for feed entries (all have occurred_at attribute)
-FeedEntry = LogEntry | ProblemReport | PartRequest | PartRequestUpdate
+    from the_flip.apps.catalog.models import MachineInstance
 
 
-class EntryType(StrEnum):
-    """Entry types for feed items. StrEnum allows direct template comparison."""
+@dataclass(frozen=True)
+class FeedConfig:
+    """Configuration for a machine feed filter tab."""
 
-    LOG = "log"
-    PROBLEM_REPORT = "problem_report"
-    PART_REQUEST = "part_request"
-    PART_REQUEST_UPDATE = "part_request_update"
+    title_suffix: str  # Appended to browser title, e.g. "- Logs"
+    breadcrumb_label: str | None  # Final breadcrumb text, None for activity feed
+    entry_types: tuple[str, ...]  # Which entry types to include; () means all registered
+    empty_message: str  # Shown when feed has no entries
+    search_empty_message: str  # Shown when search has no results
+
+
+FEED_CONFIGS: dict[str, FeedConfig] = {
+    "all": FeedConfig(
+        title_suffix="",
+        breadcrumb_label=None,
+        entry_types=(),  # empty = all registered types
+        empty_message="No activity yet.",
+        search_empty_message="No activity matches your search.",
+    ),
+    "logs": FeedConfig(
+        title_suffix=" \u00b7 Logs",
+        breadcrumb_label="Logs",
+        entry_types=("log",),
+        empty_message="No log entries yet.",
+        search_empty_message="No log entries match your search.",
+    ),
+    "problems": FeedConfig(
+        title_suffix=" \u00b7 Problem Reports",
+        breadcrumb_label="Problems",
+        entry_types=("problem_report",),
+        empty_message="No problem reports yet.",
+        search_empty_message="No problem reports match your search.",
+    ),
+    "parts": FeedConfig(
+        title_suffix=" \u00b7 Part Requests",
+        breadcrumb_label="Parts",
+        entry_types=("part_request",),  # updates intentionally excluded (too granular)
+        empty_message="No parts requests yet.",
+        search_empty_message="No parts requests match your search.",
+    ),
+}
 
 
 class PageCursor:
@@ -44,37 +85,98 @@ class PageCursor:
         return self._page_num + 1
 
 
-def get_global_feed_page(
-    page_num: int,
+@dataclass(frozen=True)
+class FeedEntrySource:
+    """Describes how to fetch one type of entry for the unified feed.
+
+    Each source specifies:
+    - entry_type: string tag set on entries (e.g. "log", "problem_report")
+    - get_base_queryset: returns queryset with model-specific select_related/prefetch_related
+    - machine_filter_field: field name for .filter(**{field: machine})
+    - global_select_related: additional select_related fields for global (non-machine) scope
+    - machine_template: template path for rendering in machine-scoped feeds
+    - global_template: template path for rendering in global (all-machines) feeds
+    """
+
+    entry_type: str
+    get_base_queryset: Callable[[], QuerySet[Any]]
+    machine_filter_field: str
+    global_select_related: tuple[str, ...]
+    machine_template: str
+    global_template: str
+
+
+# ---------------------------------------------------------------------------
+# Feed source registry
+#
+# Apps register their FeedEntrySource instances via AppConfig.ready(), keeping
+# core free of hardcoded knowledge about other apps.  Compare the same pattern
+# in core/markdown_links.py for link-type registration and core/models.py for
+# media-model registration.
+#
+# To add a new entry type to the feed:
+# 1. In the owning app's AppConfig.ready(), call register_feed_source()
+#    with template paths for machine and global feeds
+# 2. Create the entry templates
+# That's it — no enums, dispatchers, or other files to edit.
+# ---------------------------------------------------------------------------
+
+_feed_source_registry: dict[str, FeedEntrySource] = {}
+
+
+def register_feed_source(source: FeedEntrySource) -> None:
+    """Register a feed entry source. Called from each app's AppConfig.ready()."""
+    if source.entry_type in _feed_source_registry:
+        raise ValueError(f"Feed source '{source.entry_type}' is already registered")
+    _feed_source_registry[source.entry_type] = source
+
+
+def get_all_entry_types() -> tuple[str, ...]:
+    """Return all registered entry type keys. Resolves after AppConfig.ready()."""
+    return tuple(_feed_source_registry.keys())
+
+
+def clear_feed_source_registry() -> None:
+    """Reset registry state. For tests only."""
+    _feed_source_registry.clear()
+
+
+def get_feed_page(
+    page_num: int = 1,
     page_size: int = settings.LIST_PAGE_SIZE,
     search_query: str | None = None,
-) -> tuple[list[FeedEntry], bool]:
-    """Get a paginated page of global activity entries across all machines.
+    machine: MachineInstance | None = None,
+    entry_types: tuple[str, ...] = (),
+) -> tuple[list[Any], bool]:
+    """Get a paginated page of activity entries.
+
+    When machine is provided, returns entries scoped to that machine using
+    machine-specific search (excludes machine name from search fields).
+    When machine is None, returns entries across all machines with global
+    search (includes machine name matching).
+
+    An empty ``entry_types`` tuple means "all registered types".
 
     Uses merge-sort style pagination: fetches just enough from each table
     to construct the requested page.
 
-    Args:
-        page_num: Page number (1-indexed).
-        page_size: Number of items per page (default: settings.LIST_PAGE_SIZE).
-        search_query: Optional search string to filter results.
-
-    Returns:
-        Tuple of (page_items, has_next) where page_items is a list of entries
-        and has_next indicates if more pages exist.
+    Returns (page_items, has_next) tuple.
     """
+    if not entry_types:
+        entry_types = get_all_entry_types()
+
     offset = (page_num - 1) * page_size
     # Fetch one extra to detect if more pages exist (countless pagination pattern)
     fetch_limit = offset + page_size + 1
 
-    all_entries: list[FeedEntry] = []
+    all_entries: list[Any] = []
 
-    all_entries.extend(_get_global_log_entries(search_query, fetch_limit))
-    all_entries.extend(_get_global_problem_reports(search_query, fetch_limit))
-    all_entries.extend(_get_global_part_requests(search_query, fetch_limit))
-    all_entries.extend(_get_global_part_request_updates(search_query, fetch_limit))
+    for entry_type in entry_types:
+        source = _feed_source_registry.get(entry_type)
+        if source:
+            all_entries.extend(_fetch_entries(source, machine, search_query, fetch_limit))
 
-    # Sort by occurred_at descending (all entry types)
+    # Sort by occurred_at descending (all entry types share this field)
     combined = sorted(
         all_entries,
         key=lambda x: x.occurred_at,
@@ -88,86 +190,31 @@ def get_global_feed_page(
     return page_items, has_next
 
 
-def _get_global_log_entries(search_query: str | None, limit: int) -> list[LogEntry]:
-    """Get global log entries with optional search filter."""
-    queryset = LogEntry.objects.select_related(
-        "machine", "machine__model", "problem_report"
-    ).prefetch_related("maintainers__user", "media")
+def _fetch_entries(
+    source: FeedEntrySource,
+    machine: MachineInstance | None,
+    search_query: str | None,
+    limit: int,
+) -> list[Any]:
+    """Fetch entries for a single source, scoped to machine or global."""
+    queryset = source.get_base_queryset()
 
-    if search_query:
-        queryset = queryset.search(search_query)
-
-    queryset = queryset.order_by("-occurred_at")
-    logs_list = list(queryset[:limit])
-
-    # Tag entries for template differentiation
-    for log in logs_list:
-        log.entry_type = EntryType.LOG  # type: ignore[attr-defined]
-
-    return logs_list
-
-
-def _get_global_problem_reports(search_query: str | None, limit: int) -> list[ProblemReport]:
-    """Get global problem reports with optional search filter."""
-    latest_log_prefetch = Prefetch(
-        "log_entries",
-        queryset=LogEntry.objects.order_by("-occurred_at"),
-        to_attr="prefetched_log_entries",
-    )
-    queryset = ProblemReport.objects.select_related(
-        "machine", "machine__model", "reported_by_user"
-    ).prefetch_related(latest_log_prefetch, "media")
-
-    if search_query:
-        queryset = queryset.search(search_query)
+    if machine:
+        queryset = queryset.filter(**{source.machine_filter_field: machine})
+        if search_query:
+            queryset = queryset.search_for_machine(search_query)  # type: ignore[attr-defined]
+    else:
+        queryset = queryset.select_related(*source.global_select_related)
+        if search_query:
+            queryset = queryset.search(search_query)  # type: ignore[attr-defined]
 
     queryset = queryset.order_by("-occurred_at")
-    reports_list = list(queryset[:limit])
+    entries = list(queryset[:limit])
 
-    for report in reports_list:
-        report.entry_type = EntryType.PROBLEM_REPORT  # type: ignore[attr-defined]
+    # Tag entries with metadata from their source for template rendering
+    for entry in entries:
+        entry.entry_type = source.entry_type  # type: ignore[attr-defined]
+        entry.machine_template = source.machine_template  # type: ignore[attr-defined]
+        entry.global_template = source.global_template  # type: ignore[attr-defined]
 
-    return reports_list
-
-
-def _get_global_part_requests(search_query: str | None, limit: int) -> list[PartRequest]:
-    """Get global part requests with optional search filter."""
-    latest_update_prefetch = Prefetch(
-        "updates",
-        queryset=PartRequestUpdate.objects.order_by("-occurred_at"),
-        to_attr="prefetched_updates",
-    )
-    queryset = PartRequest.objects.select_related(
-        "machine", "machine__model", "requested_by__user"
-    ).prefetch_related("media", latest_update_prefetch)
-
-    if search_query:
-        queryset = queryset.search(search_query)
-
-    queryset = queryset.order_by("-occurred_at")
-    requests_list = list(queryset[:limit])
-
-    for pr in requests_list:
-        pr.entry_type = EntryType.PART_REQUEST  # type: ignore[attr-defined]
-
-    return requests_list
-
-
-def _get_global_part_request_updates(
-    search_query: str | None, limit: int
-) -> list[PartRequestUpdate]:
-    """Get global part request updates with optional search filter."""
-    queryset = PartRequestUpdate.objects.select_related(
-        "posted_by__user", "part_request", "part_request__machine"
-    ).prefetch_related("media")
-
-    if search_query:
-        queryset = queryset.search(search_query)
-
-    queryset = queryset.order_by("-occurred_at")
-    updates_list = list(queryset[:limit])
-
-    for pu in updates_list:
-        pu.entry_type = EntryType.PART_REQUEST_UPDATE  # type: ignore[attr-defined]
-
-    return updates_list
+    return entries

@@ -1,4 +1,6 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load list_tags %}
+{% load markdown_tags %}
 {% timeline_entry icon="comment" variant="log" %}
 <article class="card card--log timeline__card">
   <a href="{% url 'part-request-update-detail' update.pk %}"

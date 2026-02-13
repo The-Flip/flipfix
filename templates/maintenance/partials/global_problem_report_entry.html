@@ -1,4 +1,7 @@
-{% load core_extras %}
+{% load ui_tags %}
+{% load list_tags %}
+{% load markdown_tags %}
+{% load maintenance_tags %}
 {% timeline_entry icon="bug" variant="problem" %}
 <div class="card card--problem timeline__card">
   <a href="{% url 'problem-report-detail' entry.pk %}"

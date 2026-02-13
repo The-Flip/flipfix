@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
+from the_flip.apps.core.admin import MediaInline
+
 from .models import LogEntry, LogEntryMedia, ProblemReport, ProblemReportMedia
 
 
@@ -25,32 +27,12 @@ class LogEntryAdminForm(forms.ModelForm):
         return cleaned
 
 
-class LogEntryMediaInline(admin.TabularInline):
+class LogEntryMediaInline(MediaInline):
     model = LogEntryMedia
-    extra = 0
-    fields = (
-        "media_type",
-        "file",
-        "thumbnail_file",
-        "transcoded_file",
-        "poster_file",
-        "transcode_status",
-        "display_order",
-    )
 
 
-class ProblemReportMediaInline(admin.TabularInline):
+class ProblemReportMediaInline(MediaInline):
     model = ProblemReportMedia
-    extra = 0
-    fields = (
-        "media_type",
-        "file",
-        "thumbnail_file",
-        "transcoded_file",
-        "poster_file",
-        "transcode_status",
-        "display_order",
-    )
 
 
 @admin.register(ProblemReport)

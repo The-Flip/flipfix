@@ -63,7 +63,7 @@ class PartRequestUpdateMediaCreateTests(TemporaryMediaMixin, TestDataMixin, Test
         update = PartRequestUpdate.objects.first()
         self.assertEqual(update.media.count(), 0)
 
-    @patch("the_flip.apps.parts.views.enqueue_transcode")
+    @patch("the_flip.apps.core.media.enqueue_transcode")
     def test_form_video_upload_enqueues_transcode(self, mock_enqueue):
         """Video uploaded via form submission triggers transcoding."""
         self.client.force_login(self.maintainer_user)
@@ -163,7 +163,7 @@ class PartRequestUpdateMediaUploadTests(
         self.assertEqual(media.update, self.update)
         self.assertEqual(media.media_type, PartRequestUpdateMedia.MediaType.PHOTO)
 
-    @patch("the_flip.apps.core.mixins.enqueue_transcode")
+    @patch("the_flip.apps.core.media.enqueue_transcode")
     def test_video_upload_enqueues_transcode_with_model_name(self, mock_enqueue):
         """Video upload should call enqueue_transcode with correct model_name.
 
@@ -193,7 +193,7 @@ class PartRequestUpdateMediaUploadTests(
         self.assertEqual(media.transcode_status, PartRequestUpdateMedia.TranscodeStatus.PENDING)
         mock_enqueue.assert_called_once_with(media_id=media.id, model_name="PartRequestUpdateMedia")
 
-    @patch("the_flip.apps.core.mixins.enqueue_transcode")
+    @patch("the_flip.apps.core.media.enqueue_transcode")
     def test_photo_upload_does_not_enqueue_transcode(self, mock_enqueue):
         """AJAX photo upload should NOT trigger video transcoding."""
         self.client.force_login(self.maintainer_user)
