@@ -9,10 +9,11 @@ from the_flip.apps.core.forms import (
     MultiFileField,
     MultiFileInput,
     StyledFormMixin,
-    normalize_uploaded_files,
-    validate_media_files,
+    clean_markdown_field,
+    clean_media_files,
+    clean_occurred_at_or_now,
 )
-from the_flip.apps.core.markdown_links import convert_authoring_to_storage, sync_references
+from the_flip.apps.core.markdown_links import sync_references
 from the_flip.apps.maintenance.models import LogEntry, ProblemReport
 
 
@@ -105,24 +106,15 @@ class MaintainerProblemReportForm(ProblemReportForm):
 
     def clean_description(self):
         """Convert authoring format links to storage format."""
-        description = self.cleaned_data.get("description", "")
-        if description:
-            description = convert_authoring_to_storage(description)
-        return description
+        return clean_markdown_field(self.cleaned_data, "description")
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
-        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
-        return validate_media_files(files)
+        return clean_media_files(self.files, self.cleaned_data)
 
     def clean_occurred_at(self):
-        """Default to now if occurred_at is empty.
-
-        HTML forms submit empty strings for empty inputs, which Django interprets
-        as 'field present but empty' rather than 'field absent'. Without this,
-        the empty string becomes None and fails the model's NOT NULL constraint.
-        """
-        return self.cleaned_data.get("occurred_at") or timezone.now()
+        """Default to now if occurred_at is empty."""
+        return clean_occurred_at_or_now(self.cleaned_data)
 
     def save(self, commit=True):
         instance = super().save(commit=commit)
@@ -219,10 +211,7 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
 
     def clean_text(self):
         """Convert authoring format links to storage format."""
-        text = self.cleaned_data.get("text", "")
-        if text:
-            text = convert_authoring_to_storage(text)
-        return text
+        return clean_markdown_field(self.cleaned_data, "text")
 
     def clean_occurred_at(self):
         """Validate that occurred_at is not in the future."""
@@ -236,8 +225,7 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
 
     def clean_media_file(self):
         """Validate uploaded media (photo or video). Supports multiple files."""
-        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
-        return validate_media_files(files)
+        return clean_media_files(self.files, self.cleaned_data)
 
     def clean_machine_slug(self):
         slug = (self.cleaned_data.get("machine_slug") or "").strip()

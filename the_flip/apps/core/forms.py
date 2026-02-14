@@ -6,8 +6,10 @@ from typing import Any
 from django import forms
 from django.core.files.uploadedfile import UploadedFile
 from django.urls import reverse_lazy
+from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
+from the_flip.apps.core.markdown_links import convert_authoring_to_storage
 from the_flip.apps.core.media import (
     ALLOWED_HEIC_EXTENSIONS,
     ALLOWED_VIDEO_EXTENSIONS,
@@ -230,3 +232,22 @@ def normalize_uploaded_files(
                 files = [single]
 
     return files
+
+
+def clean_markdown_field(cleaned_data: dict, field_name: str) -> str:
+    """Convert authoring-format ``[[links]]`` to storage format in a form field."""
+    text = cleaned_data.get(field_name, "")
+    if text:
+        text = convert_authoring_to_storage(text)
+    return text
+
+
+def clean_media_files(files: Any, cleaned_data: dict) -> list[UploadedFile]:
+    """Normalize and validate uploaded media files from a form."""
+    file_list = normalize_uploaded_files(files, "media_file", cleaned_data)
+    return validate_media_files(file_list)
+
+
+def clean_occurred_at_or_now(cleaned_data: dict):
+    """Return the ``occurred_at`` value, defaulting to now if empty."""
+    return cleaned_data.get("occurred_at") or timezone.now()

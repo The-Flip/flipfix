@@ -1,7 +1,6 @@
 """Forms for parts management."""
 
 from django import forms
-from django.utils import timezone
 
 from the_flip.apps.catalog.models import MachineInstance
 from the_flip.apps.core.forms import (
@@ -9,10 +8,10 @@ from the_flip.apps.core.forms import (
     MultiFileField,
     MultiFileInput,
     StyledFormMixin,
-    normalize_uploaded_files,
-    validate_media_files,
+    clean_markdown_field,
+    clean_media_files,
+    clean_occurred_at_or_now,
 )
-from the_flip.apps.core.markdown_links import convert_authoring_to_storage
 from the_flip.apps.parts.models import PartRequest, PartRequestUpdate
 
 
@@ -60,10 +59,7 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
 
     def clean_text(self):
         """Convert authoring format links to storage format."""
-        text = self.cleaned_data.get("text", "")
-        if text:
-            text = convert_authoring_to_storage(text)
-        return text
+        return clean_markdown_field(self.cleaned_data, "text")
 
     def clean_machine_slug(self):
         """Validate machine_slug if provided."""
@@ -76,12 +72,11 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
-        return validate_media_files(files)
+        return clean_media_files(self.files, self.cleaned_data)
 
     def clean_occurred_at(self):
         """Default to now if occurred_at is empty."""
-        return self.cleaned_data.get("occurred_at") or timezone.now()
+        return clean_occurred_at_or_now(self.cleaned_data)
 
 
 class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
@@ -133,19 +128,15 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
 
     def clean_text(self):
         """Convert authoring format links to storage format."""
-        text = self.cleaned_data.get("text", "")
-        if text:
-            text = convert_authoring_to_storage(text)
-        return text
+        return clean_markdown_field(self.cleaned_data, "text")
 
     def clean_media_file(self):
         """Validate uploaded media files."""
-        files = normalize_uploaded_files(self.files, "media_file", self.cleaned_data)
-        return validate_media_files(files)
+        return clean_media_files(self.files, self.cleaned_data)
 
     def clean_occurred_at(self):
         """Default to now if occurred_at is empty."""
-        return self.cleaned_data.get("occurred_at") or timezone.now()
+        return clean_occurred_at_or_now(self.cleaned_data)
 
 
 class PartRequestUpdateEditForm(StyledFormMixin, forms.ModelForm):

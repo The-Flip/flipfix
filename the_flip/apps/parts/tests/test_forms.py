@@ -1,5 +1,8 @@
 """Tests for parts forms."""
 
+from datetime import UTC, datetime
+from unittest import mock
+
 from django.test import TestCase, tag
 
 from the_flip.apps.core.test_utils import (
@@ -9,6 +12,7 @@ from the_flip.apps.core.test_utils import (
 )
 from the_flip.apps.parts.forms import (
     PartRequestEditForm,
+    PartRequestForm,
     PartRequestUpdateEditForm,
 )
 
@@ -70,3 +74,39 @@ class PartRequestUpdateEditFormTests(TestDataMixin, TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("occurred_at", form.errors)
+
+
+@tag("forms")
+class PartRequestFormMarkdownTests(TestDataMixin, TestCase):
+    """Tests for markdown link conversion in PartRequestForm."""
+
+    def test_text_converts_authoring_links_to_storage(self):
+        """Authoring-format [[links]] in text are converted to storage format."""
+        form = PartRequestForm(
+            data={
+                "text": f"Need part for [[machine:{self.machine.slug}]]",
+            },
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIn(f"[[machine:id:{self.machine.pk}]]", form.cleaned_data["text"])
+
+
+@tag("forms")
+class PartRequestFormOccurredAtTests(TestCase):
+    """Tests for occurred_at defaulting in PartRequestForm."""
+
+    @mock.patch("the_flip.apps.core.forms.timezone.now")
+    def test_defaults_to_now_when_empty(self, mock_now):
+        """Empty occurred_at defaults to timezone.now()."""
+        fixed = datetime(2025, 6, 1, 12, 0, tzinfo=UTC)
+        mock_now.return_value = fixed
+
+        form = PartRequestForm(
+            data={
+                "text": "Need a new flipper",
+            },
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["occurred_at"], fixed)

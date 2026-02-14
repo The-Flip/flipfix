@@ -1,7 +1,10 @@
 """Tests for maintenance forms."""
 
+from datetime import timedelta
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, tag
+from django.utils import timezone
 
 from the_flip.apps.core.test_utils import (
     DATETIME_INPUT_FORMAT,
@@ -13,6 +16,7 @@ from the_flip.apps.core.test_utils import (
 from the_flip.apps.maintenance.forms import (
     LogEntryEditForm,
     LogEntryQuickForm,
+    MaintainerProblemReportForm,
     ProblemReportEditForm,
 )
 
@@ -163,3 +167,40 @@ class LogEntryEditFormTests(TestDataMixin, TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("occurred_at", form.errors)
+
+
+@tag("forms")
+class MaintainerProblemReportFormMarkdownTests(TestDataMixin, TestCase):
+    """Tests for markdown link conversion in MaintainerProblemReportForm."""
+
+    def test_description_converts_authoring_links_to_storage(self):
+        """Authoring-format [[links]] in description are converted to storage format."""
+        form = MaintainerProblemReportForm(
+            data={
+                "description": f"See [[machine:{self.machine.slug}]]",
+                "priority": "minor",
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+            },
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIn(f"[[machine:id:{self.machine.pk}]]", form.cleaned_data["description"])
+
+
+@tag("forms")
+class LogEntryQuickFormOccurredAtTests(TestCase):
+    """Tests for occurred_at validation in LogEntryQuickForm."""
+
+    def test_rejects_future_date(self):
+        """Form rejects occurred_at dates in the future."""
+        future = timezone.now() + timedelta(days=2)
+        form = LogEntryQuickForm(
+            data={
+                "occurred_at": future.strftime(DATETIME_INPUT_FORMAT),
+                "text": "Some work",
+            },
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("occurred_at", form.errors)
+        self.assertIn("future", form.errors["occurred_at"][0])
