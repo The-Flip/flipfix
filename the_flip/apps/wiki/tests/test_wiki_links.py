@@ -19,7 +19,7 @@ class WikiPageLinkRenderingTests(TestCase):
 
         self.assertIn("<a href=", result)
         self.assertIn("Test Page", result)
-        self.assertIn("/wiki/doc/docs/test-page", result)
+        self.assertIn("/doc/docs/test-page", result)
 
     def test_wiki_link_untagged_page(self):
         """[[page:id:N]] for untagged page uses root path."""
@@ -29,7 +29,7 @@ class WikiPageLinkRenderingTests(TestCase):
 
         result = render_markdown(f"See [[page:id:{page_tag.pk}]].")
 
-        self.assertIn("/wiki/doc/root-page", result)
+        self.assertIn("/doc/root-page", result)
         self.assertIn("Root Page", result)
 
     def test_wiki_link_deleted_page(self):
@@ -51,8 +51,8 @@ class WikiPageLinkRenderingTests(TestCase):
 
         self.assertIn("First", result)
         self.assertIn("Second", result)
-        self.assertIn("/wiki/doc/first", result)
-        self.assertIn("/wiki/doc/second", result)
+        self.assertIn("/doc/first", result)
+        self.assertIn("/doc/second", result)
 
     def test_wiki_link_with_nested_tag(self):
         """[[page:id:N]] renders correct path for nested tags."""
@@ -61,7 +61,7 @@ class WikiPageLinkRenderingTests(TestCase):
 
         result = render_markdown(f"See [[page:id:{page_tag.pk}]].")
 
-        self.assertIn("/wiki/doc/machines/blackout/nested", result)
+        self.assertIn("/doc/machines/blackout/nested", result)
 
     def test_no_wiki_links_unchanged(self):
         """Text without wiki links renders normally."""

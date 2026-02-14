@@ -61,7 +61,7 @@ def _add_template_sync_toast(request, result: TemplateSyncResult) -> None:
 def parse_wiki_path(path: str) -> tuple[str, str]:
     """Parse a wiki URL path into (tag, slug).
 
-    The path is everything after /wiki/doc/. The last segment is always the slug,
+    The path is everything after /doc/. The last segment is always the slug,
     everything before is the tag (joined by '/'), or empty string for untagged pages.
 
     Examples:

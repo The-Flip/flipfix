@@ -84,6 +84,30 @@ class WikiPageDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase)
 
 
 @tag("views")
+class WikiPageDetailRedirectTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for 301 redirect from old /wiki/doc/ URLs to new /doc/ URLs."""
+
+    def test_old_wiki_doc_url_redirects_permanently(self):
+        """Old /wiki/doc/ URL returns 301 to /doc/."""
+        self.client.force_login(self.maintainer_user)
+        WikiPage.objects.create(title="Test", slug="test-page")
+
+        response = self.client.get("/wiki/doc/test-page")
+
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.url, "/doc/test-page")
+
+    def test_old_wiki_doc_url_redirects_nested_path(self):
+        """Old /wiki/doc/ redirect preserves full nested path."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.get("/wiki/doc/machines/blackout/system-6")
+
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.url, "/doc/machines/blackout/system-6")
+
+
+@tag("views")
 class WikiPageCheckboxToggleTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
     """Tests for inline checkbox toggling via AJAX POST."""
 

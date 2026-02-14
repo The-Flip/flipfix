@@ -245,7 +245,7 @@ class WikiTagOrder(models.Model):
 - **Full path** is constructed as `{tag}/{page_slug}` (e.g., `machines/blackout/system-6-maintenance`). This is used in URLs and wiki links.
 - **Tag ordering** is opt-in via `WikiTagOrder`. Tags with explicit order appear first (sorted by order), then unordered tags (sorted alphabetically).
 - **Page ordering** within a tag is stored on `WikiPageTag.order`. Pages without explicit order have `null` and sort alphabetically after ordered pages.
-- **Untagged pages** are stored with a `WikiPageTag` record where `tag=""` (empty string). This sentinel value means every page has at least one `WikiPageTag`, and the uniqueness constraint covers all cases. In the UI, these pages appear at the root level of navigation, before any tags. Their URL is `/wiki/doc/{slug}`.
+- **Untagged pages** are stored with a `WikiPageTag` record where `tag=""` (empty string). This sentinel value means every page has at least one `WikiPageTag`, and the uniqueness constraint covers all cases. In the UI, these pages appear at the root level of navigation, before any tags. Their URL is `/doc/{slug}`.
 - **Slug uniqueness** is enforced per-tag via database constraint. The slug is denormalized onto `WikiPageTag` so the constraint on `['tag', 'slug']` prevents two pages with the same slug under the same tag. This includes untagged pages (where `tag=""`). When a page's slug changes, all its `WikiPageTag.slug` values are updated in the same transaction.
 - **Link references** track outgoing links from wiki pages to prevent broken links and enable reverse lookups. See [MarkdownLinks.md](MarkdownLinks.md) for details.
 
@@ -350,7 +350,7 @@ This handles nested tags automatically: renaming `machines` also updates `machin
 
 **Delete tag:**
 
-Deleting a tag removes the tag from all pages. Pages that have other tags remain in those locations. Pages with only that tag become **untagged** (moved to root level, accessible at `/wiki/doc/{slug}`).
+Deleting a tag removes the tag from all pages. Pages that have other tags remain in those locations. Pages with only that tag become **untagged** (moved to root level, accessible at `/doc/{slug}`).
 
 This maintains the invariant that every page has at least one WikiPageTag.
 
@@ -455,16 +455,16 @@ class WikiPage(models.Model):
 
 ### URL Structure
 
-All wiki page content lives under `/wiki/doc/` to separate content from functional routes. This means we don't have reserved keywords that slugs can't use.
+All wiki page content lives under `/doc/` to separate content from functional routes. This means we don't have reserved keywords that slugs can't use. (Old `/wiki/doc/` URLs redirect here with 301.)
 
 **Content URLs:**
 
-- `/wiki/doc/{slug}` - untagged page (e.g., `/wiki/doc/getting-started`)
-- `/wiki/doc/{tag}/{slug}` - tagged page (e.g., `/wiki/doc/machines/blackout/system-6-maintenance`)
+- `/doc/{slug}` - untagged page (e.g., `/doc/getting-started`)
+- `/doc/{tag}/{slug}` - tagged page (e.g., `/doc/machines/blackout/system-6-maintenance`)
 
 **URL routing is unambiguous** because slugs cannot contain slashes (enforced by `SlugField`), while tags use slashes as hierarchy separators. This means the last path segment is always the slug:
 
-| URL path after `/wiki/doc/`              | Tag (in DB)         | Slug                   |
+| URL path after `/doc/`                   | Tag (in DB)         | Slug                   |
 | ---------------------------------------- | ------------------- | ---------------------- |
 | `overview`                               | `""` (empty string) | `overview`             |
 | `machines/overview`                      | `machines`          | `overview`             |

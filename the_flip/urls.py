@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 
 from the_flip.apps.accounts.forms import SimplePasswordChangeForm
 from the_flip.apps.accounts.views import (
@@ -402,8 +403,12 @@ urlpatterns = [
         name="wiki-template-prefill",
     ),  # Template block → pre-fill create form
     path(
-        "wiki/doc/<path:path>", WikiPageDetailView.as_view(), name="wiki-page-detail"
-    ),  # Wiki page detail (path = tag/slug or just slug)
+        "doc/<path:path>", WikiPageDetailView.as_view(), name="wiki-page-detail"
+    ),  # Wiki page detail (shorter URL, not under /wiki/)
+    path(
+        "wiki/doc/<path:path>",
+        RedirectView.as_view(pattern_name="wiki-page-detail", permanent=True),
+    ),  # 301 redirect: old /wiki/doc/ → new /doc/
     path("wiki/edit/<path:path>", WikiPageEditView.as_view(), name="wiki-page-edit"),  # Edit page
     path(
         "wiki/delete/<path:path>", WikiPageDeleteView.as_view(), name="wiki-page-delete"
