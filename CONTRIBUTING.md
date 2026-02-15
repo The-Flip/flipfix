@@ -11,7 +11,6 @@ This guide covers how to contribute to the project and submit a PR.
 
 - **Create a branch** (e.g., `feature/new-icons`, `fix/login-bug`, `docs/api-guide`)
 - **Make your changes & tests**
-  - **AI assistants** MUST run `make quality` after every code change before responding
 
 ```bash
 make quality     # Format, lint, check Python types
