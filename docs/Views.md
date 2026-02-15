@@ -9,7 +9,7 @@ This project uses **Class-Based Views (CBVs)** for most views and **Function-Bas
 | **CBV** | Standard CRUD: list, detail, create, update, delete. Django's generic views handle the boilerplate.                            |
 | **FBV** | Simple one-off endpoints: health checks, AJAX validation, webhooks, or views with unusual logic that doesn't fit CBV patterns. |
 
-Examples of FBVs in this project: `healthz` (health check), `check_username` (AJAX validation), user registration views.
+Examples of FBVs in this project: `healthz` (health check), user registration views.
 
 ## Common CBV Types
 
