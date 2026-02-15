@@ -228,7 +228,7 @@ This project is in this GitHub repo: <https://github.com/The-Flip/flipfix>
 - **Database**: PostgreSQL (prod), SQLite (dev)
 - **File Storage**: Local `/media/` in dev, persistent disk in prod
 
-Settings split by environment: `the_flip/settings/{base,dev,test,prod}.py`. Set `DJANGO_SETTINGS_MODULE` accordingly.
+Settings split by environment: `the_flip/settings/{base,dev,test,prod_base,web,worker}.py`. Set `DJANGO_SETTINGS_MODULE` accordingly.
 
 ## Project Structure
 
@@ -236,15 +236,15 @@ Settings split by environment: `the_flip/settings/{base,dev,test,prod}.py`. Set 
 the_flip/
 ├── templates/              # Django templates organized by app
 └── the_flip/
-    ├── settings/           # Split settings (base/dev/test/prod)
+    ├── settings/           # Split settings (base/dev/test/prod_base/web/worker)
     ├── apps/
     │   ├── accounts/       # Maintainer profiles & auth
     │   ├── catalog/        # Machine models/instances
-    │   ├── maintenance/    # Problem reports, log entries, tasks
+    │   ├── core/           # Shared utilities & decorators
     │   ├── discord/        # Discord bot integration
+    │   ├── maintenance/    # Problem reports, log entries, tasks
     │   ├── parts/          # Parts inventory tracking
-    │   ├── webhooks/       # Webhook handlers
-    │   └── core/           # Shared utilities & decorators
+    │   └── wiki/           # Wiki knowledge base
     └── static/             # Project-level static files
 ```
 
@@ -265,10 +265,11 @@ Always follow these rules:
 
 ## Key Conventions
 
-- Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests.py` focused on that domain
+- Each app keeps `models.py`, `forms.py`, `views.py`, `admin.py`, `tests/` focused on that domain
+- Views can be split into a `views/` package when they grow large (maintenance and parts do this)
 - Routes defined in root `urls.py` rather than per-app (keeps them scannable)
 - Shared helpers go in `core` app, never in `__init__.py`
-- Tests live in app-level `tests.py` files; use Django's `TestCase`
+- Tests live in app-level `tests/` packages; use Django's `TestCase`
 
 ## Template Components
 
