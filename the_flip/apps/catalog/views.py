@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
 from django.db.models import Case, CharField, Count, F, Max, Prefetch, Q, Value, When
 from django.db.models.functions import Lower
@@ -221,7 +222,7 @@ class MachineUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
         return reverse("maintainer-machine-detail", kwargs={"slug": self.object.slug})
 
 
-class MachineModelUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
+class MachineModelUpdateView(SuccessMessageMixin, CanAccessMaintainerPortalMixin, UpdateView):
     """Edit the pinball machine model."""
 
     model = MachineModel
@@ -229,6 +230,7 @@ class MachineModelUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
     template_name = "catalog/machine_model_edit.html"
     slug_field = "slug"
     slug_url_kwarg = "slug"
+    success_message = "Model '%(name)s' saved."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -241,7 +243,6 @@ class MachineModelUpdateView(CanAccessMaintainerPortalMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
-        form.instance._request = self.request
         return super().form_valid(form)
 
     def get_success_url(self):

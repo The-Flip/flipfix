@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -76,19 +77,16 @@ def invitation_register(request, token):
     )
 
 
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+class ProfileUpdateView(SuccessMessageMixin, LoginRequiredMixin, UpdateView):
     """Allow users to update their profile information."""
 
     form_class = ProfileForm
     template_name = "accounts/profile.html"
     success_url = reverse_lazy("profile")
+    success_message = "Profile updated successfully."
 
     def get_object(self, queryset=None):  # noqa: ARG002
         return self.request.user
-
-    def form_valid(self, form):
-        messages.success(self.request, "Profile updated successfully.")
-        return super().form_valid(form)
 
 
 class TerminalListView(CanManageTerminalsMixin, ListView):

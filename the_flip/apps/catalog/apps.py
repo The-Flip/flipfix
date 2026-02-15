@@ -7,10 +7,6 @@ class CatalogConfig(AppConfig):
     verbose_name = "Catalog"
 
     def ready(self):
-        from the_flip.apps.catalog import signals
-
-        del signals  # imported for side effects (signal registration)
-
         self._register_link_types()
 
     @staticmethod
