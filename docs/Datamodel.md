@@ -1,5 +1,47 @@
 # Data Model
 
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    %% ── Accounts ──
+    User ||--o| Maintainer : "has profile"
+    Maintainer ||--o| DiscordUserLink : "linked to"
+
+    %% ── Catalog ──
+    MachineModel ||--o{ MachineInstance : "has instances"
+    Location |o--o{ MachineInstance : "located at"
+
+    %% ── Maintenance ──
+    MachineInstance ||--o{ ProblemReport : "has reports"
+    MachineInstance ||--o{ LogEntry : "has log entries"
+    ProblemReport |o--o{ LogEntry : "addressed by"
+    User |o--o{ ProblemReport : "reported by"
+    LogEntry }o--o{ Maintainer : "performed by"
+    ProblemReport ||--o{ ProblemReportMedia : "has"
+    LogEntry ||--o{ LogEntryMedia : "has"
+
+    %% ── Parts ──
+    MachineInstance |o--o{ PartRequest : "needs parts"
+    Maintainer |o--o{ PartRequest : "requested by"
+    PartRequest ||--o{ PartRequestUpdate : "has updates"
+    Maintainer |o--o{ PartRequestUpdate : "posted by"
+    PartRequest ||--o{ PartRequestMedia : "has"
+    PartRequestUpdate ||--o{ PartRequestUpdateMedia : "has"
+
+    %% ── Wiki ──
+    WikiPage ||--o{ WikiPageTag : "tagged as"
+    WikiPage ||--o{ TemplateOptionIndex : "indexed as"
+```
+
+**Notes:**
+
+- A circle (○) on a relationship line indicates an optional (nullable) foreign key.
+- `LogEntry ↔ Maintainer` is a many-to-many relationship.
+- `Invitation`, `WikiTagOrder`, `RecordReference`, and `DiscordMessageMapping` are standalone or use polymorphic links (ContentType GFKs) and are not shown above.
+- Audit fields (`created_by`, `updated_by`, `created_at`, `updated_at`) are omitted — most models with these have nullable FKs to `User`.
+- All media models inherit from `AbstractMedia` and share the same structure (media_type, file, thumbnail, transcode status, etc.).
+
 ## Accounts app
 
 ### Maintainer ([`Maintainer`](../the_flip/apps/accounts/models.py))
@@ -33,6 +75,10 @@ Issue reported by museum visitor.
 ### Log Entry ([`LogEntry`](../the_flip/apps/maintenance/models.py))
 
 Journal-type entry created by maintainers to document work on a machine.
+
+### Problem Report Media ([`ProblemReportMedia`](../the_flip/apps/maintenance/models.py))
+
+Photos/videos attached to problem reports.
 
 ### Log Entry Media ([`LogEntryMedia`](../the_flip/apps/maintenance/models.py))
 
@@ -69,6 +115,10 @@ Places a wiki page in the navigation tree. A page can have multiple tags, appear
 ### Wiki Tag Order ([`WikiTagOrder`](../the_flip/apps/wiki/models.py))
 
 Optional explicit ordering for tags in navigation. Tags without entries sort alphabetically.
+
+### Template Option Index ([`TemplateOptionIndex`](../the_flip/apps/wiki/models.py))
+
+Auto-maintained index of wiki template options for create-form dropdowns. Rebuilt on every wiki page save from `template:action` markers in page content.
 
 ## Core app
 
