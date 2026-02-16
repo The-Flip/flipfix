@@ -1,0 +1,23 @@
+{% load ui_tags %}
+{% if is_create %}
+  <a href="{% url 'wiki-home' %}"
+     class="btn btn--secondary {{ btn_size }}">
+    {% icon "circle-xmark" class="meta" %}
+    Cancel
+  </a>
+{% else %}
+  <a href="{% url 'wiki-page-detail' detail_path %}"
+     class="btn btn--secondary {{ btn_size }}">
+    {% icon "circle-xmark" class="meta" %}
+    Cancel
+  </a>
+{% endif %}
+<button type="submit" class="btn btn--primary {{ btn_size }}">
+  {% if is_create %}
+    {% icon "plus" class="meta" %}
+    Create Doc
+  {% else %}
+    {% icon "check" class="meta" %}
+    Save Changes
+  {% endif %}
+</button>

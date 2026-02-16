@@ -18,35 +18,16 @@
     <form method="post" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}
+      <div class="form-actions form-actions--top">
+        {% include "wiki/partials/page_form_actions.html" with btn_size="btn--sm" %}
+      </div>
       {% form_field form.title %}
       {% tag_chip_input_field initial_tags=form.get_initial_tags help_text="Tag paths like 'machines/blackout' or 'guides'. Leave empty for untagged." %}
       {% if is_create %}
         {% template_selector_field record_type="page" %}
       {% endif %}
       {% form_field form.content %}
-      <div class="form-actions">
-        {% if is_create %}
-          <a href="{% url 'wiki-home' %}" class="btn btn--secondary">
-            {% icon "circle-xmark" class="meta" %}
-            Cancel
-          </a>
-        {% else %}
-          <a href="{% url 'wiki-page-detail' detail_path %}"
-             class="btn btn--secondary">
-            {% icon "circle-xmark" class="meta" %}
-            Cancel
-          </a>
-        {% endif %}
-        <button type="submit" class="btn btn--primary">
-          {% if is_create %}
-            {% icon "plus" class="meta" %}
-            Create Doc
-          {% else %}
-            {% icon "check" class="meta" %}
-            Save Changes
-          {% endif %}
-        </button>
-      </div>
+      <div class="form-actions">{% include "wiki/partials/page_form_actions.html" %}</div>
     </form>
   </div>
 {% endblock %}

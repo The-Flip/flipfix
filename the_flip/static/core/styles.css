@@ -156,6 +156,10 @@ table {
   --space-8: 2rem;
   --space-10: 2.5rem;
 
+  /* Layout */
+  --two-column-sidebar-width: 18rem;
+  --two-column-gap: var(--space-5);
+
   /* Radii */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
@@ -349,7 +353,7 @@ body {
 .two-column {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--two-column-gap);
 }
 
 .two-column__main {
@@ -1272,6 +1276,13 @@ body {
   border-top: 1px solid var(--color-gray-200);
 }
 
+.form-actions--top {
+  border-top: none;
+  padding-top: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
 .file-preview-row {
   display: flex;
   gap: var(--space-2);
@@ -1931,6 +1942,34 @@ body {
   color: var(--color-gray-700);
 }
 
+.breadcrumbs__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.breadcrumb-bar > .breadcrumbs {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.breadcrumb-bar__action {
+  flex-shrink: 0;
+}
+
+.breadcrumb-bar__action-label {
+  display: none;
+}
+
 /* --- Filter Bar --- */
 .filter-bar {
   display: flex;
@@ -2585,6 +2624,10 @@ body {
   .breadcrumbs--responsive {
     font-size: var(--text-base);
   }
+
+  .breadcrumb-bar__action-label {
+    display: inline;
+  }
 }
 
 /* --- Desktop (1024px+) --- */
@@ -2600,7 +2643,7 @@ body {
 
   .two-column__sidebar {
     display: block;
-    width: 18rem;
+    width: var(--two-column-sidebar-width);
     flex-shrink: 0;
     order: 2;
   }
@@ -2612,6 +2655,11 @@ body {
   .sidebar--sticky {
     position: sticky;
     top: 5rem;
+  }
+
+  /* Align breadcrumb action with the main column's right edge */
+  .breadcrumb-bar__action {
+    margin-right: calc(var(--two-column-sidebar-width) + var(--two-column-gap));
   }
 
   .mobile-actions {
