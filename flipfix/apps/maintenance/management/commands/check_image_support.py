@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -86,13 +87,13 @@ class Command(BaseCommand):
 
         # Run through resize/conversion pipeline
         with path.open("rb") as fh:
+            content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+            # Override for formats where mimetypes may lack a mapping
             suffix = path.suffix.lower()
             if suffix in {".heic", ".heif"}:
                 content_type = "image/heic"
-            elif suffix == ".avif":
+            elif suffix == ".avif" and content_type == "application/octet-stream":
                 content_type = "image/avif"
-            else:
-                content_type = "application/octet-stream"
             uploaded = SimpleUploadedFile(
                 name=path.name,
                 content=fh.read(),
