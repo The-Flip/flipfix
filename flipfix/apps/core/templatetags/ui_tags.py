@@ -1,4 +1,4 @@
-"""Atomic UI primitives: icon, pill, smart_date, month_name, addstr.
+"""Atomic UI primitives: icon, pill, smart_date, month_name, addstr, media_accept.
 
 Also provides ``_settable_pill_context``, a shared helper for building
 settable dropdown pill context dicts.  App-level tag libraries import it::
@@ -10,7 +10,24 @@ from django import template
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
+from flipfix.apps.core.media import MEDIA_ACCEPT_ATTR
+
 register = template.Library()
+
+
+# ---- Media accept -----------------------------------------------------------
+
+
+@register.simple_tag
+def media_accept() -> str:
+    """Return the ``accept`` attribute value for media file inputs.
+
+    Usage::
+
+        <input type="file" accept="{% media_accept %}" ...>
+    """
+    return MEDIA_ACCEPT_ATTR
+
 
 # ---- Icon -------------------------------------------------------------------
 

@@ -88,6 +88,7 @@ Also exports `_settable_pill_context()`, a helper function used by app-level set
 | `form_non_field_errors` | Inclusion tag | Renders non-field errors                           |
 | `field_errors`          | Inclusion tag | Renders field errors only                          |
 | `field_help_text`       | Inclusion tag | Renders field help text only                       |
+| `media_file_input`      | Inclusion tag | Media file upload widget with preview row          |
 | `getfield`              | Filter        | Get form field by name                             |
 
 See [`Forms.md`](Forms.md) for form building patterns.

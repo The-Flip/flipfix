@@ -27,7 +27,7 @@ from flipfix.apps.core.datetime import (
 )
 from flipfix.apps.core.forms import SearchForm
 from flipfix.apps.core.markdown_links import sync_references
-from flipfix.apps.core.media import attach_media_files
+from flipfix.apps.core.media_upload import attach_media_files
 from flipfix.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
@@ -216,7 +216,11 @@ class MachineLogCreateView(
     def _attach_media(self, log_entry, media_files):
         """Attach uploaded media files to the log entry."""
         if media_files:
-            attach_media_files(media_files=media_files, parent=log_entry, media_model=LogEntryMedia)
+            attach_media_files(
+                media_files=media_files,
+                parent=log_entry,
+                media_model=LogEntryMedia,
+            )
 
     def _maybe_close_problem_report(self):
         """Close the linked problem report if the user checked the close checkbox.

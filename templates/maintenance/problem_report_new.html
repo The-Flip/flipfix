@@ -65,21 +65,8 @@
         {{ form.description }}
         {% field_errors form.description %}
       </div>
-      <!-- File upload (accumulates across multiple selections) -->
-      <div class="form-hint space-above-sm" data-file-accumulator>
-        <input type="file"
-               name="{{ form.media_file.html_name }}"
-               class="hidden"
-               multiple
-               accept="image/*,video/*,.heic,.heif"
-               data-file-input>
-        <a href="#" class="file-upload-link" data-file-trigger>
-          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-        </a>
-        {% field_errors form.media_file %}
-        <!-- Uploaded files preview -->
-        <div class="file-preview-row" data-file-preview></div>
-      </div>
+      <!-- MEDIA UPLOAD -->
+      {% media_file_input form.media_file %}
       <!-- FORM ACTIONS -->
       <div class="form-actions">
         <a href="{% if machine %}{% url 'maintainer-machine-detail' machine.slug %}?f=problems{% else %}{% url 'problem-report-list' %}{% endif %}"

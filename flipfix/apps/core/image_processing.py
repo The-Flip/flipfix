@@ -1,7 +1,8 @@
 """Image processing utilities for uploaded files.
 
 Provides resizing and format conversion for uploaded images, including:
-- HEIC/HEIF to JPEG/PNG conversion for browser compatibility
+- HEIC/HEIF to JPEG conversion for browser compatibility
+- Preservation of web-native formats (JPEG, PNG, WebP, AVIF)
 - Downscaling large images to reasonable web dimensions
 - EXIF orientation correction
 - Thumbnail generation
@@ -15,10 +16,12 @@ from __future__ import annotations
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image, ImageOps, UnidentifiedImageError
+
+from flipfix.apps.core.media import BROWSER_QUIRK_EXTENSIONS, WEB_NATIVE_FORMATS
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
@@ -57,8 +60,10 @@ def resize_image_file(
     """
     Resize the image so its longest side is max_dimension.
 
-    Converts HEIC/HEIF to JPEG for browser compatibility. Returns the original
-    file if it is not an image or cannot be identified.
+    Web-native formats (see ``WEB_NATIVE_FORMATS`` in ``media.py``) are
+    preserved.  Non-native formats (e.g. HEIC/HEIF, BMP) are converted to
+    JPEG.  Returns the original file if it is not an image or cannot be
+    identified.
 
     Args:
         uploaded_file: The uploaded file to process.
@@ -70,7 +75,11 @@ def resize_image_file(
     """
     content_type = (getattr(uploaded_file, "content_type", "") or "").lower()
     ext = Path(getattr(uploaded_file, "name", "")).suffix.lower()
-    if content_type and not content_type.startswith("image/") and ext not in {".heic", ".heif"}:
+    if (
+        content_type
+        and not content_type.startswith("image/")
+        and ext not in BROWSER_QUIRK_EXTENSIONS
+    ):
         logger.debug(
             "resize_image_file: skipping non-image content_type=%s name=%s",
             content_type,
@@ -106,7 +115,7 @@ def resize_image_file(
     image = transposed
     is_heif = original_format in {"HEIC", "HEIF"}
     needs_resize = max_dimension is not None and max(image.size) > max_dimension
-    needs_format_conversion = is_heif or original_format not in {"JPEG", "PNG"}
+    needs_format_conversion = is_heif or original_format not in WEB_NATIVE_FORMATS
 
     # Skip re-encoding if no transformation needed
     if not needs_resize and not needs_format_conversion and not needs_transpose:
@@ -116,11 +125,18 @@ def resize_image_file(
             pass
         return uploaded_file
 
-    target_format = "PNG" if original_format == "PNG" and image.mode in {"RGBA", "LA"} else "JPEG"
-    content_type_out = "image/png" if target_format == "PNG" else "image/jpeg"
-    filename = _with_extension(
-        uploaded_file.name or "upload", "png" if target_format == "PNG" else "jpg"
-    )
+    # Determine output format: preserve web-native formats, convert others to JPEG.
+    # Special case: PNG with transparency stays PNG regardless.
+    if original_format == "PNG" and image.mode in {"RGBA", "LA"}:
+        target_format = "PNG"
+    elif original_format in WEB_NATIVE_FORMATS:
+        target_format = original_format
+    else:
+        target_format = "JPEG"
+
+    fmt_info = WEB_NATIVE_FORMATS[target_format]
+    content_type_out = fmt_info.content_type
+    filename = _with_extension(uploaded_file.name or "upload", fmt_info.extension)
 
     if target_format == "JPEG" and image.mode not in {"RGB", "L"}:
         image = image.convert("RGB")
@@ -139,10 +155,12 @@ def resize_image_file(
     )
 
     buffer = BytesIO()
-    if target_format == "JPEG":
-        image.save(buffer, format=target_format, quality=85, optimize=True)
-    else:
-        image.save(buffer, format=target_format, optimize=True)
+    save_kwargs: dict[str, Any] = {"format": target_format}
+    if fmt_info.quality is not None:
+        save_kwargs["quality"] = fmt_info.quality
+    if fmt_info.optimize:
+        save_kwargs["optimize"] = True
+    image.save(buffer, **save_kwargs)
     size = buffer.tell()
     buffer.seek(0)
 

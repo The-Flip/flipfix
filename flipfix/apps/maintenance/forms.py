@@ -7,7 +7,6 @@ from flipfix.apps.catalog.validators import clean_machine_slug
 from flipfix.apps.core.forms import (
     MarkdownTextarea,
     MultiFileField,
-    MultiFileInput,
     StyledFormMixin,
     clean_markdown_field,
     clean_media_files,
@@ -78,16 +77,7 @@ class MaintainerProblemReportForm(ProblemReportForm):
         widget=forms.TextInput(attrs={"placeholder": "Who is reporting this?"}),
     )
 
-    media_file = MultiFileField(
-        label="Photo",
-        required=False,
-        widget=MultiFileInput(
-            attrs={
-                "accept": "image/*,video/*,.heic,.heif,image/heic,image/heif",
-                "multiple": True,
-            }
-        ),
-    )
+    media_file = MultiFileField(label="Photo", required=False)
 
     # occurred_at is optional; model has default=timezone.now.
     # JS pre-fills client-side, but tests/API can omit it.
@@ -193,16 +183,7 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         label="What work was done?",
         widget=MarkdownTextarea(attrs={"rows": 4, "placeholder": "Describe the work performed..."}),
     )
-    media_file = MultiFileField(
-        label="Photo",
-        required=False,
-        widget=MultiFileInput(
-            attrs={
-                "accept": "image/*,video/*,.heic,.heif,image/heic,image/heif",
-                "multiple": True,
-            }
-        ),
-    )
+    media_file = MultiFileField(label="Photo", required=False)
 
     def clean_text(self):
         """Convert authoring format links to storage format."""

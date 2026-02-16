@@ -6,7 +6,6 @@ from flipfix.apps.catalog.validators import clean_machine_slug
 from flipfix.apps.core.forms import (
     MarkdownTextarea,
     MultiFileField,
-    MultiFileInput,
     StyledFormMixin,
     clean_markdown_field,
     clean_media_files,
@@ -25,16 +24,7 @@ class PartRequestForm(StyledFormMixin, forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Who is requesting this?"}),
     )
-    media_file = MultiFileField(
-        label="Photos/Videos",
-        required=False,
-        widget=MultiFileInput(
-            attrs={
-                "accept": "image/*,video/*,.heic,.heif,image/heic,image/heif",
-                "multiple": True,
-            }
-        ),
-    )
+    media_file = MultiFileField(label="Photos/Videos", required=False)
     # occurred_at is optional; model has default=timezone.now.
     # JS pre-fills client-side, but tests/API can omit it.
     occurred_at = forms.DateTimeField(
@@ -88,16 +78,7 @@ class PartRequestUpdateForm(StyledFormMixin, forms.ModelForm):
         required=False,
         widget=forms.Select(attrs={"class": "form-input"}),
     )
-    media_file = MultiFileField(
-        label="Photos/Videos",
-        required=False,
-        widget=MultiFileInput(
-            attrs={
-                "accept": "image/*,video/*,.heic,.heif,image/heic,image/heif",
-                "multiple": True,
-            }
-        ),
-    )
+    media_file = MultiFileField(label="Photos/Videos", required=False)
     # occurred_at is optional; model has default=timezone.now.
     # JS pre-fills client-side, but tests/API can omit it.
     occurred_at = forms.DateTimeField(

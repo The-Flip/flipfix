@@ -86,20 +86,9 @@
       {% form_label form.text %}
       {{ form.text }}
       {% field_errors form.text %}
-      <div class="form-hint space-above-sm" data-file-accumulator>
-        <input type="file"
-               name="{{ form.media_file.html_name }}"
-               class="hidden"
-               multiple
-               accept="image/*,video/*,.heic,.heif"
-               data-file-input>
-        <a href="#" class="file-upload-link" data-file-trigger>
-          {% icon "paperclip" class="space-right-xs" %}Add photos and videos
-        </a>
-        {% field_errors form.media_file %}
-        <div class="file-preview-row" data-file-preview></div>
-      </div>
     </div>
+    <!-- MEDIA UPLOAD -->
+    {% media_file_input form.media_file %}
     <div class="form-actions">
       {% if problem_report %}
         <label class="checkbox-label">

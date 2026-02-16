@@ -1,7 +1,8 @@
-"""Check HEIC/HEIF support and resize pipeline."""
+"""Check image format support and the resize pipeline."""
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -11,7 +12,7 @@ from flipfix.apps.core.image_processing import resize_image_file
 
 
 class Command(BaseCommand):
-    help = "Diagnose image/HEIC support and the resize pipeline. Optionally pass --file /path/to/image."
+    help = "Diagnose image format support (Pillow, HEIC, AVIF) and the resize pipeline. Optionally pass --file /path/to/image."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -45,10 +46,28 @@ class Command(BaseCommand):
             self.stdout.write(f"pillow-heif: {pillow_heif.__version__} (opener registered)")
         except ImportError:
             self.stdout.write(
-                self.style.WARNING("pillow-heif not installed; HEIC may fail to decode.")
+                self.style.WARNING("pillow-heif not installed; HEIC/AVIF may fail to decode.")
             )
+            return
         except Exception as exc:  # pragma: no cover
             self.stdout.write(self.style.ERROR(f"pillow-heif import/registration failed: {exc}"))
+            return
+
+        # Smoke-test AVIF encode/decode
+        try:
+            from io import BytesIO
+
+            from PIL import Image
+
+            img = Image.new("RGB", (4, 4), color="red")
+            buf = BytesIO()
+            img.save(buf, format="AVIF")
+            buf.seek(0)
+            img2 = Image.open(buf)
+            img2.load()
+            self.stdout.write(f"AVIF encode/decode: OK (format={img2.format})")
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"AVIF encode/decode failed: {exc}"))
 
     def _process_file(self, path: Path):
         if not path.exists():
@@ -68,11 +87,13 @@ class Command(BaseCommand):
 
         # Run through resize/conversion pipeline
         with path.open("rb") as fh:
-            content_type = (
-                "image/heic"
-                if path.suffix.lower() in {".heic", ".heif"}
-                else "application/octet-stream"
-            )
+            content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+            # Override for formats where mimetypes may lack a mapping
+            suffix = path.suffix.lower()
+            if suffix in {".heic", ".heif"}:
+                content_type = "image/heic"
+            elif suffix == ".avif" and content_type == "application/octet-stream":
+                content_type = "image/avif"
             uploaded = SimpleUploadedFile(
                 name=path.name,
                 content=fh.read(),

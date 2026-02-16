@@ -1,0 +1,15 @@
+{% load form_tags %}
+{% load ui_tags %}
+<div class="form-hint space-above-sm" data-file-accumulator>
+  <input type="file"
+         name="{{ field.html_name }}"
+         class="hidden"
+         multiple
+         accept="{% media_accept %}"
+         data-file-input>
+  <a href="#" class="file-upload-link" data-file-trigger>
+    {% icon "paperclip" class="space-right-xs" %}Add photos and videos
+  </a>
+  {% field_errors field %}
+  <div class="file-preview-row" data-file-preview></div>
+</div>

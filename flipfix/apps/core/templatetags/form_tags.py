@@ -111,3 +111,20 @@ def field_help_text(field):
         field: A Django form field (BoundField)
     """
     return {"field": field}
+
+
+@register.inclusion_tag("components/media_file_input.html")
+def media_file_input(field):
+    """Render the media file upload widget with preview row.
+
+    Renders a hidden file input, a paperclip trigger link, field errors,
+    and a preview row for selected files.  Uses the project-wide
+    ``MEDIA_ACCEPT_ATTR`` for the accept attribute.
+
+    Usage:
+        {% media_file_input form.media_file %}
+
+    Args:
+        field: A Django form file field (BoundField)
+    """
+    return {"field": field}

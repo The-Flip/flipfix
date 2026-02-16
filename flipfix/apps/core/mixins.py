@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 
 from flipfix.apps.core.markdown_links import save_inline_markdown_field
-from flipfix.apps.core.media import attach_media_files
+from flipfix.apps.core.media_upload import attach_media_files
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -175,7 +175,11 @@ class MediaUploadMixin:
         media_model = self.get_media_model()
         parent = self.get_media_parent()
 
-        created = attach_media_files(media_files=[upload], parent=parent, media_model=media_model)
+        created = attach_media_files(
+            media_files=[upload],
+            parent=parent,
+            media_model=media_model,
+        )
         media = created[0]
 
         return JsonResponse(

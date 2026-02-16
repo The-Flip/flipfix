@@ -29,7 +29,7 @@ from flipfix.apps.core.datetime import apply_and_validate_timezone
 from flipfix.apps.core.forms import SearchForm
 from flipfix.apps.core.ip import get_real_ip
 from flipfix.apps.core.markdown_links import sync_references
-from flipfix.apps.core.media import attach_media_files
+from flipfix.apps.core.media_upload import attach_media_files
 from flipfix.apps.core.mixins import (
     CanAccessMaintainerPortalMixin,
     FormPrefillMixin,
@@ -206,7 +206,9 @@ class ProblemReportCreateView(
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
             attach_media_files(
-                media_files=media_files, parent=report, media_model=ProblemReportMedia
+                media_files=media_files,
+                parent=report,
+                media_model=ProblemReportMedia,
             )
 
         messages.success(

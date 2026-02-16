@@ -22,7 +22,7 @@ class GetTranscodingConfigTests(TestCase):
 
     def test_returns_values_when_both_configured(self):
         """Returns tuple of (url, token) when both are provided."""
-        from flipfix.apps.core.tasks import _get_transcoding_config
+        from flipfix.apps.core.transcoding import _get_transcoding_config
 
         url, token = _get_transcoding_config(
             web_service_url="https://example.com",
@@ -31,31 +31,31 @@ class GetTranscodingConfigTests(TestCase):
         self.assertEqual(url, "https://example.com")
         self.assertEqual(token, TEST_TOKEN)
 
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", None)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", None)
     def test_raises_when_url_missing(self):
         """Raises ValueError when web_service_url is not configured."""
-        from flipfix.apps.core.tasks import _get_transcoding_config
+        from flipfix.apps.core.transcoding import _get_transcoding_config
 
         with self.assertRaises(ValueError) as context:
             _get_transcoding_config(web_service_url=None, upload_token="token")
 
         self.assertIn("DJANGO_WEB_SERVICE_URL", str(context.exception))
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", None)
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", None)
     def test_raises_when_token_missing(self):
         """Raises ValueError when upload_token is not configured."""
-        from flipfix.apps.core.tasks import _get_transcoding_config
+        from flipfix.apps.core.transcoding import _get_transcoding_config
 
         with self.assertRaises(ValueError) as context:
             _get_transcoding_config(web_service_url="https://example.com", upload_token=None)
 
         self.assertIn("TRANSCODING_UPLOAD_TOKEN", str(context.exception))
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", None)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", None)
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", None)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", None)
     def test_raises_when_both_missing(self):
         """Raises ValueError listing both missing vars when neither configured."""
-        from flipfix.apps.core.tasks import _get_transcoding_config
+        from flipfix.apps.core.transcoding import _get_transcoding_config
 
         with self.assertRaises(ValueError) as context:
             _get_transcoding_config(web_service_url=None, upload_token=None)
@@ -64,11 +64,11 @@ class GetTranscodingConfigTests(TestCase):
         self.assertIn("DJANGO_WEB_SERVICE_URL", error_msg)
         self.assertIn("TRANSCODING_UPLOAD_TOKEN", error_msg)
 
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://env-url.com")
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", "env-token")
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://env-url.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", "env-token")
     def test_falls_back_to_env_vars(self):
         """Uses module-level env vars when parameters are None."""
-        from flipfix.apps.core.tasks import _get_transcoding_config
+        from flipfix.apps.core.transcoding import _get_transcoding_config
 
         url, token = _get_transcoding_config()
         self.assertEqual(url, "https://env-url.com")
@@ -79,10 +79,10 @@ class GetTranscodingConfigTests(TestCase):
 class SleepWithBackoffTests(TestCase):
     """Tests for _sleep_with_backoff helper."""
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
     def test_sleeps_with_exponential_backoff(self, mock_sleep):
         """Sleeps with exponential backoff (2^attempt seconds)."""
-        from flipfix.apps.core.tasks import _sleep_with_backoff
+        from flipfix.apps.core.transcoding import _sleep_with_backoff
 
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
@@ -100,7 +100,7 @@ class SleepWithBackoffTests(TestCase):
 
     def test_raises_when_retries_exhausted(self):
         """Raises exception when attempt equals max_retries."""
-        from flipfix.apps.core.tasks import _sleep_with_backoff
+        from flipfix.apps.core.transcoding import _sleep_with_backoff
 
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
@@ -138,10 +138,10 @@ class UploadTranscodedFilesTests(TestCase):
                 os.unlink(f.name)
         super().tearDown()
 
-    @patch("flipfix.apps.core.tasks.requests.post")
+    @patch("flipfix.apps.core.transcoding.requests.post")
     def test_upload_succeeds_on_first_attempt(self, mock_post):
         """Upload succeeds immediately when server returns 200."""
-        from flipfix.apps.core.tasks import _upload_transcoded_files
+        from flipfix.apps.core.transcoding import _upload_transcoded_files
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -164,11 +164,11 @@ class UploadTranscodedFilesTests(TestCase):
         self.assertEqual(call_kwargs["headers"]["Authorization"], f"Bearer {TEST_TOKEN}")
         self.assertEqual(call_kwargs["timeout"], 300)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.post")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.post")
     def test_upload_retries_on_server_error(self, mock_post, mock_sleep):
         """Upload retries with backoff when server returns 500."""
-        from flipfix.apps.core.tasks import _upload_transcoded_files
+        from flipfix.apps.core.transcoding import _upload_transcoded_files
 
         # First two attempts fail with 500, third succeeds
         fail_response = Mock()
@@ -193,13 +193,13 @@ class UploadTranscodedFilesTests(TestCase):
         self.assertEqual(mock_post.call_count, 3)
         self.assertEqual(mock_sleep.call_count, 2)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.post")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.post")
     def test_upload_retries_on_connection_error(self, mock_post, mock_sleep):
         """Upload retries with backoff on connection errors."""
         import requests
 
-        from flipfix.apps.core.tasks import _upload_transcoded_files
+        from flipfix.apps.core.transcoding import _upload_transcoded_files
 
         # First attempt fails with connection error, second succeeds
         success_response = Mock()
@@ -223,11 +223,11 @@ class UploadTranscodedFilesTests(TestCase):
         self.assertEqual(mock_post.call_count, 2)
         mock_sleep.assert_called_once_with(2)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.post")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.post")
     def test_upload_raises_after_max_retries(self, mock_post, mock_sleep):
         """Upload raises TransferError after exhausting all retries."""
-        from flipfix.apps.core.tasks import TransferError, _upload_transcoded_files
+        from flipfix.apps.core.transcoding import TransferError, _upload_transcoded_files
 
         fail_response = Mock()
         fail_response.status_code = 503
@@ -257,12 +257,12 @@ class DownloadSourceFileTests(TestCase):
         logging.disable(logging.CRITICAL)
         self.addCleanup(logging.disable, logging.NOTSET)
 
-    @patch("flipfix.apps.core.tasks.requests.get")
+    @patch("flipfix.apps.core.transcoding.requests.get")
     def test_download_succeeds_on_first_attempt(self, mock_get):
         """Download succeeds immediately when server returns 200."""
         import os
 
-        from flipfix.apps.core.tasks import _download_source_file
+        from flipfix.apps.core.transcoding import _download_source_file
 
         mock_response = Mock()
         mock_response.status_code = 200
@@ -293,13 +293,13 @@ class DownloadSourceFileTests(TestCase):
         self.assertEqual(call_args[1]["headers"]["Authorization"], f"Bearer {TEST_TOKEN}")
         self.assertEqual(call_args[1]["timeout"], 300)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.get")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.get")
     def test_download_retries_on_server_error(self, mock_get, mock_sleep):
         """Download retries with backoff when server returns 500."""
         import os
 
-        from flipfix.apps.core.tasks import _download_source_file
+        from flipfix.apps.core.transcoding import _download_source_file
 
         # First two attempts fail with 500, third succeeds
         fail_response = Mock()
@@ -330,15 +330,15 @@ class DownloadSourceFileTests(TestCase):
         self.assertEqual(mock_get.call_count, 3)
         self.assertEqual(mock_sleep.call_count, 2)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.get")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.get")
     def test_download_retries_on_connection_error(self, mock_get, mock_sleep):
         """Download retries with backoff on connection errors."""
         import os
 
         import requests as req
 
-        from flipfix.apps.core.tasks import _download_source_file
+        from flipfix.apps.core.transcoding import _download_source_file
 
         # First attempt fails with connection error, second succeeds
         success_response = Mock()
@@ -368,11 +368,11 @@ class DownloadSourceFileTests(TestCase):
         self.assertEqual(mock_get.call_count, 2)
         mock_sleep.assert_called_once_with(2)
 
-    @patch("flipfix.apps.core.tasks.time.sleep")
-    @patch("flipfix.apps.core.tasks.requests.get")
+    @patch("flipfix.apps.core.transcoding.time.sleep")
+    @patch("flipfix.apps.core.transcoding.requests.get")
     def test_download_raises_after_max_retries(self, mock_get, mock_sleep):
         """Download raises TransferError after exhausting all retries."""
-        from flipfix.apps.core.tasks import TransferError, _download_source_file
+        from flipfix.apps.core.transcoding import TransferError, _download_source_file
 
         fail_response = Mock()
         fail_response.status_code = 503
@@ -426,11 +426,11 @@ class VideoMediaTestMixin:
 class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode_video_job task."""
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", None)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", None)
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", None)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", None)
     def test_transcode_raises_without_required_config(self):
         """Task raises ValueError when DJANGO_WEB_SERVICE_URL is not configured."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
@@ -457,14 +457,14 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
 
     def test_transcode_skips_nonexistent_media(self):
         """Task silently skips non-existent media IDs."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         # Should not raise, just log and return
         transcode_video_job(999999, "LogEntryMedia")  # Non-existent ID
 
     def test_transcode_skips_non_video_media(self):
         """Task skips non-video media types without processing."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         # Change media type to photo
         self.media.media_type = LogEntryMedia.MediaType.PHOTO
@@ -476,11 +476,11 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         # Status should remain pending (not changed)
         self.assertEqual(self.media.transcode_status, LogEntryMedia.TranscodeStatus.PENDING)
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_success_path(self):
         """Task runs download, probe, ffmpeg, and upload on success."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
@@ -519,11 +519,11 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
         self.assertEqual(self.media.duration, 120)
         self.assertEqual(self.media.transcode_status, LogEntryMedia.TranscodeStatus.PROCESSING)
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_processing_status_before_work(self):
         """Task sets status to PROCESSING before starting transcode."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         statuses_during_run = []
 
@@ -554,11 +554,11 @@ class TranscodeVideoJobTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase)
 class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin, TestCase):
     """Tests for transcode error handling."""
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_failed_status_when_ffmpeg_errors(self):
         """Task sets status to FAILED when ffmpeg exits with error."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
@@ -587,11 +587,11 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
         probe.assert_called_once()
         upload.assert_not_called()
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_fails_when_download_errors(self):
         """Task sets status to FAILED when download raises an exception."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         download = Mock(side_effect=RuntimeError("Download failed after 3 attempts"))
         probe = Mock(return_value=120)
@@ -615,11 +615,11 @@ class TranscodeVideoErrorHandlingTests(VideoMediaTestMixin, TemporaryMediaMixin,
         run_ffmpeg.assert_not_called()
         upload.assert_not_called()
 
-    @patch("flipfix.apps.core.tasks.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
-    @patch("flipfix.apps.core.tasks.DJANGO_WEB_SERVICE_URL", "https://example.com")
+    @patch("flipfix.apps.core.transcoding.TRANSCODING_UPLOAD_TOKEN", TEST_TOKEN)
+    @patch("flipfix.apps.core.transcoding.DJANGO_WEB_SERVICE_URL", "https://example.com")
     def test_transcode_sets_failed_status_when_upload_errors(self):
         """Task sets status to FAILED when upload raises an exception."""
-        from flipfix.apps.core.tasks import transcode_video_job
+        from flipfix.apps.core.transcoding import transcode_video_job
 
         download = Mock(return_value=f"{tempfile.gettempdir()}/source.mp4")
         probe = Mock(return_value=120)
@@ -650,7 +650,7 @@ class EnqueueTranscodeTests(TemporaryMediaMixin, TestCase):
 
     def test_enqueue_transcode_invokes_async_task_with_media_id(self):
         """enqueue_transcode schedules async task with correct parameters."""
-        from flipfix.apps.core.tasks import enqueue_transcode
+        from flipfix.apps.core.transcoding import enqueue_transcode
 
         async_runner = Mock()
         enqueue_transcode(123, "LogEntryMedia", async_runner=async_runner)

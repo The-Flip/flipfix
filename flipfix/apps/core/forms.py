@@ -11,9 +11,10 @@ from PIL import Image, UnidentifiedImageError
 
 from flipfix.apps.core.markdown_links import convert_authoring_to_storage
 from flipfix.apps.core.media import (
-    ALLOWED_HEIC_EXTENSIONS,
+    ALLOWED_PHOTO_EXTENSIONS,
     ALLOWED_VIDEO_EXTENSIONS,
     MAX_MEDIA_FILE_SIZE_BYTES,
+    MEDIA_ACCEPT_ATTR,
 )
 
 # Widget type to CSS class mapping
@@ -35,9 +36,19 @@ WIDGET_CSS_CLASSES = {
 
 
 class MultiFileInput(forms.ClearableFileInput):
-    """Clearable file input that allows selecting multiple files."""
+    """Clearable file input that allows selecting multiple files.
+
+    Defaults to the project-wide media accept string and ``multiple``.
+    Callers can override attrs if needed.
+    """
 
     allow_multiple_selected = True
+
+    def __init__(self, attrs=None):
+        defaults = {"accept": MEDIA_ACCEPT_ATTR, "multiple": True}
+        if attrs:
+            defaults.update(attrs)
+        super().__init__(attrs=defaults)
 
 
 class MultiFileField(forms.FileField):
@@ -169,11 +180,11 @@ def validate_media_files(files: list[UploadedFile]) -> list[UploadedFile]:
             cleaned_files.append(media)
             continue
 
-        # Reject non-image content types (except HEIC which browsers may not recognize)
+        # Reject non-image content types (browsers may report generic MIME for some formats)
         if (
             content_type
             and not content_type.startswith("image/")
-            and ext not in ALLOWED_HEIC_EXTENSIONS
+            and ext not in ALLOWED_PHOTO_EXTENSIONS
         ):
             raise forms.ValidationError("Upload a valid image or video.")
 
