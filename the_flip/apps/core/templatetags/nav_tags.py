@@ -85,7 +85,7 @@ MAIN_NAV_ITEMS: tuple[_NavItem, ...] = (
         label="Logs",
         url_name="log-list",
         icon="screwdriver-wrench",
-        active_contains="log-",
+        active_contains="log-",  # trailing hyphen avoids matching "login"/"logout"
         mobile_extra_class="nav-priority__item--logs",
     ),
     _NavItem(

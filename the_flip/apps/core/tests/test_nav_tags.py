@@ -14,7 +14,7 @@ from the_flip.apps.core.templatetags.nav_tags import (
     _resolve_admin_items,
     _resolve_nav_items,
 )
-from the_flip.apps.core.test_utils import create_maintainer_user, create_superuser
+from the_flip.apps.core.test_utils import create_maintainer_user, create_superuser, create_user
 
 
 def _make_request(url_name: str = "", user=None):
@@ -79,6 +79,11 @@ class GetUrlNameTests(TestCase):
         request.resolver_match = ResolverMatch(lambda: None, (), {}, url_name=None)
         context = {"request": request}
         self.assertEqual(_get_url_name(context), "")
+
+
+# =============================================================================
+# Layer 2: Route contract and resolver tests
+# =============================================================================
 
 
 @tag("views")
@@ -275,8 +280,6 @@ class DesktopNavRenderTests(TestCase):
 
     def test_no_nav_without_permission(self):
         """Non-maintainer user sees no desktop nav."""
-        from the_flip.apps.core.test_utils import create_user
-
         regular = create_user(username="nonavuser")
         request = _make_request("", user=regular)
         html = _render_tag("{% desktop_nav %}", request)
@@ -419,8 +422,7 @@ class UserDropdownRenderTests(TestCase):
         user = create_maintainer_user(username="initialstest", first_name="John", last_name="Doe")
         request = _make_request("", user=user)
         html = _render_tag("{% user_dropdown %}", request)
-        self.assertIn("J", html)
-        self.assertIn("D", html)
+        self.assertIn("JD", html)
 
     def test_unauthenticated_user_sees_login(self):
         """Anonymous user sees login link instead of avatar."""
