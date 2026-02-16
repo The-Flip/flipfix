@@ -1,0 +1,165 @@
+{% load ui_tags %}
+<!-- Desktop nav (md+) -->
+{% if perms.accounts.can_access_maintainer_portal %}
+  <nav class="nav nav--desktop" aria-label="Main navigation">
+    <a href="{% url 'maintainer-machine-list' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-link--active{% endif %}"
+       {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}aria-current="page"{% endif %}>Machines</a>
+    <a href="{% url 'problem-report-list' %}"
+       class="nav-link {% if 'problem' in request.resolver_match.url_name %}nav-link--active{% endif %}"
+       {% if 'problem' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Problems</a>
+    <a href="{% url 'log-list' %}"
+       class="nav-link {% if 'log-' in request.resolver_match.url_name %}nav-link--active{% endif %}"
+       {% if 'log-' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Logs</a>
+    <a href="{% url 'part-request-list' %}"
+       class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}"
+       {% if 'part' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Parts</a>
+    <a href="{% url 'wiki-home' %}"
+       class="nav-link {% if 'wiki' in request.resolver_match.url_name %}nav-link--active{% endif %}"
+       {% if 'wiki' in request.resolver_match.url_name %}aria-current="page"{% endif %}>Docs</a>
+    {% if user.is_superuser %}
+      <div class="dropdown">
+        <button type="button"
+                class="nav-link dropdown__toggle"
+                aria-haspopup="true"
+                aria-expanded="false"
+                onclick="toggleDropdown(this)">Admin {% icon "caret-down" class="meta" %}</button>
+        <div class="dropdown__menu dropdown__menu--left hidden">
+          <a href="{% url 'wall-display-setup' %}" class="dropdown__item">{% icon "tv" class="space-right-sm" %} Wall Display</a>
+          <a href="{% url 'terminal-list' %}" class="dropdown__item">{% icon "display" class="space-right-sm" %} Terminals</a>
+          <a href="{% url 'admin:catalog_location_changelist' %}"
+             class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
+          <a href="{% url 'admin:accounts_invitation_add' %}"
+             class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
+          <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
+          <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
+        </div>
+      </div>
+    {% endif %}
+  </nav>
+{% endif %}
+<!-- Mobile priority+ nav -->
+{% if perms.accounts.can_access_maintainer_portal %}
+  <nav class="nav nav--priority nav--mobile" aria-label="Main navigation">
+    <a href="{% url 'maintainer-machine-list' %}"
+       class="nav-priority__item {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-priority__item--active{% endif %}"
+       {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}aria-current="page"{% endif %}>
+      {% icon "list" %}<span class="nav-priority__label">Machines</span>
+    </a>
+    <a href="{% url 'problem-report-list' %}"
+       class="nav-priority__item {% if 'problem' in request.resolver_match.url_name %}nav-priority__item--active{% endif %}"
+       {% if 'problem' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+      {% icon "triangle-exclamation" %}<span class="nav-priority__label">Problems</span>
+    </a>
+    <a href="{% url 'log-list' %}"
+       class="nav-priority__item nav-priority__item--logs {% if 'log-' in request.resolver_match.url_name %}nav-priority__item--active{% endif %}"
+       {% if 'log-' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+      {% icon "screwdriver-wrench" %}<span class="nav-priority__label">Logs</span>
+    </a>
+    <a href="{% url 'part-request-list' %}"
+       class="nav-priority__item nav-priority__item--parts {% if 'part' in request.resolver_match.url_name %}nav-priority__item--active{% endif %}"
+       {% if 'part' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+      {% icon "box-open" %}<span class="nav-priority__label">Parts</span>
+    </a>
+  </nav>
+  <!-- Mobile hamburger menu -->
+  <div class="dropdown nav-priority__menu nav--mobile">
+    <button type="button"
+            class="nav-priority__menu-btn {% if 'wiki' in request.resolver_match.url_name or request.resolver_match.url_name == 'wall-display-setup' or request.resolver_match.url_name == 'terminal-list' or request.resolver_match.url_name == 'machine-qr-bulk' or request.resolver_match.url_name == 'profile' %}nav-priority__menu-btn--active{% endif %}{% if 'log-' in request.resolver_match.url_name %} nav-priority__menu-btn--active-for-logs{% endif %}{% if 'part' in request.resolver_match.url_name %} nav-priority__menu-btn--active-for-parts{% endif %}"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Site menu"
+            onclick="toggleDropdown(this)">{% icon "bars" %}</button>
+    <div class="dropdown__menu nav-priority__dropdown hidden">
+      <div class="nav-priority__dropdown-group">
+        <a href="{% url 'maintainer-machine-list' %}"
+           class="dropdown__item {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}dropdown__item--selected{% endif %}"
+           {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}aria-current="page"{% endif %}>
+          {% icon "list" class="space-right-sm" %} Machines
+        </a>
+        <a href="{% url 'problem-report-list' %}"
+           class="dropdown__item {% if 'problem' in request.resolver_match.url_name %}dropdown__item--selected{% endif %}"
+           {% if 'problem' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+          {% icon "triangle-exclamation" class="space-right-sm" %} Problems
+        </a>
+        <a href="{% url 'log-list' %}"
+           class="dropdown__item {% if 'log-' in request.resolver_match.url_name %}dropdown__item--selected{% endif %}"
+           {% if 'log-' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+          {% icon "screwdriver-wrench" class="space-right-sm" %} Logs
+        </a>
+        <a href="{% url 'part-request-list' %}"
+           class="dropdown__item {% if 'part' in request.resolver_match.url_name %}dropdown__item--selected{% endif %}"
+           {% if 'part' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+          {% icon "box-open" class="space-right-sm" %} Parts
+        </a>
+        <a href="{% url 'wiki-home' %}"
+           class="dropdown__item {% if 'wiki' in request.resolver_match.url_name %}dropdown__item--selected{% endif %}"
+           {% if 'wiki' in request.resolver_match.url_name %}aria-current="page"{% endif %}>
+          {% icon "book" class="space-right-sm" %} Docs
+        </a>
+      </div>
+      {% if user.is_superuser %}
+        <div class="nav-priority__dropdown-group">
+          <p class="nav-priority__dropdown-heading">Admin</p>
+          <a href="{% url 'wall-display-setup' %}"
+             class="dropdown__item {% if request.resolver_match.url_name == 'wall-display-setup' %}dropdown__item--selected{% endif %}"
+             {% if request.resolver_match.url_name == 'wall-display-setup' %}aria-current="page"{% endif %}>{% icon "tv" class="space-right-sm" %} Wall Display</a>
+          <a href="{% url 'terminal-list' %}"
+             class="dropdown__item {% if request.resolver_match.url_name == 'terminal-list' %}dropdown__item--selected{% endif %}"
+             {% if request.resolver_match.url_name == 'terminal-list' %}aria-current="page"{% endif %}>{% icon "display" class="space-right-sm" %} Terminals</a>
+          <a href="{% url 'admin:catalog_location_changelist' %}"
+             class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
+          <a href="{% url 'admin:accounts_invitation_add' %}"
+             class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
+          <a href="{% url 'machine-qr-bulk' %}"
+             class="dropdown__item {% if request.resolver_match.url_name == 'machine-qr-bulk' %}dropdown__item--selected{% endif %}"
+             {% if request.resolver_match.url_name == 'machine-qr-bulk' %}aria-current="page"{% endif %}>{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
+          <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
+        </div>
+      {% endif %}
+      <div class="nav-priority__dropdown-group">
+        <p class="nav-priority__dropdown-heading">{{ user.username }}</p>
+        <a href="{% url 'profile' %}"
+           class="dropdown__item {% if request.resolver_match.url_name == 'profile' %}dropdown__item--selected{% endif %}"
+           {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>{% icon "gear" class="space-right-sm" %} Account</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="dropdown__item dropdown__item--danger">
+            {% icon "right-from-bracket" class="space-right-sm" %} Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endif %}
+<!-- User dropdown -->
+{% if user.is_authenticated %}
+  <div class="dropdown {% if perms.accounts.can_access_maintainer_portal %}avatar-dropdown--mobile-hidden{% endif %}">
+    <button type="button"
+            class="avatar"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Account menu"
+            onclick="toggleDropdown(this)">
+      {% if user.first_name and user.last_name %}
+        {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
+      {% elif user.first_name %}
+        {{ user.first_name|make_list|first }}
+      {% else %}
+        {{ user.username|make_list|first|upper }}
+      {% endif %}
+    </button>
+    <div class="dropdown__menu dropdown__menu--narrow hidden">
+      <p class="body-small text-muted space-below-sm">{{ user.username }}</p>
+      <a href="{% url 'profile' %}" class="dropdown__item">{% icon "gear" class="space-right-sm" %} Account</a>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="dropdown__item dropdown__item--danger">
+          {% icon "right-from-bracket" class="space-right-sm" %} Logout
+        </button>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <a href="{% url 'login' %}" class="nav-link">Login</a>
+{% endif %}
