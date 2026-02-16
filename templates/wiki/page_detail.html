@@ -5,7 +5,15 @@
 {% load static %}
 {% load wiki_tags %}
 {% block title %}{{ page.title }} · Docs · {{ block.super }}{% endblock %}
-{% block breadcrumbs %}{{ block.super }}<span>{{ page.title }}</span>{% endblock %}
+{% block breadcrumbs %}
+  {{ block.super }}
+  <span class="breadcrumbs__title">{{ page.title }}</span>
+{% endblock %}
+{% block breadcrumb_actions %}
+  <a href="{% url 'wiki-page-edit' detail_path %}"
+     class="btn btn--secondary btn--sm breadcrumb-bar__action"
+     aria-label="Edit {{ page.title }}">{% icon "pen" class="meta" %}<span class="breadcrumb-bar__action-label">Edit</span></a>
+{% endblock %}
 {% block main %}
   <article>
     <div class="card card--padded" data-text-card>
@@ -40,7 +48,7 @@
           Delete
         </a>
         <a href="{% url 'wiki-page-edit' detail_path %}"
-           class="btn btn--primary">
+           class="btn btn--secondary">
           {% icon "pen" class="meta" %}
           Edit
         </a>

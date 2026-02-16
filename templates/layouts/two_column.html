@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-  <nav class="breadcrumbs breadcrumbs--responsive">
-    {% block breadcrumbs %}{% endblock %}
-    <span class="save-status hidden"
-          data-save-status
-          aria-live="polite"
-          aria-atomic="true"></span>
-  </nav>
+  <div class="breadcrumb-bar">
+    <nav class="breadcrumbs breadcrumbs--responsive">
+      {% block breadcrumbs %}{% endblock %}
+      <span class="save-status hidden"
+            data-save-status
+            aria-live="polite"
+            aria-atomic="true"></span>
+    </nav>
+    {% block breadcrumb_actions %}{% endblock %}
+  </div>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">
     <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->

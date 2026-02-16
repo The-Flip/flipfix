@@ -33,7 +33,7 @@ Most pages don't extend these directly — use the layout templates below instea
 
 ### Layout Templates
 
-Most pages extend `layouts/two_column.html`. See that file for available blocks (`breadcrumbs`, `mobile_actions`, `sidebar`, `main`).
+Most pages extend `layouts/two_column.html`. See that file for available blocks (`breadcrumbs`, `breadcrumb_actions`, `mobile_actions`, `sidebar`, `main`).
 
 For list pages with search and infinite scroll, extend `maintenance/global_list_base.html` instead.
 

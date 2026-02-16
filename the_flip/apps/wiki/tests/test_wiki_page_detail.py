@@ -82,6 +82,19 @@ class WikiPageDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCase)
 
         self.assertEqual(response.status_code, 403)
 
+    def test_detail_view_contains_top_edit_link(self):
+        """The breadcrumb bar contains an Edit link to the page edit URL."""
+        self.client.force_login(self.maintainer_user)
+
+        page = WikiPage.objects.create(title="Test Page", slug="test-page")
+        WikiPageTag.objects.create(page=page, tag="docs", slug="test-page")
+
+        response = self.client.get(reverse("wiki-page-detail", args=["docs/test-page"]))
+
+        edit_url = reverse("wiki-page-edit", args=["docs/test-page"])
+        self.assertContains(response, f'href="{edit_url}"')
+        self.assertContains(response, "breadcrumb-bar__action")
+
 
 @tag("views")
 class WikiPageDetailRedirectTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):

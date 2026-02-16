@@ -200,6 +200,7 @@ Use HTML5 `required` attribute on inputs for browser validation.
 | `.form-textarea`        | Multi-line text input (extends `.form-input`)               |
 | `.form-hint`            | Help text below inputs                                      |
 | `.form-actions`         | Button container at form bottom (cancel left, submit right) |
+| `.form-actions--top`    | Variant for top of form (bottom border instead of top)      |
 | `.form-section`         | Fieldset with border for grouping related fields            |
 | `.radio-group`          | Horizontal container for radio button options               |
 | `.checkbox-label`       | Label wrapper for checkbox + text                           |
