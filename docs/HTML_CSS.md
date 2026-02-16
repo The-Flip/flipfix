@@ -59,6 +59,7 @@ The project establishes component patterns in [the_flip/static/core/styles.css](
 - **Forms** (`.form-field` wrapper pattern, `.form-inline` for inline forms) - See [Forms.md](Forms.md) for form building patterns and components
 - **Messages & Alerts** (`.message` with type modifiers like `.message--success`, `.message--error`)
 - **User Menu** (`.user-menu` with `.user-menu__avatar`, `.user-menu__dropdown`, `.user-menu__item`)
+- **Priority+ Nav** (`.nav--priority` with `.nav-priority__item`, `.nav-priority__label`, `.nav-priority__dropdown`, `.nav-priority__dropdown-group`, `.nav-priority__dropdown-heading`) — mobile nav bar that shows 2–4 items with icons and labels depending on viewport width, plus a Menu button that opens a dropdown with all nav items, admin section, and account actions. Items progressively enter the bar at 420px (Logs) and 540px (Parts). Template: `core/partials/nav_header.html`.
 
 ### Interactive Components
 

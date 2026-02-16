@@ -1,6 +1,5 @@
 {% extends "base_minimal_auth.html" %}
 {% load static %}
-{% load ui_tags %}
 {% block body %}
   <header class="app-header">
     <a href="{% url 'home' %}">
@@ -8,112 +7,7 @@
            alt="The Flip"
            class="brand-logo">
     </a>
-    <!-- Desktop nav (md+) -->
-    {% if perms.accounts.can_access_maintainer_portal %}
-      <nav class="nav nav--desktop">
-        <a href="{% url 'maintainer-machine-list' %}"
-           class="nav-link {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-link--active{% endif %}">Machines</a>
-        <a href="{% url 'problem-report-list' %}"
-           class="nav-link {% if 'problem' in request.resolver_match.url_name %}nav-link--active{% endif %}">Problems</a>
-        <a href="{% url 'log-list' %}"
-           class="nav-link {% if 'log-' in request.resolver_match.url_name %}nav-link--active{% endif %}">Logs</a>
-        <a href="{% url 'part-request-list' %}"
-           class="nav-link {% if 'part' in request.resolver_match.url_name %}nav-link--active{% endif %}">Parts</a>
-        <a href="{% url 'wiki-home' %}"
-           class="nav-link {% if 'wiki' in request.resolver_match.url_name %}nav-link--active{% endif %}">Docs</a>
-        {% if user.is_superuser %}
-          <div class="dropdown">
-            <button type="button"
-                    class="nav-link dropdown__toggle"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    onclick="toggleDropdown(this)">Admin {% icon "caret-down" class="meta" %}</button>
-            <div class="dropdown__menu dropdown__menu--left hidden">
-              <a href="{% url 'wall-display-setup' %}" class="dropdown__item">{% icon "tv" class="space-right-sm" %} Wall Display</a>
-              <a href="{% url 'terminal-list' %}" class="dropdown__item">{% icon "display" class="space-right-sm" %} Terminals</a>
-              <a href="{% url 'admin:catalog_location_changelist' %}"
-                 class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
-              <a href="{% url 'admin:accounts_invitation_add' %}"
-                 class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
-              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
-              <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
-            </div>
-          </div>
-        {% endif %}
-      </nav>
-    {% endif %}
-    <!-- Mobile nav (icon-only) -->
-    {% if perms.accounts.can_access_maintainer_portal %}
-      <nav class="nav nav--icons nav--mobile">
-        <a href="{% url 'maintainer-machine-list' %}"
-           class="nav-icon {% if request.resolver_match.url_name == 'maintainer-machine-list' or request.resolver_match.url_name == 'maintainer-machine-detail' %}nav-icon--active{% endif %}"
-           aria-label="Machines"
-           title="Machines">{% icon "list" %}</a>
-        <a href="{% url 'problem-report-list' %}"
-           class="nav-icon {% if 'problem' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
-           aria-label="Problems"
-           title="Problems">{% icon "triangle-exclamation" %}</a>
-        <a href="{% url 'log-list' %}"
-           class="nav-icon {% if 'log-' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
-           aria-label="Logs"
-           title="Logs">{% icon "screwdriver-wrench" %}</a>
-        <a href="{% url 'part-request-list' %}"
-           class="nav-icon {% if 'part' in request.resolver_match.url_name %}nav-icon--active{% endif %}"
-           aria-label="Parts"
-           title="Parts">{% icon "box-open" %}</a>
-        {% if user.is_superuser %}
-          <div class="dropdown">
-            <button type="button"
-                    class="nav-icon"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    aria-label="Admin"
-                    title="Admin"
-                    onclick="toggleDropdown(this)">{% icon "users" %}</button>
-            <div class="dropdown__menu hidden">
-              <a href="{% url 'wall-display-setup' %}" class="dropdown__item">{% icon "tv" class="space-right-sm" %} Wall Display</a>
-              <a href="{% url 'terminal-list' %}" class="dropdown__item">{% icon "display" class="space-right-sm" %} Terminals</a>
-              <a href="{% url 'admin:catalog_location_changelist' %}"
-                 class="dropdown__item">{% icon "location-dot" class="space-right-sm" %} Locations</a>
-              <a href="{% url 'admin:accounts_invitation_add' %}"
-                 class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Users</a>
-              <a href="{% url 'machine-qr-bulk' %}" class="dropdown__item">{% icon "qrcode" class="space-right-sm" %} QR Codes</a>
-              <a href="{% url 'admin:index' %}" class="dropdown__item">{% icon "toolbox" class="space-right-sm" %} Django Admin</a>
-            </div>
-          </div>
-        {% endif %}
-      </nav>
-    {% endif %}
-    <!-- User dropdown -->
-    {% if user.is_authenticated %}
-      <div class="dropdown">
-        <button type="button"
-                class="avatar"
-                aria-haspopup="true"
-                aria-expanded="false"
-                onclick="toggleDropdown(this)">
-          {% if user.first_name and user.last_name %}
-            {{ user.first_name|make_list|first }}{{ user.last_name|make_list|first }}
-          {% elif user.first_name %}
-            {{ user.first_name|make_list|first }}
-          {% else %}
-            {{ user.username|make_list|first|upper }}
-          {% endif %}
-        </button>
-        <div class="dropdown__menu dropdown__menu--narrow hidden">
-          <p class="body-small text-muted space-below-sm">{{ user.username }}</p>
-          <a href="{% url 'profile' %}" class="dropdown__item">{% icon "gear" class="space-right-sm" %} Account</a>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="dropdown__item dropdown__item--danger">
-              {% icon "right-from-bracket" class="space-right-sm" %} Logout
-            </button>
-          </form>
-        </div>
-      </div>
-    {% else %}
-      <a href="{% url 'login' %}" class="nav-link">Login</a>
-    {% endif %}
+    {% include "core/partials/nav_header.html" %}
   </header>
   <main class="main-content">
     {% if messages %}
