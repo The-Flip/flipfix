@@ -18,7 +18,6 @@ whitenoise==6.11.0
 # QR Code Generation
 qrcode[pil]==8.2
 Pillow==12.1.1
-pillow-heif==1.2.0
 django-q2==1.9.0
 
 # HTTP Requests (for worker → web service transfer)
@@ -40,6 +39,5 @@ django-ipware==7.0.1
 
 # Discord Bot
 discord.py==2.6.4
-audioop-lts==0.2.2  # Python 3.13 compatibility for discord.py
 httpx==0.28.1
 anthropic==0.79.0

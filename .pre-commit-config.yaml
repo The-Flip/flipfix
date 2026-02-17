@@ -83,7 +83,7 @@ repos:
       # Regenerate agent docs when source or build script changes
       - id: agent-docs
         name: agent-docs
-        entry: bash -c 'python scripts/build_agent_docs.py && git add CLAUDE.md AGENTS.md'
+        entry: bash -c 'python3 scripts/build_agent_docs.py && git add CLAUDE.md AGENTS.md'
         language: system
         files: ^(docs/AGENTS\.src\.md|scripts/build_agent_docs\.py)$
         pass_filenames: false

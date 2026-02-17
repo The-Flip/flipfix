@@ -6,6 +6,7 @@ set -o errexit
 
 # Install dependencies
 pip install -r requirements.txt
+pip install -r requirements.native.txt
 
 # Create directories if they don't exist
 mkdir -p media

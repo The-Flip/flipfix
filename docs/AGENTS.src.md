@@ -118,6 +118,16 @@ END_AGENTS
 
 Address findings before submitting.
 
+## Getting Started
+
+New contributors — clone the repo and run:
+
+```bash
+make bootstrap
+```
+
+This checks your Python version (3.13+ required), installs system dependencies, creates a venv, installs packages, sets up pre-commit hooks, configures `.env`, and runs migrations. After that, `make runserver` starts the dev server.
+
 ## Development Commands
 
 ```bash
@@ -155,30 +165,17 @@ START_CLAUDE
 
 ### Claude Code for the Web
 
-When running on Claude Code for the web (no .venv), use these commands instead:
+The Makefile auto-detects whether `.venv` exists. On the web (no venv), all `make` targets automatically use system `python3`, `ruff`, `mypy`, etc. — no overrides needed. Use the same commands as local development:
 
 ```bash
-# Testing
-DJANGO_SETTINGS_MODULE=flipfix.settings.test python3 manage.py test --keepdb
-
-# Code Quality (run all three before committing)
-ruff format .                    # Format code
-ruff check .                     # Lint code
-djlint templates/ --check        # Lint templates
-/usr/local/bin/mypy flipfix     # Type check (MUST use full path - see note below)
-
-# Database
-DJANGO_SETTINGS_MODULE=flipfix.settings.dev python3 manage.py migrate
-DJANGO_SETTINGS_MODULE=flipfix.settings.dev python3 manage.py makemigrations
-
-# Django commands
-DJANGO_SETTINGS_MODULE=flipfix.settings.dev python3 manage.py shell
-DJANGO_SETTINGS_MODULE=flipfix.settings.dev python3 manage.py check
+make test           # Run tests
+make quality        # Lint + typecheck
+make migrate        # Run migrations
 ```
 
-The SessionStart hook in `.claude/settings.json` automatically installs dependencies (ffmpeg, Python packages) and runs migrations.
+The SessionStart hooks in `.claude/settings.json` automatically install dependencies and run migrations at session start. Native packages (`pillow-heif`, `audioop-lts`) are installed best-effort — they may be unavailable on the web, which is fine for code changes and most tests.
 
-**Important: mypy path issue** - An older mypy exists at `/root/.local/bin/mypy` which shadows the pip-installed version. This older version lacks access to django-stubs, causing "No module named 'mypy_django_plugin'" errors. Always use `/usr/local/bin/mypy` or `python3 -m mypy`.
+**Important: mypy path issue** - An older mypy may exist at `/root/.local/bin/mypy` which shadows the pip-installed version. If you see "No module named 'mypy_django_plugin'" errors, use `/usr/local/bin/mypy flipfix` or `python3 -m mypy flipfix` instead.
 
 END_CLAUDE
 

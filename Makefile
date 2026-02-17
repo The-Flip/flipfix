@@ -1,6 +1,17 @@
+# Tool paths — auto-detect .venv if present, fall back to system tools.
+# Override individually with e.g. make test PYTHON=python3
+PYTHON    ?= $(shell test -x .venv/bin/python && echo .venv/bin/python || echo python3)
+RUFF      ?= $(shell test -x .venv/bin/ruff && echo .venv/bin/ruff || echo ruff)
+MYPY      ?= $(shell test -x .venv/bin/mypy && echo .venv/bin/mypy || echo python3 -m mypy)
+DJLINT    ?= $(shell test -x .venv/bin/djlint && echo .venv/bin/djlint || echo djlint)
+PRECOMMIT ?= $(shell test -x .venv/bin/pre-commit && echo .venv/bin/pre-commit || echo pre-commit)
+
 .PHONY: help
 help:
 	@echo "Django project Makefile commands:"
+	@echo ""
+	@echo "Setup:"
+	@echo "  make bootstrap      - Install everything needed for development"
 	@echo ""
 	@echo "Development:"
 	@echo "  make runserver      - Start development web server"
@@ -31,17 +42,21 @@ help:
 	@echo "  make agent-docs     - Regenerate CLAUDE.md and AGENTS.md from source"
 	@echo ""
 
+.PHONY: bootstrap
+bootstrap:
+	scripts/bootstrap.sh
+
 .PHONY: test
 test:
-	DJANGO_SETTINGS_MODULE=flipfix.settings.test .venv/bin/python manage.py test --keepdb --exclude-tag=integration
+	DJANGO_SETTINGS_MODULE=flipfix.settings.test $(PYTHON) manage.py test --keepdb --exclude-tag=integration
 
 .PHONY: test-all
 test-all:
-	DJANGO_SETTINGS_MODULE=flipfix.settings.test .venv/bin/python manage.py test --keepdb
+	DJANGO_SETTINGS_MODULE=flipfix.settings.test $(PYTHON) manage.py test --keepdb
 
 .PHONY: test-models
 test-models:
-	DJANGO_SETTINGS_MODULE=flipfix.settings.test .venv/bin/python manage.py test --keepdb --tag=models
+	DJANGO_SETTINGS_MODULE=flipfix.settings.test $(PYTHON) manage.py test --keepdb --tag=models
 
 .PHONY: test-js
 test-js:
@@ -49,52 +64,52 @@ test-js:
 
 .PHONY: eval-discord-bot-llm
 eval-discord-bot-llm:
-	.venv/bin/python manage.py eval_llm_prompt
+	$(PYTHON) manage.py eval_llm_prompt
 
 .PHONY: runserver
 runserver:
 	@pkill -f "manage.py runserver" 2>/dev/null || true
-	.venv/bin/python manage.py runserver
+	$(PYTHON) manage.py runserver
 
 .PHONY: migrate
 migrate:
-	.venv/bin/python manage.py migrate
+	$(PYTHON) manage.py migrate
 
 .PHONY: migrations
 migrations:
-	.venv/bin/python manage.py makemigrations
+	$(PYTHON) manage.py makemigrations
 
 .PHONY: shell
 shell:
-	.venv/bin/python manage.py shell
+	$(PYTHON) manage.py shell
 
 .PHONY: superuser
 superuser:
-	.venv/bin/python manage.py createsuperuser
+	$(PYTHON) manage.py createsuperuser
 
 .PHONY: runq
 runq:
 	@pkill -f "manage.py qcluster" 2>/dev/null || true
-	.venv/bin/python manage.py qcluster
+	$(PYTHON) manage.py qcluster
 
 .PHONY: runbot
 runbot:
 	@pkill -f "manage.py run_discord_bot" 2>/dev/null || true
-	.venv/bin/python manage.py run_discord_bot
+	$(PYTHON) manage.py run_discord_bot
 
 .PHONY: sample-data
 sample-data:
-	.venv/bin/python manage.py create_sample_data
+	$(PYTHON) manage.py create_sample_data
 
 .PHONY: lint
 lint:
-	.venv/bin/ruff format .
-	.venv/bin/ruff check . --fix
-	.venv/bin/djlint templates/ --reformat --quiet
+	$(RUFF) format .
+	$(RUFF) check . --fix
+	$(DJLINT) templates/ --reformat --quiet
 
 .PHONY: typecheck
 typecheck:
-	.venv/bin/mypy flipfix
+	$(MYPY) flipfix
 
 .PHONY: quality
 quality: lint typecheck
@@ -103,8 +118,8 @@ quality: lint typecheck
 .PHONY: precommit
 precommit:
 	@echo "Running pre-commit checks..."
-	.venv/bin/pre-commit run --all-files
+	$(PRECOMMIT) run --all-files
 
 .PHONY: agent-docs
 agent-docs:
-	python scripts/build_agent_docs.py
+	python3 scripts/build_agent_docs.py

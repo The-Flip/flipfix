@@ -1,0 +1,11 @@
+# Native dependencies that require system libraries or a specific Python version.
+# These are separated from requirements.txt so environments without the
+# necessary native toolchains (e.g. Claude Code web) can install the base
+# dependencies without failure.
+#
+# - pillow-heif: HEIF/HEIC image support. Requires libheif-dev headers.
+# - audioop-lts: Python 3.13 compatibility shim for discord.py voice.
+#   Only needed on Python >= 3.13 (audioop was removed from stdlib).
+
+pillow-heif==1.2.0
+audioop-lts==0.2.2

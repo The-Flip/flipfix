@@ -12,62 +12,23 @@ It's live at https://flipfix.theflip.museum/
 
 ## Local Development Setup
 
-It's in Django.
+It's in Django. You need Python 3.13+.
 
-### Prerequisites
+```bash
+git clone https://github.com/The-Flip/flipfix.git
+cd flipfix
+make bootstrap
+```
 
-- Python 3.13+
-- pip
+Bootstrap checks your Python version, installs system dependencies, creates a venv, installs packages, sets up `.env`, and runs migrations. It's idempotent — safe to run again.
 
-### Installation
+Then create some data to work with:
 
-1. **Clone repo**
-
-   ```bash
-   git clone https://github.com/The-Flip/flipfix.git
-   cd flipfix
-   ```
-
-2. **Create and activate virtual environment**
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-
-   ```bash
-   pip install -r requirements.dev.txt
-   ```
-
-4. **Configure environment variables**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edit `.env` and set values based on the instructions inside
-
-5. **Run migrations**
-
-   ```bash
-   make migrate
-   ```
-
-6. **Create sample data OR superuser**
-
-   If you want a rich set of sample data to play with, the following command creates a bunch of users including admins. Look at output for usernames. All users have a password of 'test123'.
-
-   ```bash
-   make sample-data
-   ```
-
-   Else if you want an empty system, create a user for yourself:
-
-   ```bash
-   make superuser
-   ```
+```bash
+make sample-data    # Rich sample data (look at output for usernames, password: test123)
+# OR
+make superuser      # Empty system, just your admin account
+```
 
 ## Running the Application
 
@@ -107,16 +68,6 @@ make runbot  # In a separate terminal
 ```
 
 See [docs/Discord.md](docs/Discord.md) for setup instructions. It's disabled by default.
-
-## Development Tools
-
-**Install pre-commit hooks** (recommended):
-
-```bash
-pre-commit install
-```
-
-This automatically runs code quality checks before each commit.
 
 ## Developer Documentation
 
