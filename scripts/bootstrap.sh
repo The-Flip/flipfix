@@ -47,9 +47,8 @@ if ! command -v "$PYTHON_CMD" >/dev/null 2>&1; then
   fail "Python 3 not found. Install Python 3.13+ and try again."
 fi
 
-PYTHON_VERSION=$("$PYTHON_CMD" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-PYTHON_MAJOR=$("$PYTHON_CMD" -c 'import sys; print(sys.version_info.major)')
-PYTHON_MINOR=$("$PYTHON_CMD" -c 'import sys; print(sys.version_info.minor)')
+read -r PYTHON_MAJOR PYTHON_MINOR <<< "$("$PYTHON_CMD" -c 'import sys; print(sys.version_info.major, sys.version_info.minor)')"
+PYTHON_VERSION="$PYTHON_MAJOR.$PYTHON_MINOR"
 
 if [ "$PYTHON_MAJOR" -lt 3 ] || { [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 13 ]; }; then
   fail "Python 3.13+ required (found $PYTHON_VERSION). Update Python and try again."
@@ -67,9 +66,9 @@ install_system_deps() {
   local skipped_check=false
 
   if [ "$(uname)" = "Darwin" ]; then
-    brew list libheif &>/dev/null 2>&1 || missing+=(libheif)
+    brew list libheif &>/dev/null || missing+=(libheif)
   elif command -v dpkg >/dev/null 2>&1; then
-    dpkg -s libheif-dev &>/dev/null 2>&1 || missing+=(libheif)
+    dpkg -s libheif-dev &>/dev/null || missing+=(libheif)
   else
     warn "Cannot detect libheif on this distro — install it manually if needed."
     skipped_check=true
@@ -118,10 +117,9 @@ NEED_VENV=false
 if [ ! -d "$VENV_DIR" ]; then
   NEED_VENV=true
 elif [ -x "$VENV_DIR/bin/python" ]; then
-  VENV_MAJOR=$("$VENV_DIR/bin/python" -c 'import sys; print(sys.version_info.major)')
-  VENV_MINOR=$("$VENV_DIR/bin/python" -c 'import sys; print(sys.version_info.minor)')
+  read -r VENV_MAJOR VENV_MINOR <<< "$("$VENV_DIR/bin/python" -c 'import sys; print(sys.version_info.major, sys.version_info.minor)')"
   if [ "$VENV_MAJOR" -lt 3 ] || { [ "$VENV_MAJOR" -eq 3 ] && [ "$VENV_MINOR" -lt 13 ]; }; then
-    VENV_VERSION=$("$VENV_DIR/bin/python" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    VENV_VERSION="$VENV_MAJOR.$VENV_MINOR"
     warn "Existing venv uses Python $VENV_VERSION — recreating with $PYTHON_VERSION..."
     rm -rf "$VENV_DIR"
     NEED_VENV=true
@@ -142,7 +140,10 @@ fi
 info "Installing Python dependencies..."
 "$VENV_DIR/bin/pip" install --quiet --upgrade pip
 "$VENV_DIR/bin/pip" install --quiet -r requirements.dev.txt
-"$VENV_DIR/bin/pip" install --quiet -r requirements.native.txt
+"$VENV_DIR/bin/pip" install --quiet -r requirements.native.txt || {
+  warn "Native dependencies failed to install — HEIF/audio features may be unavailable."
+  warn "Install system libraries (libheif-dev, etc.) and re-run 'make bootstrap'."
+}
 
 # --- Node.js dependencies ---
 
@@ -174,12 +175,12 @@ mkdir -p media static_collected
 if [ ! -f .env ]; then
   info "Creating .env from .env.example..."
   cp .env.example .env
-  SECRET_KEY=$("$VENV_DIR/bin/python" -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-  if [ "$(uname)" = "Darwin" ]; then
-    sed -i '' "s/SECRET_KEY=change-me/SECRET_KEY=$SECRET_KEY/" .env
-  else
-    sed -i "s/SECRET_KEY=change-me/SECRET_KEY=$SECRET_KEY/" .env
-  fi
+  "$VENV_DIR/bin/python" -c "
+import pathlib
+from django.core.management.utils import get_random_secret_key
+env = pathlib.Path('.env')
+env.write_text(env.read_text().replace('SECRET_KEY=change-me', 'SECRET_KEY=' + get_random_secret_key()))
+"
   info ".env created with generated SECRET_KEY."
 else
   info ".env already exists."
