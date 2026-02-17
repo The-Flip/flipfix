@@ -140,6 +140,32 @@ Run a single test:
 DJANGO_SETTINGS_MODULE=flipfix.settings.test .venv/bin/python manage.py test flipfix.apps.maintenance.tests.TestClassName.test_method_name
 ```
 
+### OpenAI Codex Cloud
+
+The Makefile auto-detects whether `.venv` exists. In Codex (no venv), all `make` targets automatically use system `python3`, `ruff`, `mypy`, etc. — no overrides needed.
+
+**Environment settings** (set in the Codex UI):
+
+- Pin **Python 3.14** and **Node 22**
+- Set the Setup field to `bash scripts/bootstrap_codex.sh`
+
+The setup script installs system dependencies, Python/JS packages, creates `.env`, and runs migrations. After setup, use the standard commands:
+
+```bash
+make test           # Run Python tests
+make test-js        # Run JavaScript tests
+make quality        # Lint + typecheck
+make migrate        # Run migrations
+```
+
+**Important notes:**
+
+- Internet is disabled during task execution — all dependencies must be installed during setup
+- No `.venv` exists — the Makefile falls back to system Python automatically
+- Tests use SQLite in-memory by default (no database server needed)
+- Native packages (`pillow-heif`, `audioop-lts`) are installed best-effort — they may fail, which is fine for code changes and most tests
+- Run a single test with: `DJANGO_SETTINGS_MODULE=flipfix.settings.test python3 manage.py test flipfix.apps.maintenance.tests.TestClassName.test_method_name`
+
 ## Tool Usage
 
 Use web search or official documentation to look up current API references when:
