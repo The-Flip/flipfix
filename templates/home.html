@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load ui_tags %}
+{% load markdown_tags %}
 {% block title %}Home · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="flex stack-column stack-tight">
@@ -11,33 +12,11 @@
           This is a shared machine. You will be asked to put in your username whenever you log work.
         </p>
       </div>
-    {% else %}
-      <div class="card card--padded space-below-lg">
-        <div class="sidebar__title">Welcome to The Flip's pinball machine maintenance system.</div>
+    {% endif %}
+    {% if front_page_content %}
+      <div class="card card--padded">
+        <div class="markdown-content">{{ front_page_content|render_markdown }}</div>
       </div>
     {% endif %}
-    <div class="card card--padded space-below-lg">
-      <div class="sidebar__label">Support</div>
-      <div class="sidebar__title">Bugs &amp; ideas</div>
-      <p class="text-muted space-above-sm">Found a 🪲 or have an 💡?</p>
-      <div class="flex flex-wrap items-center stack-tight space-above-sm">
-        <a href="https://discord.com/channels/1408179768033149132/1408180474853064798"
-           class="btn btn--secondary"
-           target="_blank"
-           rel="noopener">
-          {% icon "discord" style="brands" class="meta" %}
-          Post to Discord
-        </a>
-        or
-        <a href="https://github.com/The-Flip/flipfix/issues"
-           class="btn btn--secondary"
-           target="_blank"
-           rel="noopener">
-          {% icon "github" style="brands" class="meta" %}
-          Open a GitHub Issue
-        </a>
-        <em>GitHub requires an account</em>
-      </div>
-    </div>
   </div>
 {% endblock %}

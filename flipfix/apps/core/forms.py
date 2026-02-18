@@ -9,13 +9,17 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
-from flipfix.apps.core.markdown_links import convert_authoring_to_storage
+from flipfix.apps.core.markdown_links import (
+    convert_authoring_to_storage,
+    convert_storage_to_authoring,
+)
 from flipfix.apps.core.media import (
     ALLOWED_PHOTO_EXTENSIONS,
     ALLOWED_VIDEO_EXTENSIONS,
     MAX_MEDIA_FILE_SIZE_BYTES,
     MEDIA_ACCEPT_ATTR,
 )
+from flipfix.apps.core.models import SiteSettings
 
 # Widget type to CSS class mapping
 WIDGET_CSS_CLASSES = {
@@ -149,6 +153,31 @@ class StyledFormMixin:
                             existing_classes.append(cls)
                     widget.attrs["class"] = " ".join(existing_classes)
                     break
+
+
+class SiteSettingsForm(StyledFormMixin, forms.ModelForm):
+    """Form for editing site-wide settings (front page content)."""
+
+    class Meta:
+        model = SiteSettings
+        fields = ["front_page_content"]
+        widgets = {
+            "front_page_content": MarkdownTextarea(attrs={"rows": 20}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.front_page_content:
+            self.initial["front_page_content"] = convert_storage_to_authoring(
+                self.instance.front_page_content
+            )
+
+    def clean_front_page_content(self):
+        """Convert authoring format links to storage format."""
+        content = self.cleaned_data.get("front_page_content", "")
+        if content:
+            content = convert_authoring_to_storage(content)
+        return content
 
 
 def validate_media_files(files: list[UploadedFile]) -> list[UploadedFile]:

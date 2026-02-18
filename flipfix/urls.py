@@ -31,7 +31,7 @@ from flipfix.apps.core.admin_views import admin_debug_view
 from flipfix.apps.core.routing import path
 from flipfix.apps.core.views.feed import GlobalActivityFeedPartialView
 from flipfix.apps.core.views.health import healthz
-from flipfix.apps.core.views.home import HomeView
+from flipfix.apps.core.views.home import HomeView, SiteSettingsEditView
 from flipfix.apps.core.views.link_targets import LinkTargetsView, LinkTypesView
 from flipfix.apps.core.views.transcode import TranscodeStatusView
 from flipfix.apps.maintenance.views.autocomplete import (
@@ -186,6 +186,12 @@ urlpatterns = [
         TerminalReactivateView.as_view(),
         name="terminal-reactivate",
         access="superuser",
+    ),
+    ###
+    # Site settings (superuser)
+    ###
+    path(
+        "settings/site/", SiteSettingsEditView.as_view(), name="site-settings", access="superuser"
     ),
     ###
     # Public pages (no login required)

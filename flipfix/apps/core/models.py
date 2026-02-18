@@ -71,6 +71,40 @@ class SearchableQuerySetMixin:
 
 
 # ---------------------------------------------------------------------------
+# Site settings singleton
+# ---------------------------------------------------------------------------
+
+
+class SiteSettings(models.Model):
+    """Singleton holding site-wide settings such as the front page content.
+
+    Enforces a single row: ``save()`` forces ``pk=1``, ``delete()`` is a
+    no-op, and ``load()`` returns the one row (creating it if needed).
+    """
+
+    front_page_content = models.TextField(blank=True, default="")
+
+    class Meta:
+        verbose_name_plural = "site settings"
+
+    def __str__(self) -> str:
+        return "Site Settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        return 0, {}
+
+    @classmethod
+    def load(cls) -> SiteSettings:
+        """Return the singleton row, creating it if it doesn't exist."""
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+# ---------------------------------------------------------------------------
 # Abstract media model
 # ---------------------------------------------------------------------------
 

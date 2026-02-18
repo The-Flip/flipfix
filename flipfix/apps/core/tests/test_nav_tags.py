@@ -197,6 +197,27 @@ class ResolveAdminItemsTests(TestCase):
         locations = next(item for item in result if item["label"] == "Locations")
         self.assertFalse(locations["is_active"])
 
+    def test_site_settings_present(self):
+        """Site Settings appears in admin items."""
+        result = _resolve_admin_items("")
+        labels = [item["label"] for item in result]
+        self.assertIn("Site Settings", labels)
+
+    def test_site_settings_after_qr_codes_before_django_admin(self):
+        """Site Settings is positioned after QR Codes and before Django Admin."""
+        labels = [item.label for item in ADMIN_NAV_ITEMS]
+        qr_idx = labels.index("QR Codes")
+        settings_idx = labels.index("Site Settings")
+        admin_idx = labels.index("Django Admin")
+        self.assertEqual(settings_idx, qr_idx + 1)
+        self.assertEqual(admin_idx, settings_idx + 1)
+
+    def test_site_settings_active_on_its_route(self):
+        """Site Settings is active when on site-settings route."""
+        result = _resolve_admin_items("site-settings")
+        site_settings = next(item for item in result if item["label"] == "Site Settings")
+        self.assertTrue(site_settings["is_active"])
+
     def test_no_admin_active_on_unrelated_route(self):
         """No admin item is active on an unrelated route."""
         result = _resolve_admin_items("problem-report-list")

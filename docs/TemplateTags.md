@@ -38,7 +38,7 @@ Defines main nav items as data and renders each navigation variant with pre-comp
 | `mobile_hamburger`    | Inclusion tag | Mobile hamburger dropdown with all sections     |
 | `user_dropdown`       | Inclusion tag | Desktop avatar dropdown with account and logout |
 
-Also exports `MAIN_NAV_ITEMS` (tuple of `_NavItem` dataclasses) and `_is_active()` helper for testing. Navigation components automatically filter to public-accessible pages for unauthenticated users, using the URL name registry from `flipfix.apps.core.routing`. No template changes are needed — the filtering is internal to the tag.
+Also exports `MAIN_NAV_ITEMS` (tuple of `_NavItem` dataclasses), `ADMIN_NAV_ITEMS` (tuple of `_AdminNavItem` dataclasses for the admin section of the hamburger menu), and `_is_active()` helper for testing. Navigation components automatically filter to public-accessible pages for unauthenticated users, using the URL name registry from `flipfix.apps.core.routing`. No template changes are needed — the filtering is internal to the tag.
 
 #### `ui_tags` — Atomic UI primitives
 

@@ -62,6 +62,7 @@ ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
         track_active=False,
     ),
     _AdminNavItem(label="QR Codes", url_name="machine-qr-bulk", icon="qrcode"),
+    _AdminNavItem(label="Site Settings", url_name="site-settings", icon="gear"),
     _AdminNavItem(
         label="Django Admin",
         url_name="admin:index",

@@ -122,6 +122,10 @@ Auto-maintained index of wiki template options for create-form dropdowns. Rebuil
 
 ## Core app
 
+### Site Settings ([`SiteSettings`](../flipfix/apps/core/models.py))
+
+Singleton model holding site-wide settings such as the front page content.
+
 ### Record Reference ([`RecordReference`](../flipfix/apps/core/models.py))
 
 Tracks cross-record links (e.g., `[[machine:slug]]`) between any two records for "what links here" queries. Uses Django's contenttypes framework for polymorphic source/target.
