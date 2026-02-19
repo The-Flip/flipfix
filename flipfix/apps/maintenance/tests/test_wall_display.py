@@ -1,5 +1,6 @@
 """Tests for the wall display setup and board pages."""
 
+from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
 
@@ -21,15 +22,16 @@ class WallDisplaySetupViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
         super().setUp()
         self.url = reverse("wall-display-setup")
 
-    def test_requires_authentication(self):
+    @override_config(PUBLIC_ACCESS_ENABLED=True)
+    def test_accessible_to_guests_when_public_access_enabled(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    @override_config(PUBLIC_ACCESS_ENABLED=False)
+    def test_redirects_to_login_when_public_access_disabled(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
-
-    def test_requires_maintainer_access(self):
-        self.client.force_login(self.regular_user)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, 403)
 
     def test_accessible_to_maintainers(self):
         self.client.force_login(self.maintainer_user)
@@ -66,15 +68,16 @@ class WallDisplayBoardViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
         self.workshop_machine = create_machine(slug="workshop-machine", location=self.workshop)
         self.board_url = reverse("wall-display-board")
 
-    def test_requires_authentication(self):
+    @override_config(PUBLIC_ACCESS_ENABLED=True)
+    def test_accessible_to_guests_when_public_access_enabled(self):
+        response = self.client.get(self.board_url, {"location": ["floor"]})
+        self.assertEqual(response.status_code, 200)
+
+    @override_config(PUBLIC_ACCESS_ENABLED=False)
+    def test_redirects_to_login_when_public_access_disabled(self):
         response = self.client.get(self.board_url, {"location": ["floor"]})
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
-
-    def test_requires_maintainer_access(self):
-        self.client.force_login(self.regular_user)
-        response = self.client.get(self.board_url, {"location": ["floor"]})
-        self.assertEqual(response.status_code, 403)
 
     def test_shows_error_when_no_locations(self):
         self.client.force_login(self.maintainer_user)

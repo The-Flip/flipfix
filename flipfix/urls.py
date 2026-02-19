@@ -256,9 +256,9 @@ urlpatterns = [
     # Wall display
     ###
     # Wall display setup
-    path("wall/", WallDisplaySetupView.as_view(), name="wall-display-setup"),
+    path("wall/", WallDisplaySetupView.as_view(), name="wall-display-setup", access="public"),
     # Wall display board
-    path("wall/board/", WallDisplayBoardView.as_view(), name="wall-display-board"),
+    path("wall/board/", WallDisplayBoardView.as_view(), name="wall-display-board", access="public"),
     ###
     # Machines
     ###
