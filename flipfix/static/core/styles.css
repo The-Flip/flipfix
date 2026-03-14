@@ -546,7 +546,7 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: var(--text-sm);
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .card__header {
