@@ -245,6 +245,9 @@ class WallDisplayBoardViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
             )
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.board_url, {"location": ["floor"]})
+        content = response.content.decode()
+        # Only 4 rows should be rendered, not 9
+        self.assertEqual(content.count("wall-card__row"), 4)
         # First 4 reports should be visible
         for i in range(4):
             self.assertContains(response, f"Visible {i}")
