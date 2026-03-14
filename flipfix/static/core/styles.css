@@ -474,12 +474,19 @@ body {
 
 .wall-card__row {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
   text-decoration: none;
   color: inherit;
   border-bottom: 1px solid var(--color-border);
+}
+
+.wall-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .wall-card__row:last-child {
@@ -491,8 +498,6 @@ body {
 }
 
 .wall-card__desc {
-  flex: 1;
-  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
