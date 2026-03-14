@@ -2,14 +2,76 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from flipfix.apps.catalog.models import Location
+    from flipfix.apps.catalog.models import Location, MachineInstance
+    from flipfix.apps.maintenance.models import ProblemReport
+
+MAX_VISIBLE_REPORTS = 4
+
+
+@dataclass
+class MachineGroup:
+    """A single machine and its open problem reports, grouped for column display."""
+
+    machine: MachineInstance
+    reports: list[ProblemReport]
+
+    @property
+    def sort_key(self) -> int:
+        """Sort by the most severe (lowest priority_sort) report.
+
+        ``priority_sort`` is an annotation added by queryset methods like
+        :meth:`~flipfix.apps.maintenance.models.ProblemReportQuerySet.for_wall_display`
+        and
+        :meth:`~flipfix.apps.maintenance.models.ProblemReportQuerySet.for_open_by_location`.
+        """
+        return min(getattr(report, "priority_sort", 999) for report in self.reports)
+
+    @property
+    def visible_reports(self) -> list[ProblemReport]:
+        """The first reports shown as full rows."""
+        return self.reports[:MAX_VISIBLE_REPORTS]
+
+    @property
+    def overflow_summary(self) -> str:
+        """Human-readable summary of reports beyond the visible limit.
+
+        Returns e.g. "plus 3 minor and 2 task", or empty string if all
+        reports are visible.
+        """
+        overflow = self.reports[MAX_VISIBLE_REPORTS:]
+        if not overflow:
+            return ""
+        counts: Counter[str] = Counter()
+        for report in overflow:
+            counts[report.get_priority_display().lower()] += 1
+        parts = [f"{count} {label}" for label, count in counts.items()]
+        if len(parts) <= 2:
+            return "plus " + " and ".join(parts)
+        return "plus " + ", ".join(parts[:-1]) + ", and " + parts[-1]
+
+
+def group_by_machine(reports: list[ProblemReport]) -> list[MachineGroup]:
+    """Group reports by machine, preserving severity ordering within each group."""
+    by_machine: dict[int, list[ProblemReport]] = defaultdict(list)
+    machine_order: list[int] = []
+    machines: dict[int, MachineInstance] = {}
+    for report in reports:
+        pk = report.machine_id
+        if pk not in machines:
+            machines[pk] = report.machine
+            machine_order.append(pk)
+        by_machine[pk].append(report)
+
+    groups = [MachineGroup(machine=machines[pk], reports=by_machine[pk]) for pk in machine_order]
+    groups.sort(key=lambda g: g.sort_key)
+    return groups
 
 
 @dataclass

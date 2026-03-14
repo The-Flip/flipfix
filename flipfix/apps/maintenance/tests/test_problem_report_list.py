@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from flipfix.apps.catalog.models import Location
-from flipfix.apps.core.columns import Column, build_location_columns
+from flipfix.apps.core.columns import Column, MachineGroup, build_location_columns
 from flipfix.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
@@ -18,6 +18,17 @@ from flipfix.apps.core.test_utils import (
     create_problem_report,
 )
 from flipfix.apps.maintenance.models import ProblemReport
+
+
+def _reports_in_column(column):
+    """Flatten MachineGroup items back to a flat list of reports."""
+    reports = []
+    for item in column.items:
+        if isinstance(item, MachineGroup):
+            reports.extend(item.reports)
+        else:
+            reports.append(item)
+    return reports
 
 
 @tag("views")
@@ -56,8 +67,8 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         detail_url = reverse("problem-report-detail", kwargs={"pk": self.report.pk})
         self.assertContains(response, detail_url)
 
-    def test_context_has_columns(self):
-        """View should provide columns as Column objects."""
+    def test_context_has_columns_with_machine_groups(self):
+        """View should provide columns containing MachineGroup objects."""
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.list_url)
 
@@ -66,7 +77,8 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertGreaterEqual(len(columns), 1)
         self.assertIsInstance(columns[0], Column)
         self.assertIsInstance(columns[0].label, str)
-        self.assertIsInstance(columns[0].overflow_count, int)
+        # Items are MachineGroups, not flat reports
+        self.assertTrue(all(isinstance(item, MachineGroup) for item in columns[0].items))
 
     def test_only_open_reports_shown(self):
         """Column board should only show open reports, not closed."""
@@ -94,7 +106,7 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         response = self.client.get(self.list_url)
 
         columns = response.context["columns"]
-        by_label = {col.label: col.items for col in columns}
+        by_label = {col.label: _reports_in_column(col) for col in columns}
 
         self.assertIn("Room A", by_label)
         self.assertIn("Room B", by_label)
@@ -126,6 +138,23 @@ class ProblemReportListViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         columns = response.context["columns"]
         labels = [col.label for col in columns]
         self.assertLess(labels.index("Zebra Room"), labels.index("Alpha Room"))
+
+    def test_machine_header_links_to_machine_detail(self):
+        """Each machine group header should link to the machine detail page."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.list_url)
+
+        machine_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+        self.assertContains(response, machine_url)
+
+    def test_no_open_status_pill(self):
+        """The grouped card should not render an 'Open' status pill."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.list_url)
+
+        # The old card had {% pill label=entry.get_status_display variant=entry.status %}
+        # which would render "Open". The new card omits the status pill.
+        self.assertNotContains(response, 'class="pill pill--open"')
 
 
 @tag("views")
@@ -186,7 +215,9 @@ class ProblemReportColumnOrderTests(TestDataMixin, TestCase):
 
         col = self._find_column(columns, self.machine.location.name)
         self.assertIsNotNone(col)
-        pks = [r.pk for r in col.items]
+        # All reports are on the same machine, so there's one MachineGroup
+        reports = _reports_in_column(col)
+        pks = [r.pk for r in reports]
         self.assertEqual(
             pks,
             [untriaged.pk, unplayable.pk, major.pk, minor.pk, task.pk],
@@ -213,8 +244,49 @@ class ProblemReportColumnOrderTests(TestDataMixin, TestCase):
 
         col = self._find_column(columns, self.machine.location.name)
         self.assertIsNotNone(col)
-        pks = [r.pk for r in col.items]
+        reports = _reports_in_column(col)
+        pks = [r.pk for r in reports]
         self.assertLess(pks.index(newer.pk), pks.index(older.pk))
+
+    def test_machine_groups_sorted_by_severity(self):
+        """MachineGroups within a column are sorted by most severe report."""
+        machine_minor = create_machine(slug="minor-machine", location=self.location)
+        machine_critical = create_machine(slug="critical-machine", location=self.location)
+        create_problem_report(
+            machine=machine_minor,
+            description="Minor issue",
+            priority=ProblemReport.Priority.MINOR,
+        )
+        create_problem_report(
+            machine=machine_critical,
+            description="Unplayable issue",
+            priority=ProblemReport.Priority.UNPLAYABLE,
+        )
+
+        response = self.client.get(self.list_url)
+        columns = response.context["columns"]
+
+        col = self._find_column(columns, self.location.name)
+        self.assertIsNotNone(col)
+        groups = [item for item in col.items if isinstance(item, MachineGroup)]
+        machine_slugs = [g.machine.slug for g in groups]
+        self.assertLess(
+            machine_slugs.index("critical-machine"),
+            machine_slugs.index("minor-machine"),
+        )
+
+    def test_overflow_summary_for_many_reports(self):
+        """Machines with >4 reports show an overflow summary."""
+        for i in range(6):
+            create_problem_report(
+                machine=self.machine,
+                description=f"Report {i}",
+                priority=ProblemReport.Priority.MINOR,
+            )
+
+        response = self.client.get(self.list_url)
+
+        self.assertContains(response, "plus")
 
 
 @tag("views")

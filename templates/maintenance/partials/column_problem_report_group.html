@@ -1,0 +1,35 @@
+{% load ui_tags %}
+{% load markdown_tags %}
+{% load maintenance_tags %}
+<div class="wall-card wall-card--rich column-grid__entry">
+  <a href="{% url 'maintainer-machine-detail' entry.machine.slug %}"
+     class="wall-card__header">{{ entry.machine.short_display_name }}</a>
+  {% for report in entry.visible_reports %}
+    <div class="wall-card__row">
+      <a href="{% url 'problem-report-detail' report.pk %}"
+         class="wall-card__top">
+        {% problem_report_priority_pill report %}
+        <span class="wall-card__time">{{ report.occurred_at|smart_date }}</span>
+      </a>
+      <div class="wall-card__body markdown-content markdown-content--compact">
+        {% if report.description %}
+          {{ report.description|render_markdown }}
+        {% else %}
+          {{ report|problem_report_summary }}
+        {% endif %}
+      </div>
+      {% url 'problem-report-detail' report.pk as report_url %}
+      {% include "core/partials/media_grid_readonly.html" with media_items=report.media.all detail_url=report_url model_name="ProblemReportMedia" %}
+      {% if report.prefetched_log_entries %}
+        {% with latest_log=report.prefetched_log_entries.0 %}
+          <a href="{% url 'log-detail' latest_log.pk %}"
+             class="timeline__snippet-link">
+            <span class="snippet-label text-log">{% icon "screwdriver-wrench" %}Latest:</span>
+            <span class="snippet-text">{{ latest_log.text|truncatewords:15 }}</span>
+          </a>
+        {% endwith %}
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% if entry.overflow_summary %}<div class="wall-card__overflow">{{ entry.overflow_summary }}</div>{% endif %}
+</div>

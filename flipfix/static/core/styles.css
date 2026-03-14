@@ -519,6 +519,36 @@ body {
   text-align: center;
 }
 
+/* Rich wall card variant — rows contain multiple link targets */
+.wall-card--rich .wall-card__row {
+  cursor: default;
+}
+
+.wall-card--rich .wall-card__row:hover {
+  background: transparent;
+}
+
+.wall-card--rich .wall-card__top {
+  text-decoration: none;
+  color: inherit;
+}
+
+.wall-card--rich .wall-card__top:hover {
+  background: var(--color-problem-light-bg-hover);
+  border-radius: var(--radius-sm);
+  margin: calc(-1 * var(--space-1));
+  padding: var(--space-1);
+}
+
+.wall-card__body {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
 .card__header {
   display: flex;
   justify-content: space-between;
