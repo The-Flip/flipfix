@@ -203,13 +203,15 @@ class ResolveAdminItemsTests(TestCase):
         labels = [item["label"] for item in result]
         self.assertIn("Site Settings", labels)
 
-    def test_site_settings_after_qr_codes_before_django_admin(self):
-        """Site Settings is positioned after QR Codes and before Django Admin."""
+    def test_site_settings_before_django_admin(self):
+        """Site Settings is positioned before Django Admin, with Labor Report after QR Codes."""
         labels = [item.label for item in ADMIN_NAV_ITEMS]
         qr_idx = labels.index("QR Codes")
+        labor_idx = labels.index("Labor Report")
         settings_idx = labels.index("Site Settings")
         admin_idx = labels.index("Django Admin")
-        self.assertEqual(settings_idx, qr_idx + 1)
+        self.assertEqual(labor_idx, qr_idx + 1)
+        self.assertEqual(settings_idx, labor_idx + 1)
         self.assertEqual(admin_idx, settings_idx + 1)
 
     def test_site_settings_active_on_its_route(self):

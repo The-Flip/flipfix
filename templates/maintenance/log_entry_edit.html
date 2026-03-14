@@ -45,6 +45,7 @@
                required>
         {% field_errors form.occurred_at %}
       </div>
+      <div class="form-group">{% form_field form.time_spent %}</div>
       <div class="form-actions">
         <a href="{% url 'log-detail' entry.pk %}" class="btn btn--secondary">
           {% icon "circle-xmark" class="meta" %}

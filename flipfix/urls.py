@@ -39,6 +39,10 @@ from flipfix.apps.maintenance.views.autocomplete import (
     MaintainerAutocompleteView,
     ProblemReportAutocompleteView,
 )
+from flipfix.apps.maintenance.views.labor_report import (
+    LaborDetailView,
+    LaborWeeklySummaryView,
+)
 from flipfix.apps.maintenance.views.log_entries import (
     LogEntryDetailView,
     LogEntryEditView,
@@ -364,6 +368,10 @@ urlpatterns = [
     path("logs/", LogListView.as_view(), name="log-list", access="public"),
     # AJAX: infinite scroll for log list
     path("logs/entries/", LogListPartialView.as_view(), name="log-list-entries", access="public"),
+    # Labor report: weekly summary
+    path("logs/labor/", LaborWeeklySummaryView.as_view(), name="labor-report-weekly"),
+    # Labor report: drill-down detail
+    path("logs/labor/detail/", LaborDetailView.as_view(), name="labor-report-detail"),
     # Create log entry (no machine pre-selected)
     path("logs/new/", MachineLogCreateView.as_view(), name="log-create-global"),
     # Log entry detail page

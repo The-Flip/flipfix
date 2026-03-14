@@ -1,0 +1,47 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load list_tags %}
+{% block title %}Labor Report · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'log-list' %}">Logs</a>
+  <span>Labor Report</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Summary" %}
+  <div class="stat-grid">
+    <div class="stat">
+      <span class="stat__value">{{ grand_total|floatformat:-2 }}</span>
+      <span class="stat__label">Total Hours</span>
+    </div>
+  </div>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'log-create-global' %}" class="btn btn--log btn--full">
+  {% icon "plus" class="meta" %}
+  New Log Entry
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  {% if weeks %}
+    <div class="card-list">
+      {% for week in weeks %}
+        <a href="{% url 'labor-report-detail' %}?start={{ week.week_start|date:'Y-m-d' }}&end={{ week.week_end|date:'Y-m-d' }}"
+           class="card card--padded card--clickable">
+          <div class="card__row">
+            <div>
+              <strong>{{ week.week_start|date:"M j" }} – {{ week.week_end|date:"M j, Y" }}</strong>
+            </div>
+            <div class="text-muted text-sm">{{ week.entry_count }} entr{{ week.entry_count|pluralize:"y,ies" }}</div>
+          </div>
+          <div class="card__row">
+            <span class="stat__value">{{ week.total_hours|floatformat:-2 }}h</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+  {% empty_state empty_message="No labor hours logged yet." search_message="" %}
+  {% endif %}
+{% endblock %}

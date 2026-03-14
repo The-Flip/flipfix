@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from uuid import uuid4
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.urls import reverse
@@ -370,6 +372,13 @@ class LogEntry(TimeStampedMixin):
     occurred_at = models.DateTimeField(
         default=timezone.now,
         help_text="When the work was performed. Defaults to now if not specified.",
+    )
+    time_spent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Total person-hours spent (all people combined).",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

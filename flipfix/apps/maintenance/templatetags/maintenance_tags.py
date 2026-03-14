@@ -1,5 +1,7 @@
 """Maintenance domain display: problem/log pills, status/priority filters, meta formatters."""
 
+from decimal import Decimal
+
 from django import template
 from django.urls import reverse
 from django.utils.html import format_html
@@ -8,6 +10,15 @@ from flipfix.apps.core.mixins import can_access_maintainer_portal
 from flipfix.apps.core.templatetags.ui_tags import _settable_pill_context, smart_date
 
 register = template.Library()
+
+
+def _format_hours(value: Decimal | None) -> str:
+    """Format a Decimal hours value to at most 2 decimal places, stripping trailing zeros."""
+    if not value:
+        return "0"
+    # Quantize to 2 decimal places, then normalize to strip trailing zeros
+    return f"{float(value):.2f}".rstrip("0").rstrip(".")
+
 
 # ---- Problem report priority mappings ---------------------------------------
 
@@ -176,7 +187,12 @@ def log_entry_meta(context, entry):
 
     ts = smart_date(getattr(entry, "occurred_at", None))
 
+    time_spent = getattr(entry, "time_spent", None)
+    hours = format_html("{}h", _format_hours(time_spent)) if time_spent else ""
+
     if not context["user"].is_authenticated:
+        if hours:
+            return format_html("{} \u00b7 <strong>{}</strong>", hours, ts)
         return format_html("<strong>{}</strong>", ts)
 
     names = ""
@@ -187,8 +203,12 @@ def log_entry_meta(context, entry):
         names = entry.maintainer_names
 
     names = (names or "").strip()
+    if names and hours:
+        return format_html("{} \u00b7 {} \u00b7 <strong>{}</strong>", names, hours, ts)
     if names:
         return format_html("{} \u00b7 <strong>{}</strong>", names, ts)
+    if hours:
+        return format_html("{} \u00b7 <strong>{}</strong>", hours, ts)
     return format_html("<strong>{}</strong>", ts)
 
 

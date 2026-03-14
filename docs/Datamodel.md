@@ -74,7 +74,7 @@ Issue reported by museum visitor.
 
 ### Log Entry ([`LogEntry`](../flipfix/apps/maintenance/models.py))
 
-Journal-type entry created by maintainers to document work on a machine.
+Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work.
 
 ### Problem Report Media ([`ProblemReportMedia`](../flipfix/apps/maintenance/models.py))
 
