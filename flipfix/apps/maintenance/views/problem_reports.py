@@ -25,7 +25,7 @@ from flipfix.apps.core.attribution import (
     resolve_maintainer_for_create,
     resolve_maintainer_for_edit,
 )
-from flipfix.apps.core.columns import build_location_columns
+from flipfix.apps.core.columns import build_location_columns, group_by_machine
 from flipfix.apps.core.datetime import apply_and_validate_timezone
 from flipfix.apps.core.forms import SearchForm
 from flipfix.apps.core.ip import get_real_ip
@@ -54,19 +54,20 @@ class ProblemReportListView(TemplateView):
     """Global column board of open problem reports, grouped by location."""
 
     template_name = "maintenance/problem_report_list.html"
-    max_results_per_column = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         query = self.request.GET.get("q", "").strip()
         reports = ProblemReport.objects.search(query).for_open_by_location()
-        context["columns"] = build_location_columns(
+        columns = build_location_columns(
             reports,
             Location.objects.all(),
             include_empty_columns=False,
-            max_results_per_column=self.max_results_per_column,
         )
-        context["card_template"] = "maintenance/partials/column_problem_report_entry.html"
+        for column in columns:
+            column.items = group_by_machine(column.items)
+        context["columns"] = columns
+        context["card_template"] = "maintenance/partials/column_problem_report_group.html"
         context["search_form"] = SearchForm(initial={"q": query})
         context["query"] = query
         context["meta_description"] = (
