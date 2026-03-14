@@ -187,7 +187,12 @@ def log_entry_meta(context, entry):
 
     ts = smart_date(getattr(entry, "occurred_at", None))
 
+    time_spent = getattr(entry, "time_spent", None)
+    hours = format_html("{}h", _format_hours(time_spent)) if time_spent else ""
+
     if not context["user"].is_authenticated:
+        if hours:
+            return format_html("{} \u00b7 <strong>{}</strong>", hours, ts)
         return format_html("<strong>{}</strong>", ts)
 
     names = ""
@@ -196,9 +201,6 @@ def log_entry_meta(context, entry):
         names = ", ".join(str(m) for m in maintainers)
     elif getattr(entry, "maintainer_names", ""):
         names = entry.maintainer_names
-
-    time_spent = getattr(entry, "time_spent", None)
-    hours = format_html("{}h", _format_hours(time_spent)) if time_spent else ""
 
     names = (names or "").strip()
     if names and hours:

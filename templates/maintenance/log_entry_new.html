@@ -87,18 +87,7 @@
       {{ form.text }}
       {% field_errors form.text %}
     </div>
-    <div class="form-field">
-      <label for="{{ form.time_spent.id_for_label }}" class="form-label">Time spent (hours)</label>
-      <input type="number"
-             id="{{ form.time_spent.id_for_label }}"
-             name="{{ form.time_spent.html_name }}"
-             class="form-input form-input--no-spinner"
-             step="any"
-             min="0"
-             value="0.0">
-      {% field_help_text form.time_spent %}
-      {% field_errors form.time_spent %}
-    </div>
+    {% form_field form.time_spent %}
     <!-- MEDIA UPLOAD -->
     {% media_file_input form.media_file %}
     <div class="form-actions">
