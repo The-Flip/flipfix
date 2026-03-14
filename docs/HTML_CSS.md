@@ -50,6 +50,7 @@ The project establishes component patterns in [flipfix/static/core/styles.css](.
 - **Section Header** (`.section-header` with `.section-header__actions` for h2 headings with inline actions)
 - **Flip Card** (`.flip-card` with `.flip-card__top`, `.flip-card__main`, `.flip-card__bottom` and optional left/right sub-elements for aligning content; use `.flip-card--clickable` when the whole card should be a link, and `.flip-card-list` to reset list spacing when rendering multiple flip-cards)
 - **Centered Container** (`.centered-container` - flexbox container that vertically and horizontally centers content)
+- **Wall Card** (`.wall-card` with `.wall-card__header`, `.wall-card__row`, `.wall-card__desc`, `.wall-card__time`, `.wall-card__overflow` — grouped machine card for the wall display board; used inside `.column-grid.wall-display`)
 
 ### UI Components
 
