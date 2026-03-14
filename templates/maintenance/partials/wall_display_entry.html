@@ -5,7 +5,10 @@
   {% for report in entry.visible_reports %}
     <a href="{% url 'problem-report-detail' report.pk %}"
        class="wall-card__row">
-      {% problem_report_priority_pill report %}
+      <span class="wall-card__top">
+        {% problem_report_priority_pill report %}
+        <span class="wall-card__time">{{ report.occurred_at|smart_date }}</span>
+      </span>
       <span class="wall-card__desc">
         {% if report.description %}
           {{ report.description|truncatewords:20 }}
@@ -13,7 +16,6 @@
           {{ report.get_problem_type_display }}
         {% endif %}
       </span>
-      <span class="wall-card__time">{{ report.occurred_at|smart_date }}</span>
     </a>
   {% endfor %}
   {% if entry.overflow_summary %}<div class="wall-card__overflow">{{ entry.overflow_summary }}</div>{% endif %}
