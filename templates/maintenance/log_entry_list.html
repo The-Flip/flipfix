@@ -26,6 +26,11 @@
     {% icon "plus" class="meta" %}
     New Log Entry
   </a>
+  <a href="{% url 'labor-report-weekly' %}"
+     class="btn btn--secondary btn--full">
+    {% icon "clock" class="meta" %}
+    Labor Report
+  </a>
 {% endblock %}
 {% block infinite_scroll_url %}
   {% url 'log-list-entries' %}

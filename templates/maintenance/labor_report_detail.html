@@ -1,0 +1,61 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load list_tags %}
+{% load maintenance_tags %}
+{% block title %}Labor Detail · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'log-list' %}">Logs</a>
+  <a href="{% url 'labor-report-weekly' %}">Labor Report</a>
+  <span>{{ start_date|date:"M j" }} – {{ end_date|date:"M j, Y" }}</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Date Range" %}
+  <div class="sidebar__subtitle">{{ start_date|date:"M j" }} – {{ end_date|date:"M j, Y" }}</div>
+{% endsidebar_section %}
+{% sidebar_section label="Summary" %}
+<div class="stat-grid">
+  <div class="stat">
+    <span class="stat__value">{{ total_hours }}</span>
+    <span class="stat__label">Total Hours</span>
+  </div>
+  <div class="stat">
+    <span class="stat__value">{{ entries|length }}</span>
+    <span class="stat__label">Entries</span>
+  </div>
+</div>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  {% if entries %}
+    <div class="card-list">
+      {% for entry in entries %}
+        <a href="{% url 'log-detail' entry.pk %}"
+           class="card card--padded card--clickable">
+          <div class="card__row">
+            <div>
+              <strong>{{ entry.machine.short_display_name }}</strong>
+              <span class="text-muted text-sm">· {{ entry.occurred_at|smart_date }}</span>
+            </div>
+            <div>
+              <strong>{{ entry.time_spent }}h</strong>
+            </div>
+          </div>
+          <div class="card__row text-muted text-sm">
+            {% for m in entry.maintainers.all %}
+              {{ m }}
+              {% if not forloop.last %},{% endif %}
+            {% endfor %}
+            {% if entry.maintainer_names %}
+              {% if entry.maintainers.all %},{% endif %}
+              {{ entry.maintainer_names }}
+            {% endif %}
+          </div>
+          <div class="card__row text-sm">{{ entry.text|truncatechars:120 }}</div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+  {% empty_state empty_message="No labor entries in this date range." search_message="" %}
+  {% endif %}
+{% endblock %}

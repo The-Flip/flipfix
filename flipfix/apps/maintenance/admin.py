@@ -17,6 +17,7 @@ class LogEntryAdminForm(forms.ModelForm):
             "maintainer_names",
             "text",
             "occurred_at",
+            "time_spent",
             "created_by",
         )
 
@@ -64,7 +65,14 @@ class ProblemReportAdmin(SimpleHistoryAdmin):
 
 @admin.register(LogEntry)
 class LogEntryAdmin(SimpleHistoryAdmin):
-    list_display = ("machine", "occurred_at", "problem_report", "maintainer_list", "created_by")
+    list_display = (
+        "machine",
+        "occurred_at",
+        "time_spent",
+        "problem_report",
+        "maintainer_list",
+        "created_by",
+    )
     list_filter = ("machine__location", "problem_report__status")
     search_fields = (
         "text",

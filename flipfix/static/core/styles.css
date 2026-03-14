@@ -392,6 +392,34 @@ body {
   padding: var(--space-4);
 }
 
+.card--clickable {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease;
+}
+
+.card--clickable:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.card__row + .card__row {
+  margin-top: var(--space-1);
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 /* Column grid: responsive column layout for grouped views */
 .column-grid {
   display: grid;
@@ -1099,6 +1127,16 @@ body {
 .form-input--sm {
   padding: var(--space-2);
   font-size: var(--text-sm);
+}
+
+.form-input--no-spinner {
+  -moz-appearance: textfield;
+}
+
+.form-input--no-spinner::-webkit-outer-spin-button,
+.form-input--no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* Width variants for inputs that don't need full width (values in em, scale with font) */

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.contrib import messages
@@ -138,6 +139,7 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             text=description,
             occurred_at=occurred_at,
             created_by=self.request.user,
+            time_spent=form.cleaned_data.get("time_spent") or 0,
         )
         sync_references(log_entry, log_entry.text)
         self.machine = machine
@@ -325,6 +327,7 @@ class LogEntryDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView):
         action_handlers = {
             "update_text": self.handle_update_text,
             "update_occurred_at": self._handle_update_occurred_at,
+            "update_time_spent": self._handle_update_time_spent,
             "upload_media": self.handle_upload_media,
             "delete_media": self.handle_delete_media,
             "update_maintainers": self._handle_update_maintainers,
@@ -360,6 +363,26 @@ class LogEntryDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView):
         self.object.occurred_at = occurred_at
         self.object.save(update_fields=["occurred_at", "updated_at"])
         return JsonResponse({"success": True})
+
+    def _handle_update_time_spent(self, request):
+        """AJAX: update the time_spent field."""
+        raw = request.POST.get("time_spent", "").strip()
+        if not raw:
+            return JsonResponse({"success": False, "error": "No value provided"}, status=400)
+
+        try:
+            value = Decimal(raw)
+        except InvalidOperation:
+            return JsonResponse({"success": False, "error": "Invalid number"}, status=400)
+
+        if value < 0:
+            return JsonResponse(
+                {"success": False, "error": "Time spent cannot be negative."}, status=400
+            )
+
+        self.object.time_spent = value
+        self.object.save(update_fields=["time_spent", "updated_at"])
+        return JsonResponse({"success": True, "time_spent": str(value)})
 
     def _handle_update_maintainers(self, request):
         """AJAX: update maintainer assignments."""

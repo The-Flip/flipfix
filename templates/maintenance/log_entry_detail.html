@@ -30,6 +30,9 @@
   {% include "components/history_link.html" with history_url=entry.get_admin_history_url %}
   {% sidebar_section label="Log Entry" %}
   <div class="sidebar__subtitle space-above-sm">{% log_entry_meta entry %}</div>
+  {% if entry.time_spent %}
+    <div class="sidebar__subtitle space-above-sm">{% icon "clock" class="meta" %} {{ entry.time_spent }}h logged</div>
+  {% endif %}
 {% endsidebar_section %}
 {% sidebar_section label="Machine" %}
 {% if entry.problem_report %}

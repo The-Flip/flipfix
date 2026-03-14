@@ -132,7 +132,7 @@ class ProblemReportEditForm(StyledFormMixin, forms.ModelForm):
 
 
 class LogEntryEditForm(StyledFormMixin, forms.ModelForm):
-    """Form for editing a log entry's metadata (maintainer, timestamp)."""
+    """Form for editing a log entry's metadata (maintainer, timestamp, time spent)."""
 
     maintainer_name = forms.CharField(
         label="Who did the work?",
@@ -143,15 +143,30 @@ class LogEntryEditForm(StyledFormMixin, forms.ModelForm):
 
     class Meta:
         model = LogEntry
-        fields = ["occurred_at"]
+        fields = ["occurred_at", "time_spent"]
         widgets = {
             "occurred_at": forms.DateTimeInput(
                 attrs={"type": "datetime-local", "class": "form-input"}
             ),
+            "time_spent": forms.NumberInput(
+                attrs={"step": "0.5", "min": "0", "class": "form-input form-input--no-spinner"}
+            ),
         }
         labels = {
             "occurred_at": "When",
+            "time_spent": "Time spent (hours)",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["time_spent"].required = False
+
+    def clean_time_spent(self):
+        """Default to current value (or 0) when time_spent is omitted."""
+        value = self.cleaned_data.get("time_spent")
+        if value is None:
+            return self.instance.time_spent if self.instance.pk else 0
+        return value
 
 
 class LogEntryQuickForm(StyledFormMixin, forms.Form):
@@ -184,6 +199,18 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         widget=MarkdownTextarea(attrs={"rows": 4, "placeholder": "Describe the work performed..."}),
     )
     media_file = MultiFileField(label="Photo", required=False)
+    time_spent = forms.DecimalField(
+        label="Time spent (hours)",
+        max_digits=5,
+        decimal_places=1,
+        initial="0.0",
+        required=False,
+        min_value=0,
+        help_text="Total person-hours for everyone involved",
+        widget=forms.NumberInput(
+            attrs={"step": "0.5", "min": "0", "class": "form-input--no-spinner"}
+        ),
+    )
 
     def clean_text(self):
         """Convert authoring format links to storage format."""

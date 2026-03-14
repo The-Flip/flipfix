@@ -186,9 +186,16 @@ def log_entry_meta(context, entry):
     elif getattr(entry, "maintainer_names", ""):
         names = entry.maintainer_names
 
+    time_spent = getattr(entry, "time_spent", None)
+    hours = format_html("{}h", time_spent) if time_spent else ""
+
     names = (names or "").strip()
+    if names and hours:
+        return format_html("{} \u00b7 {} \u00b7 <strong>{}</strong>", names, hours, ts)
     if names:
         return format_html("{} \u00b7 <strong>{}</strong>", names, ts)
+    if hours:
+        return format_html("{} \u00b7 <strong>{}</strong>", hours, ts)
     return format_html("<strong>{}</strong>", ts)
 
 
