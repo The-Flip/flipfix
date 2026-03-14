@@ -149,7 +149,7 @@ class LogEntryEditForm(StyledFormMixin, forms.ModelForm):
                 attrs={"type": "datetime-local", "class": "form-input"}
             ),
             "time_spent": forms.NumberInput(
-                attrs={"step": "0.5", "min": "0", "class": "form-input form-input--no-spinner"}
+                attrs={"step": "any", "min": "0", "class": "form-input form-input--no-spinner"}
             ),
         }
         labels = {
@@ -202,13 +202,13 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
     time_spent = forms.DecimalField(
         label="Time spent (hours)",
         max_digits=5,
-        decimal_places=1,
+        decimal_places=2,
         initial="0.0",
         required=False,
         min_value=0,
         help_text="Total person-hours for everyone involved",
         widget=forms.NumberInput(
-            attrs={"step": "0.5", "min": "0", "class": "form-input--no-spinner"}
+            attrs={"step": "any", "min": "0", "class": "form-input--no-spinner"}
         ),
     )
 

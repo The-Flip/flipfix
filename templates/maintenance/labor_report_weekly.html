@@ -11,7 +11,7 @@
   {% sidebar_section label="Summary" %}
   <div class="stat-grid">
     <div class="stat">
-      <span class="stat__value">{{ grand_total }}</span>
+      <span class="stat__value">{{ grand_total|floatformat:-2 }}</span>
       <span class="stat__label">Total Hours</span>
     </div>
   </div>
@@ -36,7 +36,7 @@
             <div class="text-muted text-sm">{{ week.entry_count }} entr{{ week.entry_count|pluralize:"y,ies" }}</div>
           </div>
           <div class="card__row">
-            <span class="stat__value">{{ week.total_hours }}h</span>
+            <span class="stat__value">{{ week.total_hours|floatformat:-2 }}h</span>
           </div>
         </a>
       {% endfor %}

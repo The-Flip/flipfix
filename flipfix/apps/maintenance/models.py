@@ -375,7 +375,7 @@ class LogEntry(TimeStampedMixin):
     )
     time_spent = models.DecimalField(
         max_digits=5,
-        decimal_places=1,
+        decimal_places=2,
         default=0,
         validators=[MinValueValidator(Decimal("0"))],
         help_text="Total person-hours spent (all people combined).",

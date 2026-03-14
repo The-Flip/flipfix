@@ -31,7 +31,9 @@
   {% sidebar_section label="Log Entry" %}
   <div class="sidebar__subtitle space-above-sm">{% log_entry_meta entry %}</div>
   {% if entry.time_spent %}
-    <div class="sidebar__subtitle space-above-sm">{% icon "clock" class="meta" %} {{ entry.time_spent }}h logged</div>
+    <div class="sidebar__subtitle space-above-sm">
+      {% icon "clock" class="meta" %} {{ entry.time_spent|floatformat:-2 }}h logged
+    </div>
   {% endif %}
 {% endsidebar_section %}
 {% sidebar_section label="Machine" %}
