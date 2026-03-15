@@ -42,7 +42,7 @@ class CatalogConfig(AppConfig):
                 url_kwarg="slug",
                 url_field="slug",
                 autocomplete_search_fields=("name", "model__name", "model__manufacturer", "slug"),
-                autocomplete_ordering=("model__name",),
+                autocomplete_ordering=("model__sort_name",),
                 autocomplete_select_related=("model",),
                 autocomplete_serialize=_serialize_machine,
                 sort_order=20,
@@ -60,7 +60,7 @@ class CatalogConfig(AppConfig):
                 url_kwarg="slug",
                 url_field="slug",
                 autocomplete_search_fields=("name", "manufacturer", "slug"),
-                autocomplete_ordering=("name",),
+                autocomplete_ordering=("sort_name",),
                 autocomplete_serialize=_serialize_model,
                 sort_order=70,
             )

@@ -75,7 +75,7 @@ class MachineListView(ListView):
                 # 2. Machines with open problem reports first
                 F("latest_open_report_date").desc(nulls_last=True),
                 # 3. Machine name as tie-breaker
-                Lower("model__name"),
+                Lower("model__sort_name"),
             )
         )
 
@@ -332,7 +332,7 @@ class MachineCreateLandingView(View):
     template_name = "catalog/machine_create_landing.html"
 
     def get(self, request):
-        context = {"models": MachineModel.objects.all().order_by("name")}
+        context = {"models": MachineModel.objects.all().order_by("sort_name")}
         return TemplateResponse(request, self.template_name, context)
 
     def post(self, request):
