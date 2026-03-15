@@ -63,6 +63,11 @@
         <div class="sidebar__section">
           <div class="flex stack-tight stack-column">
             {% if user.is_authenticated %}
+              <a href="{% url 'machine-details' machine.slug %}"
+                 class="btn btn--secondary btn--full">
+                {% icon "circle-info" class="meta" %}
+                Details
+              </a>
               <a href="{% url 'machine-edit' machine.slug %}"
                  class="btn btn--secondary btn--full">
                 {% icon "pencil" class="meta" %}

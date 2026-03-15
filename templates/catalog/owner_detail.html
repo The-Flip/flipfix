@@ -1,9 +1,11 @@
 {% extends "layouts/two_column.html" %}
+{% load static %}
 {% load ui_tags %}
 {% load sidebar_tags %}
 {% load catalog_tags %}
 {% load maintenance_tags %}
 {% load form_tags %}
+{% load markdown_tags %}
 {% block title %}{{ object.name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'owner-list' %}">Owners</a>
@@ -137,4 +139,51 @@
       </form>
     </div>
   {% endif %}
+  <!-- COMMENTS -->
+  <div class="section-header">
+    <h2>Comments</h2>
+  </div>
+  {% if comments %}
+    <div class="flip-card-list">
+      {% for comment in comments %}
+        <div class="flip-card">
+          <div class="flip-card__main">
+            <div class="flip-card__main-left">
+              <div class="text-muted text-sm">
+                {% if comment.posted_by %}
+                  {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
+                {% else %}
+                  Unknown
+                {% endif %}
+                · {{ comment.created_at|smart_date }}
+              </div>
+              <div>{{ comment.text|render_markdown }}</div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card--padded text-center text-muted">
+      <p>No comments yet.</p>
+    </div>
+  {% endif %}
+  {% if user.is_authenticated %}
+    <div class="card card--padded">
+      <form method="post" class="form-main">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_comment">
+        {% form_field comment_form.text %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--secondary">
+            {% icon "comment" class="meta" %}
+            Add Comment
+          </button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  {% include "core/partials/markdown_textarea_scripts.html" %}
 {% endblock %}

@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from flipfix.apps.catalog.forms import OwnerDocumentForm, OwnerForm
+from flipfix.apps.catalog.forms import OwnerCommentForm, OwnerDocumentForm, OwnerForm
 from flipfix.apps.catalog.models import Owner, OwnerDocument
 
 
@@ -39,10 +39,12 @@ class OwnerDetailView(DetailView):
         )
         context["documents"] = self.object.documents.all()
         context["document_form"] = OwnerDocumentForm()
+        context["comments"] = self.object.comments.select_related("posted_by").all()
+        context["comment_form"] = OwnerCommentForm()
         return context
 
     def post(self, request, *args, **kwargs):
-        """Handle document upload and delete actions."""
+        """Handle document upload, delete, and comment actions."""
         self.object = self.get_object()
         action = request.POST.get("action", "")
 
@@ -50,6 +52,8 @@ class OwnerDetailView(DetailView):
             return self._handle_upload(request)
         elif action == "delete_document":
             return self._handle_delete(request)
+        elif action == "add_comment":
+            return self._handle_comment(request)
 
         return redirect("owner-detail", slug=self.object.slug)
 
@@ -73,6 +77,19 @@ class OwnerDetailView(DetailView):
         doc.file.delete(save=False)
         doc.delete()
         messages.success(request, f"Document '{name}' deleted.")
+        return redirect("owner-detail", slug=self.object.slug)
+
+    def _handle_comment(self, request):
+        form = OwnerCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.owner = self.object
+            comment.posted_by = request.user
+            comment.save()
+            messages.success(request, "Comment added.")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
         return redirect("owner-detail", slug=self.object.slug)
 
 

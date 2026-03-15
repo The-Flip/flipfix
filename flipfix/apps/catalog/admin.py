@@ -2,7 +2,15 @@ from django.contrib import admin
 from django.db.models import Count
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Location, MachineInstance, MachineModel, Owner, OwnerDocument
+from .models import (
+    Location,
+    MachineComment,
+    MachineInstance,
+    MachineModel,
+    Owner,
+    OwnerComment,
+    OwnerDocument,
+)
 
 
 @admin.register(Location)
@@ -33,12 +41,18 @@ class OwnerDocumentInline(admin.TabularInline):
     readonly_fields = ("uploaded_by",)
 
 
+class OwnerCommentInline(admin.TabularInline):
+    model = OwnerComment
+    extra = 0
+    readonly_fields = ("posted_by",)
+
+
 @admin.register(Owner)
 class OwnerAdmin(SimpleHistoryAdmin):
     list_display = ("name", "email", "phone", "machine_count")
     search_fields = ("name", "email", "phone")
     readonly_fields = ("slug", "created_by", "updated_by")
-    inlines = [OwnerDocumentInline]
+    inlines = [OwnerDocumentInline, OwnerCommentInline]
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(machine_count=Count("machines"))
@@ -46,6 +60,12 @@ class OwnerAdmin(SimpleHistoryAdmin):
     @admin.display(description="Machines", ordering="machine_count")
     def machine_count(self, obj):
         return obj.machine_count
+
+
+class MachineCommentInline(admin.TabularInline):
+    model = MachineComment
+    extra = 0
+    readonly_fields = ("posted_by",)
 
 
 @admin.register(MachineInstance)
@@ -63,3 +83,4 @@ class MachineInstanceAdmin(SimpleHistoryAdmin):
     list_filter = ("operational_status", "location", "owner")
     autocomplete_fields = ("model", "location", "owner")
     readonly_fields = ("asset_id", "slug", "created_by", "updated_by")
+    inlines = [MachineCommentInline]

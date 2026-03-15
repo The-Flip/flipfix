@@ -465,3 +465,45 @@ class MachineInstance(TimeStampedMixin):
                     self.asset_id = ""  # Reset and retry
         else:
             super().save(*args, **kwargs)
+
+
+class MachineComment(TimeStampedMixin):
+    """Informal note on a machine, separate from the maintenance feed."""
+
+    machine = models.ForeignKey(MachineInstance, on_delete=models.CASCADE, related_name="comments")
+    text = models.TextField()
+    posted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment on {self.machine} by {self.posted_by}"
+
+
+class OwnerComment(TimeStampedMixin):
+    """Informal note on an owner."""
+
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name="comments")
+    text = models.TextField()
+    posted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment on {self.owner} by {self.posted_by}"

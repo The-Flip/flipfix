@@ -19,6 +19,7 @@ from flipfix.apps.catalog.views.machines import (
     MachineCreateLandingView,
     MachineCreateModelDoesNotExistView,
     MachineCreateModelExistsView,
+    MachineDetailsView,
     MachineDetailViewForPublic,
     MachineFeedPartialView,
     MachineFeedView,
@@ -301,6 +302,12 @@ urlpatterns = [
         MachineFeedPartialView.as_view(),
         name="machine-feed-entries",
         access="public",
+    ),
+    # Machine details (read-only info + comments)
+    path(
+        "machines/<slug:slug>/details/",
+        MachineDetailsView.as_view(),
+        name="machine-details",
     ),
     # Edit machine
     path("machines/<slug:slug>/edit/", MachineUpdateView.as_view(), name="machine-edit"),

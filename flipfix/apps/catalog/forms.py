@@ -7,12 +7,14 @@ from django.core.exceptions import ValidationError
 
 from flipfix.apps.catalog.models import (
     OWNER_DOCUMENT_ALLOWED_EXTENSIONS,
+    MachineComment,
     MachineInstance,
     MachineModel,
     Owner,
+    OwnerComment,
     OwnerDocument,
 )
-from flipfix.apps.core.forms import StyledFormMixin
+from flipfix.apps.core.forms import MarkdownTextarea, StyledFormMixin
 from flipfix.apps.core.media import MAX_MEDIA_FILE_SIZE_BYTES
 
 
@@ -261,3 +263,25 @@ class OwnerDocumentForm(StyledFormMixin, forms.ModelForm):
             raise ValidationError("File too large. Maximum size is 200MB.")
 
         return uploaded_file
+
+
+class MachineCommentForm(StyledFormMixin, forms.ModelForm):
+    """Form for adding a comment to a machine."""
+
+    class Meta:
+        model = MachineComment
+        fields = ["text"]
+        widgets = {
+            "text": MarkdownTextarea(attrs={"rows": 4, "placeholder": "Add a comment..."}),
+        }
+
+
+class OwnerCommentForm(StyledFormMixin, forms.ModelForm):
+    """Form for adding a comment to an owner."""
+
+    class Meta:
+        model = OwnerComment
+        fields = ["text"]
+        widgets = {
+            "text": MarkdownTextarea(attrs={"rows": 4, "placeholder": "Add a comment..."}),
+        }

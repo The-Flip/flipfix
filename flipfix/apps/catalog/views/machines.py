@@ -13,6 +13,7 @@ from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView, UpdateView
 
 from flipfix.apps.catalog.forms import (
+    MachineCommentForm,
     MachineCreateModelDoesNotExistForm,
     MachineCreateModelExistsForm,
     MachineInstanceForm,
@@ -277,6 +278,43 @@ class MachineFeedPartialView(View):
                 "next_page": page_num + 1 if has_next else None,
             }
         )
+
+
+class MachineDetailsView(DetailView):
+    """Read-only machine info page with comments."""
+
+    template_name = "catalog/machine_details.html"
+    slug_field = "slug"
+    slug_url_kwarg = "slug"
+    context_object_name = "machine"
+
+    def get_queryset(self):
+        return MachineInstance.objects.select_related("model", "owner", "location")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comments"] = self.object.comments.select_related("posted_by").all()
+        context["comment_form"] = MachineCommentForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Handle comment creation."""
+        self.object = self.get_object()
+        action = request.POST.get("action", "")
+
+        if action == "add_comment":
+            form = MachineCommentForm(request.POST)
+            if form.is_valid():
+                comment = form.save(commit=False)
+                comment.machine = self.object
+                comment.posted_by = request.user
+                comment.save()
+                messages.success(request, "Comment added.")
+            else:
+                for error in form.errors.values():
+                    messages.error(request, error[0])
+
+        return redirect("machine-details", slug=self.object.slug)
 
 
 class MachineUpdateView(UpdateView):
