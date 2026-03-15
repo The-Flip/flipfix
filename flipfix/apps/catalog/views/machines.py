@@ -189,7 +189,9 @@ class MachineFeedView(TemplateView):
     template_name = "catalog/machine_feed.html"
 
     def dispatch(self, request, *args, **kwargs):
-        self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        self.machine = get_object_or_404(
+            MachineInstance.objects.select_related("model", "owner"), slug=kwargs["slug"]
+        )
         # Figure out what types of feed items to show
         self.feed_filter_type = request.GET.get("f", "all")
         if self.feed_filter_type not in FEED_CONFIGS:
@@ -280,11 +282,13 @@ class MachineFeedPartialView(View):
 class MachineUpdateView(UpdateView):
     """Edit machine instance details (excluding model)."""
 
-    model = MachineInstance
     form_class = MachineInstanceForm
     template_name = "catalog/machine_edit.html"
     slug_field = "slug"
     slug_url_kwarg = "slug"
+
+    def get_queryset(self):
+        return MachineInstance.objects.select_related("model", "owner")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

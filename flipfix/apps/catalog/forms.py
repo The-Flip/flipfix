@@ -3,7 +3,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from flipfix.apps.catalog.models import MachineInstance, MachineModel
+from flipfix.apps.catalog.models import MachineInstance, MachineModel, Owner
 from flipfix.apps.core.forms import StyledFormMixin
 
 
@@ -16,6 +16,7 @@ class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
             "name",
             "short_name",
             "serial_number",
+            "owner",
             "acquisition_notes",
         ]
         widgets = {
@@ -191,3 +192,34 @@ class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
             )
 
         return name
+
+
+class OwnerForm(StyledFormMixin, forms.ModelForm):
+    """Form for creating and editing machine owners."""
+
+    class Meta:
+        model = Owner
+        fields = [
+            "name",
+            "email",
+            "phone",
+            "alternate_contact",
+            "notes",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "e.g., William Pietri"}),
+            "email": forms.EmailInput(attrs={"placeholder": "e.g., owner@example.com"}),
+            "phone": forms.TextInput(attrs={"placeholder": "e.g., (312) 555-0100"}),
+            "alternate_contact": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Additional contact information (address, alternate phone, etc.)",
+                }
+            ),
+            "notes": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "General notes about this owner",
+                }
+            ),
+        }

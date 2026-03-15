@@ -1,7 +1,8 @@
 from django.contrib import admin
+from django.db.models import Count
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Location, MachineInstance, MachineModel
+from .models import Location, MachineInstance, MachineModel, Owner
 
 
 @admin.register(Location)
@@ -26,10 +27,32 @@ class MachineModelAdmin(SimpleHistoryAdmin):
     readonly_fields = ("sort_name", "created_by", "updated_by")
 
 
+@admin.register(Owner)
+class OwnerAdmin(SimpleHistoryAdmin):
+    list_display = ("name", "email", "phone", "machine_count")
+    search_fields = ("name", "email", "phone")
+    readonly_fields = ("slug", "created_by", "updated_by")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(machine_count=Count("machines"))
+
+    @admin.display(description="Machines", ordering="machine_count")
+    def machine_count(self, obj):
+        return obj.machine_count
+
+
 @admin.register(MachineInstance)
 class MachineInstanceAdmin(SimpleHistoryAdmin):
-    list_display = ("asset_id", "name", "short_name", "model", "location", "operational_status")
+    list_display = (
+        "asset_id",
+        "name",
+        "short_name",
+        "model",
+        "owner",
+        "location",
+        "operational_status",
+    )
     search_fields = ("asset_id", "name", "short_name", "model__name", "serial_number")
-    list_filter = ("operational_status", "location")
-    autocomplete_fields = ("model", "location")
+    list_filter = ("operational_status", "location", "owner")
+    autocomplete_fields = ("model", "location", "owner")
     readonly_fields = ("asset_id", "slug", "created_by", "updated_by")

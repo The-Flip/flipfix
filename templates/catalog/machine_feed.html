@@ -48,6 +48,11 @@
           <div class="sidebar__title">{{ machine.name }}</div>
           <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
           {% if machine.asset_id %}<div class="sidebar__subtitle text-muted">{{ machine.asset_id }}</div>{% endif %}
+          {% if machine.owner %}
+            <div class="sidebar__subtitle">
+              <a href="{% url 'owner-detail' machine.owner.slug %}">{{ machine.owner.name }}</a>
+            </div>
+          {% endif %}
           <div class="flex flex-wrap stack-tight space-above-sm"
                data-update-url="{% url 'machine-inline-update' machine.slug %}">
             {% settable_machine_status_pill machine %}

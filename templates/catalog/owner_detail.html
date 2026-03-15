@@ -1,0 +1,80 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load catalog_tags %}
+{% load maintenance_tags %}
+{% block title %}{{ object.name }} · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'owner-list' %}">Owners</a>
+  <span>{{ object.name }}</span>
+{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'owner-edit' object.slug %}"
+     class="btn btn--secondary btn--full">
+    {% icon "pencil" class="meta" %}
+    Edit
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section %}
+  <div class="sidebar__title">{{ object.name }}</div>
+  {% if object.email %}
+    <div class="sidebar__subtitle text-muted">
+      <a href="mailto:{{ object.email }}">{{ object.email }}</a>
+    </div>
+  {% endif %}
+  {% if object.phone %}<div class="sidebar__subtitle text-muted">{{ object.phone }}</div>{% endif %}
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'owner-edit' object.slug %}"
+   class="btn btn--secondary btn--full">
+  {% icon "pencil" class="meta" %}
+  Edit Owner
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  {% if object.alternate_contact or object.notes %}
+    <div class="card card--padded">
+      {% if object.alternate_contact %}
+        <div class="form-field">
+          <label class="form-label">Alternate Contact</label>
+          <p>{{ object.alternate_contact|linebreaksbr }}</p>
+        </div>
+      {% endif %}
+      {% if object.notes %}
+        <div class="form-field">
+          <label class="form-label">Notes</label>
+          <p>{{ object.notes|linebreaksbr }}</p>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+  <div class="section-header">
+    <h2>Machines</h2>
+  </div>
+  {% if machines %}
+    <div class="flip-card-list">
+      {% for machine in machines %}
+        <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+           class="flip-card flip-card--clickable">
+          <div class="flip-card__main">
+            <div class="flip-card__main-left">
+              <div class="flip-card__title">{{ machine.name }}</div>
+              <div class="text-muted text-sm">{{ machine.model|manufacturer_year }}</div>
+            </div>
+            <div class="flip-card__main-right">
+              <span class="pill {{ machine.operational_status|machine_status_css_class }}">
+                {{ machine.get_operational_status_display }}
+              </span>
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card--padded text-center text-muted">
+      <p>No machines assigned to this owner.</p>
+    </div>
+  {% endif %}
+{% endblock %}

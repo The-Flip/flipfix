@@ -15,7 +15,7 @@ from flipfix.apps.accounts.views import (
     TerminalUpdateView,
     invitation_register,
 )
-from flipfix.apps.catalog.views import (
+from flipfix.apps.catalog.views.machines import (
     MachineCreateLandingView,
     MachineCreateModelDoesNotExistView,
     MachineCreateModelExistsView,
@@ -25,6 +25,12 @@ from flipfix.apps.catalog.views import (
     MachineListView,
     MachineModelUpdateView,
     MachineUpdateView,
+)
+from flipfix.apps.catalog.views.owners import (
+    OwnerCreateView,
+    OwnerDetailView,
+    OwnerListView,
+    OwnerUpdateView,
 )
 from flipfix.apps.catalog.views_inline import MachineInlineUpdateView
 from flipfix.apps.core.admin_views import admin_debug_view
@@ -313,6 +319,17 @@ urlpatterns = [
     ###
     # Edit machine model
     path("models/<slug:slug>/edit/", MachineModelUpdateView.as_view(), name="machine-model-edit"),
+    ###
+    # Owners
+    ###
+    # List all owners
+    path("owners/", OwnerListView.as_view(), name="owner-list"),
+    # Create new owner
+    path("owners/new/", OwnerCreateView.as_view(), name="owner-create"),
+    # Owner detail page
+    path("owners/<slug:slug>/", OwnerDetailView.as_view(), name="owner-detail"),
+    # Edit owner
+    path("owners/<slug:slug>/edit/", OwnerUpdateView.as_view(), name="owner-edit"),
     ###
     # API endpoints
     ###

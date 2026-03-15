@@ -168,12 +168,59 @@ class MachineModel(TimeStampedMixin):
         super().save(*args, **kwargs)
 
 
+class Owner(TimeStampedMixin):
+    """Person or company that owns one or more pinball machines."""
+
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    alternate_contact = models.TextField(blank=True, help_text="Additional contact information")
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owners_created",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owners_updated",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("owner-detail", kwargs={"slug": self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or "owner"
+            slug = base_slug
+            counter = 2
+            while Owner.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
 class MachineInstanceQuerySet(models.QuerySet):
     """Custom queryset for MachineInstance with common filters."""
 
     def visible(self):
-        """Return machines with related model and location pre-fetched."""
-        return self.select_related("model", "location")
+        """Return machines with related model, location, and owner pre-fetched."""
+        return self.select_related("model", "location", "owner")
 
     def active_for_matching(self):
         """Return machines suitable for Discord message matching.
@@ -236,11 +283,13 @@ class MachineInstance(TimeStampedMixin):
     acquisition_notes = models.TextField(
         blank=True, verbose_name="Acquisition Notes", help_text="Details about acquisition history"
     )
-    ownership_credit = models.CharField(
-        max_length=300,
+    owner = models.ForeignKey(
+        Owner,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name="Ownership Credit",
-        help_text="Credit for ownership",
+        related_name="machines",
+        help_text="Person or company that owns this machine",
     )
     location = models.ForeignKey(
         Location,
@@ -289,8 +338,10 @@ class MachineInstance(TimeStampedMixin):
 
     @property
     def ownership_display(self) -> str:
-        """Return ownership credit or default collection name."""
-        return self.ownership_credit or "The Flip Collection"
+        """Return owner name or default collection name."""
+        if self.owner_id and self.owner:
+            return self.owner.name
+        return "The Flip Collection"
 
     def get_absolute_url(self):
         """Return the public-facing URL for this machine."""
