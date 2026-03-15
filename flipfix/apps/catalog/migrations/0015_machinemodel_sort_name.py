@@ -9,10 +9,13 @@ def backfill_sort_name(apps, schema_editor):
     """Populate sort_name for all existing MachineModel rows."""
     MachineModel = apps.get_model("catalog", "MachineModel")
     pattern = re.compile(r"^(The|A|An)\s+", re.IGNORECASE)
-    for obj in MachineModel.objects.all():
+    batch = []
+    for obj in MachineModel.objects.only("name").iterator(chunk_size=500):
         stripped = pattern.sub("", obj.name)
         obj.sort_name = stripped if stripped else obj.name
-        obj.save(update_fields=["sort_name"])
+        batch.append(obj)
+    if batch:
+        MachineModel.objects.bulk_update(batch, ["sort_name"])
 
 
 def reverse_backfill(apps, schema_editor):
