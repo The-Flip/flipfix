@@ -28,8 +28,8 @@ class MachineModelAdmin(SimpleHistoryAdmin):
 
 @admin.register(MachineInstance)
 class MachineInstanceAdmin(SimpleHistoryAdmin):
-    list_display = ("name", "short_name", "model", "location", "operational_status")
-    search_fields = ("name", "short_name", "model__name", "serial_number")
+    list_display = ("asset_id", "name", "short_name", "model", "location", "operational_status")
+    search_fields = ("asset_id", "name", "short_name", "model__name", "serial_number")
     list_filter = ("operational_status", "location")
     autocomplete_fields = ("model", "location")
-    readonly_fields = ("slug", "created_by", "updated_by")
+    readonly_fields = ("asset_id", "slug", "created_by", "updated_by")
