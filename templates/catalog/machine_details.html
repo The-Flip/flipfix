@@ -20,12 +20,15 @@
 {% endblock %}
 {% block sidebar %}
   {% sidebar_section %}
-  <div class="sidebar__title">{{ machine.name }}</div>
+  <div class="sidebar__title">
+    {{ machine.name }}
+    {% if machine.asset_id %}<span class="text-muted">({{ machine.asset_id }})</span>{% endif %}
+  </div>
   <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
-  {% if machine.asset_id %}<div class="sidebar__subtitle text-muted">{{ machine.asset_id }}</div>{% endif %}
   {% if machine.owner %}
     <div class="sidebar__subtitle">
-      <a href="{% url 'owner-detail' machine.owner.slug %}">{{ machine.owner.name }}</a>
+      Owner: <a href="{% url 'owner-detail' machine.owner.slug %}"
+    class="link-underline">{{ machine.owner.name }}</a>
     </div>
   {% endif %}
 {% endsidebar_section %}

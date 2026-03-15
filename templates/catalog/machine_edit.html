@@ -20,12 +20,15 @@
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=object.get_admin_history_url %}
   {% sidebar_section %}
-  <div class="sidebar__title">{{ object.name }}</div>
+  <div class="sidebar__title">
+    {{ object.name }}
+    {% if object.asset_id %}<span class="text-muted">({{ object.asset_id }})</span>{% endif %}
+  </div>
   <div class="sidebar__subtitle">{{ object.model|manufacturer_year }}</div>
-  {% if object.asset_id %}<div class="sidebar__subtitle text-muted">{{ object.asset_id }}</div>{% endif %}
   {% if object.owner %}
     <div class="sidebar__subtitle">
-      <a href="{% url 'owner-detail' object.owner.slug %}">{{ object.owner.name }}</a>
+      Owner: <a href="{% url 'owner-detail' object.owner.slug %}"
+    class="link-underline">{{ object.owner.name }}</a>
     </div>
   {% endif %}
   <div class="flex flex-wrap stack-tight space-above-sm"

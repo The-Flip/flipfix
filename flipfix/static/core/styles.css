@@ -2542,6 +2542,10 @@ a.stat:focus-visible {
   text-align: center;
 }
 
+.link-underline:hover {
+  text-decoration: underline;
+}
+
 /* Font weights */
 .font-semibold {
   font-weight: var(--font-semibold);
@@ -3093,4 +3097,41 @@ a.stat:focus-visible {
   pointer-events: none;
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* ---- Owner page --------------------------------------------------------- */
+
+/* Machine table on owner detail */
+.owner-machines-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.owner-machines-table th {
+  text-align: left;
+  font-weight: var(--font-medium);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-gray-200);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.owner-machines-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.owner-machines-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Larger document icons */
+.owner-doc-icon {
+  font-size: 1.25em;
+  width: 1.25em;
+  vertical-align: middle;
+  margin-right: var(--space-1);
 }

@@ -21,12 +21,6 @@
 {% block sidebar %}
   {% sidebar_section %}
   <div class="sidebar__title">{{ object.name }}</div>
-  {% if object.email %}
-    <div class="sidebar__subtitle text-muted">
-      <a href="mailto:{{ object.email }}">{{ object.email }}</a>
-    </div>
-  {% endif %}
-  {% if object.phone %}<div class="sidebar__subtitle text-muted">{{ object.phone }}</div>{% endif %}
 {% endsidebar_section %}
 {% sidebar_section %}
 <a href="{% url 'owner-edit' object.slug %}"
@@ -37,43 +31,69 @@
 {% endsidebar_section %}
 {% endblock %}
 {% block main %}
-  {% if object.alternate_contact or object.notes %}
-    <div class="card card--padded">
-      {% if object.alternate_contact %}
-        <div class="form-field">
-          <label class="form-label">Alternate Contact</label>
-          <p>{{ object.alternate_contact|linebreaksbr }}</p>
-        </div>
-      {% endif %}
-      {% if object.notes %}
-        <div class="form-field">
-          <label class="form-label">Notes</label>
-          <p>{{ object.notes|linebreaksbr }}</p>
-        </div>
-      {% endif %}
-    </div>
-  {% endif %}
+  <!-- OWNER INFO -->
+  <div class="card card--padded">
+    {% if object.email %}
+      <div class="form-field">
+        <label class="form-label">Email</label>
+        <p>
+          <a href="mailto:{{ object.email }}" class="link-underline">{{ object.email }}</a>
+        </p>
+      </div>
+    {% endif %}
+    {% if object.phone %}
+      <div class="form-field">
+        <label class="form-label">Phone</label>
+        <p>{{ object.phone }}</p>
+      </div>
+    {% endif %}
+    {% if object.alternate_contact %}
+      <div class="form-field">
+        <label class="form-label">Alternate Contact</label>
+        <p>{{ object.alternate_contact|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+    {% if object.notes %}
+      <div class="form-field">
+        <label class="form-label">Notes</label>
+        <p>{{ object.notes|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+    {% if not object.email and not object.phone and not object.alternate_contact and not object.notes %}
+      <p class="text-muted">No contact information on file.</p>
+    {% endif %}
+  </div>
+  <!-- MACHINES -->
   <div class="section-header">
-    <h2>Machines</h2>
+    <h2>
+      Machines <span class="text-muted">({{ machines|length }})</span>
+    </h2>
   </div>
   {% if machines %}
-    <div class="flip-card-list">
-      {% for machine in machines %}
-        <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-           class="flip-card flip-card--clickable">
-          <div class="flip-card__main">
-            <div class="flip-card__main-left">
-              <div class="flip-card__title">{{ machine.name }}</div>
-              <div class="text-muted text-sm">{{ machine.model|manufacturer_year }}</div>
-            </div>
-            <div class="flip-card__main-right">
-              <span class="pill {{ machine.operational_status|machine_status_css_class }}">
-                {{ machine.get_operational_status_display }}
-              </span>
-            </div>
-          </div>
-        </a>
-      {% endfor %}
+    <div class="card">
+      <table class="owner-machines-table">
+        <thead>
+          <tr>
+            <th>Machine</th>
+            <th>Asset ID</th>
+            <th>Location</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for machine in machines %}
+            <tr>
+              <td>
+                <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+                   class="link-underline">{{ machine.name }}</a>
+              </td>
+              <td class="text-muted">{{ machine.asset_id }}</td>
+              <td class="text-muted">
+                {% if machine.location %}{{ machine.location.name }}{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   {% else %}
     <div class="card card--padded text-center text-muted">
@@ -92,13 +112,16 @@
             <div class="flip-card__main-left">
               <div class="flip-card__title">
                 {% if doc.is_pdf %}
-                  {% icon "file-pdf" class="meta" %}
+                  {% icon "file-pdf" class="owner-doc-icon" %}
                 {% elif doc.is_image %}
-                  {% icon "file-image" class="meta" %}
+                  {% icon "file-image" class="owner-doc-icon" %}
                 {% else %}
-                  {% icon "file" class="meta" %}
+                  {% icon "file" class="owner-doc-icon" %}
                 {% endif %}
-                <a href="{{ doc.file.url }}" target="_blank" rel="noopener">{{ doc.display_name }}</a>
+                <a href="{{ doc.file.url }}"
+                   target="_blank"
+                   rel="noopener"
+                   class="link-underline">{{ doc.display_name }}</a>
               </div>
               <div class="text-muted text-sm">{{ doc.created_at|smart_date }}</div>
             </div>
@@ -124,19 +147,27 @@
     </div>
   {% endif %}
   {% if user.is_authenticated %}
-    <div class="card card--padded">
-      <form method="post" enctype="multipart/form-data" class="form-main">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="upload_document">
-        {% form_field document_form.title %}
-        {% form_field document_form.file %}
-        <div class="form-actions">
-          <button type="submit" class="btn btn--secondary">
-            {% icon "upload" class="meta" %}
-            Upload Document
-          </button>
-        </div>
-      </form>
+    <button type="button"
+            class="btn btn--secondary btn--sm"
+            data-toggle-target="document-upload-form">
+      {% icon "plus" class="meta" %}
+      Add document
+    </button>
+    <div id="document-upload-form" class="hidden">
+      <div class="card card--padded space-above-sm">
+        <form method="post" enctype="multipart/form-data" class="form-main">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="upload_document">
+          {% form_field document_form.title %}
+          {% form_field document_form.file %}
+          <div class="form-actions">
+            <button type="submit" class="btn btn--secondary">
+              {% icon "upload" class="meta" %}
+              Upload Document
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   {% endif %}
   <!-- COMMENTS -->
@@ -169,21 +200,42 @@
     </div>
   {% endif %}
   {% if user.is_authenticated %}
-    <div class="card card--padded">
-      <form method="post" class="form-main">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add_comment">
-        {% form_field comment_form.text %}
-        <div class="form-actions">
-          <button type="submit" class="btn btn--secondary">
-            {% icon "comment" class="meta" %}
-            Add Comment
-          </button>
-        </div>
-      </form>
+    <button type="button"
+            class="btn btn--secondary btn--sm"
+            data-toggle-target="comment-form">
+      {% icon "plus" class="meta" %}
+      Add comment
+    </button>
+    <div id="comment-form" class="hidden">
+      <div class="card card--padded space-above-sm">
+        <form method="post" class="form-main">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_comment">
+          {% form_field comment_form.text %}
+          <div class="form-actions">
+            <button type="submit" class="btn btn--secondary">
+              {% icon "comment" class="meta" %}
+              Add Comment
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   {% endif %}
 {% endblock %}
 {% block extra_scripts %}
   {% include "core/partials/markdown_textarea_scripts.html" %}
+  <script>
+    (function () {
+      'use strict';
+      for (const btn of document.querySelectorAll('[data-toggle-target]')) {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.dataset.toggleTarget);
+          if (target) {
+            target.classList.toggle('hidden');
+          }
+        });
+      }
+    })();
+  </script>
 {% endblock %}
