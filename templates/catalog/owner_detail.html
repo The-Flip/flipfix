@@ -47,6 +47,12 @@
         <p>{{ object.phone }}</p>
       </div>
     {% endif %}
+    {% if object.address %}
+      <div class="form-field">
+        <label class="form-label">Address</label>
+        <p>{{ object.address|linebreaksbr }}</p>
+      </div>
+    {% endif %}
     {% if object.alternate_contact %}
       <div class="form-field">
         <label class="form-label">Alternate Contact</label>
@@ -59,7 +65,7 @@
         <p>{{ object.notes|linebreaksbr }}</p>
       </div>
     {% endif %}
-    {% if not object.email and not object.phone and not object.alternate_contact and not object.notes %}
+    {% if not object.email and not object.phone and not object.address and not object.alternate_contact and not object.notes %}
       <p class="text-muted">No contact information on file.</p>
     {% endif %}
   </div>

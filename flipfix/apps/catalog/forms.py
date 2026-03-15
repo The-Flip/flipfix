@@ -214,6 +214,7 @@ class OwnerForm(StyledFormMixin, forms.ModelForm):
             "name",
             "email",
             "phone",
+            "address",
             "alternate_contact",
             "notes",
         ]
@@ -221,10 +222,16 @@ class OwnerForm(StyledFormMixin, forms.ModelForm):
             "name": forms.TextInput(attrs={"placeholder": "e.g., William Pietri"}),
             "email": forms.EmailInput(attrs={"placeholder": "e.g., owner@example.com"}),
             "phone": forms.TextInput(attrs={"placeholder": "e.g., (312) 555-0100"}),
+            "address": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Street address, city, state, zip",
+                }
+            ),
             "alternate_contact": forms.Textarea(
                 attrs={
                     "rows": 3,
-                    "placeholder": "Additional contact information (address, alternate phone, etc.)",
+                    "placeholder": "Additional contact information (alternate phone, etc.)",
                 }
             ),
             "notes": forms.Textarea(

@@ -178,6 +178,7 @@ class Owner(TimeStampedMixin):
     slug = models.SlugField(unique=True, max_length=200, blank=True)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=50, blank=True)
+    address = models.TextField(blank=True, help_text="Physical/mailing address")
     alternate_contact = models.TextField(blank=True, help_text="Additional contact information")
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
