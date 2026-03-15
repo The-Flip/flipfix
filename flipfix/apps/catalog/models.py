@@ -12,6 +12,7 @@ from model_utils import FieldTracker
 from simple_history.models import HistoricalRecords
 
 from flipfix.apps.core.models import TimeStampedMixin
+from flipfix.apps.core.text import strip_leading_articles
 
 
 class Location(models.Model):
@@ -120,6 +121,12 @@ class MachineModel(TimeStampedMixin):
     sources_notes = models.TextField(
         blank=True, help_text="Notes about data sources and references"
     )
+    sort_name = models.CharField(
+        max_length=200,
+        blank=True,
+        db_index=True,
+        help_text="Name with leading articles stripped, for alphabetical sorting",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -138,7 +145,7 @@ class MachineModel(TimeStampedMixin):
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["sort_name"]
 
     def __str__(self) -> str:
         return self.name
@@ -148,6 +155,7 @@ class MachineModel(TimeStampedMixin):
         return reverse("admin:catalog_machinemodel_history", args=[self.pk])
 
     def save(self, *args, **kwargs):
+        self.sort_name = strip_leading_articles(self.name)
         if not self.slug:
             base_slug = slugify(self.name) or "model"
             slug = base_slug
@@ -261,7 +269,7 @@ class MachineInstance(TimeStampedMixin):
     tracker = FieldTracker(fields=["operational_status", "location_id"])
 
     class Meta:
-        ordering = ["model__name", "serial_number"]
+        ordering = ["model__sort_name", "serial_number"]
 
     def __str__(self) -> str:
         return self.name

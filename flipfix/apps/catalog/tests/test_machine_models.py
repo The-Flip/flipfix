@@ -26,6 +26,38 @@ class MachineModelTests(TestCase):
 
 
 @tag("models")
+class MachineModelSortNameTests(TestCase):
+    """Tests for the sort_name field on MachineModel."""
+
+    def test_sort_name_populated_on_create(self):
+        """sort_name should be set automatically from name on create."""
+        model = MachineModel.objects.create(name="The Addams Family")
+        self.assertEqual(model.sort_name, "Addams Family")
+
+    def test_sort_name_updated_on_rename(self):
+        """sort_name should update when name changes."""
+        model = MachineModel.objects.create(name="The Addams Family")
+        model.name = "Monster Bash"
+        model.save()
+        model.refresh_from_db()
+        self.assertEqual(model.sort_name, "Monster Bash")
+
+    def test_sort_name_no_article(self):
+        """Names without leading articles should have sort_name == name."""
+        model = MachineModel.objects.create(name="Monster Bash")
+        self.assertEqual(model.sort_name, "Monster Bash")
+
+    def test_default_ordering_uses_sort_name(self):
+        """Default queryset ordering should sort by sort_name (article-stripped)."""
+        MachineModel.objects.create(name="The Addams Family")
+        MachineModel.objects.create(name="Monster Bash")
+        MachineModel.objects.create(name="Attack From Mars")
+
+        names = list(MachineModel.objects.values_list("name", flat=True))
+        self.assertEqual(names, ["The Addams Family", "Attack From Mars", "Monster Bash"])
+
+
+@tag("models")
 class MachineInstanceModelTests(TestCase):
     """Tests for the MachineInstance model."""
 

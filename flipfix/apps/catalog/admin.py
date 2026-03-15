@@ -23,7 +23,7 @@ class MachineModelAdmin(SimpleHistoryAdmin):
     search_fields = ("name", "slug", "manufacturer", "ipdb_id")
     list_filter = ("era", "manufacturer")
     prepopulated_fields = {"slug": ("name",)}
-    readonly_fields = ("created_by", "updated_by")
+    readonly_fields = ("sort_name", "created_by", "updated_by")
 
 
 @admin.register(MachineInstance)

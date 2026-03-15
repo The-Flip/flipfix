@@ -87,7 +87,7 @@ class MachineAutocompleteView(View):
                     output_field=IntegerField(),
                 ),
                 F("latest_open_report_date").desc(nulls_last=True),
-                Lower("model__name"),
+                Lower("model__sort_name"),
             )
         )
 
