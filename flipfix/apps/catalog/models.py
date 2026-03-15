@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -213,6 +216,62 @@ class Owner(TimeStampedMixin):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+
+OWNER_DOCUMENT_ALLOWED_EXTENSIONS = frozenset({".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp"})
+
+
+def owner_document_upload_to(instance: OwnerDocument, filename: str) -> str:
+    """Generate upload path for owner documents."""
+    return f"owner_documents/{instance.owner_id}/{uuid4()}-{filename}"
+
+
+class OwnerDocument(TimeStampedMixin):
+    """File attachment (PDF, image) associated with an owner."""
+
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name="documents")
+    title = models.CharField(
+        max_length=200, blank=True, help_text="Optional. Filename used if blank."
+    )
+    file = models.FileField(upload_to=owner_document_upload_to)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.display_name
+
+    @property
+    def display_name(self) -> str:
+        """Return title if set, otherwise the filename."""
+        if self.title:
+            return self.title
+        if self.file:
+            return Path(self.file.name).name
+        return "Untitled document"
+
+    @property
+    def is_image(self) -> bool:
+        """Return True if the file is an image (by extension)."""
+        if not self.file:
+            return False
+        ext = Path(self.file.name).suffix.lower()
+        return ext in {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+    @property
+    def is_pdf(self) -> bool:
+        """Return True if the file is a PDF."""
+        if not self.file:
+            return False
+        return Path(self.file.name).suffix.lower() == ".pdf"
 
 
 class MachineInstanceQuerySet(models.QuerySet):

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import Count
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import Location, MachineInstance, MachineModel, Owner
+from .models import Location, MachineInstance, MachineModel, Owner, OwnerDocument
 
 
 @admin.register(Location)
@@ -27,11 +27,18 @@ class MachineModelAdmin(SimpleHistoryAdmin):
     readonly_fields = ("sort_name", "created_by", "updated_by")
 
 
+class OwnerDocumentInline(admin.TabularInline):
+    model = OwnerDocument
+    extra = 0
+    readonly_fields = ("uploaded_by",)
+
+
 @admin.register(Owner)
 class OwnerAdmin(SimpleHistoryAdmin):
     list_display = ("name", "email", "phone", "machine_count")
     search_fields = ("name", "email", "phone")
     readonly_fields = ("slug", "created_by", "updated_by")
+    inlines = [OwnerDocumentInline]
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(machine_count=Count("machines"))

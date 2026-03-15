@@ -1,10 +1,19 @@
 """Forms for catalog models."""
 
+from pathlib import Path
+
 from django import forms
 from django.core.exceptions import ValidationError
 
-from flipfix.apps.catalog.models import MachineInstance, MachineModel, Owner
+from flipfix.apps.catalog.models import (
+    OWNER_DOCUMENT_ALLOWED_EXTENSIONS,
+    MachineInstance,
+    MachineModel,
+    Owner,
+    OwnerDocument,
+)
 from flipfix.apps.core.forms import StyledFormMixin
+from flipfix.apps.core.media import MAX_MEDIA_FILE_SIZE_BYTES
 
 
 class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
@@ -223,3 +232,32 @@ class OwnerForm(StyledFormMixin, forms.ModelForm):
                 }
             ),
         }
+
+
+class OwnerDocumentForm(StyledFormMixin, forms.ModelForm):
+    """Form for uploading documents to an owner."""
+
+    class Meta:
+        model = OwnerDocument
+        fields = ["title", "file"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"placeholder": "Optional description (filename used if blank)"}
+            ),
+        }
+
+    def clean_file(self):
+        """Validate file type and size."""
+        uploaded_file = self.cleaned_data.get("file")
+        if not uploaded_file:
+            return uploaded_file
+
+        ext = Path(uploaded_file.name).suffix.lower()
+        if ext not in OWNER_DOCUMENT_ALLOWED_EXTENSIONS:
+            allowed = ", ".join(sorted(OWNER_DOCUMENT_ALLOWED_EXTENSIONS))
+            raise ValidationError(f"File type '{ext}' is not allowed. Accepted: {allowed}")
+
+        if uploaded_file.size and uploaded_file.size > MAX_MEDIA_FILE_SIZE_BYTES:
+            raise ValidationError("File too large. Maximum size is 200MB.")
+
+        return uploaded_file

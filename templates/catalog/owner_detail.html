@@ -3,6 +3,7 @@
 {% load sidebar_tags %}
 {% load catalog_tags %}
 {% load maintenance_tags %}
+{% load form_tags %}
 {% block title %}{{ object.name }} · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}
   <a href="{% url 'owner-list' %}">Owners</a>
@@ -75,6 +76,65 @@
   {% else %}
     <div class="card card--padded text-center text-muted">
       <p>No machines assigned to this owner.</p>
+    </div>
+  {% endif %}
+  <!-- DOCUMENTS -->
+  <div class="section-header">
+    <h2>Documents</h2>
+  </div>
+  {% if documents %}
+    <div class="flip-card-list">
+      {% for doc in documents %}
+        <div class="flip-card">
+          <div class="flip-card__main">
+            <div class="flip-card__main-left">
+              <div class="flip-card__title">
+                {% if doc.is_pdf %}
+                  {% icon "file-pdf" class="meta" %}
+                {% elif doc.is_image %}
+                  {% icon "file-image" class="meta" %}
+                {% else %}
+                  {% icon "file" class="meta" %}
+                {% endif %}
+                <a href="{{ doc.file.url }}" target="_blank" rel="noopener">{{ doc.display_name }}</a>
+              </div>
+              <div class="text-muted text-sm">{{ doc.created_at|smart_date }}</div>
+            </div>
+            {% if user.is_authenticated %}
+              <div class="flip-card__main-right">
+                <form method="post" class="form-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_document">
+                  <input type="hidden" name="document_id" value="{{ doc.pk }}">
+                  <button type="submit"
+                          class="btn btn--secondary btn--sm"
+                          title="Delete document">{% icon "trash-can" %}</button>
+                </form>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card--padded text-center text-muted">
+      <p>No documents yet.</p>
+    </div>
+  {% endif %}
+  {% if user.is_authenticated %}
+    <div class="card card--padded">
+      <form method="post" enctype="multipart/form-data" class="form-main">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload_document">
+        {% form_field document_form.title %}
+        {% form_field document_form.file %}
+        <div class="form-actions">
+          <button type="submit" class="btn btn--secondary">
+            {% icon "upload" class="meta" %}
+            Upload Document
+          </button>
+        </div>
+      </form>
     </div>
   {% endif %}
 {% endblock %}

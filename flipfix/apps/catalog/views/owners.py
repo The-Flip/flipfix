@@ -1,12 +1,14 @@
 """Views for machine owner management."""
 
+from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Count
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from flipfix.apps.catalog.forms import OwnerForm
-from flipfix.apps.catalog.models import Owner
+from flipfix.apps.catalog.forms import OwnerDocumentForm, OwnerForm
+from flipfix.apps.catalog.models import Owner, OwnerDocument
 
 
 class OwnerListView(ListView):
@@ -35,7 +37,43 @@ class OwnerDetailView(DetailView):
         context["machines"] = self.object.machines.select_related("model", "location").order_by(
             "model__name"
         )
+        context["documents"] = self.object.documents.all()
+        context["document_form"] = OwnerDocumentForm()
         return context
+
+    def post(self, request, *args, **kwargs):
+        """Handle document upload and delete actions."""
+        self.object = self.get_object()
+        action = request.POST.get("action", "")
+
+        if action == "upload_document":
+            return self._handle_upload(request)
+        elif action == "delete_document":
+            return self._handle_delete(request)
+
+        return redirect("owner-detail", slug=self.object.slug)
+
+    def _handle_upload(self, request):
+        form = OwnerDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.owner = self.object
+            doc.uploaded_by = request.user
+            doc.save()
+            messages.success(request, f"Document '{doc.display_name}' uploaded.")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+        return redirect("owner-detail", slug=self.object.slug)
+
+    def _handle_delete(self, request):
+        doc_id = request.POST.get("document_id")
+        doc = get_object_or_404(OwnerDocument, pk=doc_id, owner=self.object)
+        name = doc.display_name
+        doc.file.delete(save=False)
+        doc.delete()
+        messages.success(request, f"Document '{name}' deleted.")
+        return redirect("owner-detail", slug=self.object.slug)
 
 
 class OwnerCreateView(SuccessMessageMixin, CreateView):
