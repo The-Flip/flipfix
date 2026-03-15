@@ -88,50 +88,71 @@
     {% endif %}
   </div>
   <!-- COMMENTS -->
-  <div class="section-header">
-    <h2>Comments</h2>
-  </div>
-  {% if comments %}
-    <div class="flip-card-list">
-      {% for comment in comments %}
-        <div class="flip-card">
-          <div class="flip-card__main">
-            <div class="flip-card__main-left">
-              <div class="text-muted text-sm">
-                {% if comment.posted_by %}
-                  {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
-                {% else %}
-                  Unknown
-                {% endif %}
-                · {{ comment.created_at|smart_date }}
-              </div>
-              <div>{{ comment.text|render_markdown }}</div>
+  <div class="space-above-lg">
+    <div class="section-header">
+      <h2>Comments</h2>
+      {% if user.is_authenticated %}
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-toggle-target="machine-comment-form">
+          {% icon "plus" class="meta" %}
+          Add comment
+        </button>
+      {% endif %}
+    </div>
+    {% if comments %}
+      <div class="card-list space-above-sm">
+        {% for comment in comments %}
+          <div class="card card--padded">
+            <div class="text-muted text-sm">
+              {% if comment.posted_by %}
+                {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
+              {% else %}
+                Unknown
+              {% endif %}
+              · {{ comment.created_at|smart_date }}
             </div>
+            <div class="space-above-sm">{{ comment.text|render_markdown }}</div>
           </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card--padded text-center text-muted space-above-sm">
+        <p>No comments yet.</p>
+      </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+      <div id="machine-comment-form" class="hidden space-above-sm">
+        <div class="card card--padded">
+          <form method="post" class="form-main">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_comment">
+            {% form_field comment_form.text %}
+            <div class="form-actions">
+              <button type="submit" class="btn btn--secondary">
+                {% icon "comment" class="meta" %}
+                Add Comment
+              </button>
+            </div>
+          </form>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card card--padded text-center text-muted">
-      <p>No comments yet.</p>
-    </div>
-  {% endif %}
-  {% if user.is_authenticated %}
-    <div class="card card--padded">
-      <form method="post" class="form-main">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="add_comment">
-        {% form_field comment_form.text %}
-        <div class="form-actions">
-          <button type="submit" class="btn btn--secondary">
-            {% icon "comment" class="meta" %}
-            Add Comment
-          </button>
-        </div>
-      </form>
-    </div>
-  {% endif %}
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
 {% block extra_scripts %}
   {% include "core/partials/markdown_textarea_scripts.html" %}
+  <script>
+    (function () {
+      'use strict';
+      for (const btn of document.querySelectorAll('[data-toggle-target]')) {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.dataset.toggleTarget);
+          if (target) {
+            target.classList.toggle('hidden');
+          }
+        });
+      }
+    })();
+  </script>
 {% endblock %}

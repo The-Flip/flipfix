@@ -64,53 +64,63 @@
     {% endif %}
   </div>
   <!-- MACHINES -->
-  <div class="section-header">
-    <h2>
-      Machines <span class="text-muted">({{ machines|length }})</span>
-    </h2>
-  </div>
-  {% if machines %}
-    <div class="card">
-      <table class="owner-machines-table">
-        <thead>
-          <tr>
-            <th>Machine</th>
-            <th>Asset ID</th>
-            <th>Location</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for machine in machines %}
+  <div class="space-above-lg">
+    <div class="section-header">
+      <h2>
+        Machines <span class="text-muted">({{ machines|length }})</span>
+      </h2>
+    </div>
+    {% if machines %}
+      <div class="card space-above-sm">
+        <table class="owner-machines-table">
+          <thead>
             <tr>
-              <td>
-                <a href="{% url 'maintainer-machine-detail' machine.slug %}"
-                   class="link-underline">{{ machine.name }}</a>
-              </td>
-              <td class="text-muted">{{ machine.asset_id }}</td>
-              <td class="text-muted">
-                {% if machine.location %}{{ machine.location.name }}{% endif %}
-              </td>
+              <th>Machine</th>
+              <th>Asset ID</th>
+              <th>Location</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <div class="card card--padded text-center text-muted">
-      <p>No machines assigned to this owner.</p>
-    </div>
-  {% endif %}
-  <!-- DOCUMENTS -->
-  <div class="section-header">
-    <h2>Documents</h2>
+          </thead>
+          <tbody>
+            {% for machine in machines %}
+              <tr>
+                <td>
+                  <a href="{% url 'maintainer-machine-detail' machine.slug %}"
+                     class="link-underline">{{ machine.name }}</a>
+                </td>
+                <td class="text-muted">{{ machine.asset_id }}</td>
+                <td class="text-muted">
+                  {% if machine.location %}{{ machine.location.name }}{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card card--padded text-center text-muted space-above-sm">
+        <p>No machines assigned to this owner.</p>
+      </div>
+    {% endif %}
   </div>
-  {% if documents %}
-    <div class="flip-card-list">
-      {% for doc in documents %}
-        <div class="flip-card">
-          <div class="flip-card__main">
-            <div class="flip-card__main-left">
-              <div class="flip-card__title">
+  <!-- DOCUMENTS -->
+  <div class="space-above-lg">
+    <div class="section-header">
+      <h2>Documents</h2>
+      {% if user.is_authenticated %}
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-toggle-target="document-upload-form">
+          {% icon "plus" class="meta" %}
+          Add document
+        </button>
+      {% endif %}
+    </div>
+    {% if documents %}
+      <div class="card-list space-above-sm">
+        {% for doc in documents %}
+          <div class="card card--padded">
+            <div class="card__row">
+              <div>
                 {% if doc.is_pdf %}
                   {% icon "file-pdf" class="owner-doc-icon" %}
                 {% elif doc.is_image %}
@@ -122,11 +132,9 @@
                    target="_blank"
                    rel="noopener"
                    class="link-underline">{{ doc.display_name }}</a>
+                <span class="text-muted text-sm">{{ doc.created_at|smart_date }}</span>
               </div>
-              <div class="text-muted text-sm">{{ doc.created_at|smart_date }}</div>
-            </div>
-            {% if user.is_authenticated %}
-              <div class="flip-card__main-right">
+              {% if user.is_authenticated %}
                 <form method="post" class="form-inline">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="delete_document">
@@ -135,93 +143,87 @@
                           class="btn btn--secondary btn--sm"
                           title="Delete document">{% icon "trash-can" %}</button>
                 </form>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card card--padded text-center text-muted">
-      <p>No documents yet.</p>
-    </div>
-  {% endif %}
-  {% if user.is_authenticated %}
-    <div id="document-upload-form" class="hidden">
-      <div class="card card--padded">
-        <form method="post" enctype="multipart/form-data" class="form-main">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="upload_document">
-          {% form_field document_form.title %}
-          {% form_field document_form.file %}
-          <div class="form-actions">
-            <button type="submit" class="btn btn--secondary">
-              {% icon "upload" class="meta" %}
-              Upload Document
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <button type="button"
-            class="btn btn--secondary btn--sm"
-            data-toggle-target="document-upload-form">
-      {% icon "plus" class="meta" %}
-      Add document
-    </button>
-  {% endif %}
-  <!-- COMMENTS -->
-  <div class="section-header">
-    <h2>Comments</h2>
-  </div>
-  {% if comments %}
-    <div class="flip-card-list">
-      {% for comment in comments %}
-        <div class="flip-card">
-          <div class="flip-card__main">
-            <div class="flip-card__main-left">
-              <div class="text-muted text-sm">
-                {% if comment.posted_by %}
-                  {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
-                {% else %}
-                  Unknown
-                {% endif %}
-                · {{ comment.created_at|smart_date }}
-              </div>
-              <div>{{ comment.text|render_markdown }}</div>
+              {% endif %}
             </div>
           </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card card--padded text-center text-muted">
-      <p>No comments yet.</p>
-    </div>
-  {% endif %}
-  {% if user.is_authenticated %}
-    <div id="comment-form" class="hidden">
-      <div class="card card--padded">
-        <form method="post" class="form-main">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_comment">
-          {% form_field comment_form.text %}
-          <div class="form-actions">
-            <button type="submit" class="btn btn--secondary">
-              {% icon "comment" class="meta" %}
-              Add Comment
-            </button>
-          </div>
-        </form>
+        {% endfor %}
       </div>
+    {% else %}
+      <div class="card card--padded text-center text-muted space-above-sm">
+        <p>No documents yet.</p>
+      </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+      <div id="document-upload-form" class="hidden space-above-sm">
+        <div class="card card--padded">
+          <form method="post" enctype="multipart/form-data" class="form-main">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_document">
+            {% form_field document_form.title %}
+            {% form_field document_form.file %}
+            <div class="form-actions">
+              <button type="submit" class="btn btn--secondary">
+                {% icon "upload" class="meta" %}
+                Upload Document
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  <!-- COMMENTS -->
+  <div class="space-above-lg">
+    <div class="section-header">
+      <h2>Comments</h2>
+      {% if user.is_authenticated %}
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-toggle-target="comment-form">
+          {% icon "plus" class="meta" %}
+          Add comment
+        </button>
+      {% endif %}
     </div>
-    <button type="button"
-            class="btn btn--secondary btn--sm"
-            data-toggle-target="comment-form">
-      {% icon "plus" class="meta" %}
-      Add comment
-    </button>
-  {% endif %}
+    {% if comments %}
+      <div class="card-list space-above-sm">
+        {% for comment in comments %}
+          <div class="card card--padded">
+            <div class="text-muted text-sm">
+              {% if comment.posted_by %}
+                {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
+              {% else %}
+                Unknown
+              {% endif %}
+              · {{ comment.created_at|smart_date }}
+            </div>
+            <div class="space-above-sm">{{ comment.text|render_markdown }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card--padded text-center text-muted space-above-sm">
+        <p>No comments yet.</p>
+      </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+      <div id="comment-form" class="hidden space-above-sm">
+        <div class="card card--padded">
+          <form method="post" class="form-main">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_comment">
+            {% form_field comment_form.text %}
+            <div class="form-actions">
+              <button type="submit" class="btn btn--secondary">
+                {% icon "comment" class="meta" %}
+                Add Comment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
 {% block extra_scripts %}
   {% include "core/partials/markdown_textarea_scripts.html" %}
