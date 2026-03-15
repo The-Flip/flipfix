@@ -21,20 +21,20 @@ from flipfix.apps.catalog.forms import (
 from flipfix.apps.catalog.models import Location, MachineInstance, MachineModel
 from flipfix.apps.core.feed import FEED_CONFIGS, PageCursor, get_feed_page
 from flipfix.apps.core.forms import SearchForm
+from flipfix.apps.core.url_utils import build_filter_url
 from flipfix.apps.maintenance.models import ProblemReport
 
-# Maximum stats shown in sidebar grid (Total + up to 3 location counts)
-SIDEBAR_STAT_LIMIT = 4
+VALID_MACHINE_STATUSES = {s.value for s in MachineInstance.OperationalStatus}
 
 
 class MachineListView(ListView):
-    """Maintainer machine list with location stats in the sidebar."""
+    """Maintainer machine list with status/location filter stats in the sidebar."""
 
     template_name = "catalog/machine_list_for_maintainers.html"
     context_object_name = "machines"
 
     def get_queryset(self):
-        return (
+        qs = (
             MachineInstance.objects.visible()
             .annotate(
                 # Count open problem reports
@@ -72,32 +72,100 @@ class MachineListView(ListView):
                     default=Value(5),
                     output_field=CharField(),
                 ),
-                # 2. Machines with open problem reports first (nulls last means machines with no reports come last)
+                # 2. Machines with open problem reports first
                 F("latest_open_report_date").desc(nulls_last=True),
-                # 3. Within machines with open reports, sort by most recent report first (already handled by step 2)
-                # 4. Machine name as tie-breaker
+                # 3. Machine name as tie-breaker
                 Lower("model__name"),
             )
         )
 
+        # Apply query param filters
+        status_filter = self.request.GET.get("status", "")
+        if status_filter in VALID_MACHINE_STATUSES:
+            qs = qs.filter(operational_status=status_filter)
+
+        location_filter = self.request.GET.get("location", "")
+        if location_filter and Location.objects.filter(slug=location_filter).exists():
+            qs = qs.filter(location__slug=location_filter)
+
+        return qs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        visible_machines = MachineInstance.objects.visible()
+        path = self.request.path
+        params = self.request.GET
 
-        # Stats for sidebar (total + location counts, max 4 to fit grid)
-        stats = [{"value": visible_machines.count(), "label": "Total"}]
-        for slug, label in [
-            ("floor", "Floor"),
-            ("workshop", "Workshop"),
-            ("storage", "Storage"),
-            ("hall", "Hall"),
-        ]:
-            count = visible_machines.filter(location__slug=slug).count()
+        status_filter = params.get("status", "")
+        location_filter = params.get("location", "")
+
+        # Use conditional aggregation for status counts (single query)
+        status_counts = MachineInstance.objects.visible().aggregate(
+            total=Count("id"),
+            good=Count("id", filter=Q(operational_status="good")),
+            fixing=Count("id", filter=Q(operational_status="fixing")),
+            broken=Count("id", filter=Q(operational_status="broken")),
+        )
+
+        # Status stats
+        status_stats = [
+            {
+                "value": status_counts["total"],
+                "label": "All",
+                "url": build_filter_url(path, params, status=None),
+                "active": not status_filter,
+            },
+            {
+                "value": status_counts["fixing"],
+                "label": "Fixing",
+                "url": build_filter_url(path, params, status="fixing"),
+                "active": status_filter == "fixing",
+                "variant": "status-fixing",
+            },
+            {
+                "value": status_counts["broken"],
+                "label": "Broken",
+                "url": build_filter_url(path, params, status="broken"),
+                "active": status_filter == "broken",
+                "variant": "status-broken",
+            },
+            {
+                "value": status_counts["good"],
+                "label": "Good",
+                "url": build_filter_url(path, params, status="good"),
+                "active": status_filter == "good",
+                "variant": "status-good",
+            },
+        ]
+
+        # Location stats from unfiltered queryset (single query with conditional aggregation)
+        locations = Location.objects.all()
+        location_agg = {f"loc_{loc.slug}": Count("id", filter=Q(location=loc)) for loc in locations}
+        location_counts = MachineInstance.objects.visible().aggregate(
+            total=Count("id"), **location_agg
+        )
+
+        location_stats = [
+            {
+                "value": location_counts["total"],
+                "label": "All",
+                "url": build_filter_url(path, params, location=None),
+                "active": not location_filter,
+            },
+        ]
+        for loc in locations:
+            count = location_counts[f"loc_{loc.slug}"]
             if count > 0:
-                stats.append({"value": count, "label": label})
-            if len(stats) >= SIDEBAR_STAT_LIMIT:
-                break
-        context["stats"] = stats
+                location_stats.append(
+                    {
+                        "value": count,
+                        "label": loc.name,
+                        "url": build_filter_url(path, params, location=loc.slug),
+                        "active": location_filter == loc.slug,
+                    }
+                )
+
+        context["status_stats"] = status_stats
+        context["location_stats"] = location_stats
         context["meta_description"] = (
             "Pinball machines at The Flip, Chicago's playable pinball museum"
             " — status, repairs, and logs."

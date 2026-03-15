@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -33,6 +33,7 @@ from flipfix.apps.core.mixins import (
     MediaUploadMixin,
     SharedAccountMixin,
 )
+from flipfix.apps.core.url_utils import build_filter_url
 from flipfix.apps.parts.forms import (
     PartRequestEditForm,
     PartRequestForm,
@@ -61,6 +62,9 @@ class PartRequestListView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         search_query = self.request.GET.get("q", "").strip()
+        raw_status = self.request.GET.get("status", "")
+        status_filter = raw_status if raw_status in PartRequest.Status.values else ""
+
         parts = (
             PartRequest.objects.search(search_query)
             .select_related("requested_by__user", "machine", "machine__model")
@@ -68,24 +72,53 @@ class PartRequestListView(TemplateView):
             .order_by("-occurred_at")
         )
 
+        if status_filter:
+            parts = parts.filter(status=status_filter)
+
         paginator = Paginator(parts, settings.LIST_PAGE_SIZE)
         page_obj = paginator.get_page(self.request.GET.get("page"))
 
-        # Stats for sidebar
+        # Stats from unfiltered counts (single query with conditional aggregation)
+        status_counts = PartRequest.objects.aggregate(
+            total=Count("id"),
+            requested=Count("id", filter=Q(status=PartRequest.Status.REQUESTED)),
+            ordered=Count("id", filter=Q(status=PartRequest.Status.ORDERED)),
+            received=Count("id", filter=Q(status=PartRequest.Status.RECEIVED)),
+        )
+
+        path = self.request.path
+        params = self.request.GET
         stats = [
             {
-                "value": PartRequest.objects.filter(status=PartRequest.Status.REQUESTED).count(),
+                "value": status_counts["total"],
+                "label": "All",
+                "url": build_filter_url(path, params, status=None),
+                "active": not status_filter,
+            },
+            {
+                "value": status_counts["requested"],
                 "label": "Requested",
+                "url": build_filter_url(path, params, status="requested"),
+                "active": status_filter == "requested",
             },
             {
-                "value": PartRequest.objects.filter(status=PartRequest.Status.ORDERED).count(),
+                "value": status_counts["ordered"],
                 "label": "Ordered",
+                "url": build_filter_url(path, params, status="ordered"),
+                "active": status_filter == "ordered",
             },
             {
-                "value": PartRequest.objects.filter(status=PartRequest.Status.RECEIVED).count(),
+                "value": status_counts["received"],
                 "label": "Received",
+                "url": build_filter_url(path, params, status="received"),
+                "active": status_filter == "received",
             },
         ]
+
+        # Filter params to preserve in search form
+        filter_params = {}
+        if status_filter:
+            filter_params["status"] = status_filter
 
         context.update(
             {
@@ -93,6 +126,7 @@ class PartRequestListView(TemplateView):
                 "part_requests": page_obj.object_list,
                 "search_form": SearchForm(initial={"q": search_query}),
                 "stats": stats,
+                "filter_params": filter_params,
                 "meta_description": (
                     "Parts requests for pinball machines at The Flip,"
                     " Chicago's playable pinball museum."
@@ -109,12 +143,16 @@ class PartRequestListPartialView(InfiniteScrollMixin, View):
 
     def get_queryset(self):
         search_query = self.request.GET.get("q", "").strip()
-        return (
+        status_filter = self.request.GET.get("status", "")
+        qs = (
             PartRequest.objects.search(search_query)
             .select_related("requested_by__user", "machine", "machine__model")
             .prefetch_related("media", _latest_update_prefetch())
             .order_by("-occurred_at")
         )
+        if status_filter in PartRequest.Status.values:
+            qs = qs.filter(status=status_filter)
+        return qs
 
 
 class PartRequestCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
