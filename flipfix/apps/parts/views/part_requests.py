@@ -62,7 +62,8 @@ class PartRequestListView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         search_query = self.request.GET.get("q", "").strip()
-        status_filter = self.request.GET.get("status", "")
+        raw_status = self.request.GET.get("status", "")
+        status_filter = raw_status if raw_status in PartRequest.Status.values else ""
 
         parts = (
             PartRequest.objects.search(search_query)
@@ -71,7 +72,7 @@ class PartRequestListView(TemplateView):
             .order_by("-occurred_at")
         )
 
-        if status_filter in PartRequest.Status.values:
+        if status_filter:
             parts = parts.filter(status=status_filter)
 
         paginator = Paginator(parts, settings.LIST_PAGE_SIZE)
@@ -116,7 +117,7 @@ class PartRequestListView(TemplateView):
 
         # Filter params to preserve in search form
         filter_params = {}
-        if status_filter in PartRequest.Status.values:
+        if status_filter:
             filter_params["status"] = status_filter
 
         context.update(

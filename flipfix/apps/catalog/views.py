@@ -139,7 +139,7 @@ class MachineListView(ListView):
 
         # Location stats from unfiltered queryset (single query with conditional aggregation)
         locations = Location.objects.all()
-        location_agg = {loc.slug: Count("id", filter=Q(location=loc)) for loc in locations}
+        location_agg = {f"loc_{loc.slug}": Count("id", filter=Q(location=loc)) for loc in locations}
         location_counts = MachineInstance.objects.visible().aggregate(
             total=Count("id"), **location_agg
         )
@@ -153,7 +153,7 @@ class MachineListView(ListView):
             },
         ]
         for loc in locations:
-            count = location_counts[loc.slug]
+            count = location_counts[f"loc_{loc.slug}"]
             if count > 0:
                 location_stats.append(
                     {

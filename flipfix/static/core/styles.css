@@ -2447,6 +2447,11 @@ a.stat:focus-visible {
   background-color: var(--color-gray-100);
 }
 
+a.stat:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .stat--active {
   background-color: var(--color-gray-100);
   outline: 2px solid var(--color-accent);
