@@ -147,14 +147,8 @@
     </div>
   {% endif %}
   {% if user.is_authenticated %}
-    <button type="button"
-            class="btn btn--secondary btn--sm"
-            data-toggle-target="document-upload-form">
-      {% icon "plus" class="meta" %}
-      Add document
-    </button>
     <div id="document-upload-form" class="hidden">
-      <div class="card card--padded space-above-sm">
+      <div class="card card--padded">
         <form method="post" enctype="multipart/form-data" class="form-main">
           {% csrf_token %}
           <input type="hidden" name="action" value="upload_document">
@@ -169,6 +163,12 @@
         </form>
       </div>
     </div>
+    <button type="button"
+            class="btn btn--secondary btn--sm"
+            data-toggle-target="document-upload-form">
+      {% icon "plus" class="meta" %}
+      Add document
+    </button>
   {% endif %}
   <!-- COMMENTS -->
   <div class="section-header">
@@ -200,14 +200,8 @@
     </div>
   {% endif %}
   {% if user.is_authenticated %}
-    <button type="button"
-            class="btn btn--secondary btn--sm"
-            data-toggle-target="comment-form">
-      {% icon "plus" class="meta" %}
-      Add comment
-    </button>
     <div id="comment-form" class="hidden">
-      <div class="card card--padded space-above-sm">
+      <div class="card card--padded">
         <form method="post" class="form-main">
           {% csrf_token %}
           <input type="hidden" name="action" value="add_comment">
@@ -221,6 +215,12 @@
         </form>
       </div>
     </div>
+    <button type="button"
+            class="btn btn--secondary btn--sm"
+            data-toggle-target="comment-form">
+      {% icon "plus" class="meta" %}
+      Add comment
+    </button>
   {% endif %}
 {% endblock %}
 {% block extra_scripts %}
