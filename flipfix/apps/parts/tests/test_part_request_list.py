@@ -106,6 +106,69 @@ class PartRequestListFilterTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertContains(response, "Ordered part")
         self.assertNotContains(response, "Requested part")
 
+    def test_filter_by_status_requested(self):
+        """?status=requested shows only requested parts."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?status=requested")
+        self.assertContains(response, "Requested part")
+        self.assertNotContains(response, "Ordered part")
+        self.assertNotContains(response, "Received part")
+        self.assertNotContains(response, "Cancelled part")
+
+    def test_filter_by_status_ordered(self):
+        """?status=ordered shows only ordered parts."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?status=ordered")
+        self.assertContains(response, "Ordered part")
+        self.assertNotContains(response, "Requested part")
+
+    def test_invalid_status_ignored(self):
+        """?status=bogus shows all part requests."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?status=bogus")
+        self.assertContains(response, "Requested part")
+        self.assertContains(response, "Ordered part")
+        self.assertContains(response, "Received part")
+        self.assertContains(response, "Cancelled part")
+
+    def test_stats_show_unfiltered_counts(self):
+        """Stat counts reflect unfiltered totals even when filtered."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?status=requested")
+        stats = response.context["stats"]
+        all_stat = next(s for s in stats if s["label"] == "All")
+        self.assertEqual(all_stat["value"], 4)
+
+    def test_all_link_present(self):
+        """'All' stat links to unfiltered view."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list") + "?status=requested")
+        stats = response.context["stats"]
+        all_stat = next(s for s in stats if s["label"] == "All")
+        self.assertNotIn("status=", all_stat["url"])
+
+    def test_search_with_status_filter(self):
+        """?q=...&status=... combines text search with status filter."""
+        self.client.force_login(self.maintainer_user)
+        # Create another requested part to differentiate
+        create_part_request(
+            text="Flipper rubbers needed",
+            requested_by=self.maintainer,
+            status=PartRequest.Status.REQUESTED,
+        )
+        response = self.client.get(reverse("part-request-list") + "?q=Flipper&status=requested")
+        self.assertContains(response, "Flipper rubbers needed")
+        self.assertNotContains(response, "Ordered part")
+        self.assertNotContains(response, "Requested part")
+
+    def test_stat_links_present(self):
+        """Stat grid contains filter URLs."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(reverse("part-request-list"))
+        stats = response.context["stats"]
+        requested_stat = next(s for s in stats if s["label"] == "Requested")
+        self.assertIn("status=requested", requested_stat["url"])
+
 
 @tag("views")
 class PartRequestSearchFreeTextNameTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):

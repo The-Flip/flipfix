@@ -22,6 +22,8 @@ help:
 	@echo "Testing:"
 	@echo "  make test           - Run fast suite (excludes integration)"
 	@echo "  make test-all       - Run full test suite (includes integration)"
+	@echo "  make test-module M= - Run a single test module/class/method"
+	@echo "                        e.g. make test-module M=flipfix.apps.catalog.tests.test_machine_list"
 	@echo "  make test-models    - Run model tests only"
 	@echo "  make test-js        - Run JavaScript tests (requires npm install)"
 	@echo "  make eval-discord-bot-llm - Evaluate Discord bot LLM prompt"
@@ -53,6 +55,13 @@ test:
 .PHONY: test-all
 test-all:
 	DJANGO_SETTINGS_MODULE=flipfix.settings.test $(PYTHON) manage.py test --keepdb
+
+.PHONY: test-module
+test-module:
+ifndef M
+	$(error Usage: make test-module M=flipfix.apps.catalog.tests.test_machine_list)
+endif
+	DJANGO_SETTINGS_MODULE=flipfix.settings.test $(PYTHON) manage.py test --keepdb $(M)
 
 .PHONY: test-models
 test-models:
