@@ -13,8 +13,11 @@
   {% endif %}
 {% endblock %}
 {% block sidebar %}
-  {% sidebar_section label="Machines" %}
-  {% stat_grid stats=stats %}
+  {% sidebar_section label="Status" %}
+  {% stat_grid stats=status_stats %}
+{% endsidebar_section %}
+{% sidebar_section label="Location" %}
+{% stat_grid stats=location_stats %}
 {% endsidebar_section %}
 {% sidebar_section %}
 {% if user.is_superuser %}
