@@ -47,44 +47,42 @@
 {% block main %}
   <!-- MACHINE INFO -->
   <div class="card card--padded">
-    <dl>
-      {% if machine.asset_id %}
-        <div class="form-field">
-          <label class="form-label">Asset ID</label>
-          <p>{{ machine.asset_id }}</p>
-        </div>
-      {% endif %}
+    {% if machine.asset_id %}
       <div class="form-field">
-        <label class="form-label">Name</label>
-        <p>{{ machine.name }}</p>
+        <label class="form-label">Asset ID</label>
+        <p>{{ machine.asset_id }}</p>
       </div>
-      {% if machine.short_name %}
-        <div class="form-field">
-          <label class="form-label">Short Name</label>
-          <p>{{ machine.short_name }}</p>
-        </div>
-      {% endif %}
-      {% if machine.serial_number %}
-        <div class="form-field">
-          <label class="form-label">Serial Number</label>
-          <p>{{ machine.serial_number }}</p>
-        </div>
-      {% endif %}
-      {% if machine.owner %}
-        <div class="form-field">
-          <label class="form-label">Owner</label>
-          <p>
-            <a href="{% url 'owner-detail' machine.owner.slug %}">{{ machine.owner.name }}</a>
-          </p>
-        </div>
-      {% endif %}
-      {% if machine.acquisition_notes %}
-        <div class="form-field">
-          <label class="form-label">Acquisition Notes</label>
-          <p>{{ machine.acquisition_notes|linebreaksbr }}</p>
-        </div>
-      {% endif %}
-    </dl>
+    {% endif %}
+    <div class="form-field">
+      <label class="form-label">Name</label>
+      <p>{{ machine.name }}</p>
+    </div>
+    {% if machine.short_name %}
+      <div class="form-field">
+        <label class="form-label">Short Name</label>
+        <p>{{ machine.short_name }}</p>
+      </div>
+    {% endif %}
+    {% if machine.serial_number %}
+      <div class="form-field">
+        <label class="form-label">Serial Number</label>
+        <p>{{ machine.serial_number }}</p>
+      </div>
+    {% endif %}
+    {% if machine.owner %}
+      <div class="form-field">
+        <label class="form-label">Owner</label>
+        <p>
+          <a href="{% url 'owner-detail' machine.owner.slug %}">{{ machine.owner.name }}</a>
+        </p>
+      </div>
+    {% endif %}
+    {% if machine.acquisition_notes %}
+      <div class="form-field">
+        <label class="form-label">Acquisition Notes</label>
+        <p>{{ machine.acquisition_notes|linebreaksbr }}</p>
+      </div>
+    {% endif %}
   </div>
   <!-- COMMENTS -->
   <div class="section-header">

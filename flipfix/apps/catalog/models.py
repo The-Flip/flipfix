@@ -239,6 +239,7 @@ class OwnerDocument(TimeStampedMixin):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="owner_documents_uploaded",
     )
 
     history = HistoricalRecords()
@@ -459,7 +460,12 @@ class MachineInstance(TimeStampedMixin):
                     with transaction.atomic():
                         super().save(*args, **kwargs)
                     return
-                except IntegrityError:
+                except IntegrityError as exc:
+                    # Only retry if this looks like an asset_id collision.
+                    # Other unique constraint violations (name, slug, short_name)
+                    # should propagate immediately.
+                    if "asset_id" not in str(exc):
+                        raise
                     if attempt == self.ASSET_ID_MAX_RETRIES - 1:
                         raise
                     self.asset_id = ""  # Reset and retry
@@ -477,6 +483,7 @@ class MachineComment(TimeStampedMixin):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="machine_comments_posted",
     )
 
     history = HistoricalRecords()
@@ -498,6 +505,7 @@ class OwnerComment(TimeStampedMixin):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="owner_comments_posted",
     )
 
     history = HistoricalRecords()
