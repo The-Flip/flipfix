@@ -1,5 +1,6 @@
 """Tests for the Owner model and owner views."""
 
+from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
 
@@ -209,3 +210,37 @@ class OwnerNavigationTests(TestCase):
         self.client.force_login(superuser)
         response = self.client.get(reverse("owner-list"))
         self.assertEqual(response.status_code, 200)
+
+
+@tag("views")
+class OwnerPrivacyTests(TestDataMixin, TestCase):
+    """Owner info must not appear on public pages."""
+
+    def setUp(self):
+        super().setUp()
+        self.owner = Owner.objects.create(name="Secret Owner")
+        self.machine.owner = self.owner
+        self.machine.save()
+
+    @override_config(PUBLIC_ACCESS_ENABLED=True)
+    def test_machine_feed_hides_owner_for_guest(self):
+        """Machine feed should not show owner info to unauthenticated users."""
+        url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Secret Owner")
+
+    @override_config(PUBLIC_ACCESS_ENABLED=True)
+    def test_machine_feed_shows_owner_for_maintainer(self):
+        """Machine feed should show owner info to authenticated maintainers."""
+        self.client.force_login(self.maintainer_user)
+        url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+        response = self.client.get(url)
+        self.assertContains(response, "Secret Owner")
+
+    def test_public_machine_detail_hides_owner(self):
+        """Public machine detail (/m/slug/) should not show owner info."""
+        url = reverse("public-machine-detail", kwargs={"slug": self.machine.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Secret Owner")

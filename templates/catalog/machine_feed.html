@@ -50,7 +50,7 @@
             {% if machine.asset_id %}<span class="text-muted">({{ machine.asset_id }})</span>{% endif %}
           </div>
           <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
-          {% if machine.owner %}
+          {% if user.is_authenticated and machine.owner %}
             <div class="sidebar__subtitle">
               Owner: <a href="{% url 'owner-detail' machine.owner.slug %}"
     class="link-underline">{{ machine.owner.name }}</a>
