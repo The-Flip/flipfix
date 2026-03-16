@@ -12,7 +12,9 @@ from django.db import migrations, models
 def backfill_asset_ids(apps, schema_editor):
     """Assign M0001, M0002, ... to existing machines ordered by created_at."""
     MachineInstance = apps.get_model("catalog", "MachineInstance")
-    for index, machine in enumerate(MachineInstance.objects.order_by("created_at"), start=1):
+    for index, machine in enumerate(
+        MachineInstance.objects.order_by("created_at", "id"), start=1
+    ):
         machine.asset_id = f"M{index:04d}"
         machine.save(update_fields=["asset_id"])
 

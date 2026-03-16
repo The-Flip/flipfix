@@ -76,7 +76,12 @@ class OwnerDetailView(DetailView):
         return redirect("owner-detail", slug=self.object.slug)
 
     def _handle_delete(self, request):
-        doc_id = request.POST.get("document_id")
+        raw_doc_id = request.POST.get("document_id")
+        try:
+            doc_id = int(raw_doc_id)
+        except (TypeError, ValueError):
+            messages.error(request, "Invalid document selected.")
+            return redirect("owner-detail", slug=self.object.slug)
         doc = get_object_or_404(OwnerDocument, pk=doc_id, owner=self.object)
         name = doc.display_name
         doc.file.delete(save=False)

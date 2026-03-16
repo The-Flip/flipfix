@@ -461,11 +461,11 @@ class MachineInstance(TimeStampedMixin):
                     with transaction.atomic():
                         super().save(*args, **kwargs)
                     return
-                except IntegrityError as exc:
-                    # Only retry if this looks like an asset_id collision.
-                    # Other unique constraint violations (name, slug, short_name)
-                    # should propagate immediately.
-                    if "asset_id" not in str(exc):
+                except IntegrityError:
+                    # Only retry if the generated asset_id was taken by a
+                    # concurrent save.  Other unique constraint violations
+                    # (name, slug, short_name) should propagate immediately.
+                    if not MachineInstance.objects.filter(asset_id=self.asset_id).exists():
                         raise
                     if attempt == self.ASSET_ID_MAX_RETRIES - 1:
                         raise
