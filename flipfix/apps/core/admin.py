@@ -1,5 +1,18 @@
 from django.contrib import admin
 
+from flipfix.apps.core.models import ApiKey
+
+
+@admin.register(ApiKey)
+class ApiKeyAdmin(admin.ModelAdmin):
+    list_display = ("app_name", "key_preview", "created_at")
+    readonly_fields = ("key", "created_at")
+    search_fields = ("app_name",)
+
+    @admin.display(description="Key")
+    def key_preview(self, obj: ApiKey) -> str:
+        return f"{obj.key[:8]}..."
+
 
 class MediaInline(admin.TabularInline):
     """Base inline for models that inherit from AbstractMedia.

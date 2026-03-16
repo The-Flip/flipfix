@@ -36,6 +36,7 @@ from flipfix.apps.catalog.views.owners import (
 from flipfix.apps.catalog.views_inline import MachineInlineUpdateView
 from flipfix.apps.core.admin_views import admin_debug_view
 from flipfix.apps.core.routing import path
+from flipfix.apps.core.views.api import MachineDetailApiView, MachineListApiView
 from flipfix.apps.core.views.feed import GlobalActivityFeedPartialView
 from flipfix.apps.core.views.health import healthz
 from flipfix.apps.core.views.home import HomeView, SiteSettingsEditView
@@ -340,6 +341,20 @@ urlpatterns = [
     ###
     # API endpoints
     ###
+    # Read-only machine list for internal services
+    path(
+        "api/v1/machines/",
+        MachineListApiView.as_view(),
+        name="api-v1-machine-list",
+        access="always_public",
+    ),
+    # Read-only machine detail by asset ID
+    path(
+        "api/v1/machines/<str:asset_id>/",
+        MachineDetailApiView.as_view(),
+        name="api-v1-machine-detail",
+        access="always_public",
+    ),
     # Worker: download source video for transcoding
     path(
         "api/transcoding/download/<str:model_name>/<int:media_id>/",

@@ -77,6 +77,7 @@ STOP and read the relevant doc before writing code. Code that doesn't follow doc
 | `[[type:ref]]` markdown links    | [`docs/MarkdownLinks.md`](docs/MarkdownLinks.md)         |
 | Template tags & components       | [`docs/TemplateTags.md`](docs/TemplateTags.md)           |
 | Public/guest access system       | [`docs/Auth.md`](docs/Auth.md)                           |
+| Internal API & authentication    | [`docs/API.md`](docs/API.md)                             |
 
 Follow the patterns in these docs exactly. Do not introduce new conventions without asking. Update docs when changing behavior.
 

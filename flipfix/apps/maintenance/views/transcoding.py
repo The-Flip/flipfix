@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from functools import partial, wraps
+from functools import partial
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -14,69 +14,30 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+from flipfix.apps.core.api_auth import ApiAuthError, json_api_view
 from flipfix.apps.core.models import AbstractMedia, get_media_model
 
 logger = logging.getLogger(__name__)
 
 
-class _AuthenticationError(Exception):
-    """Raised when API authentication fails."""
-
-    def __init__(self, message: str, status: int = 401):
-        self.message = message
-        self.status = status
-        super().__init__(message)
-
-
-def _json_api_view(view_method):
-    """
-    Decorator that converts exceptions to JSON error responses.
-
-    Handles:
-    - _AuthenticationError → 401/403 with error message
-    - ValidationError → 400 with error message
-    - Http404 → 404 with error message
-    - OSError → 500 with "File storage error" message (logged)
-    - Other exceptions → 500 with generic message (logged)
-    """
-
-    @wraps(view_method)
-    def wrapper(self, request, *args, **kwargs):
-        try:
-            return view_method(self, request, *args, **kwargs)
-        except _AuthenticationError as e:
-            return JsonResponse({"success": False, "error": e.message}, status=e.status)
-        except ValidationError as e:
-            return JsonResponse({"success": False, "error": "; ".join(e.messages)}, status=400)
-        except Http404 as e:
-            return JsonResponse({"success": False, "error": str(e) or "Not found"}, status=404)
-        except OSError:
-            logger.exception("File storage error in %s", view_method.__name__)
-            return JsonResponse({"success": False, "error": "File storage error"}, status=500)
-        except Exception:
-            logger.exception("Unexpected error in %s", view_method.__name__)
-            return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
-
-    return wrapper
-
-
 def _validate_transcoding_auth(request) -> None:
-    """
-    Validate Bearer token authentication for transcoding API endpoints.
+    """Validate Bearer token authentication for transcoding API endpoints.
+
+    Uses the shared TRANSCODING_UPLOAD_TOKEN setting (not the ApiKey table).
 
     Raises:
-        _AuthenticationError: If authentication fails.
+        ApiAuthError: If authentication fails.
     """
     auth_header = request.META.get("HTTP_AUTHORIZATION", "")
     if not auth_header.startswith("Bearer "):
-        raise _AuthenticationError("Missing or invalid Authorization header", status=401)
+        raise ApiAuthError("Missing or invalid Authorization header", status=401)
 
     token = auth_header[7:]
     if not settings.TRANSCODING_UPLOAD_TOKEN:
-        raise _AuthenticationError("Server not configured for transcoding", status=500)
+        raise ApiAuthError("Server not configured for transcoding", status=500)
 
     if not constant_time_compare(token, settings.TRANSCODING_UPLOAD_TOKEN):
-        raise _AuthenticationError("Invalid authentication token", status=403)
+        raise ApiAuthError("Invalid authentication token", status=403)
 
 
 def _get_media_record(model_name: str, media_id: int) -> tuple[type, AbstractMedia]:
@@ -133,7 +94,7 @@ class ReceiveTranscodedMediaView(View):
     - Authorization header: Bearer <token>
     """
 
-    @_json_api_view
+    @json_api_view
     def post(self, request, model_name: str, media_id: int):
         _validate_transcoding_auth(request)
 
@@ -186,7 +147,7 @@ class ServeSourceMediaView(View):
     Returns the source file as a streaming response.
     """
 
-    @_json_api_view
+    @json_api_view
     def get(self, request, model_name: str, media_id: int):
         _validate_transcoding_auth(request)
         _media_model, media = _get_media_record(model_name, media_id)
