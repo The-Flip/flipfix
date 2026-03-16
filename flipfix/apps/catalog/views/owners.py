@@ -9,7 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from flipfix.apps.catalog.forms import OwnerCommentForm, OwnerDocumentForm, OwnerForm
 from flipfix.apps.catalog.models import Owner, OwnerDocument
-from flipfix.apps.core.sort import article_sort_key
+from flipfix.apps.core.text import strip_leading_articles
 
 
 class OwnerListView(ListView):
@@ -19,10 +19,15 @@ class OwnerListView(ListView):
     context_object_name = "owners"
 
     def get_queryset(self):
-        return Owner.objects.annotate(
-            machine_count=Count("machines"),
-            sort_name=article_sort_key("name"),
-        ).order_by("sort_name")
+        return Owner.objects.annotate(machine_count=Count("machines")).order_by("name")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Re-sort in Python to strip leading articles (small list, no perf concern)
+        context["owners"] = sorted(
+            context["owners"], key=lambda o: strip_leading_articles(o.name).lower()
+        )
+        return context
 
 
 class OwnerDetailView(DetailView):
@@ -38,9 +43,8 @@ class OwnerDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["machines"] = (
-            self.object.machines.select_related("model", "location")
-            .order_by("model__sort_name")
+        context["machines"] = self.object.machines.select_related("model", "location").order_by(
+            "model__sort_name"
         )
         context["documents"] = self.object.documents.all()
         context["document_form"] = OwnerDocumentForm()
