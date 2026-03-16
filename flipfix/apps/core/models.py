@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -296,3 +297,30 @@ def register_reference_cleanup(*model_classes: type[models.Model]) -> None:
 
     for model_class in model_classes:
         post_delete.connect(_cleanup_references, sender=model_class, weak=False)
+
+
+# ---------------------------------------------------------------------------
+# API key for service-to-service authentication
+# ---------------------------------------------------------------------------
+
+
+class ApiKey(TimeStampedMixin):
+    """API key for authenticating internal service-to-service requests."""
+
+    app_name = models.CharField(
+        max_length=100,
+        help_text="Name of the application using this key (e.g., 'signage-app')",
+    )
+    key = models.CharField(max_length=64, unique=True, db_index=True)
+
+    class Meta:
+        verbose_name = "API key"
+        verbose_name_plural = "API keys"
+
+    def __str__(self) -> str:
+        return f"{self.app_name} ({self.key[:8]}...)"
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(32)
+        super().save(*args, **kwargs)
