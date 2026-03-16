@@ -59,9 +59,11 @@
       {{ object.model.sources_notes|linebreaks }}
     </div>
   {% endif %}
-  <div class="card centered">
-    <p>{{ object.ownership_display }}</p>
-  </div>
+  {% if user.is_authenticated %}
+    <div class="card centered">
+      <p>{{ object.ownership_display }}</p>
+    </div>
+  {% endif %}
   <div class="card centered">
     <h2>Having trouble with this machine?</h2>
     {% report_problem_button object btn_class="btn btn--primary" label="Report a Problem" %}

@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.urls import reverse
 from django.utils.text import slugify
 from model_utils import FieldTracker
 from simple_history.models import HistoricalRecords
 
+from flipfix.apps.core.asset_ids import generate_asset_id
 from flipfix.apps.core.models import TimeStampedMixin
 from flipfix.apps.core.text import strip_leading_articles
 
@@ -167,12 +171,117 @@ class MachineModel(TimeStampedMixin):
         super().save(*args, **kwargs)
 
 
+class Owner(TimeStampedMixin):
+    """Person or company that owns one or more pinball machines."""
+
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    address = models.TextField(blank=True, help_text="Physical/mailing address")
+    alternate_contact = models.TextField(blank=True, help_text="Additional contact information")
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owners_created",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="owners_updated",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("owner-detail", kwargs={"slug": self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or "owner"
+            slug = base_slug
+            counter = 2
+            while Owner.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
+OWNER_DOCUMENT_ALLOWED_EXTENSIONS = frozenset({".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp"})
+
+
+def owner_document_upload_to(instance: OwnerDocument, filename: str) -> str:
+    """Generate upload path for owner documents."""
+    return f"owner_documents/{instance.owner_id}/{uuid4()}-{filename}"
+
+
+class OwnerDocument(TimeStampedMixin):
+    """File attachment (PDF, image) associated with an owner."""
+
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name="documents")
+    title = models.CharField(
+        max_length=200, blank=True, help_text="Optional. Filename used if blank."
+    )
+    file = models.FileField(upload_to=owner_document_upload_to)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owner_documents_uploaded",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.display_name
+
+    @property
+    def display_name(self) -> str:
+        """Return title if set, otherwise the filename."""
+        if self.title:
+            return self.title
+        if self.file:
+            return Path(self.file.name).name
+        return "Untitled document"
+
+    @property
+    def is_image(self) -> bool:
+        """Return True if the file is an image (by extension)."""
+        if not self.file:
+            return False
+        ext = Path(self.file.name).suffix.lower()
+        return ext in {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+    @property
+    def is_pdf(self) -> bool:
+        """Return True if the file is a PDF."""
+        if not self.file:
+            return False
+        return Path(self.file.name).suffix.lower() == ".pdf"
+
+
 class MachineInstanceQuerySet(models.QuerySet):
     """Custom queryset for MachineInstance with common filters."""
 
     def visible(self):
-        """Return machines with related model and location pre-fetched."""
-        return self.select_related("model", "location")
+        """Return machines with related model, location, and owner pre-fetched."""
+        return self.select_related("model", "location", "owner")
 
     def active_for_matching(self):
         """Return machines suitable for Discord message matching.
@@ -200,6 +309,13 @@ class MachineInstance(TimeStampedMixin):
         BROKEN = "broken", "Broken"
         UNKNOWN = "unknown", "Unknown"
 
+    asset_id = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=True,
+        verbose_name="Asset ID",
+        help_text="Unique asset identifier (e.g., M0001). Auto-generated.",
+    )
     model = models.ForeignKey(
         MachineModel,
         on_delete=models.PROTECT,
@@ -228,11 +344,13 @@ class MachineInstance(TimeStampedMixin):
     acquisition_notes = models.TextField(
         blank=True, verbose_name="Acquisition Notes", help_text="Details about acquisition history"
     )
-    ownership_credit = models.CharField(
-        max_length=300,
+    owner = models.ForeignKey(
+        Owner,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name="Ownership Credit",
-        help_text="Credit for ownership",
+        related_name="machines",
+        help_text="Person or company that owns this machine",
     )
     location = models.ForeignKey(
         Location,
@@ -281,8 +399,10 @@ class MachineInstance(TimeStampedMixin):
 
     @property
     def ownership_display(self) -> str:
-        """Return ownership credit or default collection name."""
-        return self.ownership_credit or "The Flip Collection"
+        """Return owner name or default collection name."""
+        if self.owner_id and self.owner:
+            return self.owner.name
+        return "The Flip Collection"
 
     def get_absolute_url(self):
         """Return the public-facing URL for this machine."""
@@ -316,6 +436,9 @@ class MachineInstance(TimeStampedMixin):
                     {"short_name": "A machine with this short name already exists."}
                 )
 
+    ASSET_ID_PREFIX = "M"
+    ASSET_ID_MAX_RETRIES = 3
+
     def save(self, *args, **kwargs):
         # Strip name and normalize short_name
         if self.name:
@@ -330,4 +453,66 @@ class MachineInstance(TimeStampedMixin):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
-        super().save(*args, **kwargs)
+
+        if not self.asset_id:
+            for attempt in range(self.ASSET_ID_MAX_RETRIES):
+                self.asset_id = generate_asset_id(self.ASSET_ID_PREFIX, MachineInstance)
+                try:
+                    with transaction.atomic():
+                        super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    # Only retry if the generated asset_id was taken by a
+                    # concurrent save.  Other unique constraint violations
+                    # (name, slug, short_name) should propagate immediately.
+                    if not MachineInstance.objects.filter(asset_id=self.asset_id).exists():
+                        raise
+                    if attempt == self.ASSET_ID_MAX_RETRIES - 1:
+                        raise
+                    self.asset_id = ""  # Reset and retry
+        else:
+            super().save(*args, **kwargs)
+
+
+class MachineComment(TimeStampedMixin):
+    """Informal note on a machine, separate from the maintenance feed."""
+
+    machine = models.ForeignKey(MachineInstance, on_delete=models.CASCADE, related_name="comments")
+    text = models.TextField()
+    posted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="machine_comments_posted",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment on {self.machine} by {self.posted_by}"
+
+
+class OwnerComment(TimeStampedMixin):
+    """Informal note on an owner."""
+
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name="comments")
+    text = models.TextField()
+    posted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owner_comments_posted",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Comment on {self.owner} by {self.posted_by}"

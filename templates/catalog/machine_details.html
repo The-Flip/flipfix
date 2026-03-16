@@ -1,0 +1,158 @@
+{% extends "layouts/two_column.html" %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load form_tags %}
+{% load catalog_tags %}
+{% load markdown_tags %}
+{% block title %}{{ machine.name }} Details · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+  <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
+  <span>Details</span>
+{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'machine-edit' machine.slug %}"
+     class="btn btn--secondary btn--full">
+    {% icon "pencil" class="meta" %}
+    Edit Machine
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section %}
+  <div class="sidebar__title">
+    {{ machine.name }}
+    {% if machine.asset_id %}<span class="text-muted">({{ machine.asset_id }})</span>{% endif %}
+  </div>
+  <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
+  {% if machine.owner %}
+    <div class="sidebar__subtitle">
+      Owner: <a href="{% url 'owner-detail' machine.owner.slug %}"
+    class="link-underline">{{ machine.owner.name }}</a>
+    </div>
+  {% endif %}
+{% endsidebar_section %}
+{% sidebar_section %}
+{% if user.is_authenticated %}
+  <a href="{% url 'machine-edit' machine.slug %}"
+     class="btn btn--secondary btn--full">
+    {% icon "pencil" class="meta" %}
+    Edit Machine
+  </a>
+{% endif %}
+<a href="{% url 'maintainer-machine-detail' machine.slug %}"
+   class="btn btn--secondary btn--full">
+  {% icon "list" class="meta" %}
+  Activity Feed
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <!-- MACHINE INFO -->
+  <div class="card card--padded">
+    {% if machine.asset_id %}
+      <div class="form-field">
+        <label class="form-label">Asset ID</label>
+        <p>{{ machine.asset_id }}</p>
+      </div>
+    {% endif %}
+    <div class="form-field">
+      <label class="form-label">Name</label>
+      <p>{{ machine.name }}</p>
+    </div>
+    {% if machine.short_name %}
+      <div class="form-field">
+        <label class="form-label">Short Name</label>
+        <p>{{ machine.short_name }}</p>
+      </div>
+    {% endif %}
+    {% if machine.serial_number %}
+      <div class="form-field">
+        <label class="form-label">Serial Number</label>
+        <p>{{ machine.serial_number }}</p>
+      </div>
+    {% endif %}
+    {% if machine.owner %}
+      <div class="form-field">
+        <label class="form-label">Owner</label>
+        <p>
+          <a href="{% url 'owner-detail' machine.owner.slug %}">{{ machine.owner.name }}</a>
+        </p>
+      </div>
+    {% endif %}
+    {% if machine.acquisition_notes %}
+      <div class="form-field">
+        <label class="form-label">Acquisition Notes</label>
+        <p>{{ machine.acquisition_notes|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+  </div>
+  <!-- COMMENTS -->
+  <div class="space-above-lg">
+    <div class="section-header">
+      <h2>Comments</h2>
+      {% if user.is_authenticated %}
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-toggle-target="machine-comment-form">
+          {% icon "plus" class="meta" %}
+          Add comment
+        </button>
+      {% endif %}
+    </div>
+    {% if comments %}
+      <div class="card-list space-above-sm">
+        {% for comment in comments %}
+          <div class="card card--padded">
+            <div class="text-muted text-sm">
+              {% if comment.posted_by %}
+                {{ comment.posted_by.get_full_name|default:comment.posted_by.username }}
+              {% else %}
+                Unknown
+              {% endif %}
+              · {{ comment.created_at|smart_date }}
+            </div>
+            <div class="space-above-sm">{{ comment.text|render_markdown }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card card--padded text-center text-muted space-above-sm">
+        <p>No comments yet.</p>
+      </div>
+    {% endif %}
+    {% if user.is_authenticated %}
+      <div id="machine-comment-form" class="hidden space-above-sm">
+        <div class="card card--padded">
+          <form method="post" class="form-main">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_comment">
+            {% form_field comment_form.text %}
+            <div class="form-actions">
+              <button type="submit" class="btn btn--secondary">
+                {% icon "comment" class="meta" %}
+                Add Comment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  {% include "core/partials/markdown_textarea_scripts.html" %}
+  <script>
+    (function () {
+      'use strict';
+      for (const btn of document.querySelectorAll('[data-toggle-target]')) {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.dataset.toggleTarget);
+          if (target) {
+            target.classList.toggle('hidden');
+          }
+        });
+      }
+    })();
+  </script>
+{% endblock %}

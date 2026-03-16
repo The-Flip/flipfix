@@ -1,0 +1,49 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% block title %}Owners · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}<span>Owners</span>{% endblock %}
+{% block mobile_actions %}
+  <a href="{% url 'owner-create' %}" class="btn btn--secondary btn--full">
+    {% icon "plus" class="meta" %}
+    New Owner
+  </a>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section %}
+  <div class="sidebar__title">Owners</div>
+  <div class="sidebar__subtitle text-muted">{{ owners|length }} owner{{ owners|length|pluralize }}</div>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'owner-create' %}" class="btn btn--secondary btn--full">
+  {% icon "plus" class="meta" %}
+  New Owner
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  {% if owners %}
+    <div class="card-list">
+      {% for owner in owners %}
+        <a href="{% url 'owner-detail' owner.slug %}"
+           class="card card--clickable card--padded">
+          <div class="card__row">
+            <div>
+              <div class="font-semibold">{{ owner.name }}</div>
+              {% if owner.email %}<div class="text-muted text-sm">{{ owner.email }}</div>{% endif %}
+            </div>
+            <span class="pill pill--neutral">{{ owner.machine_count }} machine{{ owner.machine_count|pluralize }}</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card card--padded text-center text-muted">
+      <p>No owners yet.</p>
+      <a href="{% url 'owner-create' %}" class="btn btn--secondary">
+        {% icon "plus" class="meta" %}
+        Add First Owner
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}

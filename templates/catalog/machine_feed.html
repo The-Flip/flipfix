@@ -45,8 +45,17 @@
         {% include "components/history_link.html" with history_url=machine.get_admin_history_url %}
         <!-- MACHINE INFO -->
         <div class="sidebar__section">
-          <div class="sidebar__title">{{ machine.name }}</div>
+          <div class="sidebar__title">
+            {{ machine.name }}
+            {% if machine.asset_id %}<span class="text-muted">({{ machine.asset_id }})</span>{% endif %}
+          </div>
           <div class="sidebar__subtitle">{{ machine.model|manufacturer_year }}</div>
+          {% if user.is_authenticated and machine.owner %}
+            <div class="sidebar__subtitle">
+              Owner: <a href="{% url 'owner-detail' machine.owner.slug %}"
+    class="link-underline">{{ machine.owner.name }}</a>
+            </div>
+          {% endif %}
           <div class="flex flex-wrap stack-tight space-above-sm"
                data-update-url="{% url 'machine-inline-update' machine.slug %}">
             {% settable_machine_status_pill machine %}
@@ -57,6 +66,11 @@
         <div class="sidebar__section">
           <div class="flex stack-tight stack-column">
             {% if user.is_authenticated %}
+              <a href="{% url 'machine-details' machine.slug %}"
+                 class="btn btn--secondary btn--full">
+                {% icon "circle-info" class="meta" %}
+                Details
+              </a>
               <a href="{% url 'machine-edit' machine.slug %}"
                  class="btn btn--secondary btn--full">
                 {% icon "pencil" class="meta" %}

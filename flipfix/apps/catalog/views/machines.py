@@ -13,6 +13,7 @@ from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView, UpdateView
 
 from flipfix.apps.catalog.forms import (
+    MachineCommentForm,
     MachineCreateModelDoesNotExistForm,
     MachineCreateModelExistsForm,
     MachineInstanceForm,
@@ -189,7 +190,9 @@ class MachineFeedView(TemplateView):
     template_name = "catalog/machine_feed.html"
 
     def dispatch(self, request, *args, **kwargs):
-        self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        self.machine = get_object_or_404(
+            MachineInstance.objects.select_related("model", "owner"), slug=kwargs["slug"]
+        )
         # Figure out what types of feed items to show
         self.feed_filter_type = request.GET.get("f", "all")
         if self.feed_filter_type not in FEED_CONFIGS:
@@ -277,14 +280,53 @@ class MachineFeedPartialView(View):
         )
 
 
+class MachineDetailsView(DetailView):
+    """Read-only machine info page with comments."""
+
+    template_name = "catalog/machine_details.html"
+    slug_field = "slug"
+    slug_url_kwarg = "slug"
+    context_object_name = "machine"
+
+    def get_queryset(self):
+        return MachineInstance.objects.select_related("model", "owner", "location")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comments"] = self.object.comments.select_related("posted_by").all()
+        context["comment_form"] = MachineCommentForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Handle comment creation."""
+        self.object = self.get_object()
+        action = request.POST.get("action", "")
+
+        if action == "add_comment":
+            form = MachineCommentForm(request.POST)
+            if form.is_valid():
+                comment = form.save(commit=False)
+                comment.machine = self.object
+                comment.posted_by = request.user
+                comment.save()
+                messages.success(request, "Comment added.")
+            else:
+                for error in form.errors.values():
+                    messages.error(request, error[0])
+
+        return redirect("machine-details", slug=self.object.slug)
+
+
 class MachineUpdateView(UpdateView):
     """Edit machine instance details (excluding model)."""
 
-    model = MachineInstance
     form_class = MachineInstanceForm
     template_name = "catalog/machine_edit.html"
     slug_field = "slug"
     slug_url_kwarg = "slug"
+
+    def get_queryset(self):
+        return MachineInstance.objects.select_related("model", "owner")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

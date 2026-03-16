@@ -1,10 +1,21 @@
 """Forms for catalog models."""
 
+from pathlib import Path
+
 from django import forms
 from django.core.exceptions import ValidationError
 
-from flipfix.apps.catalog.models import MachineInstance, MachineModel
-from flipfix.apps.core.forms import StyledFormMixin
+from flipfix.apps.catalog.models import (
+    OWNER_DOCUMENT_ALLOWED_EXTENSIONS,
+    MachineComment,
+    MachineInstance,
+    MachineModel,
+    Owner,
+    OwnerComment,
+    OwnerDocument,
+)
+from flipfix.apps.core.forms import MarkdownTextarea, StyledFormMixin
+from flipfix.apps.core.media import MAX_MEDIA_FILE_SIZE_BYTES
 
 
 class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
@@ -16,6 +27,7 @@ class MachineInstanceForm(StyledFormMixin, forms.ModelForm):
             "name",
             "short_name",
             "serial_number",
+            "owner",
             "acquisition_notes",
         ]
         widgets = {
@@ -191,3 +203,92 @@ class MachineCreateModelDoesNotExistForm(StyledFormMixin, forms.Form):
             )
 
         return name
+
+
+class OwnerForm(StyledFormMixin, forms.ModelForm):
+    """Form for creating and editing machine owners."""
+
+    class Meta:
+        model = Owner
+        fields = [
+            "name",
+            "email",
+            "phone",
+            "address",
+            "alternate_contact",
+            "notes",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "e.g., William Pietri"}),
+            "email": forms.EmailInput(attrs={"placeholder": "e.g., owner@example.com"}),
+            "phone": forms.TextInput(attrs={"placeholder": "e.g., (312) 555-0100"}),
+            "address": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Street address, city, state, zip",
+                }
+            ),
+            "alternate_contact": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Additional contact information (alternate phone, etc.)",
+                }
+            ),
+            "notes": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "General notes about this owner",
+                }
+            ),
+        }
+
+
+class OwnerDocumentForm(StyledFormMixin, forms.ModelForm):
+    """Form for uploading documents to an owner."""
+
+    class Meta:
+        model = OwnerDocument
+        fields = ["title", "file"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"placeholder": "Optional description (filename used if blank)"}
+            ),
+        }
+
+    def clean_file(self):
+        """Validate file type and size."""
+        uploaded_file = self.cleaned_data.get("file")
+        if not uploaded_file:
+            return uploaded_file
+
+        ext = Path(uploaded_file.name).suffix.lower()
+        if ext not in OWNER_DOCUMENT_ALLOWED_EXTENSIONS:
+            allowed = ", ".join(sorted(OWNER_DOCUMENT_ALLOWED_EXTENSIONS))
+            raise ValidationError(f"File type '{ext}' is not allowed. Accepted: {allowed}")
+
+        if uploaded_file.size and uploaded_file.size > MAX_MEDIA_FILE_SIZE_BYTES:
+            raise ValidationError("File too large. Maximum size is 200MB.")
+
+        return uploaded_file
+
+
+class MachineCommentForm(StyledFormMixin, forms.ModelForm):
+    """Form for adding a comment to a machine."""
+
+    class Meta:
+        model = MachineComment
+        fields = ["text"]
+        widgets = {
+            "text": MarkdownTextarea(attrs={"rows": 4, "placeholder": "Add a comment..."}),
+        }
+
+
+class OwnerCommentForm(StyledFormMixin, forms.ModelForm):
+    """Form for adding a comment to an owner."""
+
+    class Meta:
+        model = OwnerComment
+        fields = ["text"]
+        widgets = {
+            "text": MarkdownTextarea(attrs={"rows": 4, "placeholder": "Add a comment..."}),
+        }

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from flipfix.apps.catalog.models import MachineModel
+from flipfix.apps.catalog.models import MachineModel, Owner
 
 
 class Command(BaseCommand):
@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 updated_fields = self._update_model(model, row)
                 ownership_updated = self._update_instance_ownership(model, row)
                 if ownership_updated:
-                    updated_fields.append("ownership_credit")
+                    updated_fields.append("owner")
 
                 # Get display name (short_name if available)
                 instance = model.instances.order_by("id").first()
@@ -150,8 +150,9 @@ class Command(BaseCommand):
         return updated_fields
 
     def _update_instance_ownership(self, model: MachineModel, row: dict) -> bool:
-        """Update ownership_credit on the first instance (by lowest ID).
+        """Update owner on the first instance (by lowest ID).
 
+        Gets or creates an Owner record from the ownership text.
         Returns True if ownership was updated, False otherwise.
         """
         ownership = row.get("Ownership", "").strip()
@@ -165,6 +166,7 @@ class Command(BaseCommand):
                 f"Machine model '{model.name}' has no instances. Run create_sample_machines first."
             )
 
-        instance.ownership_credit = ownership
-        instance.save()
+        owner, _created = Owner.objects.get_or_create(name=ownership)
+        instance.owner = owner
+        instance.save(update_fields=["owner", "updated_at"])
         return True
