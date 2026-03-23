@@ -26,6 +26,7 @@ from django.test import TestCase, override_settings
 from flipfix.apps.accounts.models import Maintainer
 from flipfix.apps.catalog.models import MachineInstance, MachineModel
 from flipfix.apps.maintenance.models import LogEntry, ProblemReport
+from flipfix.apps.oauth.models import AppCapability, AppCapabilityGrant
 from flipfix.apps.parts.models import PartRequest, PartRequestUpdate
 
 if TYPE_CHECKING:
@@ -410,6 +411,92 @@ def create_part_request_update(
         text=text,
         new_status=new_status,
         **kwargs,
+    )
+
+
+def create_oauth_application(
+    name: str | None = None,
+    skip_authorization: bool = True,
+    **kwargs,
+):
+    """Create a test OAuth2 Application (confidential, authorization-code grant).
+
+    The plain client_secret is stored on the returned instance as
+    ``plain_client_secret`` since DOT hashes the secret on save.
+
+    Args:
+        name: Application name (auto-generated if not provided)
+        skip_authorization: Skip user consent screen (default True for first-party apps)
+        **kwargs: Additional fields
+
+    Returns:
+        Created Application instance with ``plain_client_secret`` attribute
+    """
+    from oauth2_provider.models import get_application_model
+
+    app_model = get_application_model()
+    if name is None:
+        name = f"Test App {_unique_suffix()}"
+    plain_secret = secrets.token_hex(32)
+    app = app_model.objects.create(
+        name=name,
+        client_type=app_model.CLIENT_CONFIDENTIAL,
+        authorization_grant_type=app_model.GRANT_AUTHORIZATION_CODE,
+        redirect_uris="http://testserver/callback",
+        skip_authorization=skip_authorization,
+        algorithm=app_model.RS256_ALGORITHM,
+        client_secret=plain_secret,
+        **kwargs,
+    )
+    app.plain_client_secret = plain_secret
+    return app
+
+
+def create_app_capability(
+    app=None,
+    slug: str | None = None,
+    name: str | None = None,
+    **kwargs,
+) -> AppCapability:
+    """Create a test AppCapability.
+
+    Args:
+        app: OAuth Application (created if not provided)
+        slug: Capability slug (auto-generated if not provided)
+        name: Human-readable name (auto-generated if not provided)
+        **kwargs: Additional fields
+
+    Returns:
+        Created AppCapability instance
+    """
+    if app is None:
+        app = create_oauth_application()
+    if slug is None:
+        slug = f"cap-{_unique_suffix()}"
+    if name is None:
+        name = f"Test Capability {slug}"
+    return AppCapability.objects.create(app=app, slug=slug, name=name, **kwargs)
+
+
+def grant_capability(
+    user: User,
+    capability: AppCapability,
+    granted_by: User | None = None,
+) -> AppCapabilityGrant:
+    """Grant a capability to a user.
+
+    Args:
+        user: User receiving the grant
+        capability: Capability to grant
+        granted_by: User granting (optional)
+
+    Returns:
+        Created AppCapabilityGrant instance
+    """
+    return AppCapabilityGrant.objects.create(
+        user=user,
+        capability=capability,
+        granted_by=granted_by,
     )
 
 

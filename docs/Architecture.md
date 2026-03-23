@@ -38,6 +38,10 @@ Discord integration with two main features:
 - **Outbound webhooks**: Posts notifications to Discord when events occur (problem reports, log entries, parts requests)
 - **Inbound bot**: Listens to a configured Discord channel and creates tickets from employee messages
 
+### `oauth`
+
+OAuth2/OIDC provider for SSO across theflip.museum apps. Uses django-oauth-toolkit. Defines app-scoped capabilities (not Django permissions) that control what users can do in external apps.
+
 ## App Dependencies
 
 We try to keep apps separated at all layers, including views and forms. Cross-app imports are sometimes necessary for pragmatic reasons, but should not be the default. The "Model dependencies" column is strict — `models.py` must only contain relational references to the listed apps. The "Also used in views" column lists additional apps referenced at the view/form/template layer where full separation wasn't practical.
@@ -51,6 +55,7 @@ We try to keep apps separated at all layers, including views and forms. Cross-ap
 | **maintenance** | core, accounts, catalog |                             |
 | **parts**       | core, accounts, catalog | maintenance                 |
 | **discord**     | core, accounts          | catalog, maintenance, parts |
+| **oauth**       | core                    |                             |
 
 ## Services
 

@@ -21,3 +21,6 @@ LOGGING["handlers"]["console"]["formatter"] = "dev"  # noqa: F405
 LOGGING["loggers"]["flipfix"]["level"] = "INFO"  # noqa: F405
 LOGGING["loggers"]["django.request"]["level"] = "INFO"  # noqa: F405
 LOGGING["loggers"]["django.server"]["level"] = "INFO"  # noqa: F405
+
+# Allow HTTP redirect URIs for local OAuth2 development
+OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"] = ["http", "https"]  # noqa: F405

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "simple_history",
+    "oauth2_provider",
     "flipfix.apps.core",
     "flipfix.apps.accounts",
     "flipfix.apps.catalog",
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     "flipfix.apps.parts",
     "flipfix.apps.discord",
     "flipfix.apps.wiki",
+    "flipfix.apps.oauth",
 ]
 
 MIDDLEWARE = [
@@ -253,4 +255,27 @@ LOGGING: MutableMapping[str, Any] = {
             "propagate": False,
         },
     },
+}
+
+# OAuth2/OIDC Provider (django-oauth-toolkit)
+# Required by DOT's swappable model machinery for migration dependency resolution
+OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
+_oidc_rsa_key = config("OIDC_RSA_PRIVATE_KEY", default="")
+_oidc_issuer = SITE_URL or ""
+OAUTH2_PROVIDER = {
+    "OIDC_ENABLED": True,
+    "OIDC_ISS_ENDPOINT": _oidc_issuer,
+    "OIDC_RSA_PRIVATE_KEY": _oidc_rsa_key,
+    "SCOPES": {
+        "openid": "OpenID Connect",
+        "profile": "User profile",
+        "email": "Email address",
+        "capabilities": "App-specific capabilities",
+    },
+    "OAUTH2_VALIDATOR_CLASS": "flipfix.apps.oauth.validators.FlipFixOAuth2Validator",
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
+    "REFRESH_TOKEN_EXPIRE_SECONDS": 2592000,  # 30 days
+    "ROTATE_REFRESH_TOKEN": True,
+    "PKCE_REQUIRED": True,
+    "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
 }
