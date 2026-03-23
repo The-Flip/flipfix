@@ -76,6 +76,14 @@ from flipfix.apps.maintenance.views.wall_display import (
     WallDisplayBoardView,
     WallDisplaySetupView,
 )
+from flipfix.apps.oauth.views import (
+    AuthorizationView,
+    ConnectDiscoveryInfoView,
+    JwksInfoView,
+    RevokeTokenView,
+    TokenView,
+    UserInfoView,
+)
 from flipfix.apps.parts.views.part_request_updates import (
     PartRequestUpdateCreateView,
     PartRequestUpdateDetailView,
@@ -144,6 +152,45 @@ urlpatterns = [
         "register/<str:token>/",
         invitation_register,
         name="invitation-register",
+        access="always_public",
+    ),
+    ###
+    # OAuth2/OIDC Provider (SSO for theflip.museum apps)
+    ###
+    path(
+        "oauth/authorize/",
+        AuthorizationView.as_view(),
+        name="oauth2-authorize",
+        access="authenticated",
+    ),
+    path(
+        "oauth/token/",
+        TokenView.as_view(),
+        name="oauth2-token",
+        access="always_public",
+    ),
+    path(
+        "oauth/revoke/",
+        RevokeTokenView.as_view(),
+        name="oauth2-revoke",
+        access="always_public",
+    ),
+    path(
+        "oauth/userinfo/",
+        UserInfoView.as_view(),
+        name="oauth2-userinfo",
+        access="always_public",
+    ),
+    path(
+        ".well-known/openid-configuration",
+        ConnectDiscoveryInfoView.as_view(),
+        name="oauth2-discovery",
+        access="always_public",
+    ),
+    path(
+        ".well-known/jwks.json",
+        JwksInfoView.as_view(),
+        name="oauth2-jwks",
         access="always_public",
     ),
     ###

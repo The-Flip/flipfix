@@ -92,6 +92,63 @@ Shared editable includes (`text_card_editable.html`, `media_card_editable.html`)
 
 The `history_link.html` component self-guards with `{% if user.is_superuser %}` — no extra wrapper needed.
 
+## OAuth2/OIDC Provider (SSO)
+
+FlipFix acts as an OAuth2/OIDC authorization server for other apps in the theflip.museum domain. External apps authenticate users via FlipFix — users log in once and get seamless SSO across all apps.
+
+### How SSO works
+
+1. User visits an external app (e.g., `juice.theflip.museum`)
+2. The app redirects to `flipfix.theflip.museum/oauth/authorize/` with standard OAuth2 parameters
+3. If the user has an active FlipFix session: the authorize endpoint redirects back immediately with an auth code (no login form, no consent screen)
+4. If not: FlipFix shows the login page, then completes the flow silently
+5. The external app exchanges the code for tokens and calls `/oauth/userinfo/` for identity and capabilities
+
+### Endpoints
+
+| Route                              | Access          | Purpose                                   |
+| ---------------------------------- | --------------- | ----------------------------------------- |
+| `oauth/authorize/`                 | `authenticated` | OAuth2 authorization (any logged-in user) |
+| `oauth/token/`                     | `always_public` | Token exchange (external app, no session) |
+| `oauth/revoke/`                    | `always_public` | Token revocation                          |
+| `oauth/userinfo/`                  | `always_public` | OIDC UserInfo (Bearer token auth)         |
+| `.well-known/openid-configuration` | `always_public` | OIDC discovery                            |
+| `.well-known/jwks.json`            | `always_public` | Public signing keys                       |
+
+### Scopes and claims
+
+| Scope          | Claims                                                                     |
+| -------------- | -------------------------------------------------------------------------- |
+| `openid`       | `sub` (user ID)                                                            |
+| `profile`      | `preferred_username`, `name`, `given_name`, `family_name`, `is_maintainer` |
+| `email`        | `email`, `email_verified`                                                  |
+| `capabilities` | `https://flipfix.theflip.museum/capabilities` (list of capability slugs)   |
+
+### App capabilities
+
+Capabilities are per-app permissions managed by superusers in Django admin. Unlike Django permissions (which control what users can do inside FlipFix), capabilities control what users can do in external apps that authenticate via FlipFix.
+
+- **`AppCapability`** — defines a capability an app supports (e.g., "Control Machine Power" for Juice)
+- **`AppCapabilityGrant`** — grants a capability to a user
+
+Superusers manage capabilities via Django admin at `/admin/oauth/`.
+
+### Registering a new client app
+
+1. Create an Application in Django admin (`/admin/oauth2_provider/application/`)
+2. Set client type to "Confidential", grant type to "Authorization code"
+3. Set `skip_authorization = True` for first-party apps (enables silent SSO)
+4. Set the algorithm to RS256
+5. Add redirect URIs for the app
+6. Create `AppCapability` records for the app's capabilities
+7. Grant capabilities to users via `AppCapabilityGrant`
+
+### Configuration
+
+- **`OIDC_RSA_PRIVATE_KEY`** env var: RSA private key (PEM) for signing OIDC tokens
+- **`SITE_URL`** env var: Used as the OIDC issuer URL
+- Dev settings allow HTTP redirect URIs; prod requires HTTPS
+
 ## Making a page public
 
 To make an existing maintainer page publicly accessible:
