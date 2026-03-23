@@ -318,6 +318,25 @@ class OIDCDiscoveryTests(TestCase):
         self.assertIn("/oauth/token/", data["token_endpoint"])
         self.assertIn("/oauth/userinfo/", data["userinfo_endpoint"])
 
+    @override_settings(
+        ALLOWED_HOSTS=["other.example.com", "testserver"],
+        OAUTH2_PROVIDER=_OIDC_SETTINGS,
+    )
+    def test_discovery_endpoints_use_issuer_not_request_host(self):
+        """Discovery endpoints are anchored to OIDC_ISS_ENDPOINT, not the request Host."""
+        response = self.client.get(
+            "/.well-known/openid-configuration",
+            HTTP_HOST="other.example.com",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # All endpoints should use the configured issuer (http://testserver), not the request host
+        self.assertTrue(data["authorization_endpoint"].startswith("http://testserver/"))
+        self.assertTrue(data["token_endpoint"].startswith("http://testserver/"))
+        self.assertTrue(data["userinfo_endpoint"].startswith("http://testserver/"))
+        self.assertTrue(data["jwks_uri"].startswith("http://testserver/"))
+        self.assertNotIn("other.example.com", data["authorization_endpoint"])
+
     def test_jwks_endpoint(self):
         response = self.client.get("/.well-known/jwks.json")
         self.assertEqual(response.status_code, 200)
@@ -375,9 +394,16 @@ class OAuthAdminTests(AccessControlTestCase):
         response = self.client.get("/admin/oauth/appcapability/")
         self.assertEqual(response.status_code, 200)
 
-    def test_maintainer_cannot_access_capability_admin(self):
+    def test_non_staff_redirected_from_capability_admin(self):
+        """Non-staff user is redirected to admin login."""
         maintainer = create_maintainer_user()
         self.client.force_login(maintainer)
         response = self.client.get("/admin/oauth/appcapability/")
-        # Django admin redirects non-staff to admin login, or returns 403
-        self.assertIn(response.status_code, (302, 403))
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_non_superuser_denied_capability_admin(self):
+        """Staff user without superuser gets 403 from our permission checks."""
+        staff_user = create_user(is_staff=True)
+        self.client.force_login(staff_user)
+        response = self.client.get("/admin/oauth/appcapability/")
+        self.assertEqual(response.status_code, 403)

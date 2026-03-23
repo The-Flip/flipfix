@@ -26,7 +26,7 @@ class FlipFixOAuth2Validator(OAuth2Validator):
             "family_name": user.last_name,
             "is_maintainer": user.has_perm("accounts.can_access_maintainer_portal"),
             "email": user.email,
-            "email_verified": True,
+            "email_verified": bool(user.email),
         }
 
         capability_slugs = list(

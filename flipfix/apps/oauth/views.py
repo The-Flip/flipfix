@@ -8,6 +8,8 @@ The ConnectDiscoveryInfoView is overridden to use this project's URL names
 instead of DOT's namespaced names (we don't use DOT's include() pattern).
 """
 
+from urllib.parse import urljoin
+
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -45,6 +47,11 @@ class ConnectDiscoveryInfoView(OIDCOnlyMixin, View):
 
     def get(self, request, *args, **kwargs):
         issuer_url = oauth2_settings.OIDC_ISS_ENDPOINT or oauth2_settings.oidc_issuer(request)
+        issuer_base = issuer_url.rstrip("/") + "/"
+
+        def _endpoint(url_name: str) -> str:
+            """Build an endpoint URL anchored to the issuer, not the request host."""
+            return urljoin(issuer_base, reverse(url_name).lstrip("/"))
 
         from oauth2_provider.models import get_application_model
 
@@ -61,10 +68,10 @@ class ConnectDiscoveryInfoView(OIDCOnlyMixin, View):
 
         data = {
             "issuer": issuer_url,
-            "authorization_endpoint": request.build_absolute_uri(reverse("oauth2-authorize")),
-            "token_endpoint": request.build_absolute_uri(reverse("oauth2-token")),
-            "userinfo_endpoint": request.build_absolute_uri(reverse("oauth2-userinfo")),
-            "jwks_uri": request.build_absolute_uri(reverse("oauth2-jwks")),
+            "authorization_endpoint": _endpoint("oauth2-authorize"),
+            "token_endpoint": _endpoint("oauth2-token"),
+            "userinfo_endpoint": _endpoint("oauth2-userinfo"),
+            "jwks_uri": _endpoint("oauth2-jwks"),
             "scopes_supported": list(scopes.get_available_scopes()),
             "response_types_supported": oauth2_settings.OIDC_RESPONSE_TYPES_SUPPORTED,
             "subject_types_supported": oauth2_settings.OIDC_SUBJECT_TYPES_SUPPORTED,
