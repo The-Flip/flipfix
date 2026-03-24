@@ -548,3 +548,17 @@ class OAuthAdminTests(AccessControlTestCase):
         self.client.force_login(superuser)
         response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
         self.assertEqual(response.status_code, 200)
+
+    def test_non_staff_redirected_from_group_grant_admin(self):
+        """Non-staff user is redirected to admin login."""
+        maintainer = create_maintainer_user()
+        self.client.force_login(maintainer)
+        response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_non_superuser_denied_group_grant_admin(self):
+        """Staff user without superuser gets 403 from our permission checks."""
+        staff_user = create_user(is_staff=True)
+        self.client.force_login(staff_user)
+        response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
+        self.assertEqual(response.status_code, 403)
