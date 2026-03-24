@@ -1,8 +1,9 @@
 """Custom OAuth2 validator for FlipFix OIDC claims."""
 
+from django.db.models import Q
 from oauth2_provider.oauth2_validators import OAuth2Validator
 
-from flipfix.apps.oauth.models import AppCapabilityGrant
+from flipfix.apps.oauth.models import AppCapability
 
 
 class FlipFixOAuth2Validator(OAuth2Validator):
@@ -30,10 +31,10 @@ class FlipFixOAuth2Validator(OAuth2Validator):
         }
 
         capability_slugs = list(
-            AppCapabilityGrant.objects.filter(
-                user=user,
-                capability__app=request.client,
-            ).values_list("capability__slug", flat=True)
+            AppCapability.objects.filter(app=request.client)
+            .filter(Q(grants__user=user) | Q(group_grants__group__in=user.groups.all()))
+            .values_list("slug", flat=True)
+            .distinct()
         )
         claims["https://flipfix.theflip.museum/capabilities"] = capability_slugs
 

@@ -67,3 +67,37 @@ class AppCapabilityGrant(TimeStampedMixin):
 
     def __str__(self) -> str:
         return f"{self.user.username} -> {self.capability}"
+
+
+class AppCapabilityGroupGrant(TimeStampedMixin):
+    """Grant of an app capability to all members of a Django group."""
+
+    group = models.ForeignKey(
+        "auth.Group",
+        on_delete=models.CASCADE,
+        related_name="capability_grants",
+    )
+    capability = models.ForeignKey(
+        AppCapability,
+        on_delete=models.CASCADE,
+        related_name="group_grants",
+    )
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["group", "capability"],
+                name="unique_grant_per_group",
+            ),
+        ]
+        ordering = ["capability__app", "capability__name", "group__name"]
+
+    def __str__(self) -> str:
+        return f"{self.group.name} -> {self.capability}"

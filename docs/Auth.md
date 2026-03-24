@@ -129,19 +129,23 @@ FlipFix acts as an OAuth2/OIDC authorization server for other apps in the thefli
 Capabilities are per-app permissions managed by superusers in Django admin. Unlike Django permissions (which control what users can do inside FlipFix), capabilities control what users can do in external apps that authenticate via FlipFix.
 
 - **`AppCapability`** — defines a capability an app supports (e.g., "Control Machine Power" for Juice)
-- **`AppCapabilityGrant`** — grants a capability to a user
+- **`AppCapabilityGrant`** — grants a capability to an individual user
+- **`AppCapabilityGroupGrant`** — grants a capability to all members of a Django group (e.g., granting "control_power" to the "Maintainers" group gives every maintainer that capability)
+
+When a user has both a direct grant and a group grant for the same capability, it appears only once in the OIDC claims.
 
 Superusers manage capabilities via Django admin at `/admin/oauth/`.
 
 ### Registering a new client app
 
 1. Create an Application in Django admin (`/admin/oauth2_provider/application/`)
-2. Set client type to "Confidential", grant type to "Authorization code"
-3. Set `skip_authorization = True` for first-party apps (enables silent SSO)
-4. Set the algorithm to RS256
-5. Add redirect URIs for the app
-6. Create `AppCapability` records for the app's capabilities
-7. Grant capabilities to users via `AppCapabilityGrant`
+2. Leave the **User** field blank — it's optional and not needed for service-level client apps
+3. Set **Client type** to "Confidential" and **Authorization grant type** to "Authorization code"
+4. Set `skip_authorization = True` for first-party apps (enables silent SSO)
+5. Set **Algorithm** to "RSA with SHA-2 256" (RS256) — this enables OIDC support with signed ID tokens
+6. Add **Redirect URIs** — one per line, space-separated. These are the URLs the client app is allowed to redirect back to after authorization. They should point to the client app's OAuth callback endpoint, e.g. `https://juice.theflip.museum/auth/callback`. Dev settings allow `http://` URIs; prod requires `https://`.
+7. Create `AppCapability` records for the app's capabilities
+8. Grant capabilities to users via `AppCapabilityGrant`, or to groups via `AppCapabilityGroupGrant`
 
 ### Configuration
 

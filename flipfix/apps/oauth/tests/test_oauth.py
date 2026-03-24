@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings, tag
 
 from flipfix.apps.core.test_utils import (
@@ -19,8 +20,13 @@ from flipfix.apps.core.test_utils import (
     create_superuser,
     create_user,
     grant_capability,
+    grant_capability_to_group,
 )
-from flipfix.apps.oauth.models import AppCapability, AppCapabilityGrant
+from flipfix.apps.oauth.models import (
+    AppCapability,
+    AppCapabilityGrant,
+    AppCapabilityGroupGrant,
+)
 
 
 def _generate_test_rsa_key() -> str:
@@ -127,6 +133,48 @@ class AppCapabilityGrantModelTests(TestCase):
         user = create_user()
         cap = create_app_capability()
         g = grant_capability(user, cap, granted_by=granter)
+        granter.delete()
+        g.refresh_from_db()
+        self.assertIsNone(g.granted_by)
+
+
+@tag("models")
+class AppCapabilityGroupGrantModelTests(TestCase):
+    def test_str_representation(self):
+        group = Group.objects.create(name="Testers")
+        app = create_oauth_application(name="Juice")
+        cap = create_app_capability(app=app, slug="power", name="Power Control")
+        g = grant_capability_to_group(group, cap)
+        self.assertEqual(str(g), "Testers -> Juice: Power Control")
+
+    def test_unique_grant_per_group(self):
+        from django.db import IntegrityError
+
+        group = Group.objects.create(name="Testers")
+        cap = create_app_capability()
+        grant_capability_to_group(group, cap)
+        with self.assertRaises(IntegrityError):
+            grant_capability_to_group(group, cap)
+
+    def test_cascade_delete_with_capability(self):
+        group = Group.objects.create(name="Testers")
+        cap = create_app_capability()
+        grant_capability_to_group(group, cap)
+        cap.delete()
+        self.assertEqual(AppCapabilityGroupGrant.objects.count(), 0)
+
+    def test_cascade_delete_with_group(self):
+        group = Group.objects.create(name="Testers")
+        cap = create_app_capability()
+        grant_capability_to_group(group, cap)
+        group.delete()
+        self.assertEqual(AppCapabilityGroupGrant.objects.count(), 0)
+
+    def test_granted_by_set_null_on_delete(self):
+        granter = create_superuser()
+        group = Group.objects.create(name="Testers")
+        cap = create_app_capability()
+        g = grant_capability_to_group(group, cap, granted_by=granter)
         granter.delete()
         g.refresh_from_db()
         self.assertIsNone(g.granted_by)
@@ -382,6 +430,93 @@ class OAuthAccessControlTests(AccessControlTestCase):
 
 
 # =============================================================================
+# Group Capability Tests
+# =============================================================================
+
+
+@tag("views")
+@override_settings(OAUTH2_PROVIDER=_OIDC_SETTINGS)
+class OAuthGroupCapabilityTests(AccessControlTestCase):
+    """Test that group-based capability grants appear in OIDC claims."""
+
+    def setUp(self):
+        super().setUp()
+        self.app = create_oauth_application(name="Juice")
+        self.user = create_maintainer_user(username="alice")
+        self.group = Group.objects.get(name="Maintainers")
+        self.cap = create_app_capability(app=self.app, slug="control_power", name="Control Power")
+
+    def _get_capabilities(self, user):
+        """Run the full OAuth flow and return the capabilities claim."""
+        self.client.force_login(user)
+        verifier, challenge = _pkce_pair()
+        response = self.client.get(
+            "/oauth/authorize/",
+            {
+                "response_type": "code",
+                "client_id": self.app.client_id,
+                "redirect_uri": "http://testserver/callback",
+                "scope": "openid capabilities",
+                "code_challenge": challenge,
+                "code_challenge_method": "S256",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        code = parse_qs(urlparse(response.url).query)["code"][0]
+
+        token_response = self.client.post(
+            "/oauth/token/",
+            {
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": "http://testserver/callback",
+                "client_id": self.app.client_id,
+                "client_secret": self.app.plain_client_secret,
+                "code_verifier": verifier,
+            },
+        )
+        self.assertEqual(token_response.status_code, 200)
+        access_token = token_response.json()["access_token"]
+
+        userinfo_response = self.client.get(
+            "/oauth/userinfo/",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
+        )
+        self.assertEqual(userinfo_response.status_code, 200)
+        return userinfo_response.json()["https://flipfix.theflip.museum/capabilities"]
+
+    def test_group_grant_appears_in_capabilities(self):
+        grant_capability_to_group(self.group, self.cap)
+        caps = self._get_capabilities(self.user)
+        self.assertEqual(caps, ["control_power"])
+
+    def test_direct_and_group_grant_deduplicated(self):
+        grant_capability(self.user, self.cap)
+        grant_capability_to_group(self.group, self.cap)
+        caps = self._get_capabilities(self.user)
+        self.assertEqual(caps, ["control_power"])
+
+    def test_group_grant_scoped_to_app(self):
+        """Group grant on one app doesn't leak to another."""
+        grant_capability_to_group(self.group, self.cap)
+        other_app = create_oauth_application(name="Other")
+        other_cap = create_app_capability(app=other_app, slug="other_cap", name="Other")
+        grant_capability_to_group(self.group, other_cap)
+        caps = self._get_capabilities(self.user)
+        self.assertEqual(caps, ["control_power"])
+
+    def test_user_not_in_group_doesnt_get_group_capability(self):
+        grant_capability_to_group(self.group, self.cap)
+        # Create a maintainer user in a different group
+        other_user = create_maintainer_user(username="bob")
+        other_user.groups.clear()
+        other_group = Group.objects.create(name="Other Group")
+        other_user.groups.add(other_group)
+        caps = self._get_capabilities(other_user)
+        self.assertEqual(caps, [])
+
+
+# =============================================================================
 # Admin Tests
 # =============================================================================
 
@@ -406,4 +541,24 @@ class OAuthAdminTests(AccessControlTestCase):
         staff_user = create_user(is_staff=True)
         self.client.force_login(staff_user)
         response = self.client.get("/admin/oauth/appcapability/")
+        self.assertEqual(response.status_code, 403)
+
+    def test_superuser_can_access_group_grant_admin(self):
+        superuser = create_superuser()
+        self.client.force_login(superuser)
+        response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_non_staff_redirected_from_group_grant_admin(self):
+        """Non-staff user is redirected to admin login."""
+        maintainer = create_maintainer_user()
+        self.client.force_login(maintainer)
+        response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_staff_non_superuser_denied_group_grant_admin(self):
+        """Staff user without superuser gets 403 from our permission checks."""
+        staff_user = create_user(is_staff=True)
+        self.client.force_login(staff_user)
+        response = self.client.get("/admin/oauth/appcapabilitygroupgrant/")
         self.assertEqual(response.status_code, 403)

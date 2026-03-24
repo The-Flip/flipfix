@@ -26,13 +26,13 @@ from django.test import TestCase, override_settings
 from flipfix.apps.accounts.models import Maintainer
 from flipfix.apps.catalog.models import MachineInstance, MachineModel
 from flipfix.apps.maintenance.models import LogEntry, ProblemReport
-from flipfix.apps.oauth.models import AppCapability, AppCapabilityGrant
+from flipfix.apps.oauth.models import AppCapability, AppCapabilityGrant, AppCapabilityGroupGrant
 from flipfix.apps.parts.models import PartRequest, PartRequestUpdate
 
 if TYPE_CHECKING:
     from io import BytesIO
 
-    from django.contrib.auth.models import User
+    from django.contrib.auth.models import Group, User
 
 UserModel = cast("type[User]", get_user_model())
 
@@ -495,6 +495,28 @@ def grant_capability(
     """
     return AppCapabilityGrant.objects.create(
         user=user,
+        capability=capability,
+        granted_by=granted_by,
+    )
+
+
+def grant_capability_to_group(
+    group: Group,
+    capability: AppCapability,
+    granted_by: User | None = None,
+) -> AppCapabilityGroupGrant:
+    """Grant a capability to all members of a group.
+
+    Args:
+        group: Group receiving the grant
+        capability: Capability to grant
+        granted_by: User granting (optional)
+
+    Returns:
+        Created AppCapabilityGroupGrant instance
+    """
+    return AppCapabilityGroupGrant.objects.create(
+        group=group,
         capability=capability,
         granted_by=granted_by,
     )
