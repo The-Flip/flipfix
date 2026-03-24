@@ -139,3 +139,17 @@ Links a Discord user to a Maintainer account for attribution.
 ### Discord Message Mapping ([`DiscordMessageMapping`](../flipfix/apps/discord/models.py))
 
 Tracks which Discord messages have been processed and links them to the records they created. This prevents an echo of posting the new records back to Discord, as well as prevents users from attempting to post a Discord message to Flipfix multiple times.
+
+## OAuth app
+
+### App Capability ([`AppCapability`](../flipfix/apps/oauth/models.py))
+
+A capability that an OAuth application defines (e.g., "Control Machine Power" for Juice). Scoped to an Application with a unique slug per app.
+
+### App Capability Grant ([`AppCapabilityGrant`](../flipfix/apps/oauth/models.py))
+
+Grants a capability to an individual user. Includes `granted_by` audit trail.
+
+### App Capability Group Grant ([`AppCapabilityGroupGrant`](../flipfix/apps/oauth/models.py))
+
+Grants a capability to all members of a Django group. When a user has both a direct grant and a group grant for the same capability, it appears only once in OIDC claims.
