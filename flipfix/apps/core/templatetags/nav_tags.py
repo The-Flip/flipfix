@@ -6,14 +6,30 @@ that render each navigation variant with pre-computed active states.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from django import template
 
 from flipfix.apps.core.mixins import can_access_maintainer_portal
+from flipfix.apps.core.mixins import can_manage_catalog as _can_manage_catalog
 from flipfix.apps.core.routing import get_public_url_names
 
+if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractUser
+
+# Predicate signature accepts AnonymousUser (logged-out users on public
+# routes) as well as AbstractUser subclasses. ``Any`` mirrors the
+# convention used by ``can_access_maintainer_portal`` in ``mixins.py``.
+_UserPredicate = Callable[["AbstractUser | Any"], bool]
+
 register = template.Library()
+
+
+def _is_superuser(user: AbstractUser | Any) -> bool:
+    return user.is_superuser
+
 
 # ---- Nav item data ----------------------------------------------------------
 
@@ -38,12 +54,17 @@ class _NavItem:
 
 @dataclass(frozen=True)
 class _AdminNavItem:
-    """An admin navigation item. Uses exact url_name matching for active state."""
+    """An admin navigation item. Uses exact url_name matching for active state.
+
+    ``visible_to`` is the predicate that decides whether this item appears
+    in the admin dropdown for a given user. Default is superuser-only.
+    """
 
     label: str
     url_name: str
     icon: str
     track_active: bool = True
+    visible_to: _UserPredicate = _is_superuser
 
 
 ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
@@ -61,9 +82,19 @@ ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
         icon="user-plus",
         track_active=False,
     ),
-    _AdminNavItem(label="QR Codes", url_name="machine-qr-bulk", icon="qrcode"),
+    _AdminNavItem(
+        label="QR Codes",
+        url_name="machine-qr-bulk",
+        icon="qrcode",
+        visible_to=_can_manage_catalog,
+    ),
     _AdminNavItem(label="Labor Report", url_name="labor-report-weekly", icon="clock"),
-    _AdminNavItem(label="Owners", url_name="owner-list", icon="address-book"),
+    _AdminNavItem(
+        label="Owners",
+        url_name="owner-list",
+        icon="address-book",
+        visible_to=_can_manage_catalog,
+    ),
     _AdminNavItem(label="Site Settings", url_name="site-settings", icon="gear"),
     _AdminNavItem(
         label="Django Admin",
@@ -110,12 +141,6 @@ MAIN_NAV_ITEMS: tuple[_NavItem, ...] = (
     ),
 )
 
-# Routes that activate the hamburger button itself (pages only reachable
-# via the hamburger, not already shown in the mobile priority bar).
-_HAMBURGER_ACTIVE_ROUTES: frozenset[str] = frozenset(
-    {item.url_name for item in ADMIN_NAV_ITEMS if item.track_active} | {"profile"},
-)
-
 # ---- Helpers ----------------------------------------------------------------
 
 
@@ -147,8 +172,11 @@ def _resolve_nav_items(url_name: str, *, public_only: bool = False) -> list[dict
     ]
 
 
-def _resolve_admin_items(url_name: str) -> list[dict[str, str | bool]]:
+def _resolve_admin_items(url_name: str, user: AbstractUser | Any) -> list[dict[str, str | bool]]:
     """Build admin item context dicts with active state resolved.
+
+    Items are filtered by their ``visible_to`` predicate, so each user
+    sees only the entries they have access to.
 
     Note: active-state comparison uses exact match on url_name, but
     resolver_match.url_name strips namespace prefixes (e.g. "admin:").
@@ -162,6 +190,7 @@ def _resolve_admin_items(url_name: str) -> list[dict[str, str | bool]]:
             "is_active": item.track_active and url_name == item.url_name,
         }
         for item in ADMIN_NAV_ITEMS
+        if item.visible_to(user)
     ]
 
 
@@ -187,13 +216,14 @@ def desktop_nav(context: dict) -> dict:
     """
     user = context["user"]
     url_name = _get_url_name(context)
-    admin_items = _resolve_admin_items(url_name)
+    admin_items = _resolve_admin_items(url_name, user)
     return {
         "nav_items": _resolve_nav_items(
             url_name, public_only=not can_access_maintainer_portal(user)
         ),
         "admin_items": admin_items,
         "admin_active": any(item["is_active"] for item in admin_items),
+        "show_admin_menu": bool(admin_items),
         "user": user,
         "perms": context.get("perms"),
     }
@@ -232,18 +262,22 @@ def mobile_hamburger(context: dict) -> dict:
     user = context["user"]
     url_name = _get_url_name(context)
     nav_items = _resolve_nav_items(url_name, public_only=not can_access_maintainer_portal(user))
+    admin_items = _resolve_admin_items(url_name, user)
 
     # The hamburger button lights up when the current page is:
     # - A non-bar nav item that's active (e.g. Docs/wiki)
-    # - An admin or account route only accessible via the hamburger
+    # - An admin item visible to this user that matches the current route
+    # - The profile page (only reachable via the hamburger)
     hamburger_active = (
         any(item["is_active"] for item in nav_items if not item["in_mobile_bar"])
-        or url_name in _HAMBURGER_ACTIVE_ROUTES
+        or any(item["is_active"] for item in admin_items)
+        or url_name == "profile"
     )
 
     return {
         "nav_items": nav_items,
-        "admin_items": _resolve_admin_items(url_name),
+        "admin_items": admin_items,
+        "show_admin_menu": bool(admin_items),
         "user": user,
         "perms": context.get("perms"),
         "hamburger_active": hamburger_active,

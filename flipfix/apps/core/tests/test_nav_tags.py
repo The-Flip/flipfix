@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from django.contrib.auth.models import Group, Permission
 from django.template import RequestContext, Template
+from django.template.loader import render_to_string
 from django.test import RequestFactory, TestCase, tag
 from django.urls import ResolverMatch
 
+from flipfix.apps.core.mixins import can_manage_catalog
 from flipfix.apps.core.templatetags.nav_tags import (
     ADMIN_NAV_ITEMS,
     MAIN_NAV_ITEMS,
@@ -14,7 +17,13 @@ from flipfix.apps.core.templatetags.nav_tags import (
     _resolve_admin_items,
     _resolve_nav_items,
 )
-from flipfix.apps.core.test_utils import create_maintainer_user, create_superuser, create_user
+from flipfix.apps.core.test_utils import (
+    create_catalog_manager_only_user,
+    create_catalog_manager_user,
+    create_maintainer_user,
+    create_superuser,
+    create_user,
+)
 
 
 def _make_request(url_name: str = "", user=None):
@@ -178,28 +187,35 @@ class ResolveNavItemsTests(TestCase):
 
 @tag("views")
 class ResolveAdminItemsTests(TestCase):
-    """Tests for _resolve_admin_items helper."""
+    """Tests for _resolve_admin_items helper.
 
-    def test_returns_all_admin_items(self):
-        """Returns a dict for each item in ADMIN_NAV_ITEMS."""
-        result = _resolve_admin_items("")
+    Most tests render for a superuser so all items are visible; per-role
+    visibility filtering is exercised in nav-render tests below.
+    """
+
+    def setUp(self):
+        self.superuser = create_superuser(username="admin_items_su")
+
+    def test_returns_all_admin_items_for_superuser(self):
+        """Returns a dict for each item in ADMIN_NAV_ITEMS when user is superuser."""
+        result = _resolve_admin_items("", self.superuser)
         self.assertEqual(len(result), len(ADMIN_NAV_ITEMS))
 
     def test_tracked_item_active(self):
         """Wall Display is active when on its route."""
-        result = _resolve_admin_items("wall-display-setup")
+        result = _resolve_admin_items("wall-display-setup", self.superuser)
         wall = next(item for item in result if item["label"] == "Wall Display")
         self.assertTrue(wall["is_active"])
 
     def test_untracked_item_never_active(self):
         """Locations never shows as active (track_active=False)."""
-        result = _resolve_admin_items("admin:catalog_location_changelist")
+        result = _resolve_admin_items("admin:catalog_location_changelist", self.superuser)
         locations = next(item for item in result if item["label"] == "Locations")
         self.assertFalse(locations["is_active"])
 
     def test_site_settings_present(self):
         """Site Settings appears in admin items."""
-        result = _resolve_admin_items("")
+        result = _resolve_admin_items("", self.superuser)
         labels = [item["label"] for item in result]
         self.assertIn("Site Settings", labels)
 
@@ -218,13 +234,13 @@ class ResolveAdminItemsTests(TestCase):
 
     def test_site_settings_active_on_its_route(self):
         """Site Settings is active when on site-settings route."""
-        result = _resolve_admin_items("site-settings")
+        result = _resolve_admin_items("site-settings", self.superuser)
         site_settings = next(item for item in result if item["label"] == "Site Settings")
         self.assertTrue(site_settings["is_active"])
 
     def test_no_admin_active_on_unrelated_route(self):
         """No admin item is active on an unrelated route."""
-        result = _resolve_admin_items("problem-report-list")
+        result = _resolve_admin_items("problem-report-list", self.superuser)
         active = [item for item in result if item["is_active"]]
         self.assertEqual(len(active), 0)
 
@@ -407,6 +423,25 @@ class MobileHamburgerRenderTests(TestCase):
         html = _render_tag("{% mobile_hamburger %}", request)
         self.assertIn("nav-priority__menu-btn--active-for-parts", html)
 
+    def test_hamburger_button_active_for_admin_route_visible_to_user(self):
+        """Superuser on an admin-only route highlights the hamburger button."""
+        superuser = create_superuser(username="hamburger_admin_route")
+        request = _make_request("wall-display-setup", user=superuser)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertIn("nav-priority__menu-btn--active", html)
+
+    def test_hamburger_button_inactive_for_admin_route_hidden_from_user(self):
+        """Plain maintainer hitting a hidden admin route directly does NOT light up the hamburger.
+
+        Regression test: previously the hamburger lit up for any route in
+        _HAMBURGER_ACTIVE_ROUTES regardless of who could actually see the
+        item in their dropdown. The active state now derives from the
+        filtered admin_items list.
+        """
+        request = _make_request("machine-qr-bulk", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertNotIn("nav-priority__menu-btn--active", html)
+
     def test_admin_section_for_superuser(self):
         """Superuser sees admin section in hamburger."""
         superuser = create_superuser(username="hamburgeradmin")
@@ -476,3 +511,197 @@ class UserDropdownRenderTests(TestCase):
         request = _make_request("", user=user)
         html = _render_tag("{% user_dropdown %}", request)
         self.assertIn("avatar-dropdown--mobile-hidden", html)
+
+
+# =============================================================================
+# Catalog Managers group: nav visibility boundary
+# =============================================================================
+
+
+_CATALOG_MANAGER_ITEMS = ("QR Codes", "Owners")
+_SUPERUSER_ONLY_ITEMS = (
+    "Wall Display",
+    "Terminals",
+    "Locations",
+    "Users",
+    "Labor Report",
+    "Site Settings",
+    "Django Admin",
+)
+
+
+@tag("views")
+class CatalogManagerNavVisibilityTests(TestCase):
+    """Verify the Admin nav is scoped correctly for Catalog Managers.
+
+    A "Catalog Manager" here means a user in BOTH the Maintainers group
+    (for portal access) AND the Catalog Managers group (for the
+    additive can_manage_catalog permission).
+    """
+
+    def setUp(self):
+        self.user = create_catalog_manager_user(username="catmgr")
+
+    def test_fixture_has_no_staff_or_superuser(self):
+        """Sanity: the catalog-manager role does not grant is_staff or is_superuser."""
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+    def test_template_filter_returns_true(self):
+        """The can_manage_catalog filter is True for a working catalog manager.
+
+        Pairs with the False-direction test in CatalogManagerOnlyANDPredicateTests
+        to lock in both branches of the predicate.
+        """
+        request = _make_request("", user=self.user)
+        template = Template("{% load accounts_tags %}{{ user|can_manage_catalog }}")
+        rendered = template.render(RequestContext(request))
+        self.assertEqual(rendered.strip(), "True")
+
+    def test_desktop_admin_dropdown_contains_only_catalog_items(self):
+        """Catalog manager sees Admin dropdown with exactly QR Codes + Owners."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% desktop_nav %}", request)
+        self.assertIn("Admin", html)  # the dropdown toggle label
+        for label in _CATALOG_MANAGER_ITEMS:
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+        for label in _SUPERUSER_ONLY_ITEMS:
+            with self.subTest(label=label):
+                self.assertNotIn(label, html)
+
+    def test_mobile_hamburger_admin_section_contains_only_catalog_items(self):
+        """Catalog manager sees Admin section in hamburger with QR Codes + Owners."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        for label in _CATALOG_MANAGER_ITEMS:
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+        for label in _SUPERUSER_ONLY_ITEMS:
+            with self.subTest(label=label):
+                self.assertNotIn(label, html)
+
+
+@tag("views")
+class PlainMaintainerAdminInvisibilityTests(TestCase):
+    """Verify a plain Maintainer (not in Catalog Managers) sees no Admin section."""
+
+    def setUp(self):
+        self.user = create_maintainer_user(username="plainmaint")
+
+    def test_desktop_admin_dropdown_absent(self):
+        """Plain maintainer sees no Admin dropdown in desktop nav."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% desktop_nav %}", request)
+        self.assertNotIn("dropdown__toggle", html)
+
+    def test_mobile_hamburger_admin_section_absent(self):
+        """Plain maintainer sees no Admin section in hamburger."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertNotIn('nav-priority__dropdown-heading">Admin', html)
+
+
+@tag("views")
+class CatalogManagerOnlyANDPredicateTests(TestCase):
+    """Regression test for the AND predicate.
+
+    A user in Catalog Managers but NOT Maintainers must NOT see catalog
+    UI on public routes. This is the test that fails if anyone weakens
+    the predicate to just ``can_manage_catalog``.
+    """
+
+    def setUp(self):
+        self.user = create_catalog_manager_only_user(username="catmgr_only")
+
+    def test_fixture_has_no_staff_or_superuser(self):
+        """Sanity: this fixture has neither is_staff nor is_superuser."""
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+    def test_python_helper_returns_false(self):
+        """can_manage_catalog() returns False without maintainer portal access."""
+        self.assertFalse(can_manage_catalog(self.user))
+
+    def test_template_filter_returns_false(self):
+        """The can_manage_catalog filter agrees with the Python helper."""
+        request = _make_request("", user=self.user)
+        template = Template("{% load accounts_tags %}{{ user|can_manage_catalog }}")
+        rendered = template.render(RequestContext(request))
+        self.assertEqual(rendered.strip(), "False")
+
+    def test_desktop_admin_dropdown_absent(self):
+        """No Admin dropdown on desktop nav."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% desktop_nav %}", request)
+        self.assertNotIn("dropdown__toggle", html)
+
+    def test_mobile_hamburger_admin_section_absent(self):
+        """No Admin section in mobile hamburger."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertNotIn('nav-priority__dropdown-heading">Admin', html)
+
+
+@tag("views")
+class MachineListNewMachineButtonTests(TestCase):
+    """Visibility of the 'New Machine' button on the maintainer machine list.
+
+    Renders the template directly with a manually built context (the view
+    layer would normally supply machines/stats; for visibility checks we
+    can pass empty values).
+    """
+
+    def _render_machine_list(self, user) -> str:
+        request = _make_request("maintainer-machine-list", user=user)
+        return render_to_string(
+            "catalog/machine_list_for_maintainers.html",
+            {
+                "machines": [],
+                "status_stats": [],
+                "location_stats": [],
+            },
+            request=request,
+        )
+
+    def test_visible_for_superuser(self):
+        html = self._render_machine_list(create_superuser(username="newmachine_su"))
+        self.assertIn("New Machine", html)
+
+    def test_visible_for_catalog_manager(self):
+        html = self._render_machine_list(create_catalog_manager_user(username="newmachine_cm"))
+        self.assertIn("New Machine", html)
+
+    def test_hidden_for_plain_maintainer(self):
+        html = self._render_machine_list(create_maintainer_user(username="newmachine_pm"))
+        self.assertNotIn("New Machine", html)
+
+    def test_hidden_for_catalog_manager_only(self):
+        """AND-predicate regression: catalog-manager-but-not-maintainer must NOT see the button."""
+        html = self._render_machine_list(create_catalog_manager_only_user(username="newmachine_co"))
+        self.assertNotIn("New Machine", html)
+
+
+@tag("views")
+class CatalogManagersGroupMigrationTests(TestCase):
+    """Sanity tests for the Catalog Managers group and permission."""
+
+    def test_permission_exists(self):
+        self.assertTrue(
+            Permission.objects.filter(
+                codename="can_manage_catalog",
+                content_type__app_label="accounts",
+                content_type__model="maintainer",
+            ).exists()
+        )
+
+    def test_group_exists_with_only_can_manage_catalog(self):
+        group = Group.objects.get(name="Catalog Managers")
+        codenames = set(group.permissions.values_list("codename", flat=True))
+        self.assertEqual(codenames, {"can_manage_catalog"})
+
+    def test_group_starts_empty(self):
+        group = Group.objects.get(name="Catalog Managers")
+        # Other tests' setUp adds users to this group; each test runs in
+        # its own transaction so those adds are not visible here.
+        self.assertEqual(group.user_set.count(), 0)

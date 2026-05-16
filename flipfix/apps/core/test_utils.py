@@ -169,6 +169,28 @@ def create_maintainer_user(username: str | None = None, **kwargs) -> User:
     return user
 
 
+def create_catalog_manager_user(username: str | None = None, **kwargs) -> User:
+    """Create a user in both Maintainers and Catalog Managers groups."""
+    from django.contrib.auth.models import Group
+
+    user = create_maintainer_user(username=username, **kwargs)
+    user.groups.add(Group.objects.get(name="Catalog Managers"))
+    return user
+
+
+def create_catalog_manager_only_user(username: str | None = None, **kwargs) -> User:
+    """Create a user in Catalog Managers but NOT Maintainers.
+
+    Used to verify the AND predicate: a user with only catalog-manager
+    membership should not see catalog-management UI on public routes.
+    """
+    from django.contrib.auth.models import Group
+
+    user = create_user(username=username, is_staff=False, **kwargs)
+    user.groups.add(Group.objects.get(name="Catalog Managers"))
+    return user
+
+
 def create_superuser(username: str | None = None, **kwargs) -> User:
     """Create a superuser (admin).
 

@@ -16,7 +16,7 @@
         </a>
       {% endfor %}
     </div>
-    {% if user.is_superuser %}
+    {% if show_admin_menu %}
       <div class="nav-priority__dropdown-group">
         <p class="nav-priority__dropdown-heading">Admin</p>
         {% for item in admin_items %}
