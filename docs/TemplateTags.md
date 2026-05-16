@@ -141,11 +141,12 @@ These live in each app's `templatetags/` directory.
 | `part_request_meta`                 | Simple tag    | Requester name + timestamp (guest-aware, hides names) |
 | `part_update_meta`                  | Simple tag    | Poster name + timestamp (guest-aware, hides names)    |
 
-#### `accounts_tags` — User display (`accounts/templatetags/`)
+#### `accounts_tags` — User display & permission predicates (`accounts/templatetags/`)
 
-| Component                    | Type   | Description                                |
-| ---------------------------- | ------ | ------------------------------------------ |
-| `display_name_with_username` | Filter | "First Last (username)" or just "username" |
+| Component                    | Type   | Description                                               |
+| ---------------------------- | ------ | --------------------------------------------------------- |
+| `display_name_with_username` | Filter | "First Last (username)" or just "username"                |
+| `can_manage_catalog`         | Filter | True if user is a working catalog manager (portal + perm) |
 
 #### `accounts_form_tags` — Maintainer form components (`accounts/templatetags/`)
 

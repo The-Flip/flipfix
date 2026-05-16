@@ -3,9 +3,10 @@
 {% load ui_tags %}
 {% load sidebar_tags %}
 {% load list_tags %}
+{% load accounts_tags %}
 {% block title %}Machines · {{ block.super }}{% endblock %}
 {% block mobile_actions %}
-  {% if user.is_superuser %}
+  {% if user|can_manage_catalog %}
     <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
       {% icon "plus" class="meta" %}
       New Machine
@@ -20,7 +21,7 @@
 {% stat_grid stats=location_stats %}
 {% endsidebar_section %}
 {% sidebar_section %}
-{% if user.is_superuser %}
+{% if user|can_manage_catalog %}
   <a href="{% url 'machine-create-landing' %}"
      class="btn btn--secondary btn--full">
     {% icon "plus" class="meta" %}

@@ -241,7 +241,7 @@ This project uses Django's `@register.inclusion_tag` and `@register.simple_block
 | `catalog_tags`       | catalog     | Machine status pills/filters, `manufacturer_year`                                                                                     |
 | `maintenance_tags`   | maintenance | Problem/log pills/filters, `problem_report_summary`, `log_entry_meta`, `report_problem_button`                                        |
 | `parts_tags`         | parts       | `settable_part_request_status_pill`, `part_request_meta`, `part_update_meta`                                                          |
-| `accounts_tags`      | accounts    | `display_name_with_username`                                                                                                          |
+| `accounts_tags`      | accounts    | `display_name_with_username`, `can_manage_catalog`                                                                                    |
 | `accounts_form_tags` | accounts    | `maintainer_autocomplete_field`, `maintainer_chip_input_field`                                                                        |
 | `wiki_tags`          | wiki        | `render_wiki_content`, `deslugify`                                                                                                    |
 | `wiki_form_tags`     | wiki        | `template_selector_field`, `tag_chip_input_field`                                                                                     |

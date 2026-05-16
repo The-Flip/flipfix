@@ -5,7 +5,7 @@
        class="nav-link {% if item.is_active %}nav-link--active{% endif %}"
        {% if item.is_active %}aria-current="page"{% endif %}>{{ item.label }}</a>
   {% endfor %}
-  {% if user.is_superuser %}
+  {% if show_admin_menu %}
     <div class="dropdown">
       <button type="button"
               class="nav-link dropdown__toggle {% if admin_active %}nav-link--active{% endif %}"

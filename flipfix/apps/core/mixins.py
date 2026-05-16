@@ -32,6 +32,16 @@ def can_access_maintainer_portal(user: AbstractUser | Any) -> bool:
     return user.has_perm("accounts.can_access_maintainer_portal")
 
 
+def can_manage_catalog(user: AbstractUser | Any) -> bool:
+    """
+    Check if user is a working catalog manager.
+
+    Requires both maintainer portal access and the catalog management
+    permission. Superusers pass via ``has_perm()`` auto-pass.
+    """
+    return can_access_maintainer_portal(user) and user.has_perm("accounts.can_manage_catalog")
+
+
 class FormPrefillMixin:
     """Pre-fill a form field from session data.
 

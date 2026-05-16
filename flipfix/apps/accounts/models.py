@@ -21,6 +21,7 @@ class Maintainer(TimeStampedMixin):
         ordering = ["user__username"]
         permissions = [
             ("can_access_maintainer_portal", "Can access the maintainer portal"),
+            ("can_manage_catalog", "Can manage catalog (create machines, print QR codes)"),
         ]
 
     def __str__(self) -> str:
