@@ -26,6 +26,29 @@ class MaintainerProfileFormTests(TestCase):
         user.maintainer.refresh_from_db()
         self.assertEqual(user.maintainer.bio, "Hello, I fix pinball.")
 
+    def test_initial_bio_converts_storage_to_authoring(self):
+        """Stored ``[[type:id:N]]`` tokens become ``[[type:slug]]`` for editing.
+
+        Without this, every link in a saved bio leaks as raw storage syntax
+        in the textarea. Covers all slug-based link types via one pass.
+        """
+        from flipfix.apps.catalog.models import MachineInstance, MachineModel
+
+        model = MachineModel.objects.create(name="Blackout", slug="blackout")
+        machine = MachineInstance.objects.create(model=model, name="Blackout", slug="blackout")
+        alice = create_maintainer_user(username="alice")
+        alice.maintainer.bio = (
+            f"Working on [[machine:id:{machine.pk}]]. Thanks [[user:id:{alice.pk}]]."
+        )
+        alice.maintainer.save(update_fields=["bio"])
+
+        form = MaintainerProfileForm(instance=alice.maintainer)
+
+        self.assertEqual(
+            form.initial["bio"],
+            "Working on [[machine:blackout]]. Thanks [[user:alice]].",
+        )
+
     def test_clean_bio_rejects_unresolvable_authoring_links(self):
         """``clean_markdown_field`` hook runs on bio.
 

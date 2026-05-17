@@ -29,7 +29,7 @@ The system supports two kinds of link types:
 - **Slug-based** (e.g., `[[machine:blackout]]`): For models with human-readable slugs. The authoring format uses the slug, while the storage format uses the database PK (`[[machine:id:42]]`).
 - **ID-based** (e.g., `[[problem:7]]`): For models without slugs. The format is the same in both authoring and storage.
 
-Seven link types are registered across four apps:
+Eight link types are registered across five apps:
 
 | Type                | App         | Format     | Model               |
 | ------------------- | ----------- | ---------- | ------------------- |
@@ -40,6 +40,9 @@ Seven link types are registered across four apps:
 | `partrequest`       | parts       | ID-based   | `PartRequest`       |
 | `partrequestupdate` | parts       | ID-based   | `PartRequestUpdate` |
 | `page`              | wiki        | slug-based | `WikiPageTag`       |
+| `user`              | accounts    | slug-based | `auth.User`         |
+
+The `user` type is scoped to directory-visible maintainers — see [`Scoping`](#scoping) for how `target_queryset` keeps autocomplete, save-time validation, render-time resolution, and reference syncing all in agreement about which targets are linkable.
 
 ### Registry pattern
 
@@ -176,6 +179,20 @@ See `core/tests/test_link_rendering.py`, `core/tests/test_link_conversion.py`, a
 | ------------ | ------- | --------------------------------------------------------------------------- |
 | `slug_field` | `None`  | Set to the model's slug field name for slug-based types. `None` = ID-based. |
 
+#### Scoping
+
+`target_queryset` defines the set of records a link type considers linkable. It is a callable `(model) -> QuerySet` that defaults to `model.objects.all()`. The same scope is used by save-time conversion, render-time lookup, autocomplete, and reference syncing — all in agreement.
+
+Use it when a record exists in the database but should not be linkable — e.g. the `user` type uses it to scope to directory-visible maintainers so deactivated users, shared kiosk accounts, and orphan users without a profile page are hidden from `[[user:…]]`.
+
+Records outside the scope behave exactly like deleted records:
+
+- Autocomplete does not surface them.
+- `convert_authoring_to_storage("[[type:slug]]")` raises `ValidationError`.
+- Render output for `[[type:id:N]]` is `*[broken link]*`.
+- `convert_storage_to_authoring("[[type:id:N]]")` leaves the storage token unchanged — the edit form shows the raw token so the author can decide what to do. Broken-link text is strictly a render-time concern.
+- `sync_references()` prunes the `RecordReference` row on the next save (and recreates it if the record re-enters scope — self-healing).
+
 **Rendering (in markdown output):**
 
 | Field            | Default  | Description                                                |
@@ -208,9 +225,13 @@ Most slug-based types don't need these — the defaults use `slug_field` directl
 
 **Other:**
 
-| Field        | Default        | Description                                                            |
-| ------------ | -------------- | ---------------------------------------------------------------------- |
-| `is_enabled` | `lambda: True` | Runtime toggle. Return `False` to hide the type without unregistering. |
+| Field        | Default        | Description                                                                         |
+| ------------ | -------------- | ----------------------------------------------------------------------------------- |
+| `is_enabled` | `lambda: True` | Runtime toggle. Return `False` to hide the type without unregistering.              |
+| `sort_order` | `100`          | Integer controlling position in the `[[` type picker — lower numbers appear higher. |
+
+Existing `sort_order` values, for reference when slotting a new type:
+`page` (10), `machine` (20), `problem` (30), `log` (40), `partrequest` (50), `partrequestupdate` (60), `model` (70), `user` (80).
 
 ## Adding a New Link Source
 
@@ -338,6 +359,7 @@ if action == "update_text":
 | Simple ID-based type                      | `maintenance/apps.py` → `problem` registration                                    |
 | ID-based with related model in label      | `parts/apps.py` → `partrequestupdate` registration                                |
 | Irregular slug format (e.g., `tag/slug`)  | `wiki/apps.py` → `page` registration                                              |
+| Scoped link target (filter linkable rows) | `accounts/apps.py` → `user` registration (uses `target_queryset`)                 |
 | ModelForm source with `save(commit=True)` | `maintenance/forms.py` → `MaintainerProblemReportForm`                            |
 | Regular Form source (sync in view)        | `maintenance/forms.py` → `LogEntryQuickForm` + `maintenance/views/log_entries.py` |
 | Signal cleanup                            | `maintenance/apps.py` → `register_reference_cleanup()` call                       |

@@ -186,3 +186,41 @@ class ReferenceSyncTests(TestCase):
         sync_references(entry, "See [[machine:id:99999]].")
 
         self.assertEqual(self._ref_count(entry, target_model=MachineInstance), 0)
+
+    def test_orphan_reference_pruned_when_target_hard_deleted(self):
+        """Re-syncing a source prunes orphan rows whose target was hard-deleted.
+
+        ``GenericForeignKey`` doesn't cascade on target deletion, so a target
+        hard-delete leaves the ``RecordReference`` row dangling. On the next
+        sync of any source that still mentions that ID, the orphan row is
+        cleaned up — keeping the "what links here" index in sync with what
+        the renderer treats as live.
+        """
+        entry = LogEntry.objects.create(machine=self.machine, text="test")
+        model = MachineModel.objects.create(name="Doomed", slug="doomed")
+        target = MachineInstance.objects.create(model=model, slug="doomed", name="Doomed")
+        content = f"See [[machine:id:{target.pk}]]."
+
+        # Set up the orphan: create the ref row, then hard-delete the target.
+        # No cleanup runs because ``register_reference_cleanup()`` only wires
+        # post_delete for *source* models, and ``GenericForeignKey`` doesn't
+        # cascade — so the ref row survives the target delete, reproducing
+        # the exact "orphan in the wild" state.
+        sync_references(entry, content)
+        self.assertTrue(self._ref_exists(entry, target))
+
+        target_pk = target.pk
+        MachineInstance.objects.filter(pk=target_pk).delete()
+        orphan_qs = RecordReference.objects.filter(
+            source_type=ContentType.objects.get_for_model(entry),
+            source_id=entry.pk,
+            target_type=ContentType.objects.get_for_model(MachineInstance),
+            target_id=target_pk,
+        )
+        self.assertTrue(
+            orphan_qs.exists(), "precondition: orphan row should remain after target hard-delete"
+        )
+
+        # Re-syncing the same content prunes the orphan.
+        sync_references(entry, content)
+        self.assertFalse(orphan_qs.exists())

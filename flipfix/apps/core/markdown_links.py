@@ -29,6 +29,7 @@ from typing import Any
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
+from django.db.models.expressions import Combinable
 
 # ---------------------------------------------------------------------------
 # LinkType dataclass
@@ -63,6 +64,14 @@ class LinkType:
     get_label: Callable[[Any], str] | None = None  # override for irregular label
     select_related: tuple[str, ...] = ()
 
+    # --- Scoping ---
+    # The set of records this link type considers linkable. Used by save-time
+    # conversion, render-time lookup, autocomplete, and reference syncing.
+    # Defaults to ``model.objects.all()``. Set to a callable to scope the type
+    # to a subset (e.g. only maintainers visible in the user directory) so
+    # records outside the scope render as broken links and won't autocomplete.
+    target_queryset: Callable[[type[models.Model]], models.QuerySet[Any]] | None = None
+
     # --- Authoring format (slug-based types only) ---
     # Custom lookup for authoring format: (model_class, raw_values) -> {key: obj}
     # Default for slug-based types: filter(**{slug_field + "__in": values})
@@ -75,7 +84,10 @@ class LinkType:
 
     # --- Autocomplete ---
     autocomplete_search_fields: tuple[str, ...] = ()
-    autocomplete_ordering: tuple[str, ...] = ()
+    # Strings or ORM expressions (``F``, ``OrderBy``, ``Lower``, …) — anything
+    # ``QuerySet.order_by()`` accepts. Expressions are necessary for nulls-last
+    # sorts and case-insensitive collation; bare strings are fine otherwise.
+    autocomplete_ordering: tuple[str | Combinable, ...] = ()
     autocomplete_select_related: tuple[str, ...] = ()
     autocomplete_serialize: Callable[[Any], dict] | None = None
 
@@ -106,6 +118,19 @@ class LinkType:
             return self.get_label(obj)
         return str(getattr(obj, self.label_field, obj))
 
+    def get_target_queryset(self) -> models.QuerySet[Any]:
+        """Return the queryset of records this link type considers linkable.
+
+        Defaults to ``model.objects.all()``. Types with a ``target_queryset``
+        callable use that instead — keeping save-time validation, render-time
+        resolution, autocomplete, and reference syncing all in agreement
+        about which targets are linkable.
+        """
+        model = self.get_model()
+        if self.target_queryset is None:
+            return model.objects.all()
+        return self.target_queryset(model)
+
 
 # ---------------------------------------------------------------------------
 # Registry
@@ -119,6 +144,17 @@ def register(link_type: LinkType) -> None:
     """Register a link type. Called from each app's AppConfig.ready()."""
     if link_type.name in _registry:
         raise ValueError(f"Link type '{link_type.name}' is already registered")
+    # ``authoring_lookup`` bypasses ``get_target_queryset()`` in the slug-lookup
+    # paths (see ``_render_by_slug`` / ``_convert_to_storage``), so combining
+    # the two would silently break scoping at save time while still applying
+    # it at render time. Reject the combination at registration rather than
+    # leaving it as a latent trap.
+    if link_type.authoring_lookup is not None and link_type.target_queryset is not None:
+        raise ValueError(
+            f"Link type '{link_type.name}' sets both ``authoring_lookup`` and "
+            "``target_queryset``; these are mutually exclusive because "
+            "``authoring_lookup`` short-circuits the scope filter."
+        )
     _registry[link_type.name] = link_type
     # Compile regex patterns eagerly
     name = re.escape(link_type.name)
@@ -224,9 +260,8 @@ def _render_by_id(
     if not matches:
         return text
 
-    model = lt.get_model()
     ids = [int(m.group(1)) for m in matches]
-    qs = model.objects.filter(pk__in=ids)
+    qs = lt.get_target_queryset().filter(pk__in=ids)
     if lt.select_related:
         qs = qs.select_related(*lt.select_related)
     by_id = {obj.pk: obj for obj in qs}
@@ -261,7 +296,7 @@ def _render_by_slug(
     if lt.authoring_lookup:
         by_key = lt.authoring_lookup(model, raw_values)
     else:
-        qs = model.objects.filter(**{f"{lt.slug_field}__in": raw_values})
+        qs = lt.get_target_queryset().filter(**{f"{lt.slug_field}__in": raw_values})
         if lt.select_related:
             qs = qs.select_related(*lt.select_related)
         by_key = {getattr(obj, lt.slug_field): obj for obj in qs}
@@ -321,7 +356,7 @@ def _convert_to_storage(
     if lt.authoring_lookup:
         by_key = lt.authoring_lookup(model, raw_values)
     else:
-        qs = model.objects.filter(**{f"{lt.slug_field}__in": raw_values})
+        qs = lt.get_target_queryset().filter(**{f"{lt.slug_field}__in": raw_values})
         by_key = {getattr(obj, lt.slug_field): obj for obj in qs}
 
     result = content
@@ -362,9 +397,8 @@ def _convert_to_authoring(
     if not matches:
         return content
 
-    model = lt.get_model()
     ids = [int(m.group(1)) for m in matches]
-    by_id = {obj.pk: obj for obj in model.objects.filter(pk__in=ids)}
+    by_id = {obj.pk: obj for obj in lt.get_target_queryset().filter(pk__in=ids)}
 
     result = content
     for match in reversed(matches):
@@ -403,22 +437,23 @@ def sync_references(source: models.Model, content: str) -> None:
 
     content = content or ""
 
-    # Parse all link IDs from content using registered patterns
-    links_by_model: dict[type[Any], set[int]] = {}
+    # Parse all link IDs from content using registered patterns.
+    # Keyed by LinkType (not model) so each type's target_queryset is honored
+    # when validating which targets still exist. Types with no matches in
+    # content stay in the list so the loop below can prune stale refs whose
+    # content mention has disappeared.
+    links_by_type: list[tuple[LinkType, set[int]]] = []
     for lt in get_enabled_link_types():
         pats = get_patterns(lt)
         pattern = pats.get("storage") or pats.get("id")
         if pattern is None:
             continue
         ids = {int(m.group(1)) for m in pattern.finditer(content)}
-        links_by_model[lt.get_model()] = ids
-
-    if not links_by_model:
-        return
+        links_by_type.append((lt, ids))
 
     # Pre-compute all ContentTypes (single query via get_for_models)
     source_ct = ContentType.objects.get_for_model(source)
-    content_types = ContentType.objects.get_for_models(*links_by_model.keys())
+    content_types = ContentType.objects.get_for_models(*(lt.get_model() for lt, _ in links_by_type))
 
     # Get existing references for this source
     existing_refs = RecordReference.objects.filter(
@@ -431,7 +466,8 @@ def sync_references(source: models.Model, content: str) -> None:
     to_create: list[RecordReference] = []
     to_delete_filters: list[Q] = []
 
-    for model_class, target_ids in links_by_model.items():
+    for lt, target_ids in links_by_type:
+        model_class = lt.get_model()
         target_ct = content_types[model_class]
         existing_ids = existing_by_ct.get(target_ct.id, set())
 
@@ -441,8 +477,12 @@ def sync_references(source: models.Model, content: str) -> None:
                 to_delete_filters.append(Q(target_type=target_ct, target_id__in=existing_ids))
             continue
 
-        # Only reference targets that actually exist
-        valid_ids = set(model_class.objects.filter(pk__in=target_ids).values_list("pk", flat=True))
+        # Only reference in-scope targets. Out-of-scope IDs (e.g. a user no
+        # longer in the directory) get pruned the next time the source saves,
+        # keeping RecordReference in sync with what the renderer treats as live.
+        valid_ids = set(
+            lt.get_target_queryset().filter(pk__in=target_ids).values_list("pk", flat=True)
+        )
 
         # Refs to add
         for target_id in valid_ids - existing_ids:
@@ -455,8 +495,11 @@ def sync_references(source: models.Model, content: str) -> None:
                 )
             )
 
-        # Refs to remove
-        ids_to_remove = existing_ids - target_ids
+        # Refs to remove. Compare against valid_ids (not target_ids) so that
+        # existing rows whose target is no longer in scope — hard-deleted OR
+        # filtered out by target_queryset — get pruned, not just rows whose
+        # ID was removed from the source content.
+        ids_to_remove = existing_ids - valid_ids
         if ids_to_remove:
             to_delete_filters.append(Q(target_type=target_ct, target_id__in=ids_to_remove))
 
