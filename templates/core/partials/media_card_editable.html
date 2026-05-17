@@ -42,7 +42,10 @@
             {# drag sources (reorderable grids drag from the handle only; #}
             {# non-reorderable editable grids don't drag at all). The CSS #}
             {# selector above covers webkit; this covers Firefox. #}
-            <a href="{{ media.file.url }}" target="_blank" draggable="false">
+            <a href="{{ media.file.url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               draggable="false">
               {% if media.thumbnail_file %}
                 <img src="{{ media.thumbnail_file.url }}"
                      alt="{{ alt|default:'Photo' }}"

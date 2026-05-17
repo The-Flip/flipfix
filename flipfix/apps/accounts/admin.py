@@ -34,8 +34,17 @@ class MaintainerMediaAdmin(SimpleHistoryAdmin):
     list_display = ["id", "maintainer", "media_type", "transcode_status", "created_at"]
     list_filter = ["media_type", "transcode_status"]
     search_fields = ["maintainer__user__username"]
-    readonly_fields = ["created_at", "updated_at", "media_type", "transcode_status"]
+    readonly_fields = ["created_at", "updated_at", "transcode_status"]
     ordering = ["-created_at"]
+
+    def get_readonly_fields(self, request, obj=None):
+        # ``media_type`` must be set at create time (no default; gates
+        # AbstractMedia.save() upload processing), but should be locked
+        # afterwards so the classification can't drift from the file.
+        base = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            base.append("media_type")
+        return base
 
 
 @admin.register(Invitation)

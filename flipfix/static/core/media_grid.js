@@ -214,7 +214,7 @@
     // Editable tiles aren't valid drag sources (reorder drags from the
     // handle; non-reorder doesn't drag at all). Match the partial.
     return `
-      <a href="${data.media_url}" target="_blank" draggable="false">
+      <a href="${data.media_url}" target="_blank" rel="noopener noreferrer" draggable="false">
         <img src="${data.thumbnail_url}" alt="${altText}" draggable="false">
       </a>
     `;

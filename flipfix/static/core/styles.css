@@ -1399,8 +1399,15 @@ body {
   user-select: none;
 }
 
-.media-grid__item:hover .media-reorder__handle {
+.media-grid__item:hover .media-reorder__handle,
+.media-grid__item:focus-within .media-reorder__handle,
+.media-reorder__handle:focus-visible {
   opacity: 1;
+}
+
+.media-reorder__handle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .media-reorder__handle:active {
@@ -2011,7 +2018,7 @@ body {
 .user-card__silhouette {
   width: 60%;
   height: 60%;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
 }
 
 .user-card__caption {

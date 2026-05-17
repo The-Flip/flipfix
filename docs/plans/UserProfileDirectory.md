@@ -75,13 +75,17 @@ We're doing nothing special for the front desk. No special read-only role.
 
 New users are also not prompted to add photos.
 
-### No Migration
+### No Data Backfill
 
-There's no migration:
+There's no data backfill:
 
-- All Maintainers automatically appear in it, by virtue of being a maintainer that's not a shared terminal account, with is_active true.
+- All Maintainers automatically appear in the directory, by virtue of being a maintainer that's not a shared terminal account, with is_active true.
 - We don't prompt existing users to add photos.
-- We aren't backfilling from Discord
+- We aren't backfilling from Discord.
+
+(Schema/permission migrations 0008–0011 ship with this feature: bio field,
+`MaintainerMedia` table, `view_user_profiles` permission grant, and a
+reserved-username collision check.)
 
 ### No delete user account on request
 

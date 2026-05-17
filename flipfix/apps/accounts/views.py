@@ -99,7 +99,8 @@ class ProfileUpdateView(MediaUploadMixin, UpdateView):
     template_name = "accounts/profile.html"
     success_url = reverse_lazy("profile")
 
-    def get_object(self, queryset=None):  # noqa: ARG002
+    def get_object(self, queryset=None):
+        del queryset  # unused — UpdateView signature requires the parameter
         return self.request.user
 
     def _get_maintainer(self) -> Maintainer | None:

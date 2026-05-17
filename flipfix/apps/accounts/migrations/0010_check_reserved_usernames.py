@@ -12,6 +12,7 @@ rename the offending user, or remove the name from ``RESERVED_USERNAMES``
 and accept the routing implications.
 """
 
+from django.conf import settings
 from django.db import migrations
 
 # Snapshot of RESERVED_USERNAMES at the time of this migration. Inlined
@@ -33,7 +34,7 @@ _RESERVED_USERNAMES_SNAPSHOT = frozenset(
 
 
 def check_reserved_usernames(apps, schema_editor):
-    User = apps.get_model("auth", "User")
+    User = apps.get_model(settings.AUTH_USER_MODEL)
     collisions = list(
         User.objects.filter(username__in=_RESERVED_USERNAMES_SNAPSHOT).values_list(
             "username", flat=True
@@ -54,6 +55,7 @@ def noop_reverse(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0009_grant_view_user_profiles_to_maintainers"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [

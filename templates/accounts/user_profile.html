@@ -24,6 +24,7 @@
           {% else %}
             <a href="{{ media.file.url }}"
                target="_blank"
+               rel="noopener noreferrer"
                class="user-profile__photo-link">
               <img src="{{ media.file.url }}"
                    alt="{{ maintainer.user|display_name_with_username }}"
