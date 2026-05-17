@@ -1967,6 +1967,36 @@ body {
   overflow: hidden;
 }
 
+/* --- User Profile Detail --- */
+.user-profile__media {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-4);
+}
+
+.user-profile__media-item {
+  background-color: var(--color-gray-100);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-profile__photo,
+.user-profile__media-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.user-profile__bio {
+  max-width: 60ch;
+}
+
 /* --- Terminal List & Cards --- */
 .terminal-list {
   display: flex;

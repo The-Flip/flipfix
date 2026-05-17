@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
 from django.views import View
-from django.views.generic import FormView, ListView, UpdateView
+from django.views.generic import DetailView, FormView, ListView, UpdateView
 
 from .forms import (
     InvitationRegistrationForm,
@@ -88,6 +88,32 @@ class ProfileUpdateView(SuccessMessageMixin, UpdateView):
 
     def get_object(self, queryset=None):  # noqa: ARG002
         return self.request.user
+
+
+class UserProfileDetailView(DetailView):
+    """Profile detail page at ``/users/<username>/``.
+
+    Same access pattern as ``UserDirectoryView``: middleware gates to
+    logged-in maintainers, ``dispatch()`` layers ``can_view_user_profiles``
+    on top. The queryset is ``Maintainer.objects.in_user_directory()`` —
+    single source of truth — so any maintainer who would not appear in the
+    directory listing also 404s here.
+    """
+
+    template_name = "accounts/user_profile.html"
+    context_object_name = "maintainer"
+    slug_field = "user__username"
+    slug_url_kwarg = "username"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_user_profiles(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Maintainer.objects.in_user_directory().select_related("user").prefetch_related("media")
+        )
 
 
 class UserDirectoryView(ListView):

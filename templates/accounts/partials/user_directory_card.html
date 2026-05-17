@@ -2,21 +2,17 @@
 {% load markdown_tags %}
 {% load video_tags %}
 {% with user=maintainer.user first_media=maintainer.media.all|slice:":1" %}
-  {# §6 swaps <article> for <a href="{% url 'user-profile' username=user.username %}">. The hover style on .card--clickable applies either way. #}
-  <article class="card card--clickable user-card"
-           data-search-text="{{ user.first_name }} {{ user.last_name }} {{ user.username }}">
+  <a href="{% url 'user-profile' username=user.username %}"
+     class="card card--clickable user-card"
+     data-search-text="{{ user.first_name }} {{ user.last_name }} {{ user.username }}">
     <div class="user-card__media">
       {% for media in first_media %}
         {% if media.media_type == media.MediaType.VIDEO %}
           {% video_thumbnail media=media model_name="MaintainerMedia" %}
         {% elif media.thumbnail_file %}
-          <img src="{{ media.thumbnail_file.url }}"
-               alt="{{ user|display_name_with_username }}"
-               class="user-card__photo">
+          <img src="{{ media.thumbnail_file.url }}" alt="" class="user-card__photo">
         {% else %}
-          <img src="{{ media.file.url }}"
-               alt="{{ user|display_name_with_username }}"
-               class="user-card__photo">
+          <img src="{{ media.file.url }}" alt="" class="user-card__photo">
         {% endif %}
       {% empty %}
         {# Silhouette stub — §8 swaps this for {% user_silhouette user %}. #}
@@ -37,5 +33,5 @@
         </div>
       {% endif %}
     </div>
-  </article>
+  </a>
 {% endwith %}

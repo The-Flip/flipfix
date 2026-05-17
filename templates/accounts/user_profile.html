@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% load ui_tags %}
+{% load video_tags %}
+{% load markdown_tags %}
+{% load accounts_tags %}
+{% block title %}{{ maintainer.user|display_name_with_username }} · {{ block.super }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'user-directory' %}">Users</a>
+    <span>{{ maintainer.user|display_name_with_username }}</span>
+  </nav>
+  {% if maintainer.media.all %}
+    <section class="user-profile__media">
+      {% for media in maintainer.media.all %}
+        <div class="user-profile__media-item">
+          {% if media.media_type == media.MediaType.VIDEO %}
+            {% video_player media=media model_name="MaintainerMedia" %}
+          {% else %}
+            <img src="{{ media.file.url }}"
+                 alt="{{ maintainer.user|display_name_with_username }}"
+                 class="user-profile__photo">
+          {% endif %}
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+  {% if maintainer.bio %}
+    <section class="user-profile__bio markdown-content">
+      {{ maintainer.bio|render_markdown }}
+    </section>
+  {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
+{% endblock %}
