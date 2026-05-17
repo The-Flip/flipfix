@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+{% load ui_tags %}
+{% load list_tags %}
+{% block title %}Users · {{ block.super }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <span>Users</span>
+  </nav>
+  <div class="filter-bar">
+    <div class="filter-bar__search filter-bar__search--full">
+      <label for="user-directory-search" class="visually-hidden">Search users</label>
+      <input type="search"
+             id="user-directory-search"
+             placeholder="Search by name or username..."
+             class="filter-bar__search-input"
+             autocomplete="off">
+      {% icon "magnifying-glass" class="filter-bar__search-icon" %}
+    </div>
+  </div>
+  {% if maintainers %}
+    <div class="user-directory" id="user-directory-list">
+      {% for maintainer in maintainers %}
+        {% include "accounts/partials/user_directory_card.html" with maintainer=maintainer %}
+      {% endfor %}
+    </div>
+    {# Shown by user_directory_filter.js when a query hides every card. #}
+    <p class="text-muted hidden" id="user-directory-no-results">No users match your search.</p>
+  {% else %}
+  {% empty_state empty_message="No users in the directory yet." search_message="No users match your search." %}
+  {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'accounts/user_directory_filter.js' %}" defer></script>
+{% endblock %}

@@ -1,7 +1,11 @@
 {# Editable media card with upload button, grid, and file input #}
 {# Usage: {% include "core/partials/media_card_editable.html" with media_items=entry.media.all alt="Log entry photo" model_name="LogEntryMedia" %} #}
-{# Requires: Include media_grid.js and video_transcode_poll.js in page scripts #}
+{# Optional: pass ``reorder=True`` and ``reorder_url=request.path`` to enable drag-reorder. #}
+{# Requires: Include media_grid.js (and media_reorder.js + SortableJS when reorder=True) in page scripts #}
 {% load ui_tags video_tags %}
+{# Reorder handle is intentionally a non-interactive button: drag is a mouse-only #}
+{# affordance (SortableJS has no built-in keyboard reorder), so we tell assistive #}
+{# tech to skip it rather than announce an unreachable control. #}
 <div class="card card--padded space-above-lg"
      data-media-card
      data-alt-text="{{ alt|default:'Photo' }}"
@@ -16,18 +20,40 @@
       </div>
     {% endif %}
   </div>
-  <div class="media-grid" data-media-container>
+  <div class="media-grid"
+       data-media-container
+       {% if reorder %}data-media-reorder data-reorder-url="{{ reorder_url }}"{% endif %}>
     {% if media_items %}
       {% for media in media_items %}
-        <div class="media-grid__item" data-media-id="{{ media.id }}">
+        <div class="media-grid__item"
+             data-media-id="{{ media.id }}"
+             {% if reorder %}data-id="{{ media.id }}"{% endif %}>
+          {% if reorder %}
+            <button type="button"
+                    class="media-reorder__handle"
+                    aria-hidden="true"
+                    tabindex="-1"
+                    title="Drag to reorder">{% icon "grip-vertical" %}</button>
+          {% endif %}
           {% if media.media_type == media.MediaType.VIDEO %}
             {% video_player media=media model_name=model_name|default:"LogEntryMedia" %}
           {% else %}
-            <a href="{{ media.file.url }}" target="_blank">
+            {# draggable="false" on every editable tile: these aren't valid #}
+            {# drag sources (reorderable grids drag from the handle only; #}
+            {# non-reorderable editable grids don't drag at all). The CSS #}
+            {# selector above covers webkit; this covers Firefox. #}
+            <a href="{{ media.file.url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               draggable="false">
               {% if media.thumbnail_file %}
-                <img src="{{ media.thumbnail_file.url }}" alt="{{ alt|default:'Photo' }}">
+                <img src="{{ media.thumbnail_file.url }}"
+                     alt="{{ alt|default:'Photo' }}"
+                     draggable="false">
               {% else %}
-                <img src="{{ media.file.url }}" alt="{{ alt|default:'Photo' }}">
+                <img src="{{ media.file.url }}"
+                     alt="{{ alt|default:'Photo' }}"
+                     draggable="false">
               {% endif %}
             </a>
           {% endif %}

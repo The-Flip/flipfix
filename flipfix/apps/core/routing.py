@@ -38,7 +38,7 @@ from django.http import HttpResponseNotAllowed
 from django.urls import path as django_path
 from django.utils.cache import patch_cache_control
 
-from flipfix.apps.core.mixins import can_access_maintainer_portal
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 
 _public_url_names: set[str] = set()
 

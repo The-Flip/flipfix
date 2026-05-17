@@ -7,7 +7,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 
-from flipfix.apps.core.forms import StyledFormMixin
+from flipfix.apps.core.forms import MarkdownTextarea, StyledFormMixin, clean_markdown_field
+
+from .models import RESERVED_USERNAMES, Maintainer
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User as UserType
@@ -43,6 +45,8 @@ class InvitationRegistrationForm(StyledFormMixin, forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data["username"]
+        if username.lower() in RESERVED_USERNAMES:
+            raise forms.ValidationError("This username is reserved.")
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("This username is already taken.")
         return username
@@ -79,6 +83,36 @@ class ProfileForm(StyledFormMixin, forms.ModelForm):
         if email and User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
+
+
+class MaintainerProfileForm(StyledFormMixin, forms.ModelForm):
+    """Form for users to update Maintainer-owned profile fields.
+
+    Sibling of ``ProfileForm`` (which targets ``User``). Rendered on the
+    same page; ``ProfileUpdateView`` validates and saves both together.
+
+    The bio uses ``MarkdownTextarea`` for the same authoring experience
+    (link autocomplete, keyboard shortcuts) as problem-report descriptions
+    and other markdown fields. Templates rendering this form must include
+    ``core/partials/markdown_textarea_scripts.html``.
+    """
+
+    class Meta:
+        model = Maintainer
+        fields = ["bio"]
+        widgets = {
+            "bio": MarkdownTextarea(
+                attrs={
+                    "rows": 4,
+                    "maxlength": 300,
+                    "placeholder": "A short markdown bio (max 300 characters).",
+                }
+            ),
+        }
+
+    def clean_bio(self):
+        """Convert authoring-format ``[[links]]`` to storage format."""
+        return clean_markdown_field(self.cleaned_data, "bio")
 
 
 class TerminalCreateForm(StyledFormMixin, forms.Form):
@@ -120,6 +154,8 @@ class TerminalCreateForm(StyledFormMixin, forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data["username"]
+        if username.lower() in RESERVED_USERNAMES:
+            raise forms.ValidationError("This username is reserved.")
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("This username is already taken.")
         return username

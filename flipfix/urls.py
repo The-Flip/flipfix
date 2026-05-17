@@ -13,6 +13,8 @@ from flipfix.apps.accounts.views import (
     TerminalLoginView,
     TerminalReactivateView,
     TerminalUpdateView,
+    UserDirectoryView,
+    UserProfileDetailView,
     invitation_register,
 )
 from flipfix.apps.catalog.views.machines import (
@@ -192,6 +194,18 @@ urlpatterns = [
         JwksInfoView.as_view(),
         name="oauth2-jwks",
         access="always_public",
+    ),
+    ###
+    # User directory
+    ###
+    path("users/", UserDirectoryView.as_view(), name="user-directory"),
+    # /users/<username>/ MUST stay last among /users/ routes. Django matches
+    # in declaration order, so any future literal /users/<reserved>/ route
+    # (e.g. /users/me/) has to be declared above this catch-all.
+    path(
+        "users/<str:username>/",
+        UserProfileDetailView.as_view(),
+        name="user-profile",
     ),
     ###
     # Profile

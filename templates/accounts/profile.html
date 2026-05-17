@@ -1,4 +1,5 @@
 {% extends "layouts/two_column.html" %}
+{% load static %}
 {% load ui_tags %}
 {% load sidebar_tags %}
 {% load form_tags %}
@@ -17,11 +18,20 @@
   <div class="sidebar__title">{{ user|display_name_with_username }}</div>
 {% endsidebar_section %}
 {% sidebar_section %}
-<a href="{% url 'password_change' %}"
-   class="btn btn--secondary btn--full">
-  {% icon "key" class="meta" %}
-  Change Password
-</a>
+<div class="stack-tight stack-column">
+  {% if user|is_in_user_directory %}
+    <a href="{% url 'user-profile' username=user.username %}"
+       class="btn btn--secondary btn--full">
+      {% icon "user" class="meta" %}
+      View public profile
+    </a>
+  {% endif %}
+  <a href="{% url 'password_change' %}"
+     class="btn btn--secondary btn--full">
+    {% icon "key" class="meta" %}
+    Change Password
+  </a>
+</div>
 {% endsidebar_section %}
 {% endblock %}
 {% block main %}
@@ -30,6 +40,8 @@
       {% csrf_token %}
       {% form_non_field_errors form %}
       {% form_fields form %}
+      {% form_non_field_errors maintainer_form %}
+      {% form_fields maintainer_form %}
       <div class="form-actions">
         <a href="{% url 'home' %}" class="btn btn--secondary">
           {% icon "circle-xmark" class="meta" %}
@@ -42,4 +54,20 @@
       </div>
     </form>
   </div>
+  {% if user|is_in_user_directory %}
+    {% include "core/partials/media_card_editable.html" with media_items=profile_media alt="Profile photo" model_name="MaintainerMedia" reorder=True reorder_url=request.path %}
+  {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+  {% if user|is_in_user_directory %}
+    {% include "core/partials/markdown_textarea_scripts.html" %}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+            integrity="sha384-HZZ/fukV+9G8gwTNjN7zQDG0Sp7MsZy5DDN6VfY3Be7V9dvQpEpR2jF2HlyFUUjU"  {# pragma: allowlist secret #}
+            crossorigin="anonymous"
+            defer></script>
+    <script src="{% static 'core/save_status.js' %}" defer></script>
+    <script src="{% static 'core/media_grid.js' %}" defer></script>
+    <script src="{% static 'core/media_reorder.js' %}" defer></script>
+    <script src="{% static 'core/video_transcode_poll.js' %}" defer></script>
+  {% endif %}
 {% endblock %}

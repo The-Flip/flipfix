@@ -32,6 +32,9 @@ class MediaInline(admin.TabularInline):
         "transcode_status",
         "display_order",
     )
+    # ``media_type`` is intentionally editable: it has no default and gates
+    # upload processing in AbstractMedia.save(), so admin-added rows would
+    # save with an empty classification if it were read-only.
     readonly_fields = (
         "thumbnail_file",
         "transcoded_file",
