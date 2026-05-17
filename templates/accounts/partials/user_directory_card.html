@@ -25,13 +25,20 @@
         </svg>
       {% endfor %}
     </div>
-    <div class="user-card__body">
+    {# Sandwich layout: name as a thin carve-out at the top, bio as a #}
+    {# 2-line carve-out at the bottom. The photo's middle (where faces #}
+    {# usually live) stays unobstructed. #}
+    <div class="user-card__caption user-card__caption--top">
       <span class="user-card__title">{{ user|display_name_with_username }}</span>
-      {% if maintainer.bio %}
-        <div class="markdown-content markdown-content--compact user-card__bio">
-          {{ maintainer.bio|truncatechars:80|render_markdown }}
-        </div>
-      {% endif %}
     </div>
+    {% if maintainer.bio %}
+      <div class="user-card__caption user-card__caption--bottom">
+        {# Plain text only: rendered markdown can produce inner anchor tags #}
+        {# (autolinks, [[wiki:refs]]) that nest inside the card's outer link, #}
+        {# which is invalid HTML and would split the card across grid cells. #}
+        {# Full markdown renders on the detail page. #}
+        <span class="user-card__bio">{{ maintainer.bio|render_markdown|striptags|truncatechars:140 }}</span>
+      </div>
+    {% endif %}
   </a>
 {% endwith %}

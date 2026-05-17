@@ -167,7 +167,7 @@
 
       const data = await response.json();
       if (data.success) {
-        const mediaItem = createMediaElement(data, altText, modelName);
+        const mediaItem = createMediaElement(data, altText, modelName, container);
         container.appendChild(mediaItem);
         attachDeleteHandler(mediaItem.querySelector('.media-grid__delete'), container);
         uploadButton.textContent = 'Upload More';
@@ -211,9 +211,11 @@
    * @returns {string} HTML string
    */
   function buildImageContent(data, altText) {
+    // Editable tiles aren't valid drag sources (reorder drags from the
+    // handle; non-reorder doesn't drag at all). Match the partial.
     return `
-      <a href="${data.media_url}" target="_blank">
-        <img src="${data.thumbnail_url}" alt="${altText}">
+      <a href="${data.media_url}" target="_blank" draggable="false">
+        <img src="${data.thumbnail_url}" alt="${altText}" draggable="false">
       </a>
     `;
   }
@@ -223,19 +225,34 @@
    * @param {Object} data - Response data from upload
    * @param {string} altText - Alt text for images
    * @param {string} modelName - Model name for video polling
+   * @param {HTMLElement} container - The media container (used to mirror reorder markup)
    * @returns {HTMLElement} The created media item element
    */
-  function createMediaElement(data, altText, modelName) {
+  function createMediaElement(data, altText, modelName, container) {
     const mediaItem = document.createElement('div');
     mediaItem.className = 'media-grid__item';
     mediaItem.dataset.mediaId = data.media_id;
 
+    // If the container is reorderable, mirror the partial's reorder markup
+    // (data-id + drag handle) so the new item is draggable without a page
+    // reload. SortableJS picks up children added to its container.
+    // Handle is aria-hidden + tabindex=-1 to match the partial: drag is a
+    // mouse-only affordance, not a keyboard control.
+    const reorderable = container && container.hasAttribute('data-media-reorder');
+    if (reorderable) {
+      mediaItem.dataset.id = data.media_id;
+    }
+
+    const handle = reorderable
+      ? `<button type="button" class="media-reorder__handle" aria-hidden="true" tabindex="-1" title="Drag to reorder"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>`
+      : '';
     const content =
       data.media_type === 'video'
         ? buildVideoContent(data, modelName)
         : buildImageContent(data, altText);
 
     mediaItem.innerHTML = `
+      ${handle}
       ${content}
       <button type="button" class="media-grid__delete" data-media-id="${data.media_id}" aria-label="Delete media">&times;</button>
     `;

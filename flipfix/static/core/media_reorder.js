@@ -35,6 +35,13 @@
       ghostClass: 'media-reorder__item--ghost',
       chosenClass: 'media-reorder__item--chosen',
       dragClass: 'media-reorder__item--drag',
+      // forceFallback bypasses the browser's native HTML5 drag-image
+      // snapshot, which can omit child subtrees marked draggable="false"
+      // (used on our images to suppress browser image-drag) and produces
+      // inconsistent ghosts in Chromium when the source element has a
+      // transformed descendant. SortableJS clones the source itself in
+      // fallback mode, giving us a reliable ghost in every browser.
+      forceFallback: true,
       onSort: () => {
         saveOrder(container, url);
       },

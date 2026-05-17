@@ -34,7 +34,7 @@ class MaintainerMediaAdmin(SimpleHistoryAdmin):
     list_display = ["id", "maintainer", "media_type", "transcode_status", "created_at"]
     list_filter = ["media_type", "transcode_status"]
     search_fields = ["maintainer__user__username"]
-    readonly_fields = ["created_at", "updated_at", "transcode_status"]
+    readonly_fields = ["created_at", "updated_at", "media_type", "transcode_status"]
     ordering = ["-created_at"]
 
 

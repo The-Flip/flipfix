@@ -123,16 +123,24 @@ class UserDirectoryContentTests(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, 'class="card card--clickable user-card"')
 
-    def test_bio_rendered_truncated_and_as_markdown(self):
-        """Bio uses the truncatechars → render_markdown condensed pattern."""
+    def test_bio_rendered_as_plain_text_and_truncated(self):
+        """Card bio is plain-text only.
+
+        Markdown is rendered for link resolution but tags are stripped
+        before display: nested ``<a>`` tags inside the card's outer
+        ``<a>`` would be auto-closed by browsers and split the card
+        across grid cells. Full markdown still renders on the detail
+        page.
+        """
         user = create_maintainer_user(username="alice", first_name="Alice")
         user.maintainer.bio = "**Bold bio** with much more text " * 10
         user.maintainer.save()
         response = self.client.get(self.url)
-        # Markdown emphasis becomes <strong>; we don't assert exact length
-        # (truncatechars + markdown interplay) — just that bold was applied
-        # and the trailing repetitions did not all render.
-        self.assertContains(response, "<strong>Bold bio</strong>")
+        # No HTML tags from markdown in the card body.
+        self.assertNotContains(response, "<strong>Bold bio</strong>")
+        # Plain text (with markdown syntax visible) is present and truncated.
+        self.assertContains(response, "Bold bio")
+        self.assertContains(response, "…")  # truncatechars ellipsis
 
 
 @tag("views")

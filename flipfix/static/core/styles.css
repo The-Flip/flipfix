@@ -1314,6 +1314,27 @@ body {
   height: 120px;
   object-fit: cover;
   border-radius: var(--radius-sm);
+  display: block;
+}
+
+/* Hover/focus affordance: the thumbnail anchor opens the full image,
+   but without a visible cue users don't realize it's clickable. */
+.media-grid__item a {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.media-grid__item a:hover {
+  box-shadow: 0 0 0 2px var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.media-grid__item a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .media-grid__status {
@@ -1337,6 +1358,7 @@ body {
   position: absolute;
   top: 4px;
   right: 4px;
+  z-index: 1;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -1352,6 +1374,53 @@ body {
 
 .media-grid__item:hover .media-grid__delete {
   opacity: 1;
+}
+
+.media-reorder__handle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+
+.media-grid__item:hover .media-reorder__handle {
+  opacity: 1;
+}
+
+.media-reorder__handle:active {
+  cursor: grabbing;
+}
+
+.media-reorder__item--ghost {
+  opacity: 0.4;
+}
+
+/* In editable media-management UX, suppress the browser's native drag on
+   images and links inside tiles — those tiles aren't valid drag sources
+   (reorderable grids drag from the handle only; non-reorderable editable
+   grids don't drag at all), so promising drag would be misleading.
+   Scoped to [data-media-card] so read-only galleries keep normal
+   drag-to-desktop. */
+[data-media-card] .media-grid__item img,
+[data-media-card] .media-grid__item a {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .form-main {
@@ -1910,10 +1979,13 @@ body {
 }
 
 /* .user-card sits on top of the shared .card / .card--clickable; only the
-   directory-specific layout bits live here. */
+   directory-specific layout bits live here. The card is a 3:4 portrait
+   photo with two carve-outs: a thin name bar at the top and a 2-line
+   bio bar at the bottom, each backed by a dark translucent fill and
+   edged with the brand accent so the photo's middle (where faces
+   usually sit) stays unobstructed. */
 .user-card {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -1921,7 +1993,7 @@ body {
 
 .user-card__media {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 3 / 4;
   background-color: var(--color-gray-100);
   display: flex;
   align-items: center;
@@ -1942,17 +2014,30 @@ body {
   color: var(--color-text-secondary);
 }
 
-.user-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
+.user-card__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(0, 0, 0, 0.72);
+  color: white;
+}
+
+.user-card__caption--top {
+  top: 0;
+  /* Accent stripe at the bottom edge frames the photo with brand color. */
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.user-card__caption--bottom {
+  bottom: 0;
+  border-top: 2px solid var(--color-accent);
 }
 
 .user-card__title {
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
+  color: white;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1960,9 +2045,10 @@ body {
 
 .user-card__bio {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.35;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1983,6 +2069,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: box-shadow 0.15s ease;
+}
+
+.user-profile__media-item:has(.user-profile__photo-link:hover) {
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 .user-profile__photo,
@@ -1991,6 +2082,22 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.user-profile__photo-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.15s ease;
+}
+
+.user-profile__photo-link:hover .user-profile__photo {
+  transform: scale(1.02);
+}
+
+.user-profile__photo-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .user-profile__bio {

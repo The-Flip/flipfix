@@ -14,6 +14,7 @@ from django import template
 
 from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 from flipfix.apps.accounts.permissions import can_manage_catalog as _can_manage_catalog
+from flipfix.apps.accounts.permissions import can_view_user_profiles as _can_view_user_profiles
 from flipfix.apps.core.routing import get_public_url_names
 
 if TYPE_CHECKING:
@@ -41,6 +42,12 @@ class _NavItem:
     Each item uses exactly one matching strategy:
     - ``active_exact``: match when url_name is in the tuple (e.g. Machines)
     - ``active_contains``: match when the substring appears in url_name (e.g. Problems)
+
+    ``visible_to`` is an optional predicate that further filters whether
+    this item appears for a given user. Use it when the route enforces a
+    finer-grained permission than ``can_access_maintainer_portal`` — so
+    the nav's visibility stays in lockstep with the route gate and users
+    don't see links that would 403.
     """
 
     label: str
@@ -50,6 +57,7 @@ class _NavItem:
     active_exact: tuple[str, ...] = field(default_factory=tuple)
     in_mobile_bar: bool = True
     mobile_extra_class: str = ""
+    visible_to: _UserPredicate | None = None
 
 
 @dataclass(frozen=True)
@@ -77,7 +85,7 @@ ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
         track_active=False,
     ),
     _AdminNavItem(
-        label="Users",
+        label="Invite User",
         url_name="admin:accounts_invitation_add",
         icon="user-plus",
         track_active=False,
@@ -139,6 +147,14 @@ MAIN_NAV_ITEMS: tuple[_NavItem, ...] = (
         active_contains="wiki",
         in_mobile_bar=False,
     ),
+    _NavItem(
+        label="Users",
+        url_name="user-directory",
+        icon="users",
+        active_exact=("user-directory", "user-profile"),
+        in_mobile_bar=False,
+        visible_to=_can_view_user_profiles,
+    ),
 )
 
 # ---- Helpers ----------------------------------------------------------------
@@ -151,11 +167,22 @@ def _is_active(item: _NavItem, url_name: str) -> bool:
     return item.active_contains != "" and item.active_contains in url_name
 
 
-def _resolve_nav_items(url_name: str, *, public_only: bool = False) -> list[dict[str, str | bool]]:
+def _resolve_nav_items(
+    url_name: str,
+    user: AbstractUser | Any | None = None,
+    *,
+    public_only: bool = False,
+) -> list[dict[str, str | bool]]:
     """Build nav item context dicts with active state resolved.
 
     When ``public_only`` is True, only items whose ``url_name`` is in the
-    public URL name registry are included.  Used for guest navigation.
+    public URL name registry are included. Used for guest navigation.
+
+    Items with a ``visible_to`` predicate are filtered against ``user``
+    so the nav matches the route's permission gate. ``user`` defaults
+    to ``None`` as a test-only convenience that bypasses ``visible_to``
+    filtering (lets active-state tests skip user setup); production
+    callers — the three nav tags — always pass an explicit user.
     """
     public_names = get_public_url_names() if public_only else None
     return [
@@ -168,7 +195,8 @@ def _resolve_nav_items(url_name: str, *, public_only: bool = False) -> list[dict
             "mobile_extra_class": item.mobile_extra_class,
         }
         for item in MAIN_NAV_ITEMS
-        if public_names is None or item.url_name in public_names
+        if (public_names is None or item.url_name in public_names)
+        and (user is None or item.visible_to is None or item.visible_to(user))
     ]
 
 
@@ -219,7 +247,7 @@ def desktop_nav(context: dict) -> dict:
     admin_items = _resolve_admin_items(url_name, user)
     return {
         "nav_items": _resolve_nav_items(
-            url_name, public_only=not can_access_maintainer_portal(user)
+            url_name, user, public_only=not can_access_maintainer_portal(user)
         ),
         "admin_items": admin_items,
         "admin_active": any(item["is_active"] for item in admin_items),
@@ -243,7 +271,7 @@ def mobile_priority_bar(context: dict) -> dict:
     user = context["user"]
     return {
         "nav_items": _resolve_nav_items(
-            _get_url_name(context), public_only=not can_access_maintainer_portal(user)
+            _get_url_name(context), user, public_only=not can_access_maintainer_portal(user)
         ),
         "user": user,
         "perms": context.get("perms"),
@@ -261,7 +289,9 @@ def mobile_hamburger(context: dict) -> dict:
     """
     user = context["user"]
     url_name = _get_url_name(context)
-    nav_items = _resolve_nav_items(url_name, public_only=not can_access_maintainer_portal(user))
+    nav_items = _resolve_nav_items(
+        url_name, user, public_only=not can_access_maintainer_portal(user)
+    )
     admin_items = _resolve_admin_items(url_name, user)
 
     # The hamburger button lights up when the current page is:

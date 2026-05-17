@@ -143,6 +143,12 @@ class RouteContractTests(TestCase):
     def test_wiki_page(self):
         self.assertEqual(self._active_labels("wiki-page"), {"Docs"})
 
+    def test_user_directory(self):
+        self.assertEqual(self._active_labels("user-directory"), {"Users"})
+
+    def test_user_profile(self):
+        self.assertEqual(self._active_labels("user-profile"), {"Users"})
+
     def test_empty_url_name(self):
         self.assertEqual(self._active_labels(""), set())
 
@@ -284,12 +290,12 @@ class DesktopNavRenderTests(TestCase):
         self.assertEqual(html.count("nav-link--active"), 1)
 
     def test_all_nav_items_present(self):
-        """All 5 nav items render in desktop nav."""
+        """Every label in MAIN_NAV_ITEMS renders in desktop nav."""
         request = _make_request("", user=self.user)
         html = _render_tag("{% desktop_nav %}", request)
-        for label in ("Machines", "Problems", "Logs", "Parts", "Docs"):
-            with self.subTest(label=label):
-                self.assertIn(label, html)
+        for item in MAIN_NAV_ITEMS:
+            with self.subTest(label=item.label):
+                self.assertIn(item.label, html)
 
     def test_admin_dropdown_for_superuser(self):
         """Superuser sees admin dropdown."""
@@ -330,6 +336,10 @@ class DesktopNavRenderTests(TestCase):
         self.assertIn("Logs", html)
         self.assertNotIn("Parts", html)
         self.assertNotIn("Docs", html)
+        # Users directory is maintainer-only on top of the public-only
+        # filter (user-directory isn't in PUBLIC_URL_NAMES); regression
+        # guard that a non-portal user never sees it.
+        self.assertNotIn(">Users<", html)
 
 
 @tag("views")
@@ -523,7 +533,7 @@ _SUPERUSER_ONLY_ITEMS = (
     "Wall Display",
     "Terminals",
     "Locations",
-    "Users",
+    "Invite User",
     "Labor Report",
     "Site Settings",
     "Django Admin",

@@ -33,6 +33,7 @@ class MediaInline(admin.TabularInline):
         "display_order",
     )
     readonly_fields = (
+        "media_type",
         "thumbnail_file",
         "transcoded_file",
         "poster_file",

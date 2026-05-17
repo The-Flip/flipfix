@@ -52,11 +52,7 @@ class Maintainer(TimeStampedMixin):
         default=False,
         help_text="Shared accounts are used on workshop terminals by multiple maintainers.",
     )
-    bio = models.TextField(
-        max_length=300,
-        blank=True,
-        help_text="Short markdown bio shown on the user's profile page.",
-    )
+    bio = models.TextField(max_length=300, blank=True)
 
     objects = MaintainerQuerySet.as_manager()
 
