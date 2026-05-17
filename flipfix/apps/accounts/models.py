@@ -53,6 +53,15 @@ class Maintainer(TimeStampedMixin):
         help_text="Shared accounts are used on workshop terminals by multiple maintainers.",
     )
     bio = models.TextField(max_length=300, blank=True)
+    # Indexed because we sort the user directory by it and will filter on it
+    # for the future inactive-account deactivation sweep. Don't drop the index
+    # thinking it's unused.
+    last_active_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Most recent authenticated request from this maintainer. Updated at most once per day.",
+    )
 
     objects = MaintainerQuerySet.as_manager()
 

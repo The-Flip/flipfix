@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Value
+from django.db.models import F, Value
 from django.db.models.functions import Coalesce, Lower, NullIf
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -257,7 +257,12 @@ class UserDirectoryView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        # Sort by the same character users read: first name if set,
+        # Primary sort: most recently active first, so volunteers who actually
+        # use the system surface to the top and lapsed accounts drift down.
+        # Never-seen maintainers (NULL last_active_at) fall to the bottom and
+        # use the alphabetical tiebreaker.
+        #
+        # Tiebreaker: the same character users read — first name if set,
         # otherwise username. Lower() is required because Postgres and
         # SQLite default collations are byte-order, so without it "alice"
         # would sort after "Zoe". .distinct() is defensive against the
@@ -274,7 +279,7 @@ class UserDirectoryView(ListView):
             Maintainer.objects.in_user_directory()
             .select_related("user")
             .prefetch_related("media")
-            .order_by(sort_key)
+            .order_by(F("last_active_at").desc(nulls_last=True), sort_key)
             .distinct()
         )
 
