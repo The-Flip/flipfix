@@ -6,8 +6,11 @@ exhaustively in ``test_user_directory_predicates.py``; here we verify the
 view wires the queryset, template, and access check correctly.
 """
 
+from datetime import timedelta
+
 from django.test import TestCase, tag
 from django.urls import reverse
+from django.utils import timezone
 
 from flipfix.apps.accounts.models import Maintainer
 from flipfix.apps.core.test_utils import (
@@ -163,11 +166,18 @@ class UserDirectoryEmptyStateTests(TestCase):
 
 @tag("views")
 class UserDirectorySortTests(TestCase):
-    """Directory sorts alphabetically by display-name first character.
+    """Directory sorts by ``last_active_at`` (recent first), with the
+    alphabetical display-name key as the tiebreaker for NULL/never-seen.
 
-    Sort key: ``Lower(Coalesce(NullIf(first_name, ""), username))``. With
-    Lower() applied, casing does not flip the order; without it, byte
-    order would put "Zoe" before "alice".
+    Primary sort: ``F("last_active_at").desc(nulls_last=True)``.
+    Tiebreaker: ``Lower(Coalesce(NullIf(first_name, ""), username))``. The
+    Lower() is required because Postgres and SQLite default to byte-order,
+    so without it "Zoe" would sort before "alice".
+
+    Note on middleware interaction: ``MaintainerActivityMiddleware`` bumps
+    the requesting user's ``last_active_at`` AFTER ``get_response`` returns,
+    so the response context examined here reflects the pre-touch state.
+    Viewer rows therefore stay NULL within a single request.
     """
 
     def test_alphabetical_case_insensitive(self):
@@ -212,3 +222,51 @@ class UserDirectorySortTests(TestCase):
         ids = [m.id for m in response.context["maintainers"]]
         self.assertEqual(len(ids), len(set(ids)))
         self.assertIn(Maintainer.objects.get(user=user).id, ids)
+
+    def test_recent_active_sorts_before_older_active(self):
+        """More-recent ``last_active_at`` outranks older ``last_active_at``."""
+        now = timezone.now()
+        older = create_maintainer_user(username="older", first_name="Older")
+        newer = create_maintainer_user(username="newer", first_name="Newer")
+        # .update() sidesteps auto_now on updated_at and any save() signals,
+        # mirroring the middleware's write path.
+        Maintainer.objects.filter(user=older).update(last_active_at=now - timedelta(days=2))
+        Maintainer.objects.filter(user=newer).update(last_active_at=now)
+
+        viewer = create_maintainer_user(username="viewer")
+        self.client.force_login(viewer)
+
+        response = self.client.get(reverse("user-directory"))
+        usernames = [m.user.username for m in response.context["maintainers"]]
+        # newer (most recent) > older (older active) > viewer (NULL).
+        self.assertEqual(usernames, ["newer", "older", "viewer"])
+
+    def test_nulls_sort_after_any_active(self):
+        """Any non-NULL ``last_active_at`` outranks every NULL, regardless of name."""
+        seen = create_maintainer_user(username="seen", first_name="Aaron")
+        create_maintainer_user(username="never", first_name="Zelda")
+        Maintainer.objects.filter(user=seen).update(last_active_at=timezone.now())
+
+        viewer = create_maintainer_user(username="viewer")
+        self.client.force_login(viewer)
+
+        response = self.client.get(reverse("user-directory"))
+        usernames = [m.user.username for m in response.context["maintainers"]]
+        # 'seen' (active, Aaron) first.
+        # 'never' (NULL, Zelda) and viewer (NULL) fall to alphabetical:
+        # 'never' (Z) is *after* 'viewer' (v), but uppercase Z vs lowercase v
+        # is Lower()'d → "viewer" < "zelda", so viewer wins the alphabetical tie.
+        self.assertEqual(usernames, ["seen", "viewer", "never"])
+
+    def test_nulls_break_ties_alphabetically(self):
+        """Among NULL ``last_active_at`` rows, alphabetical order is preserved."""
+        create_maintainer_user(username="zoe", first_name="Zoe")
+        create_maintainer_user(username="alice", first_name="Alice")
+        create_maintainer_user(username="bob", first_name="Bob")
+        viewer = create_maintainer_user(username="viewer")
+        self.client.force_login(viewer)
+
+        response = self.client.get(reverse("user-directory"))
+        usernames = [m.user.username for m in response.context["maintainers"]]
+        # All NULL → pure alphabetical.
+        self.assertEqual(usernames, ["alice", "bob", "viewer", "zoe"])

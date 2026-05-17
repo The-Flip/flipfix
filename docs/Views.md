@@ -116,6 +116,7 @@ path("terminals/", TerminalListView.as_view(), name="terminal-list", access="sup
 
 1. **`LoginRequiredMiddleware`** — Django 5.1 built-in. Redirects unauthenticated users to login unless the view is marked `login_not_required` (our `path()` handles this automatically for `access="always_public"` and `access="public"`).
 2. **`MaintainerAccessMiddleware`** — checks the `can_access_maintainer_portal` permission globally. Views with `access="always_public"`, `"authenticated"`, or guest visitors on `"public"` routes are skipped automatically.
+3. **`MaintainerActivityMiddleware`** — records `Maintainer.last_active_at` at most once per 24 h per authenticated user, gated by `cache.add()`. Runs on the response path (after the view), so it also fires on 403/error responses — for users without a `Maintainer` row, the underlying `.filter().update()` is a harmless no-op.
 
 Views don't need `CanAccessMaintainerPortalMixin` — it was removed in favor of middleware.
 

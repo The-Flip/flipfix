@@ -2042,6 +2042,7 @@ body {
 }
 
 .user-card__title {
+  display: block;
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: white;

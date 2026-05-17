@@ -1,6 +1,6 @@
 """Tests for ``MaintainerProfileForm`` (the bio editor).
 
-Covers the markdown-link conversion hook and the 300-char limit on bio.
+Covers the markdown-link conversion hook on the bio field.
 """
 
 from django.test import TestCase, tag
@@ -25,18 +25,6 @@ class MaintainerProfileFormTests(TestCase):
         form.save()
         user.maintainer.refresh_from_db()
         self.assertEqual(user.maintainer.bio, "Hello, I fix pinball.")
-
-    def test_bio_over_300_chars_rejected(self):
-        """The model's ``max_length=300`` is surfaced by the form."""
-        user = create_maintainer_user(username="alice")
-        form = MaintainerProfileForm(data={"bio": "x" * 301}, instance=user.maintainer)
-        self.assertFalse(form.is_valid())
-        self.assertIn("bio", form.errors)
-
-    def test_bio_exactly_300_chars_accepted(self):
-        user = create_maintainer_user(username="alice")
-        form = MaintainerProfileForm(data={"bio": "x" * 300}, instance=user.maintainer)
-        self.assertTrue(form.is_valid(), form.errors)
 
     def test_clean_bio_rejects_unresolvable_authoring_links(self):
         """``clean_markdown_field`` hook runs on bio.

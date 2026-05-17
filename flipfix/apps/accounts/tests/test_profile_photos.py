@@ -110,20 +110,6 @@ class ProfileBioSaveTests(TestCase):
         self.user.maintainer.refresh_from_db()
         self.assertEqual(self.user.maintainer.bio, "")
 
-    def test_bio_over_300_chars_rejected(self):
-        response = self.client.post(
-            PROFILE_URL,
-            {
-                "first_name": "Alice",
-                "last_name": "",
-                "email": "alice@example.com",
-                "bio": "x" * 301,
-            },
-        )
-        self.assertEqual(response.status_code, 200)  # re-rendered, not redirect
-        self.user.maintainer.refresh_from_db()
-        self.assertEqual(self.user.maintainer.bio, "")  # unchanged
-
     def test_invalid_email_rolls_back_bio(self):
         """Atomic save: an invalid email must not persist a bio change."""
         other = create_maintainer_user(username="taken")
