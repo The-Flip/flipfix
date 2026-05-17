@@ -104,8 +104,7 @@ class MaintainerProfileForm(StyledFormMixin, forms.ModelForm):
             "bio": MarkdownTextarea(
                 attrs={
                     "rows": 4,
-                    "maxlength": 300,
-                    "placeholder": "A short markdown bio (max 300 characters).",
+                    "placeholder": "A short markdown bio.",
                 }
             ),
         }

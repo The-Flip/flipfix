@@ -52,7 +52,7 @@ class Maintainer(TimeStampedMixin):
         default=False,
         help_text="Shared accounts are used on workshop terminals by multiple maintainers.",
     )
-    bio = models.TextField(max_length=300, blank=True)
+    bio = models.TextField(blank=True)
     # Indexed because we sort the user directory by it and will filter on it
     # for the future inactive-account deactivation sweep. Don't drop the index
     # thinking it's unused.
