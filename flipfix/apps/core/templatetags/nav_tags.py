@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 # Predicate signature accepts AnonymousUser (logged-out users on public
 # routes) as well as AbstractUser subclasses. ``Any`` mirrors the
-# convention used by ``can_access_maintainer_portal`` in ``mixins.py``.
+# convention used by ``can_access_maintainer_portal`` in
+# ``flipfix.apps.accounts.permissions``.
 _UserPredicate = Callable[["AbstractUser | Any"], bool]
 
 register = template.Library()

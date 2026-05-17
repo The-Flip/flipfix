@@ -62,6 +62,8 @@
   {% if user|is_in_user_directory %}
     {% include "core/partials/markdown_textarea_scripts.html" %}
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"
+            integrity="sha384-HZZ/fukV+9G8gwTNjN7zQDG0Sp7MsZy5DDN6VfY3Be7V9dvQpEpR2jF2HlyFUUjU"  {# pragma: allowlist secret #}
+            crossorigin="anonymous"
             defer></script>
     <script src="{% static 'core/save_status.js' %}" defer></script>
     <script src="{% static 'core/media_grid.js' %}" defer></script>

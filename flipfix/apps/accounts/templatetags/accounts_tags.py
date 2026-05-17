@@ -19,14 +19,15 @@ register = template.Library()
 def can_manage_catalog(user) -> bool:
     """Return whether ``user`` is a working catalog manager.
 
-    Thin wrapper over ``flipfix.apps.core.mixins.can_manage_catalog`` so
-    templates can write::
+    Thin wrapper over ``flipfix.apps.accounts.permissions.can_manage_catalog``
+    so templates can write::
 
         {% load accounts_tags %}
         {% if user|can_manage_catalog %}...{% endif %}
 
     Single source of truth: the predicate logic (portal access AND the
-    catalog-management permission) lives in ``mixins.py``.
+    catalog-management permission) lives in
+    ``flipfix.apps.accounts.permissions``.
     """
     return _can_manage_catalog(user)
 
