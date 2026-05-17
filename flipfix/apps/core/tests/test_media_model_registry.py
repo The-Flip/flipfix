@@ -18,12 +18,13 @@ class MediaModelRegistryTests(TestCase):
     """Tests that apps register their media models via AppConfig.ready()."""
 
     def test_all_expected_models_registered(self):
-        """All four media models are present in the registry after startup."""
+        """All concrete media models are present in the registry after startup."""
         expected = {
             "LogEntryMedia",
             "ProblemReportMedia",
             "PartRequestMedia",
             "PartRequestUpdateMedia",
+            "MaintainerMedia",
         }
         self.assertEqual(set(_MEDIA_MODEL_REGISTRY.keys()), expected)
 

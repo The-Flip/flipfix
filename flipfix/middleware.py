@@ -8,8 +8,8 @@ from collections.abc import Callable
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 from flipfix.apps.core.ip import get_real_ip
-from flipfix.apps.core.mixins import can_access_maintainer_portal
 from flipfix.logging import bind_log_context, reset_log_context
 
 

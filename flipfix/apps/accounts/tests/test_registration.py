@@ -126,6 +126,33 @@ class InvitationRegistrationViewTests(AccessControlTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "email is already registered")
 
+    def test_registration_rejects_reserved_username(self):
+        """Reserved usernames (e.g., ``admin``, ``me``) are rejected.
+
+        These names are reserved for sibling routes under ``/users/<username>/``;
+        allowing them would silently shadow future routes.
+        """
+        data = {
+            "username": "admin",
+            "email": "newuser@example.com",
+            "password": TEST_PASSWORD,
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "username is reserved")
+        self.assertFalse(User.objects.filter(username="admin").exists())
+
+    def test_registration_rejects_reserved_username_case_insensitive(self):
+        """Reserved-name check is case-insensitive."""
+        data = {
+            "username": "Admin",
+            "email": "newuser@example.com",
+            "password": TEST_PASSWORD,
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "username is reserved")
+
     def test_registration_validates_password_strength(self):
         """Registration should enforce password validation rules."""
         data = {

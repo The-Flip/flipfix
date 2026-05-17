@@ -6,7 +6,7 @@ from django import template
 from django.urls import reverse
 from django.utils.html import format_html
 
-from flipfix.apps.core.mixins import can_access_maintainer_portal
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 from flipfix.apps.core.templatetags.ui_tags import _settable_pill_context, smart_date
 
 register = template.Library()

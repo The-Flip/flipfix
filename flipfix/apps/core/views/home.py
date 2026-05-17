@@ -5,8 +5,9 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 from flipfix.apps.core.forms import SiteSettingsForm
-from flipfix.apps.core.mixins import SharedAccountMixin, can_access_maintainer_portal
+from flipfix.apps.core.mixins import SharedAccountMixin
 from flipfix.apps.core.models import SiteSettings
 from flipfix.apps.core.views.feed import GlobalActivityFeedView
 

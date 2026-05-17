@@ -2,7 +2,15 @@
 
 from django import template
 
-from flipfix.apps.core.mixins import can_manage_catalog as _can_manage_catalog
+from flipfix.apps.accounts.permissions import (
+    can_manage_catalog as _can_manage_catalog,
+)
+from flipfix.apps.accounts.permissions import (
+    can_view_user_profiles as _can_view_user_profiles,
+)
+from flipfix.apps.accounts.permissions import (
+    is_in_user_directory as _is_in_user_directory,
+)
 
 register = template.Library()
 
@@ -21,6 +29,21 @@ def can_manage_catalog(user) -> bool:
     catalog-management permission) lives in ``mixins.py``.
     """
     return _can_manage_catalog(user)
+
+
+@register.filter(name="can_view_user_profiles")
+def can_view_user_profiles(user) -> bool:
+    """Return whether ``user`` can view the user directory and profile pages."""
+    return _can_view_user_profiles(user)
+
+
+@register.filter(name="is_in_user_directory")
+def is_in_user_directory(user) -> bool:
+    """Return whether ``user`` appears in the public user directory.
+
+    Used by ``/profile`` to decide whether to show the photo management section.
+    """
+    return _is_in_user_directory(user)
 
 
 @register.filter

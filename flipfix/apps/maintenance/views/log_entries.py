@@ -21,6 +21,7 @@ from django.views import View
 from django.views.generic import DetailView, FormView, TemplateView, UpdateView
 
 from flipfix.apps.accounts.models import Maintainer
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 from flipfix.apps.catalog.models import MachineInstance
 from flipfix.apps.catalog.view_helpers import resolve_selected_machine
 from flipfix.apps.core.datetime import (
@@ -36,7 +37,6 @@ from flipfix.apps.core.mixins import (
     InlineTextEditMixin,
     MediaUploadMixin,
     SharedAccountMixin,
-    can_access_maintainer_portal,
 )
 from flipfix.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm
 from flipfix.apps.maintenance.models import (

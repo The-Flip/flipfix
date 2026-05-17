@@ -15,31 +15,10 @@ from flipfix.apps.core.markdown_links import save_inline_markdown_field
 from flipfix.apps.core.media_upload import attach_media_files
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import AbstractUser
     from django.core.files.uploadedfile import UploadedFile
     from django.db import models
     from django.db.models import QuerySet
     from django.http import HttpRequest
-
-
-def can_access_maintainer_portal(user: AbstractUser | Any) -> bool:
-    """
-    Check if user can access the maintainer portal.
-
-    Used by ``MaintainerAccessMiddleware`` and inline permission checks.
-    Uses permission-based check. Superusers automatically pass via has_perm().
-    """
-    return user.has_perm("accounts.can_access_maintainer_portal")
-
-
-def can_manage_catalog(user: AbstractUser | Any) -> bool:
-    """
-    Check if user is a working catalog manager.
-
-    Requires both maintainer portal access and the catalog management
-    permission. Superusers pass via ``has_perm()`` auto-pass.
-    """
-    return can_access_maintainer_portal(user) and user.has_perm("accounts.can_manage_catalog")
 
 
 class FormPrefillMixin:

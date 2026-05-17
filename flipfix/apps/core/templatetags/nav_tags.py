@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any
 
 from django import template
 
-from flipfix.apps.core.mixins import can_access_maintainer_portal
-from flipfix.apps.core.mixins import can_manage_catalog as _can_manage_catalog
+from flipfix.apps.accounts.permissions import can_access_maintainer_portal
+from flipfix.apps.accounts.permissions import can_manage_catalog as _can_manage_catalog
 from flipfix.apps.core.routing import get_public_url_names
 
 if TYPE_CHECKING:

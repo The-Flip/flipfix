@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.test import RequestFactory, TestCase, tag
 from django.urls import ResolverMatch
 
-from flipfix.apps.core.mixins import can_manage_catalog
+from flipfix.apps.accounts.permissions import can_manage_catalog
 from flipfix.apps.core.templatetags.nav_tags import (
     ADMIN_NAV_ITEMS,
     MAIN_NAV_ITEMS,
