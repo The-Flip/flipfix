@@ -169,7 +169,7 @@ class ProfileUpdateView(MediaUploadMixin, UpdateView):
         TOCTOU: two simultaneous uploads from two tabs could both pass the
         count and create an 11th row. Acknowledged, not locked — the window
         is negligible for a single-user feature and select_for_update would
-        be over-engineering. See plan §3.
+        be over-engineering.
         """
         existing = MaintainerMedia.objects.filter(maintainer=self.get_media_parent()).count()
         if existing >= MAX_PROFILE_MEDIA:

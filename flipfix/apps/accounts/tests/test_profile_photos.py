@@ -1,4 +1,4 @@
-"""Tests for the ``/profile`` photo management section (§7).
+"""Tests for the ``/profile`` photo management section.
 
 Covers:
 - Visibility: photo section + bio form only render for directory members.

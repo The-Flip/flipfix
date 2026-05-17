@@ -2,6 +2,12 @@
 
 The Flip museum would like Flipfix to have a user directory and user profile pages, both with user-uploadable photos.
 
+## Implementation Status
+
+**Status:** implemented.
+
+---
+
 ## Goals
 
 - Enable museum volunteers and staff -- all in the maintainers group -- to introduce themselves.
@@ -100,13 +106,3 @@ We want to reuse the existing media system, which we hope will get us most of th
 - Sounds like drag/drop is not part of the generic system yet. Design it as a generic media-reorder endpoint so that parts/maintenance can adopt it later (they will not adopt it this PR). Consider using whatever reordering functionality we can from the wiki.
 
 If we can reuse MORE of the media system by changing this spec, we should.
-
-### Reusable profile logic
-
-We use the following check multiple places:
-
-```python
-is_active=True AND in Maintainers group AND not maintainer.is_shared_account
-```
-
-Extract it into a single helper (e.g. is_in_user_directory(user) in core/mixins.py, plus a matching template tag) and use it in all the places.

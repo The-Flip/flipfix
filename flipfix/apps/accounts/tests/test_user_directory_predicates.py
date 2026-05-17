@@ -1,9 +1,9 @@
 """Tests for the user-directory visibility predicates and capability checks.
 
 Covers the queryset method, the per-user predicate, and the permission
-helpers that gate the upcoming ``/users`` directory and ``/users/<username>``
-profile pages. These predicates are load-bearing for §5/§6 views, so
-locking down the contract here protects those views from regressions.
+helpers that gate the ``/users`` directory and ``/users/<username>``
+profile pages. Locking down the contract here protects those views
+from regressions.
 """
 
 from django.contrib.auth import get_user_model
