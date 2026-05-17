@@ -47,8 +47,7 @@ class LinkTargetsView(View):
                 status=400,
             )
 
-        model = lt.get_model()
-        qs = model.objects.all()
+        qs = lt.get_target_queryset()
 
         if lt.autocomplete_select_related:
             qs = qs.select_related(*lt.autocomplete_select_related)

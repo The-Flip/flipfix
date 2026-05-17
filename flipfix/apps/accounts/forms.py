@@ -8,6 +8,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 
 from flipfix.apps.core.forms import MarkdownTextarea, StyledFormMixin, clean_markdown_field
+from flipfix.apps.core.markdown_links import convert_storage_to_authoring
 
 from .models import RESERVED_USERNAMES, Maintainer
 
@@ -104,10 +105,17 @@ class MaintainerProfileForm(StyledFormMixin, forms.ModelForm):
             "bio": MarkdownTextarea(
                 attrs={
                     "rows": 4,
-                    "placeholder": "A short markdown bio.",
+                    "placeholder": "Your bio.  Supports markdown and [[ wikilinks.",
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Render existing bios in authoring format so links show as
+        # ``[[user:alice]]`` rather than the stored ``[[user:id:N]]``.
+        if self.instance.pk and self.instance.bio:
+            self.initial["bio"] = convert_storage_to_authoring(self.instance.bio)
 
     def clean_bio(self):
         """Convert authoring-format ``[[links]]`` to storage format."""
