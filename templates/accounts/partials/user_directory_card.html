@@ -1,0 +1,41 @@
+{% load accounts_tags %}
+{% load markdown_tags %}
+{% load video_tags %}
+{% with user=maintainer.user first_media=maintainer.media.all|slice:":1" %}
+  {# §6 swaps <article> for <a href="{% url 'user-profile' username=user.username %}">. The hover style on .card--clickable applies either way. #}
+  <article class="card card--clickable user-card"
+           data-search-text="{{ user.first_name }} {{ user.last_name }} {{ user.username }}">
+    <div class="user-card__media">
+      {% for media in first_media %}
+        {% if media.media_type == media.MediaType.VIDEO %}
+          {% video_thumbnail media=media model_name="MaintainerMedia" %}
+        {% elif media.thumbnail_file %}
+          <img src="{{ media.thumbnail_file.url }}"
+               alt="{{ user|display_name_with_username }}"
+               class="user-card__photo">
+        {% else %}
+          <img src="{{ media.file.url }}"
+               alt="{{ user|display_name_with_username }}"
+               class="user-card__photo">
+        {% endif %}
+      {% empty %}
+        {# Silhouette stub — §8 swaps this for {% user_silhouette user %}. #}
+        <svg class="user-card__silhouette"
+             viewBox="0 0 64 64"
+             aria-hidden="true"
+             focusable="false">
+          <circle cx="32" cy="24" r="12" fill="currentColor" opacity="0.35" />
+          <path d="M12 60c0-11 9-20 20-20s20 9 20 20z" fill="currentColor" opacity="0.35" />
+        </svg>
+      {% endfor %}
+    </div>
+    <div class="user-card__body">
+      <span class="user-card__title">{{ user|display_name_with_username }}</span>
+      {% if maintainer.bio %}
+        <div class="markdown-content markdown-content--compact user-card__bio">
+          {{ maintainer.bio|truncatechars:80|render_markdown }}
+        </div>
+      {% endif %}
+    </div>
+  </article>
+{% endwith %}

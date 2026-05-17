@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, cast
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.messages.views import SuccessMessageMixin
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Value
+from django.db.models.functions import Coalesce, Lower, NullIf
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
@@ -18,6 +21,7 @@ from .forms import (
     TerminalUpdateForm,
 )
 from .models import Invitation, Maintainer
+from .permissions import can_view_user_profiles
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User as UserType
@@ -84,6 +88,47 @@ class ProfileUpdateView(SuccessMessageMixin, UpdateView):
 
     def get_object(self, queryset=None):  # noqa: ARG002
         return self.request.user
+
+
+class UserDirectoryView(ListView):
+    """Public-to-maintainers directory of profile pages.
+
+    Access: middleware gates this to logged-in maintainers (default
+    ``access=None`` on the URL). ``dispatch()`` adds the extra
+    ``can_view_user_profiles`` capability check on top — kept inline
+    rather than via a mixin to mirror the per-view auth style in
+    ``docs/Views.md``.
+    """
+
+    template_name = "accounts/user_directory.html"
+    context_object_name = "maintainers"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_view_user_profiles(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        # Sort by the same character users read: first name if set,
+        # otherwise username. Lower() is required because Postgres and
+        # SQLite default collations are byte-order, so without it "alice"
+        # would sort after "Zoe". .distinct() is defensive against the
+        # user__groups M2M join inside in_user_directory() — today a user
+        # can only be in the Maintainers group once, but the join could
+        # silently produce duplicates if the predicate evolves.
+        sort_key = Lower(Coalesce(NullIf("user__first_name", Value("")), "user__username"))
+        # prefetch_related("media") loads every MaintainerMedia row per
+        # maintainer (≤10 each) although the card only renders the first.
+        # Fine at expected scale (dozens of maintainers); if the directory
+        # grows past a few hundred, switch to a Subquery for the first-id
+        # or a sliced Prefetch with to_attr.
+        return (
+            Maintainer.objects.in_user_directory()
+            .select_related("user")
+            .prefetch_related("media")
+            .order_by(sort_key)
+            .distinct()
+        )
 
 
 class TerminalListView(ListView):

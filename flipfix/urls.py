@@ -13,6 +13,7 @@ from flipfix.apps.accounts.views import (
     TerminalLoginView,
     TerminalReactivateView,
     TerminalUpdateView,
+    UserDirectoryView,
     invitation_register,
 )
 from flipfix.apps.catalog.views.machines import (
@@ -193,6 +194,10 @@ urlpatterns = [
         name="oauth2-jwks",
         access="always_public",
     ),
+    ###
+    # User directory
+    ###
+    path("users/", UserDirectoryView.as_view(), name="user-directory"),
     ###
     # Profile
     ###
