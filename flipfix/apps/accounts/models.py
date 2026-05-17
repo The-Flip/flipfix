@@ -147,12 +147,19 @@ class MaintainerMedia(AbstractMedia):
         verbose_name = "Maintainer media"
         verbose_name_plural = "Maintainer media"
 
-    @classmethod
-    def can_user_reorder(cls, user, parent_obj: Maintainer) -> bool:
-        """Permission check used by the generic media-reorder endpoint.
-
-        A maintainer may only reorder their own profile media.
-        """
-        if not user.is_authenticated or not hasattr(user, "maintainer"):
-            return False
-        return user.maintainer.pk == parent_obj.pk
+    def save(self, *args, **kwargs):
+        # Ensure display_order is always non-null on insert. AbstractMedia
+        # leaves it nullable, and Postgres vs SQLite disagree on NULL ordering
+        # (last vs first for ASC), so without this the directory tile order
+        # would differ between dev and prod. Scoped to MaintainerMedia for now;
+        # parts/maintenance can adopt the same pattern when they wire reorder.
+        if self._state.adding and self.display_order is None:
+            max_order = MaintainerMedia.objects.filter(maintainer=self.maintainer).aggregate(
+                models.Max("display_order")
+            )["display_order__max"]
+            # Race: two concurrent inserts may both read the same max and end
+            # up with the same display_order. Accepted for v1 (single-user
+            # feature, AJAX serializes uploads); ties are broken by created_at
+            # via Meta.ordering. Do not reach for select_for_update "for safety."
+            self.display_order = 0 if max_order is None else max_order + 1
+        super().save(*args, **kwargs)

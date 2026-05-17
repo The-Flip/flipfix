@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
@@ -93,10 +94,10 @@ class SharedAccountMixin:
 
 class MediaUploadMixin:
     """
-    Mixin for views that handle media upload and delete actions.
+    Mixin for views that handle media upload, delete, and reorder actions.
 
-    Provides handle_upload_media() and handle_delete_media() methods
-    that can be called from a view's post() method.
+    Provides handle_upload_media(), handle_delete_media(), and
+    handle_reorder_media() methods that can be called from a view's post().
 
     Subclasses must implement:
         - get_media_model(): Return the media model class (e.g., LogEntryMedia)
@@ -192,6 +193,50 @@ class MediaUploadMixin:
 
         except (media_model.DoesNotExist, ValueError):
             return JsonResponse({"success": False, "error": "Media not found"}, status=404)
+
+    def handle_reorder_media(self, request: HttpRequest) -> JsonResponse:
+        """
+        Handle media reorder from AJAX request.
+
+        Expects form-encoded POST with repeated ``ordered_ids`` values listing
+        every existing media id for the parent, in the desired order. Strict:
+        the submitted set must exactly equal the parent's current media set —
+        subsets would leave non-listed items at stale display_order, duplicates
+        would corrupt ordering.
+
+        Returns 400 on any mismatch; clients should surface a refresh prompt.
+        """
+        raw_ids = request.POST.getlist("ordered_ids")
+        try:
+            submitted_ids = [int(x) for x in raw_ids]
+        except (TypeError, ValueError):
+            return JsonResponse({"success": False, "error": "Invalid id"}, status=400)
+
+        media_model = self.get_media_model()
+        parent = self.get_media_parent()
+        parent_field_name = media_model.parent_field_name
+
+        qs = media_model.objects.filter(**{parent_field_name: parent})
+        existing_ids = set(qs.values_list("id", flat=True))
+
+        if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != existing_ids:
+            return JsonResponse({"success": False, "error": "Invalid reorder payload"}, status=400)
+
+        order_map = {pk: idx for idx, pk in enumerate(submitted_ids)}
+        with transaction.atomic():
+            # Filter by submitted_ids (not just the parent) so a row inserted
+            # between validation above and this re-query can't slip in and
+            # KeyError on order_map lookup.
+            items = list(qs.filter(pk__in=submitted_ids))
+            for item in items:
+                item.display_order = order_map[item.pk]
+            # bulk_update intentionally skips save() and simple_history: reorder
+            # is a high-frequency UI action, and AbstractMedia.save() only
+            # matters on fresh photo upload (image resize). Do not switch to
+            # per-row save() "for safety."
+            media_model.objects.bulk_update(items, ["display_order"])
+
+        return JsonResponse({"success": True})
 
 
 class InlineTextEditMixin:
