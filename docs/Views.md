@@ -188,15 +188,17 @@ Pass `machine=` for a machine-scoped feed (uses `search_for_machine`) or omit it
 ```python
 from flipfix.apps.core.feed import get_feed_page, FEED_CONFIGS
 
-# Machine-scoped feed
+# Machine-scoped feed - pass the whole FeedConfig (not entry_types alone)
+# so the per-source DB ordering travels with the entry-type list.
 entries, has_next = get_feed_page(
     machine=self.machine,
-    entry_types=feed_config.entry_types,
+    feed_config=feed_config,
     page_num=page_num,
     search_query=search_query,
 )
 
-# Global feed (all machines)
+# Global feed (all machines) - feed_config defaults to None, which means
+# "all registered types, default -occurred_at ordering".
 entries, has_next = get_feed_page(
     page_num=page_num,
     search_query=search_query,
@@ -204,6 +206,16 @@ entries, has_next = get_feed_page(
 ```
 
 Use `PageCursor` when templates expect `page_obj` interface but Django's `Paginator` can't be used (multiple querysets).
+
+### `FeedConfig.source_order_by` invariant
+
+Each `FeedConfig` declares a `source_order_by` tuple that controls the DB ordering applied to its participating sources. It defaults to `("-occurred_at",)`, which matches the in-memory merge-sort comparator in `get_feed_page`.
+
+**Invariant:** if more than one source participates (`len(entry_types) != 1` — and that includes `entry_types=()`, the "all registered types" sentinel), `source_order_by` must remain `("-occurred_at",)`. `FeedConfig.__post_init__` enforces this at construction time and raises `ValueError` otherwise.
+
+Why: pagination fetches an `offset + page_size + 1` slab from each source using `source_order_by`, then merges by `occurred_at` descending. If the per-source key disagrees with the merge key, the slab is the wrong window — a row that should be on the requested page can fall outside the per-source slab and silently vanish from the result.
+
+Single-source tabs (e.g. Problems, which uses `("status_sort", "priority_sort", "-occurred_at")`) are exempt because `get_feed_page` skips the merge entirely when only one source participates and trusts the DB ordering.
 
 ## Query Optimization
 

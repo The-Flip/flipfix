@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 from django.test import TestCase, tag
 
 from flipfix.apps.core.feed import (
+    FeedConfig,
     FeedEntrySource,
     _feed_source_registry,
     clear_feed_source_registry,
@@ -105,3 +106,70 @@ class RegisterFeedSourceTests(TestCase):
         """clear_feed_source_registry() removes all entries."""
         clear_feed_source_registry()
         self.assertEqual(len(_feed_source_registry), 0)
+
+
+@tag("models")
+class FeedConfigInvariantTests(TestCase):
+    """Tests for the ``FeedConfig.__post_init__`` source_order_by invariant.
+
+    Multi-source feeds must use the default ``("-occurred_at",)`` order so the
+    per-source DB slab aligns with the in-memory merge comparator.  See the
+    dataclass docstring for the failure mode this guard prevents.
+    """
+
+    _valid_kwargs = {
+        "title_suffix": "",
+        "breadcrumb_label": None,
+        "empty_message": "",
+        "search_empty_message": "",
+    }
+
+    def test_single_source_can_use_custom_order(self):
+        """Single-source configs may override source_order_by freely."""
+        config = FeedConfig(
+            entry_types=("problem_report",),
+            source_order_by=("status_sort", "priority_sort", "-occurred_at"),
+            **self._valid_kwargs,
+        )
+        self.assertEqual(
+            config.source_order_by,
+            ("status_sort", "priority_sort", "-occurred_at"),
+        )
+
+    def test_multi_source_with_custom_order_raises(self):
+        """Multi-source config with non-default order is rejected at construction."""
+        with self.assertRaises(ValueError) as ctx:
+            FeedConfig(
+                entry_types=("log", "problem_report"),
+                source_order_by=("status_sort",),
+                **self._valid_kwargs,
+            )
+        self.assertIn("source_order_by", str(ctx.exception))
+
+    def test_empty_entry_types_with_custom_order_raises(self):
+        """The () sentinel (all registered types) counts as multi-source."""
+        with self.assertRaises(ValueError):
+            FeedConfig(
+                entry_types=(),
+                source_order_by=("status_sort",),
+                **self._valid_kwargs,
+            )
+
+    def test_default_order_allowed_for_any_arity(self):
+        """The default order is always valid, regardless of entry_types count."""
+        # Single
+        FeedConfig(entry_types=("log",), **self._valid_kwargs)
+        # Multi
+        FeedConfig(entry_types=("log", "problem_report"), **self._valid_kwargs)
+        # All
+        FeedConfig(entry_types=(), **self._valid_kwargs)
+
+    def test_empty_source_order_by_raises(self):
+        """Empty source_order_by is rejected — it would clear DB ordering."""
+        with self.assertRaises(ValueError) as ctx:
+            FeedConfig(
+                entry_types=("log",),
+                source_order_by=(),
+                **self._valid_kwargs,
+            )
+        self.assertIn("cannot be empty", str(ctx.exception))

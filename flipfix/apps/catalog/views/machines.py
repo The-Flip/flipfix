@@ -207,7 +207,7 @@ class MachineFeedView(TemplateView):
         # Get first page of entries
         entries, has_next = get_feed_page(
             machine=self.machine,
-            entry_types=feed_config.entry_types,
+            feed_config=feed_config,
             page_num=1,
             search_query=search_query or None,
         )
@@ -258,7 +258,7 @@ class MachineFeedPartialView(View):
 
         page_items, has_next = get_feed_page(
             machine=machine,
-            entry_types=feed_config.entry_types,
+            feed_config=feed_config,
             page_num=page_num,
             search_query=search_query,
         )

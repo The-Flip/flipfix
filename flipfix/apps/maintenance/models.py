@@ -72,6 +72,35 @@ class ProblemReportQuerySet(SearchableQuerySetMixin, models.QuerySet):
             for i, (value, _) in enumerate(ProblemReport.Priority.choices)
         ]
 
+    def with_priority_sort(self):
+        """Annotate ``priority_sort`` for ordering by ``Priority`` enum position.
+
+        Cheap constant-time ``CASE`` expression — no joins.  Order by the
+        annotation ascending to get the enum's defined order (untriaged first,
+        task last).
+        """
+        return self.annotate(
+            priority_sort=Case(
+                *self._priority_whens(),
+                default=Value(999),
+                output_field=IntegerField(),
+            )
+        )
+
+    def with_status_sort(self):
+        """Annotate ``status_sort`` so open reports sort before closed.
+
+        Cheap constant-time ``CASE`` expression — no joins.  Order by the
+        annotation ascending to get open (0) before closed (1).
+        """
+        return self.annotate(
+            status_sort=Case(
+                When(status=ProblemReport.Status.OPEN, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        )
+
     def for_wall_display(self, location_slugs: list[str]):
         """Build the queryset for the wall display board.
 
@@ -79,18 +108,14 @@ class ProblemReportQuerySet(SearchableQuerySetMixin, models.QuerySet):
         priority then newest first.  Annotates ``media_count`` for compact
         display (no prefetch of full media objects).
         """
-        priority_sort = Case(
-            *self._priority_whens(),
-            default=Value(999),
-            output_field=IntegerField(),
-        )
         return (
             self.filter(
                 status=ProblemReport.Status.OPEN,
                 machine__location__slug__in=location_slugs,
             )
             .select_related("machine", "machine__model", "machine__location")
-            .annotate(media_count=Count("media"), priority_sort=priority_sort)
+            .annotate(media_count=Count("media"))
+            .with_priority_sort()
             .order_by("priority_sort", "-occurred_at")
         )
 
@@ -106,16 +131,11 @@ class ProblemReportQuerySet(SearchableQuerySetMixin, models.QuerySet):
             queryset=LogEntry.objects.order_by("-occurred_at"),
             to_attr="prefetched_log_entries",
         )
-        priority_sort = Case(
-            *self._priority_whens(),
-            default=Value(999),
-            output_field=IntegerField(),
-        )
         return (
             self.filter(status=ProblemReport.Status.OPEN)
             .select_related("machine", "machine__model", "machine__location")
             .prefetch_related(latest_log_prefetch, "media")
-            .annotate(priority_sort=priority_sort)
+            .with_priority_sort()
             .order_by("priority_sort", "-occurred_at")
         )
 

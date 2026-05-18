@@ -48,8 +48,14 @@ class MaintenanceConfig(AppConfig):
                 queryset=LogEntry.objects.order_by("-occurred_at"),
                 to_attr="prefetched_log_entries",
             )
-            return ProblemReport.objects.select_related("reported_by_user").prefetch_related(
-                latest_log_prefetch, "media"
+            # status_sort + priority_sort annotations are referenced by
+            # FEED_CONFIGS["problems"].source_order_by in core/feed.py.
+            # The two declarations must stay in sync.
+            return (
+                ProblemReport.objects.select_related("reported_by_user")
+                .prefetch_related(latest_log_prefetch, "media")
+                .with_status_sort()
+                .with_priority_sort()
             )
 
         register_feed_source(

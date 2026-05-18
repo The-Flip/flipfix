@@ -4,15 +4,20 @@ The global feed shows all activity across all machines and is the home page
 for maintainers.
 """
 
+from datetime import timedelta
+
 from django.test import TestCase, tag
 from django.urls import reverse
+from django.utils import timezone
 
+from flipfix.apps.core.feed import get_feed_page
 from flipfix.apps.core.test_utils import (
     TestDataMixin,
     create_log_entry,
     create_machine,
     create_machine_model,
     create_maintainer_user,
+    create_part_request,
     create_problem_report,
     create_user,
 )
@@ -224,3 +229,47 @@ class GlobalFeedPartialViewTests(TestDataMixin, TestCase):
         data = response.json()
         # Page 2 with default page size should work
         self.assertIsInstance(data["items"], str)
+
+
+@tag("views")
+class GlobalFeedOrderingTests(TestDataMixin, TestCase):
+    """Tests for the multi-source merge order of the global activity feed."""
+
+    def test_merge_sorts_strictly_by_occurred_at_descending(self):
+        """Entries from heterogeneous sources interleave by ``occurred_at``.
+
+        Exercises ``get_feed_page`` directly (rather than the view) so the
+        assertion is decoupled from template rendering and uses the same code
+        path the AJAX partial uses.
+        """
+        now = timezone.now()
+        old_log = create_log_entry(
+            machine=self.machine,
+            text="old log",
+            occurred_at=now - timedelta(days=3),
+        )
+        newer_problem = create_problem_report(
+            machine=self.machine,
+            description="newer problem",
+            occurred_at=now - timedelta(days=1),
+        )
+        newest_part = create_part_request(
+            machine=self.machine,
+            text="newest part",
+            occurred_at=now - timedelta(hours=1),
+        )
+
+        entries, _ = get_feed_page(page_num=1)
+
+        # Identify entries by (type, pk) because pks collide across entry-type
+        # tables (e.g. LogEntry and ProblemReport both start at 1).
+        ordered_ids = [(type(e).__name__, e.pk) for e in entries]
+        # Expect strict newest-first order regardless of entry type.
+        self.assertEqual(
+            ordered_ids[:3],
+            [
+                (type(newest_part).__name__, newest_part.pk),
+                (type(newer_problem).__name__, newer_problem.pk),
+                (type(old_log).__name__, old_log.pk),
+            ],
+        )

@@ -25,15 +25,51 @@ if TYPE_CHECKING:
     from flipfix.apps.catalog.models import MachineInstance
 
 
+_DEFAULT_FEED_ORDER: tuple[str, ...] = ("-occurred_at",)
+
+
 @dataclass(frozen=True)
 class FeedConfig:
-    """Configuration for a machine feed filter tab."""
+    """Configuration for a machine feed filter tab.
+
+    ``source_order_by`` controls the DB ordering applied to each participating
+    source queryset.  It defaults to ``("-occurred_at",)``, which matches the
+    Python merge-sort comparator in :func:`get_feed_page`.
+
+    **Invariant:** if more than one source participates (``len(entry_types) != 1``,
+    which includes ``entry_types=()`` \u2014 the "all registered types" sentinel), the
+    sort key must remain ``("-occurred_at",)``.  Pagination fetches a per-source
+    slab using ``source_order_by`` and then merges by ``occurred_at`` desc \u2014 if
+    the per-source key disagrees with the merge key, the slab is the wrong
+    window and entries silently vanish from the result.  Enforced by
+    :meth:`__post_init__`.
+    """
 
     title_suffix: str  # Appended to browser title, e.g. "- Logs"
     breadcrumb_label: str | None  # Final breadcrumb text, None for activity feed
     entry_types: tuple[str, ...]  # Which entry types to include; () means all registered
     empty_message: str  # Shown when feed has no entries
     search_empty_message: str  # Shown when search has no results
+    source_order_by: tuple[str, ...] = _DEFAULT_FEED_ORDER
+
+    def __post_init__(self) -> None:
+        if not self.source_order_by:
+            # An empty order tuple would expand to ``QuerySet.order_by()``,
+            # which clears all ordering in Django 5.2 and returns rows in
+            # unspecified DB order — silently destabilising pagination.
+            raise ValueError(
+                "FeedConfig.source_order_by cannot be empty; provide at "
+                "least one field (e.g. '-occurred_at')."
+            )
+        if len(self.entry_types) != 1 and self.source_order_by != _DEFAULT_FEED_ORDER:
+            raise ValueError(
+                "FeedConfig.source_order_by must be ('-occurred_at',) when "
+                "entry_types has zero or multiple entries; otherwise the "
+                "per-source slab will not align with the merge comparator "
+                "and entries can silently drop from paginated results. "
+                f"Got entry_types={self.entry_types!r}, "
+                f"source_order_by={self.source_order_by!r}."
+            )
 
 
 FEED_CONFIGS: dict[str, FeedConfig] = {
@@ -57,6 +93,11 @@ FEED_CONFIGS: dict[str, FeedConfig] = {
         entry_types=("problem_report",),
         empty_message="No problem reports yet.",
         search_empty_message="No problem reports match your search.",
+        # `status_sort` and `priority_sort` are CASE annotations applied in
+        # MaintenanceConfig._register_feed_sources (maintenance/apps.py).
+        # The two declarations must stay in sync \u2014 dropping either side
+        # raises FieldError when the Problems tab is rendered.
+        source_order_by=("status_sort", "priority_sort", "-occurred_at"),
     ),
     "parts": FeedConfig(
         title_suffix=" \u00b7 Part Requests",
@@ -141,12 +182,23 @@ def clear_feed_source_registry() -> None:
     _feed_source_registry.clear()
 
 
+def _resolve_entry_types(feed_config: FeedConfig | None) -> tuple[str, ...]:
+    """Resolve the entry-type tuple for a feed query.
+
+    ``None`` and an empty ``entry_types`` both mean "all registered types" —
+    the convention used by the global activity feed and the All Activity tab.
+    """
+    if feed_config is None or not feed_config.entry_types:
+        return get_all_entry_types()
+    return feed_config.entry_types
+
+
 def get_feed_page(
     page_num: int = 1,
     page_size: int = settings.LIST_PAGE_SIZE,
     search_query: str | None = None,
     machine: MachineInstance | None = None,
-    entry_types: tuple[str, ...] = (),
+    feed_config: FeedConfig | None = None,
 ) -> tuple[list[Any], bool]:
     """Get a paginated page of activity entries.
 
@@ -155,15 +207,28 @@ def get_feed_page(
     When machine is None, returns entries across all machines with global
     search (includes machine name matching).
 
-    An empty ``entry_types`` tuple means "all registered types".
+    ``feed_config=None`` means "all registered types, default ``-occurred_at``
+    ordering" — the zero-config behavior used by global activity feeds.
+    Otherwise the config supplies both ``entry_types`` and ``source_order_by``;
+    its :meth:`FeedConfig.__post_init__` guarantees the per-source key is
+    compatible with the merge-sort comparator below.
 
-    Uses merge-sort style pagination: fetches just enough from each table
-    to construct the requested page.
+    For multi-source feeds, uses merge-sort style pagination: fetches just
+    enough from each table to construct the requested page.  For single-source
+    feeds, skips the Python merge entirely and trusts the DB ordering — this
+    is required for correctness, not an optimization, because single-source
+    tabs may use a key (e.g. ``status_sort, priority_sort, -occurred_at``)
+    that differs from the merge comparator.
 
     Returns (page_items, has_next) tuple.
     """
-    if not entry_types:
-        entry_types = get_all_entry_types()
+    # Both branches arrive safe against the merge-comparator invariant:
+    #   - None: implicit default order matches the merge key.
+    #   - FeedConfig: __post_init__ guarantees multi-source configs use the
+    #     default order; single-source configs may use any key and bypass the
+    #     merge below.
+    entry_types = _resolve_entry_types(feed_config)
+    order_by = feed_config.source_order_by if feed_config else _DEFAULT_FEED_ORDER
 
     offset = (page_num - 1) * page_size
     # Fetch one extra to detect if more pages exist (countless pagination pattern)
@@ -174,14 +239,20 @@ def get_feed_page(
     for entry_type in entry_types:
         source = _feed_source_registry.get(entry_type)
         if source:
-            all_entries.extend(_fetch_entries(source, machine, search_query, fetch_limit))
+            all_entries.extend(_fetch_entries(source, machine, search_query, fetch_limit, order_by))
 
-    # Sort by occurred_at descending (all entry types share this field)
-    combined = sorted(
-        all_entries,
-        key=lambda x: x.occurred_at,
-        reverse=True,
-    )
+    if len(entry_types) == 1:
+        # Single source: DB ordering is already correct; re-sorting by
+        # occurred_at would destroy any status/priority bucketing.
+        combined = all_entries
+    else:
+        # Merge sort by occurred_at descending (all entry types share this
+        # field, and the invariant guarantees per-source order matches).
+        combined = sorted(
+            all_entries,
+            key=lambda x: x.occurred_at,
+            reverse=True,
+        )
 
     # Slice to requested page
     page_items = combined[offset : offset + page_size]
@@ -195,6 +266,7 @@ def _fetch_entries(
     machine: MachineInstance | None,
     search_query: str | None,
     limit: int,
+    order_by: tuple[str, ...],
 ) -> list[Any]:
     """Fetch entries for a single source, scoped to machine or global."""
     queryset = source.get_base_queryset()
@@ -208,7 +280,7 @@ def _fetch_entries(
         if search_query:
             queryset = queryset.search(search_query)  # type: ignore[attr-defined]
 
-    queryset = queryset.order_by("-occurred_at")
+    queryset = queryset.order_by(*order_by)
     entries = list(queryset[:limit])
 
     # Tag entries with metadata from their source for template rendering
