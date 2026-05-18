@@ -98,7 +98,7 @@ PartRequest.objects.exclude(status="cancelled").filter(status__in=["requested", 
 The project uses this pattern in:
 
 - `MachineInstanceQuerySet` - `visible()`, `active_for_matching()`
-- `ProblemReportQuerySet` - `open()`, `search()`, `search_for_machine()`
+- `ProblemReportQuerySet` - `open()`, `search()`, `search_for_machine()`, `with_priority_sort()`, `with_status_sort()`, `for_wall_display()`, `for_open_by_location()`
 - `LogEntryQuerySet` - `search()`, `search_for_machine()`, `search_for_problem_report()`
 - `PartRequestQuerySet` - `active()`, `pending()`, `search()`, `search_for_machine()`
 - `PartRequestUpdateQuerySet` - `search()`, `search_for_machine()`, `search_for_part_request()`

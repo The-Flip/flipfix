@@ -7,8 +7,11 @@ This view handles four URL patterns via query params:
 - /machines/slug/?f=parts → parts requests and updates only
 """
 
+from datetime import timedelta
+
 from django.test import RequestFactory, TestCase, tag
 from django.urls import reverse
+from django.utils import timezone
 
 from flipfix.apps.accounts.models import Maintainer
 from flipfix.apps.catalog.views_inline import MachineInlineUpdateView
@@ -19,10 +22,11 @@ from flipfix.apps.core.test_utils import (
     create_machine,
     create_machine_model,
     create_maintainer_user,
+    create_part_request,
     create_problem_report,
     create_user,
 )
-from flipfix.apps.maintenance.models import LogEntryMedia
+from flipfix.apps.maintenance.models import LogEntryMedia, ProblemReport
 from flipfix.apps.parts.models import PartRequest, PartRequestUpdate
 
 
@@ -437,3 +441,168 @@ class RenderLatestLogEntryQueryTests(TestDataMixin, TestCase):
             html = self.view._render_latest_log_entry(self.machine, self.request)
 
         self.assertEqual(html, "")
+
+
+@tag("views")
+class MachineFeedOrderingTests(TestDataMixin, TestCase):
+    """Tests for per-tab sort order on the machine activity feed.
+
+    The Problems tab uses ``(status_sort, priority_sort, -occurred_at)`` so
+    actionable items rise to the top.  Every other tab is purely chronological.
+    Asserting against ``response.context["entries"]`` keeps these tests focused
+    on feed ordering rather than template structure.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.feed_url = reverse("maintainer-machine-detail", kwargs={"slug": self.machine.slug})
+        self.client.force_login(self.maintainer_user)
+        self.now = timezone.now()
+
+    def test_problems_tab_orders_status_then_priority_then_recency(self):
+        """Open beats closed, then full priority enum order, then newest-first.
+
+        Covers all five ``Priority`` values so any pairwise inversion in the
+        enum's defined order is caught.  Created in a deliberately scrambled
+        order so creation-order coincidence can't pass the test.
+        """
+        closed_unplayable = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.CLOSED,
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            description="Closed unplayable from yesterday",
+            occurred_at=self.now - timedelta(days=1),
+        )
+        open_minor = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.MINOR,
+            description="Open minor from an hour ago",
+            occurred_at=self.now - timedelta(hours=1),
+        )
+        open_unplayable = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.UNPLAYABLE,
+            description="Open unplayable from last week",
+            occurred_at=self.now - timedelta(days=7),
+        )
+        open_untriaged = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.UNTRIAGED,
+            description="Open untriaged from two weeks ago",
+            occurred_at=self.now - timedelta(days=14),
+        )
+        open_major = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.MAJOR,
+            description="Open major from three days ago",
+            occurred_at=self.now - timedelta(days=3),
+        )
+        open_task = create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.TASK,
+            description="Open task from two days ago",
+            occurred_at=self.now - timedelta(days=2),
+        )
+
+        response = self.client.get(self.feed_url, {"f": "problems"})
+
+        entries = list(response.context["entries"])
+        self.assertEqual(
+            [e.pk for e in entries],
+            [
+                open_untriaged.pk,
+                open_unplayable.pk,
+                open_major.pk,
+                open_minor.pk,
+                open_task.pk,
+                closed_unplayable.pk,
+            ],
+        )
+
+    def test_all_tab_orders_strictly_by_occurred_at(self):
+        """All Activity tab is chronological across heterogeneous entry types."""
+        old_log = create_log_entry(
+            machine=self.machine,
+            text="Old log",
+            occurred_at=self.now - timedelta(days=3),
+        )
+        newer_problem = create_problem_report(
+            machine=self.machine,
+            description="Newer problem",
+            occurred_at=self.now - timedelta(days=1),
+        )
+        newest_part = create_part_request(
+            machine=self.machine,
+            text="Newest part",
+            occurred_at=self.now - timedelta(hours=1),
+        )
+
+        response = self.client.get(self.feed_url)
+
+        entries = list(response.context["entries"])
+        # Identify entries by (type, pk) because pks collide across entry-type
+        # tables (e.g. LogEntry and ProblemReport both start at 1).
+        ids = [(type(e).__name__, e.pk) for e in entries]
+        self.assertEqual(
+            ids,
+            [
+                (type(newest_part).__name__, newest_part.pk),
+                (type(newer_problem).__name__, newer_problem.pk),
+                (type(old_log).__name__, old_log.pk),
+            ],
+        )
+
+    def test_logs_tab_orders_by_occurred_at_descending(self):
+        """Single-source Logs tab stays chronological."""
+        oldest = create_log_entry(
+            machine=self.machine,
+            text="oldest log",
+            occurred_at=self.now - timedelta(days=2),
+        )
+        middle = create_log_entry(
+            machine=self.machine,
+            text="middle log",
+            occurred_at=self.now - timedelta(days=1),
+        )
+        newest = create_log_entry(
+            machine=self.machine,
+            text="newest log",
+            occurred_at=self.now,
+        )
+
+        response = self.client.get(self.feed_url, {"f": "logs"})
+
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [newest.pk, middle.pk, oldest.pk],
+        )
+
+    def test_parts_tab_orders_by_occurred_at_descending(self):
+        """Single-source Parts tab stays chronological."""
+        oldest = create_part_request(
+            machine=self.machine,
+            text="oldest request",
+            occurred_at=self.now - timedelta(days=2),
+        )
+        middle = create_part_request(
+            machine=self.machine,
+            text="middle request",
+            occurred_at=self.now - timedelta(days=1),
+        )
+        newest = create_part_request(
+            machine=self.machine,
+            text="newest request",
+            occurred_at=self.now,
+        )
+
+        response = self.client.get(self.feed_url, {"f": "parts"})
+
+        self.assertEqual(
+            [e.pk for e in response.context["entries"]],
+            [newest.pk, middle.pk, oldest.pk],
+        )
