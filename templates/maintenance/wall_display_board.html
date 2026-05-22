@@ -2,6 +2,20 @@
 {% block title %}{{ page_title }} · Wall Display · {{ block.super }}{% endblock %}
 {% block extra_head %}
   {% if refresh_seconds %}<meta http-equiv="refresh" content="{{ refresh_seconds }}">{% endif %}
+  {% if mode == "now-playing" and not error %}
+    {# djlint:off #}
+    <style>
+      .wall-display--now-playing .now-playing-grid {
+        grid-template-rows: repeat({{ per_column }}, auto);
+      }
+      {% for column in columns %}
+      .wall-display--now-playing .now-playing-location:nth-of-type({{ forloop.counter }}) {
+        flex-grow: {{ column.sub_columns }};
+      }
+      {% endfor %}
+</style>
+    {# djlint:on #}
+  {% endif %}
 {% endblock %}
 {% block body %}
   {% if error %}
@@ -11,11 +25,9 @@
   {% elif mode == "now-playing" %}
     <div class="column-grid wall-display wall-display--now-playing">
       {% for column in columns %}
-        <div class="now-playing-location"
-             style="flex-grow: {{ column.sub_columns }}">
+        <div class="now-playing-location">
           <h2 class="column-grid__header">{{ column.label }}</h2>
-          <div class="now-playing-grid"
-               style="grid-template-rows: repeat({{ per_column }}, auto)">
+          <div class="now-playing-grid">
             {% for entry in column.items %}
               {% include "maintenance/partials/wall_display_now_playing_entry.html" with entry=entry %}
             {% empty %}

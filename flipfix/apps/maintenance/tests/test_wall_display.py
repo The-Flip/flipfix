@@ -550,10 +550,12 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
             },
         )
         content = response.content.decode()
-        # Floor wrapper has flex-grow: 1
-        self.assertIn('style="flex-grow: 1"', content)
-        # Workshop wrapper has flex-grow: 3
-        self.assertIn('style="flex-grow: 3"', content)
+        # Floor wrapper (first location) gets flex-grow: 1
+        self.assertIn(":nth-of-type(1)", content)
+        self.assertIn("flex-grow: 1;", content)
+        # Workshop wrapper (second location) gets flex-grow: 3
+        self.assertIn(":nth-of-type(2)", content)
+        self.assertIn("flex-grow: 3;", content)
 
     def test_now_playing_empty_location_still_gets_one_sub_column(self):
         """Locations with no working machines still claim a minimum flex slice."""
@@ -570,5 +572,5 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
         )
         content = response.content.decode()
         # Two flex-grow declarations: floor=2 (ceil(15/10)), workshop=1 (min)
-        self.assertIn('style="flex-grow: 2"', content)
-        self.assertIn('style="flex-grow: 1"', content)
+        self.assertIn("flex-grow: 2;", content)
+        self.assertIn("flex-grow: 1;", content)
