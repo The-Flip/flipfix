@@ -463,7 +463,7 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
         create_machine(slug="taf", name="The Addams Family", location=self.floor, model=model)
         response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
         self.assertContains(response, "The Addams Family")
-        self.assertContains(response, "(Williams, 1994)")
+        self.assertContains(response, "(1994 Williams)")
 
     def test_now_playing_omits_parens_when_neither_present(self):
         """No naked parens when both manufacturer and year are blank."""
