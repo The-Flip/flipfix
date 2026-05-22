@@ -4,7 +4,7 @@ from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
 
-from flipfix.apps.catalog.models import Location
+from flipfix.apps.catalog.models import Location, MachineInstance
 from flipfix.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TestDataMixin,
@@ -54,6 +54,26 @@ class WallDisplaySetupViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
         response = self.client.get(self.url)
         self.assertContains(response, floor.name)
         self.assertContains(response, workshop.name)
+
+    def test_mode_dropdown_renders_both_options(self):
+        """The setup page exposes both display modes in a dropdown."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'name="mode"')
+        self.assertContains(response, 'value="workshop"')
+        self.assertContains(response, 'value="now-playing"')
+
+    def test_mode_selection_preserved_in_dropdown(self):
+        """The dropdown re-renders with the requested mode pre-selected."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url, {"mode": "now-playing"})
+        self.assertContains(response, 'value="now-playing" selected')
+
+    def test_workshop_is_default_mode(self):
+        """When no mode is given, the workshop option is selected."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'value="workshop" selected')
 
 
 @tag("views")
@@ -366,3 +386,191 @@ class WallDisplayQuerySetTests(TestDataMixin, TestCase):
         ProblemReportMedia.objects.create(problem_report=report, file="b.jpg")
         qs = ProblemReport.objects.for_wall_display(["floor"])
         self.assertEqual(qs.first().media_count, 2)
+
+
+@tag("views")
+class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
+    """Tests for the now-playing mode of the wall display board."""
+
+    def setUp(self):
+        super().setUp()
+        self.floor, _ = Location.objects.get_or_create(
+            slug="floor", defaults={"name": "Floor", "sort_order": 1}
+        )
+        self.workshop, _ = Location.objects.get_or_create(
+            slug="workshop", defaults={"name": "Workshop", "sort_order": 2}
+        )
+        self.board_url = reverse("wall-display-board")
+        self.client.force_login(self.maintainer_user)
+
+    def _make_model(self, name, manufacturer="Williams", year=1994):
+        from flipfix.apps.catalog.models import MachineModel
+
+        return MachineModel.objects.create(name=name, manufacturer=manufacturer, year=year)
+
+    def test_unknown_mode_falls_back_to_workshop(self):
+        """An unknown mode value renders the workshop board, not an error."""
+        create_machine(slug="m1", location=self.floor, name="Visible Machine")
+        create_problem_report(
+            machine=create_machine(slug="m2", location=self.floor),
+            description="Workshop problem",
+        )
+        response = self.client.get(self.board_url, {"mode": "bogus", "location": ["floor"]})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Workshop problem")
+
+    def test_now_playing_shows_only_working_machines(self):
+        """Only machines with operational_status=GOOD appear in now-playing."""
+        good = create_machine(
+            slug="good-machine",
+            name="Good Machine",
+            location=self.floor,
+            operational_status=MachineInstance.OperationalStatus.GOOD,
+        )
+        for status, slug, label in [
+            (MachineInstance.OperationalStatus.BROKEN, "broken-m", "Broken Machine"),
+            (MachineInstance.OperationalStatus.FIXING, "fixing-m", "Fixing Machine"),
+            (MachineInstance.OperationalStatus.UNKNOWN, "unknown-m", "Unknown Machine"),
+        ]:
+            create_machine(slug=slug, name=label, location=self.floor, operational_status=status)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, good.name)
+        self.assertNotContains(response, "Broken Machine")
+        self.assertNotContains(response, "Fixing Machine")
+        self.assertNotContains(response, "Unknown Machine")
+
+    def test_now_playing_filters_by_location(self):
+        """Now-playing respects the location filter."""
+        create_machine(slug="floor-good", name="Floor Good", location=self.floor)
+        create_machine(slug="workshop-good", name="Workshop Good", location=self.workshop)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "Floor Good")
+        self.assertNotContains(response, "Workshop Good")
+
+    def test_now_playing_sorts_oldest_year_first(self):
+        """Machines are ordered by manufacturing year ascending."""
+        old_model = self._make_model("Old Model", year=1980)
+        new_model = self._make_model("New Model", year=2020)
+        create_machine(slug="new-m", name="Newer Game", location=self.floor, model=new_model)
+        create_machine(slug="old-m", name="Older Game", location=self.floor, model=old_model)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        content = response.content.decode()
+        self.assertLess(content.index("Older Game"), content.index("Newer Game"))
+
+    def test_now_playing_shows_manufacturer_and_year(self):
+        """Each row renders 'Name (Manufacturer, Year)'."""
+        model = self._make_model("Addams", manufacturer="Williams", year=1994)
+        create_machine(slug="taf", name="The Addams Family", location=self.floor, model=model)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "The Addams Family")
+        self.assertContains(response, "(Williams, 1994)")
+
+    def test_now_playing_omits_parens_when_neither_present(self):
+        """No naked parens when both manufacturer and year are blank."""
+        from flipfix.apps.catalog.models import MachineModel
+
+        model = MachineModel.objects.create(name="Anon Model", manufacturer="", year=None)
+        create_machine(slug="anon", name="Mystery Machine", location=self.floor, model=model)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "Mystery Machine")
+        self.assertNotContains(response, "()")
+
+    def test_now_playing_shows_empty_message_when_no_working_machines(self):
+        """An empty location column shows the now-playing empty message."""
+        create_machine(
+            slug="broken-only",
+            name="Broken Only",
+            location=self.floor,
+            operational_status=MachineInstance.OperationalStatus.BROKEN,
+        )
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "No machines playing.")
+        self.assertNotContains(response, "Broken Only")
+
+    def test_now_playing_page_title(self):
+        """The page title reflects the now-playing mode."""
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "Now Playing · Wall Display")
+
+    def test_now_playing_does_not_show_problem_reports(self):
+        """Now-playing renders no problem-report rows, even on working machines."""
+        good = create_machine(slug="good-machine", name="Good Machine", location=self.floor)
+        create_problem_report(machine=good, description="Stealth problem text")
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "Good Machine")
+        self.assertNotContains(response, "Stealth problem text")
+
+    def test_now_playing_per_column_sets_grid_template(self):
+        """The per_column param flows through as a CSS custom property."""
+        create_machine(slug="m1", location=self.floor)
+        response = self.client.get(
+            self.board_url,
+            {"mode": "now-playing", "location": ["floor"], "per_column": "5"},
+        )
+        self.assertContains(response, "grid-template-rows: repeat(5, auto)")
+
+    def test_now_playing_per_column_defaults_to_10(self):
+        """Without an explicit per_column, the template uses the default of 10."""
+        create_machine(slug="m1", location=self.floor)
+        response = self.client.get(self.board_url, {"mode": "now-playing", "location": ["floor"]})
+        self.assertContains(response, "grid-template-rows: repeat(10, auto)")
+
+    def test_now_playing_per_column_invalid_falls_back_to_default(self):
+        """Non-numeric per_column values fall back to the default."""
+        create_machine(slug="m1", location=self.floor)
+        response = self.client.get(
+            self.board_url,
+            {"mode": "now-playing", "location": ["floor"], "per_column": "abc"},
+        )
+        self.assertContains(response, "grid-template-rows: repeat(10, auto)")
+
+    def test_now_playing_per_column_clamped_to_max(self):
+        """Per-column values above the cap are clamped down."""
+        create_machine(slug="m1", location=self.floor)
+        response = self.client.get(
+            self.board_url,
+            {"mode": "now-playing", "location": ["floor"], "per_column": "9999"},
+        )
+        self.assertContains(response, "grid-template-rows: repeat(50, auto)")
+
+    def test_now_playing_location_flex_matches_sub_column_count(self):
+        """Locations get flex-grow proportional to the number of sub-columns they need."""
+        # 5 machines on floor → 1 sub-column at per_column=10
+        for i in range(5):
+            create_machine(slug=f"floor-{i}", location=self.floor)
+        # 25 machines on workshop → 3 sub-columns at per_column=10 (ceil(25/10))
+        for i in range(25):
+            create_machine(slug=f"workshop-{i}", location=self.workshop)
+        response = self.client.get(
+            self.board_url,
+            {
+                "mode": "now-playing",
+                "location": ["floor", "workshop"],
+                "per_column": "10",
+            },
+        )
+        content = response.content.decode()
+        # Floor wrapper (first location) gets flex-grow: 1
+        self.assertIn(":nth-of-type(1)", content)
+        self.assertIn("flex-grow: 1;", content)
+        # Workshop wrapper (second location) gets flex-grow: 3
+        self.assertIn(":nth-of-type(2)", content)
+        self.assertIn("flex-grow: 3;", content)
+
+    def test_now_playing_empty_location_still_gets_one_sub_column(self):
+        """Locations with no working machines still claim a minimum flex slice."""
+        # Workshop has no machines; flex should still be at least 1.
+        for i in range(15):
+            create_machine(slug=f"floor-{i}", location=self.floor)
+        response = self.client.get(
+            self.board_url,
+            {
+                "mode": "now-playing",
+                "location": ["floor", "workshop"],
+                "per_column": "10",
+            },
+        )
+        content = response.content.decode()
+        # Two flex-grow declarations: floor=2 (ceil(15/10)), workshop=1 (min)
+        self.assertIn("flex-grow: 2;", content)
+        self.assertIn("flex-grow: 1;", content)
