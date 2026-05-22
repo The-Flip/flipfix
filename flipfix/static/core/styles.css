@@ -559,6 +559,37 @@ body {
   color: var(--color-text-primary);
 }
 
+/* Now Playing: dense list of machines, sub-columns flow within each location */
+.now-playing-location {
+  min-width: 0;
+}
+
+.now-playing-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  column-gap: var(--space-4);
+  row-gap: 0;
+}
+
+.now-playing-row {
+  padding: 0 var(--space-2);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-playing-row__model {
+  margin-left: var(--space-1);
+  color: var(--color-text-muted);
+  font-weight: var(--font-normal);
+}
+
+.now-playing-row__model:empty {
+  margin-left: 0;
+}
+
 .card__header {
   display: flex;
   justify-content: space-between;

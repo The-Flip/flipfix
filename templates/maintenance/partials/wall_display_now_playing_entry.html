@@ -1,0 +1,5 @@
+{% load catalog_tags %}
+<div class="now-playing-row">
+  <strong>{{ entry.short_display_name }}</strong>
+  <span class="now-playing-row__model">{{ entry.model|manufacturer_year_parens }}</span>
+</div>

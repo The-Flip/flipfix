@@ -15,6 +15,15 @@
           action="{% url 'wall-display-board' %}"
           class="form-main">
       <div class="form-field">
+        <label class="form-label" for="mode">Display mode</label>
+        <select id="mode" name="mode" class="form-input">
+          {% for value, label in mode_choices %}
+            <option value="{{ value }}" {% if value == mode %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">Workshop shows open problems. Now Playing shows machines ready to play.</p>
+      </div>
+      <div class="form-field">
         <label class="form-label">Locations</label>
         <p class="form-hint">Drag to set column order.</p>
         <div data-sortable-locations>
@@ -39,6 +48,17 @@
                placeholder="e.g. 120"
                class="form-input form-input--width-10">
         <p class="form-hint">Auto-refresh in seconds. Minimum 10. Leave blank for no refresh.</p>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="per_column">Machines per sub-column</label>
+        <input type="number"
+               id="per_column"
+               name="per_column"
+               min="1"
+               max="50"
+               value="{{ default_per_column }}"
+               class="form-input form-input--width-10">
+        <p class="form-hint">Now Playing only. Each location splits into sub-columns of this many machines.</p>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn--primary" disabled>

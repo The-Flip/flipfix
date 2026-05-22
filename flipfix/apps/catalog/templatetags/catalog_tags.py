@@ -75,6 +75,27 @@ def manufacturer_year(model):
     return " \u00b7 ".join(parts)
 
 
+@register.filter
+def manufacturer_year_parens(model):
+    """Return '(Manufacturer, Year)' for a machine model, or '' if both blank.
+
+    Comma-separated variant used by the Now Playing wall display.
+    Returns an empty string when both fields are blank, so templates
+    can omit the trailing label cleanly.
+
+    Usage:
+        {{ machine.model|manufacturer_year_parens }}
+    """
+    parts = []
+    if model.manufacturer:
+        parts.append(model.manufacturer)
+    if model.year:
+        parts.append(str(model.year))
+    if not parts:
+        return ""
+    return f"({', '.join(parts)})"
+
+
 # ---- Settable pills ---------------------------------------------------------
 
 
