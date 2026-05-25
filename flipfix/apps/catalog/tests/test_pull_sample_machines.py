@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -91,13 +92,14 @@ class PullSampleMachinesTests(TestCase):
     def setUp(self):
         self._tmp = tempfile.mkdtemp()
         self.output = Path(self._tmp) / "machines.json"
+        self.api_key = secrets.token_hex(16)
         self.addCleanup(lambda: __import__("shutil").rmtree(self._tmp, ignore_errors=True))
 
     def _run(self, **kwargs):
         return call_command(
             "pull_sample_machines",
             "--api-key",
-            "test-key",
+            self.api_key,
             "--url",
             "http://example.test",
             "--output",
@@ -114,7 +116,7 @@ class PullSampleMachinesTests(TestCase):
         # Hit the documented endpoint with a Bearer header.
         url, kwargs = mock_get.call_args[0][0], mock_get.call_args[1]
         self.assertEqual(url, "http://example.test/api/v1/machines/")
-        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer test-key")
+        self.assertEqual(kwargs["headers"]["Authorization"], f"Bearer {self.api_key}")
 
         entries = json.loads(self.output.read_text())
         self.assertEqual([e["name"] for e in entries], ["Ballyhoo", "Twilight Zone"])  # by year
@@ -156,6 +158,20 @@ class PullSampleMachinesTests(TestCase):
 
     def test_http_error_raises_command_error(self):
         with patch(f"{MODULE}.requests.get", side_effect=requests.ConnectionError("boom")):
+            with self.assertRaises(CommandError):
+                self._run()
+
+    def test_invalid_json_raises_command_error(self):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.side_effect = ValueError("not JSON")
+        with patch(f"{MODULE}.requests.get", return_value=response):
+            with self.assertRaises(CommandError):
+                self._run()
+
+    def test_unexpected_shape_raises_command_error(self):
+        # A 200 with the wrong shape (e.g. an HTML error page parsed as a list).
+        with patch(f"{MODULE}.requests.get", return_value=_mock_response(["not", "a", "dict"])):
             with self.assertRaises(CommandError):
                 self._run()
 

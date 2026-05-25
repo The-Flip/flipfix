@@ -90,9 +90,16 @@ class Command(BaseCommand):
                 timeout=REQUEST_TIMEOUT,
             )
             response.raise_for_status()
+            payload = response.json()
         except requests.RequestException as exc:
             raise CommandError(f"Failed to fetch {url}: {exc}") from exc
-        return response.json().get("machines", [])
+        except ValueError as exc:  # includes json.JSONDecodeError
+            raise CommandError(f"Invalid JSON from {url}: {exc}") from exc
+
+        machines = payload.get("machines") if isinstance(payload, dict) else None
+        if not isinstance(machines, list):
+            raise CommandError(f"Unexpected response from {url}: missing 'machines' list.")
+        return machines
 
     def _group(self, machines: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Regroup the API's flat instance list into the per-model fixture shape."""
