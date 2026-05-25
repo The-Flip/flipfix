@@ -219,6 +219,11 @@ table {
   --color-priority-major-text: #c2410c;
   --color-priority-major-border: #fdba74;
 
+  /* Technology era (chart) — Okabe-Ito palette, colorblind-safe */
+  --color-era-pm: #009e73; /* Pure Mechanical */
+  --color-era-em: #e69f00; /* Electromechanical */
+  --color-era-ss: #0072b2; /* Solid State */
+
   /* Inputs / avatar */
   --color-input-bg: #ffffff;
   --color-input-border: #d1d5db;
@@ -282,6 +287,11 @@ table {
     --color-priority-major-bg: #2d2014;
     --color-priority-major-text: #fb923c;
     --color-priority-major-border: #4a301a;
+
+    /* Technology era — lifted for contrast on dark surfaces */
+    --color-era-pm: #1cc796;
+    --color-era-em: #f0b53a;
+    --color-era-ss: #4daafc;
 
     --color-input-bg: #2b2b2b;
     --color-input-border: #404040;
@@ -3385,4 +3395,158 @@ a.stat:focus-visible {
   width: 1.25em;
   vertical-align: middle;
   margin-right: var(--space-1);
+}
+
+/* ========================================
+   MACHINE EXPLORE CHART
+   ======================================== */
+
+.explore-header {
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.explore-header__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin: 0;
+}
+
+.explore-header__lead {
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0 0;
+}
+
+/* Era color key */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+
+.chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.chart-legend__swatch {
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.chart-legend__swatch--pm {
+  background: var(--color-era-pm);
+}
+
+.chart-legend__swatch--em {
+  background: var(--color-era-em);
+}
+
+.chart-legend__swatch--ss {
+  background: var(--color-era-ss);
+}
+
+/* Chart canvas (scrolls horizontally when wider than the viewport) */
+.machine-chart {
+  position: relative;
+  overflow-x: auto;
+}
+
+.machine-chart__svg {
+  display: block;
+}
+
+.machine-chart__gridline {
+  stroke: var(--color-border-soft);
+  stroke-width: 1;
+}
+
+.machine-chart__year-label,
+.machine-chart__row-label {
+  font-family: var(--font-family);
+  font-size: var(--text-xs);
+  fill: var(--color-text-muted);
+}
+
+.machine-chart__row-label {
+  fill: var(--color-text-primary);
+  font-weight: var(--font-medium);
+}
+
+.machine-chart__dot {
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+  transition: stroke 0.12s ease;
+}
+
+.machine-chart__dot--pm {
+  fill: var(--color-era-pm);
+}
+
+.machine-chart__dot--em {
+  fill: var(--color-era-em);
+}
+
+.machine-chart__dot--ss {
+  fill: var(--color-era-ss);
+}
+
+.machine-chart__dot-link {
+  cursor: pointer;
+}
+
+.machine-chart__dot-link:hover .machine-chart__dot {
+  stroke: var(--color-text-primary);
+}
+
+.machine-chart__dot-link:focus-visible {
+  outline: none;
+}
+
+.machine-chart__dot-link:focus-visible .machine-chart__dot {
+  stroke: var(--color-input-focus);
+  stroke-width: 3;
+}
+
+.machine-chart__note {
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* Hover / focus detail card */
+.chart-card {
+  position: absolute;
+  z-index: 100;
+  min-width: 10rem;
+  max-width: 16rem;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+
+.chart-card__title {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.chart-card__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-0-5);
+}
+
+.chart-card__tags {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
 }
