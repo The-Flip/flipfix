@@ -3520,6 +3520,23 @@ a.stat:focus-visible {
   font-size: var(--text-sm);
 }
 
+/* Disclosure listing machines excluded from the chart (missing data) */
+.machine-chart__excluded {
+  margin-top: var(--space-3);
+}
+
+.machine-chart__excluded > summary {
+  margin-top: 0;
+  cursor: pointer;
+}
+
+.machine-chart__excluded-list {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
 /* No-JS fallback table (JS demotes it to .visually-hidden once the SVG renders) */
 .machine-chart__table {
   width: 100%;

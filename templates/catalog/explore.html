@@ -24,10 +24,20 @@
   <!-- CHART: rendered into the mount point by catalog_chart.js -->
   <div class="machine-chart" id="machine-chart" data-machine-chart></div>
   {{ chart_data|json_script:"machine-chart-data" }}
-  {% if excluded_count %}
-    <p class="machine-chart__note text-muted">
-      {{ excluded_count }} machine{{ excluded_count|pluralize }} not shown (missing year, manufacturer or era).
-    </p>
+  {% if excluded %}
+    <details class="machine-chart__excluded">
+      <summary class="machine-chart__note text-muted">
+        {{ excluded_count }} machine{{ excluded_count|pluralize }} not shown (missing year, manufacturer or era)
+      </summary>
+      <ul class="machine-chart__excluded-list">
+        {% for machine in excluded %}
+          <li>
+            <a href="{{ machine.url }}">{{ machine.name }}</a>
+            <span class="text-muted">— missing {{ machine.missing|join:", " }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
   {% endif %}
   <!-- Accessible / no-JS fallback: visible by default; catalog_chart.js hides it
        (visually-hidden) once the SVG renders, so it stays available to screen
