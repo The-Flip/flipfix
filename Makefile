@@ -39,6 +39,7 @@ help:
 	@echo "  make migrations     - Create new migrations"
 	@echo "  make superuser      - Create superuser"
 	@echo "  make sample-data    - Create sample data (dev only)"
+	@echo "  make pull-sample-machines - Refresh machines.json fixture from prod API (needs SAMPLE_DATA_API_KEY)"
 	@echo ""
 	@echo "Documentation:"
 	@echo "  make agent-docs     - Regenerate CLAUDE.md and AGENTS.md from source"
@@ -109,6 +110,10 @@ runbot:
 .PHONY: sample-data
 sample-data:
 	$(PYTHON) manage.py create_sample_data
+
+.PHONY: pull-sample-machines
+pull-sample-machines:
+	$(PYTHON) manage.py pull_sample_machines
 
 .PHONY: lint
 lint:

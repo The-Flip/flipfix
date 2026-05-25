@@ -25,6 +25,15 @@ def _serialize_machine(m: MachineInstance) -> dict:
             "name": m.model.name,
             "manufacturer": m.model.manufacturer,
             "year": m.model.year,
+            "month": m.model.month,
+            "era": m.model.era,
+            "system": m.model.system,
+            "scoring": m.model.scoring,
+            "flipper_count": m.model.flipper_count,
+            "ipdb_id": m.model.ipdb_id,
+            "pinside_rating": (
+                float(m.model.pinside_rating) if m.model.pinside_rating is not None else None
+            ),
         },
     }
 
