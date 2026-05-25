@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Explore · {{ block.super }}{% endblock %}
+{% block content %}
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs breadcrumbs--responsive">
+    <a href="{% url 'maintainer-machine-list' %}">Machines</a>
+    <span>Explore</span>
+  </nav>
+  <header class="explore-header">
+    <h1 class="explore-header__title">Explore the collection</h1>
+    <p class="explore-header__lead">Every machine plotted by year and manufacturer, colored by technology era.</p>
+  </header>
+  <!-- LEGEND: era color key (labels carry the meaning, not color alone) -->
+  <ul class="chart-legend" aria-label="Technology era color key">
+    {% for item in legend %}
+      <li class="chart-legend__item">
+        <span class="chart-legend__swatch chart-legend__swatch--{{ item.era|lower }}"
+              aria-hidden="true"></span>
+        {{ item.label }}
+      </li>
+    {% endfor %}
+  </ul>
+  <!-- CHART: rendered into the mount point by catalog_chart.js -->
+  <div class="machine-chart" id="machine-chart" data-machine-chart></div>
+  {{ chart_data|json_script:"machine-chart-data" }}
+  {% if excluded_count %}
+    <p class="machine-chart__note text-muted">
+      {{ excluded_count }} machine{{ excluded_count|pluralize }} not shown (missing year, manufacturer or era).
+    </p>
+  {% endif %}
+  <!-- Accessible / no-JS fallback: visible by default; catalog_chart.js hides it
+       (visually-hidden) once the SVG renders, so it stays available to screen
+       readers and to sighted users when JavaScript is unavailable. -->
+  <table id="machine-chart-table" class="machine-chart__table">
+    <caption>Machines by year, manufacturer and technology era</caption>
+    <thead>
+      <tr>
+        <th scope="col">Machine</th>
+        <th scope="col">Manufacturer</th>
+        <th scope="col">Year</th>
+        <th scope="col">Era</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dot in chart_data %}
+        <tr>
+          <td>
+            <a href="{{ dot.url }}">{{ dot.name }}</a>
+          </td>
+          <td>{{ dot.manufacturer }}</td>
+          <td>{{ dot.year }}</td>
+          <td>{{ dot.era_label }}</td>
+          <td>{{ dot.status_label }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/catalog_chart.js' %}" defer></script>
+{% endblock %}

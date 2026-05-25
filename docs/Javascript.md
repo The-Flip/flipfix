@@ -186,9 +186,10 @@ These are utility functions called by other components rather than auto-initiali
 
 ### Page-Specific
 
-| File                | Purpose                                           |
-| ------------------- | ------------------------------------------------- |
-| log_entry_detail.js | Auto-save for log entry work date and maintainers |
+| File                | Purpose                                                                  |
+| ------------------- | ------------------------------------------------------------------------ |
+| log_entry_detail.js | Auto-save for log entry work date and maintainers                        |
+| catalog_chart.js    | Machine Explore dot chart (reads `json_script` data, renders inline SVG) |
 
 ## Custom Events
 

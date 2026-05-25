@@ -17,6 +17,7 @@ from flipfix.apps.accounts.views import (
     UserProfileDetailView,
     invitation_register,
 )
+from flipfix.apps.catalog.views.explore import MachineExploreView
 from flipfix.apps.catalog.views.machines import (
     MachineCreateLandingView,
     MachineCreateModelDoesNotExistView,
@@ -337,6 +338,10 @@ urlpatterns = [
     ###
     # List all machines
     path("machines/", MachineListView.as_view(), name="maintainer-machine-list", access="public"),
+    # Explore: collection visualizations (must precede the <slug> catch route)
+    path(
+        "machines/explore/", MachineExploreView.as_view(), name="machine-explore", access="public"
+    ),
     # Landing page: select model
     path("machines/new/", MachineCreateLandingView.as_view(), name="machine-create-landing"),
     # Create new model + instance
