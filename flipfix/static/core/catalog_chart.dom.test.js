@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest';
 
-const { renderChart } = require('./catalog_chart.js');
+const { renderChart, init } = require('./catalog_chart.js');
 
 const dot = (manufacturer, year, era, extra = {}) => ({
   name: `${manufacturer} ${year}`,
@@ -75,5 +75,35 @@ describe('renderChart', () => {
     renderChart(mount, []);
     expect(mount.querySelector('svg')).toBeNull();
     expect(mount.textContent).toContain('No machines to chart');
+  });
+});
+
+describe('init (progressive enhancement)', () => {
+  const setup = (dots) => {
+    document.body.innerHTML = `
+      <div data-machine-chart id="machine-chart"></div>
+      <script type="application/json" id="machine-chart-data">${JSON.stringify(dots)}</script>
+      <table id="machine-chart-table"><tbody></tbody></table>
+    `;
+    return document.querySelector('[data-machine-chart]');
+  };
+
+  it('hides the fallback table once the chart renders', () => {
+    const mount = setup([dot('Bally', 1980, 'EM')]);
+    const table = document.getElementById('machine-chart-table');
+    expect(table.classList.contains('visually-hidden')).toBe(false);
+
+    init(mount);
+    expect(mount.querySelector('svg')).not.toBeNull();
+    expect(table.classList.contains('visually-hidden')).toBe(true);
+  });
+
+  it('leaves the table visible when there is nothing to chart', () => {
+    const mount = setup([]);
+    init(mount);
+    expect(mount.querySelector('svg')).toBeNull();
+    expect(
+      document.getElementById('machine-chart-table').classList.contains('visually-hidden')
+    ).toBe(false);
   });
 });

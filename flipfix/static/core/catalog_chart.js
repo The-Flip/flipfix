@@ -279,6 +279,14 @@
     }
     renderChart(mountEl, dots);
 
+    // Progressive enhancement: the data table is visible by default (the no-JS
+    // fallback). Now that the SVG has rendered, demote it to a screen-reader-only
+    // representation so it stays available to assistive tech without duplicating
+    // the chart visually.
+    if (mountEl.querySelector('svg')) {
+      document.getElementById('machine-chart-table')?.classList.add('visually-hidden');
+    }
+
     // Redraw on resize so the year axis re-fits the viewport.
     let resizeTimer;
     window.addEventListener('resize', () => {
@@ -303,5 +311,6 @@
     exports.decadeTicks = decadeTicks;
     exports.rowHeight = rowHeight;
     exports.renderChart = renderChart;
+    exports.init = init;
   }
 })(typeof module !== 'undefined' ? module.exports : null);

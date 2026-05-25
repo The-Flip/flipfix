@@ -30,9 +30,9 @@ class MachineExploreView(TemplateView):
         # Only machines whose model carries all three chart dimensions can be
         # plotted. ``visible()`` select_related's the model, so reading
         # model fields and ``get_*_display()`` below adds no extra queries.
+        owned = MachineInstance.objects.visible()
         instances = (
-            MachineInstance.objects.visible()
-            .filter(model__year__isnull=False)
+            owned.filter(model__year__isnull=False)
             .exclude(model__manufacturer="")
             .exclude(model__era="")
             .order_by("model__manufacturer", "model__year", "model__sort_name")
@@ -54,7 +54,9 @@ class MachineExploreView(TemplateView):
 
         context["chart_data"] = chart_data
         context["legend"] = [{"era": era.value, "label": era.label} for era in MachineModel.Era]
-        context["excluded_count"] = MachineInstance.objects.count() - len(chart_data)
+        # Count exclusions against the same base queryset chart_data is built
+        # from, so the two stay consistent (chart_data is always a subset).
+        context["excluded_count"] = owned.count() - len(chart_data)
         context["meta_description"] = (
             "Explore The Flip's pinball collection by year, manufacturer and technology era."
         )

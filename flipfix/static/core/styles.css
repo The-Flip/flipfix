@@ -3520,6 +3520,27 @@ a.stat:focus-visible {
   font-size: var(--text-sm);
 }
 
+/* No-JS fallback table (JS demotes it to .visually-hidden once the SVG renders) */
+.machine-chart__table {
+  width: 100%;
+  margin-top: var(--space-4);
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.machine-chart__table caption {
+  text-align: left;
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-2);
+}
+
+.machine-chart__table th,
+.machine-chart__table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
 /* Hover / focus detail card */
 .chart-card {
   position: absolute;

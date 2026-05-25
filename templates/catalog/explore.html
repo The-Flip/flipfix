@@ -29,8 +29,10 @@
       {{ excluded_count }} machine{{ excluded_count|pluralize }} not shown (missing year, manufacturer or era).
     </p>
   {% endif %}
-  <!-- Accessible / no-JS fallback: the same data as a table -->
-  <table class="visually-hidden">
+  <!-- Accessible / no-JS fallback: visible by default; catalog_chart.js hides it
+       (visually-hidden) once the SVG renders, so it stays available to screen
+       readers and to sighted users when JavaScript is unavailable. -->
+  <table id="machine-chart-table" class="machine-chart__table">
     <caption>Machines by year, manufacturer and technology era</caption>
     <thead>
       <tr>
