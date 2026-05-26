@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import secrets
+from decimal import Decimal
 
 from django.db import IntegrityError
 from django.test import TestCase, tag
 
-from flipfix.apps.catalog.models import Location
+from flipfix.apps.catalog.models import Location, MachineModel
 from flipfix.apps.core.models import ApiKey
 from flipfix.apps.core.test_utils import create_machine, create_machine_model
 
@@ -110,6 +111,42 @@ class MachineListApiResponseTests(TestCase):
         self.assertEqual(m["model"]["name"], "Medieval Madness")
         self.assertEqual(m["model"]["manufacturer"], "Williams")
         self.assertEqual(m["model"]["year"], 1997)
+
+    def test_model_exposes_parity_fields(self):
+        """The serialized model includes the catalog metadata sample data needs."""
+        model = create_machine_model(
+            name="Twilight Zone",
+            manufacturer="Bally",
+            year=1993,
+            month=9,
+            era=MachineModel.Era.SS,
+            system="WPC",
+            scoring="points",
+            flipper_count=3,
+            ipdb_id=2684,
+            pinside_rating=Decimal("8.90"),
+        )
+        create_machine(model=model, name="Twilight Zone")
+
+        m = self._get().json()["machines"][0]["model"]
+        self.assertEqual(m["month"], 9)
+        self.assertEqual(m["era"], "SS")
+        self.assertEqual(m["system"], "WPC")
+        self.assertEqual(m["scoring"], "points")
+        self.assertEqual(m["flipper_count"], 3)
+        self.assertEqual(m["ipdb_id"], 2684)
+        # Emitted as a JSON number, not a Decimal-as-string.
+        self.assertEqual(m["pinside_rating"], 8.9)
+        self.assertIsInstance(m["pinside_rating"], float)
+
+    def test_null_model_fields_serialize_as_null(self):
+        """Absent optional model fields serialize as null (not omitted)."""
+        model = create_machine_model(pinside_rating=None, ipdb_id=None)
+        create_machine(model=model, name="No Metadata")
+
+        m = self._get().json()["machines"][0]["model"]
+        self.assertIsNone(m["pinside_rating"])
+        self.assertIsNone(m["ipdb_id"])
 
     def test_null_location(self):
         """Machine with no location returns null for location field."""
