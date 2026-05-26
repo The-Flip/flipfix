@@ -6,11 +6,13 @@ import json
 import secrets
 import tempfile
 from pathlib import Path
+from unittest import skipUnless
 from unittest.mock import Mock, patch
 
 import requests
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import connection
 from django.test import TestCase, tag
 
 from flipfix.apps.catalog.models import MachineInstance, MachineModel
@@ -175,8 +177,12 @@ class PullSampleMachinesTests(TestCase):
             with self.assertRaises(CommandError):
                 self._run()
 
+    @skipUnless(
+        connection.vendor == "sqlite",
+        "create_sample_machines is SQLite-only (CI runs on PostgreSQL)",
+    )
     def test_regenerated_fixture_is_importable(self):
-        """The written file round-trips through create_sample_machines."""
+        """The written file round-trips through create_sample_machines (SQLite only)."""
         from flipfix.apps.catalog.management.commands.create_sample_machines import (
             Command as CreateCommand,
         )
