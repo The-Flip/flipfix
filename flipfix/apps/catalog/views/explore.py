@@ -24,39 +24,67 @@ class MachineExploreView(TemplateView):
 
     template_name = "catalog/explore.html"
 
+    @staticmethod
+    def _missing_dimensions(model: MachineModel) -> list[str]:
+        """Return the chart dimensions a model is missing (empty if plottable)."""
+        missing = []
+        if model.year is None:
+            missing.append("year")
+        if not model.manufacturer:
+            missing.append("manufacturer")
+        # era can be inferred from the year, so it's only "missing" when neither
+        # a stored era nor a year is available.
+        if not model.effective_era:
+            missing.append("era")
+        return missing
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
-        # Only machines whose model carries all three chart dimensions can be
-        # plotted. ``visible()`` select_related's the model, so reading
-        # model fields and ``get_*_display()`` below adds no extra queries.
-        owned = MachineInstance.objects.visible()
-        instances = (
-            owned.filter(model__year__isnull=False)
-            .exclude(model__manufacturer="")
-            .exclude(model__era="")
-            .order_by("model__manufacturer", "model__year", "model__sort_name")
+        # Partition every owned machine in a single pass: those whose model
+        # carries all three chart dimensions are plotted; the rest are listed
+        # (with the reason) so a maintainer can find and fix the missing data.
+        # ``visible()`` select_related's the model, so reading model fields and
+        # ``get_*_display()`` below adds no extra queries.
+        owned = MachineInstance.objects.visible().order_by(
+            "model__manufacturer", "model__year", "model__sort_name"
         )
 
-        chart_data = [
-            {
-                "name": instance.short_display_name,
-                "manufacturer": instance.model.manufacturer,
-                "year": instance.model.year,
-                "era": instance.model.era,
-                "era_label": instance.model.get_era_display(),
-                "status": instance.operational_status,
-                "status_label": instance.get_operational_status_display(),
-                "url": reverse("maintainer-machine-detail", args=[instance.slug]),
-            }
-            for instance in instances
-        ]
+        chart_data = []
+        excluded = []
+        for instance in owned:
+            model = instance.model
+            missing = self._missing_dimensions(model)
+            if missing:
+                excluded.append(
+                    {
+                        "name": instance.short_display_name,
+                        "url": reverse("maintainer-machine-detail", args=[instance.slug]),
+                        "missing": missing,
+                    }
+                )
+                continue
+            era = model.effective_era
+            chart_data.append(
+                {
+                    "name": instance.short_display_name,
+                    "manufacturer": model.manufacturer,
+                    "year": model.year,
+                    "era": era,
+                    "era_label": MachineModel.Era(era).label,
+                    "status": instance.operational_status,
+                    "status_label": instance.get_operational_status_display(),
+                    "url": reverse("maintainer-machine-detail", args=[instance.slug]),
+                }
+            )
+
+        # Excluded machines often lack manufacturer/year, so sort by name.
+        excluded.sort(key=lambda m: m["name"].lower())
 
         context["chart_data"] = chart_data
         context["legend"] = [{"era": era.value, "label": era.label} for era in MachineModel.Era]
-        # Count exclusions against the same base queryset chart_data is built
-        # from, so the two stay consistent (chart_data is always a subset).
-        context["excluded_count"] = owned.count() - len(chart_data)
+        context["excluded"] = excluded
+        context["excluded_count"] = len(excluded)
         context["meta_description"] = (
             "Explore The Flip's pinball collection by year, manufacturer and technology era."
         )

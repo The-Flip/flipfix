@@ -76,18 +76,63 @@ class MachineExploreViewDataTests(TestCase):
         self.assertEqual(dot["status_label"], "Broken")
         self.assertEqual(dot["url"], reverse("maintainer-machine-detail", args=["kiss"]))
 
-    def test_excludes_instances_missing_chart_dimensions(self):
-        """Instances whose model lacks year, manufacturer or era are not charted."""
+    def test_excludes_instances_missing_year_or_manufacturer(self):
+        """Machines missing year or manufacturer are not charted (era is inferable)."""
         create_machine(
             model=create_machine_model(manufacturer="Gottlieb", year=1975, era=MachineModel.Era.EM)
         )
         create_machine(model=create_machine_model(year=None), slug="no-year")
         create_machine(model=create_machine_model(manufacturer=""), slug="no-mfr")
-        create_machine(model=create_machine_model(era=""), slug="no-era")
+        # Blank era but a known year is now inferred (plotted), not excluded.
+        create_machine(model=create_machine_model(year=2001, era=""), slug="no-era")
 
         context = self._chart()
+        self.assertEqual(len(context["chart_data"]), 2)  # Gottlieb + inferred-era machine
+        self.assertEqual(context["excluded_count"], 2)  # no-year, no-mfr
+        self.assertEqual(len(context["excluded"]), 2)
+
+    def test_excluded_entries_name_the_missing_dimensions(self):
+        """Each excluded entry links to the machine and lists what it's missing."""
+        create_machine(
+            model=create_machine_model(name="No Year", year=None, era=MachineModel.Era.SS),
+            name="No Year",
+            slug="no-year",
+        )
+        create_machine(
+            model=create_machine_model(name="Bare", year=None, manufacturer="", era=""),
+            name="Bare",
+            slug="bare",
+        )
+
+        excluded = {m["name"]: m for m in self._chart()["excluded"]}
+        self.assertEqual(excluded["No Year"]["missing"], ["year"])
+        self.assertEqual(excluded["Bare"]["missing"], ["year", "manufacturer", "era"])
+        self.assertEqual(
+            excluded["No Year"]["url"], reverse("maintainer-machine-detail", args=["no-year"])
+        )
+
+    def test_missing_era_is_inferred_from_year(self):
+        """A machine with year + manufacturer but no era is plotted via inferred era."""
+        create_machine(
+            model=create_machine_model(manufacturer="Gottlieb", year=1965, era=""),
+            name="Eraless EM",
+            slug="eraless",
+        )
+
+        context = self._chart()
+        self.assertEqual(context["excluded"], [])
         self.assertEqual(len(context["chart_data"]), 1)
-        self.assertEqual(context["excluded_count"], 3)
+        dot = context["chart_data"][0]
+        self.assertEqual(dot["era"], MachineModel.Era.EM)
+        self.assertEqual(dot["era_label"], "Electromechanical")
+
+    def test_no_excluded_when_all_plottable(self):
+        create_machine(
+            model=create_machine_model(manufacturer="Bally", year=1980, era=MachineModel.Era.EM)
+        )
+        context = self._chart()
+        self.assertEqual(context["excluded"], [])
+        self.assertEqual(context["excluded_count"], 0)
 
     def test_legend_lists_all_eras(self):
         legend = self._chart()["legend"]

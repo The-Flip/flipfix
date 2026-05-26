@@ -154,6 +154,27 @@ class MachineModel(TimeStampedMixin):
     def __str__(self) -> str:
         return self.name
 
+    @staticmethod
+    def era_for_year(year: int | None) -> str:
+        """Infer a technology era from a manufacture year.
+
+        A fallback for when ``era`` is blank: pinball moved from pure-mechanical
+        to electromechanical around 1935, and to solid-state in 1977. Returns
+        "" when the year is unknown (nothing to infer from).
+        """
+        if year is None:
+            return ""
+        if year <= 1934:
+            return MachineModel.Era.PM
+        if year <= 1976:
+            return MachineModel.Era.EM
+        return MachineModel.Era.SS
+
+    @property
+    def effective_era(self) -> str:
+        """Stored era, or one inferred from the year when era is blank."""
+        return self.era or MachineModel.era_for_year(self.year)
+
     def get_admin_history_url(self) -> str:
         """Return URL to this model's Django admin change history."""
         return reverse("admin:catalog_machinemodel_history", args=[self.pk])

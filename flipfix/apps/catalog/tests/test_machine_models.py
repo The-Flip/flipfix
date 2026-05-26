@@ -58,6 +58,37 @@ class MachineModelSortNameTests(TestCase):
 
 
 @tag("models")
+class MachineModelEraTests(TestCase):
+    """Era inference from manufacture year."""
+
+    def test_era_for_year_boundaries(self):
+        cases = {
+            None: "",
+            1930: MachineModel.Era.PM,
+            1934: MachineModel.Era.PM,  # last PM year
+            1935: MachineModel.Era.EM,  # first EM year
+            1976: MachineModel.Era.EM,  # last EM year
+            1977: MachineModel.Era.SS,  # first SS year
+            2024: MachineModel.Era.SS,
+        }
+        for year, expected in cases.items():
+            self.assertEqual(MachineModel.era_for_year(year), expected, f"year={year}")
+
+    def test_effective_era_prefers_stored_value(self):
+        # A 1990 machine explicitly tagged PM keeps PM (no override by inference).
+        model = MachineModel(name="Oddball", year=1990, era=MachineModel.Era.PM)
+        self.assertEqual(model.effective_era, MachineModel.Era.PM)
+
+    def test_effective_era_infers_when_blank(self):
+        model = MachineModel(name="Untagged", year=1965, era="")
+        self.assertEqual(model.effective_era, MachineModel.Era.EM)
+
+    def test_effective_era_blank_when_no_era_and_no_year(self):
+        model = MachineModel(name="Mystery", year=None, era="")
+        self.assertEqual(model.effective_era, "")
+
+
+@tag("models")
 class MachineInstanceModelTests(TestCase):
     """Tests for the MachineInstance model."""
 
