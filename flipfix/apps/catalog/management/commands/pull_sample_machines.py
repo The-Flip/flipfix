@@ -99,6 +99,10 @@ class Command(BaseCommand):
         machines = payload.get("machines") if isinstance(payload, dict) else None
         if not isinstance(machines, list):
             raise CommandError(f"Unexpected response from {url}: missing 'machines' list.")
+        # Validate each entry at the boundary so _group can trust the shape.
+        for entry in machines:
+            if not isinstance(entry, dict) or not isinstance(entry.get("model"), dict):
+                raise CommandError(f"Unexpected machine entry from {url}: {entry!r}")
         return machines
 
     def _group(self, machines: list[dict[str, Any]]) -> list[dict[str, Any]]:

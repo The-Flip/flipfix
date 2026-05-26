@@ -177,6 +177,13 @@ class PullSampleMachinesTests(TestCase):
             with self.assertRaises(CommandError):
                 self._run()
 
+    def test_malformed_machine_entry_raises_command_error(self):
+        # 'machines' is a list, but an entry isn't a dict with a dict 'model'.
+        payload = {"machines": [{"name": "Broken", "model": "not-a-dict"}]}
+        with patch(f"{MODULE}.requests.get", return_value=_mock_response(payload)):
+            with self.assertRaises(CommandError):
+                self._run()
+
     @skipUnless(
         connection.vendor == "sqlite",
         "create_sample_machines is SQLite-only (CI runs on PostgreSQL)",
