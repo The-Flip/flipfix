@@ -68,10 +68,11 @@ def _parse_bearer_token(request) -> str:
     return auth_header[7:]
 
 
-def validate_api_key(request):
+def validate_api_key(request, *, require_write: bool = False):
     """Validate Bearer token against the ApiKey table.
 
-    Returns the matched ``ApiKey`` instance.
+    Returns the matched ``ApiKey`` instance.  When ``require_write`` is set,
+    the matched key must have ``can_write`` enabled or a 403 is raised.
     Raises ``ApiAuthError`` on failure.
     """
     from flipfix.apps.core.models import ApiKey
@@ -80,6 +81,8 @@ def validate_api_key(request):
 
     for api_key in ApiKey.objects.all():
         if constant_time_compare(token, api_key.key):
+            if require_write and not api_key.can_write:
+                raise ApiAuthError("API key is not authorized for write operations", status=403)
             return api_key
 
     raise ApiAuthError("Invalid API key", status=403)

@@ -277,6 +277,11 @@ class ApiKeyModelTests(TestCase):
         api_key = ApiKey.objects.create(app_name="test-app")
         self.assertEqual(len(api_key.key), 64)  # 32 bytes = 64 hex chars
 
+    def test_can_write_defaults_to_false(self):
+        """Keys are read-only unless write access is explicitly granted."""
+        api_key = ApiKey.objects.create(app_name="test-app")
+        self.assertFalse(api_key.can_write)
+
     def test_preserves_explicit_key(self):
         """Explicit key is preserved, not overwritten."""
         explicit_key = secrets.token_hex(32)

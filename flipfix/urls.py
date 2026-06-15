@@ -39,7 +39,11 @@ from flipfix.apps.catalog.views.owners import (
 from flipfix.apps.catalog.views_inline import MachineInlineUpdateView
 from flipfix.apps.core.admin_views import admin_debug_view
 from flipfix.apps.core.routing import path
-from flipfix.apps.core.views.api import MachineDetailApiView, MachineListApiView
+from flipfix.apps.core.views.api import (
+    MachineDetailApiView,
+    MachineListApiView,
+    MachineProblemReportCreateApiView,
+)
 from flipfix.apps.core.views.feed import GlobalActivityFeedPartialView
 from flipfix.apps.core.views.health import healthz
 from flipfix.apps.core.views.home import HomeView, SiteSettingsEditView
@@ -419,6 +423,13 @@ urlpatterns = [
         "api/v1/machines/<str:asset_id>/",
         MachineDetailApiView.as_view(),
         name="api-v1-machine-detail",
+        access="always_public",
+    ),
+    # Write: file a problem report against a machine (requires can_write key)
+    path(
+        "api/v1/machines/<str:asset_id>/problem-reports/",
+        MachineProblemReportCreateApiView.as_view(),
+        name="api-v1-machine-problem-report-create",
         access="always_public",
     ),
     # Worker: download source video for transcoding

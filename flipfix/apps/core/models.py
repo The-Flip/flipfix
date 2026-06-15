@@ -312,6 +312,10 @@ class ApiKey(TimeStampedMixin):
         help_text="Name of the application using this key (e.g., 'signage-app')",
     )
     key = models.CharField(max_length=64, unique=True, db_index=True)
+    can_write = models.BooleanField(
+        default=False,
+        help_text="Allow this key to use write endpoints (create reports, change status).",
+    )
 
     class Meta:
         verbose_name = "API key"
