@@ -1,6 +1,8 @@
 # Internal API
 
-Flipfix exposes a read-only JSON API for internal services (e.g., signage apps, dashboards) that need machine data.
+Flipfix exposes a JSON API for internal services (e.g., signage apps, dashboards, power
+monitoring) that need machine data. Most endpoints are read-only; a small write surface exists for
+trusted services and is gated behind a per-key **write** capability.
 
 ## Authentication
 
@@ -16,6 +18,13 @@ All API endpoints require a **Bearer token** in the `Authorization` header.
 
 To rotate a key: create a new one, update your client, then delete the old one.
 
+### Read vs. write keys
+
+Every valid key may call the read endpoints. Write endpoints additionally require the key's
+**Can write** flag to be enabled (set it on the API key in Django Admin). A read-only key that
+calls a write endpoint gets `403`. Grant write access only to trusted services that genuinely need
+to mutate data.
+
 ### Sending the key
 
 ```
@@ -24,10 +33,12 @@ Authorization: Bearer <your-api-key>
 
 ### Error responses
 
-| Status | Meaning                                     |
-| ------ | ------------------------------------------- |
-| 401    | Missing or malformed `Authorization` header |
-| 403    | API key not recognized                      |
+| Status | Meaning                                             |
+| ------ | --------------------------------------------------- |
+| 400    | Invalid request body (write endpoints)              |
+| 401    | Missing or malformed `Authorization` header         |
+| 403    | API key not recognized, or not authorized for write |
+| 404    | Resource not found                                  |
 
 All error responses return JSON:
 
@@ -146,6 +157,69 @@ Returns 404 if no machine matches the given asset ID:
 ```
 
 The response fields are the same as the list endpoint — see the [field reference](#get-apiv1machines) above.
+
+### `POST /api/v1/machines/<asset_id>/problem-reports/`
+
+**Write endpoint** — requires a key with the **write** capability (see [Read vs. write
+keys](#read-vs-write-keys)).
+
+Files a problem report against a machine, and optionally marks the machine `broken` in the same
+transaction. Designed for automated services such as [juice](https://github.com/The-Flip/juice)
+power monitoring, which files an `unplayable` report and trips the machine to `broken` when it
+auto-cuts power on a sustained overload.
+
+**Request body** (all fields optional):
+
+| Field              | Type    | Default | Description                                                         |
+| ------------------ | ------- | ------- | ------------------------------------------------------------------- |
+| `priority`         | string  | `minor` | One of `untriaged`, `unplayable`, `major`, `minor`, `task`          |
+| `problem_type`     | string  | `other` | One of `stuck_ball`, `no_credits`, `other`                          |
+| `description`      | string  | `""`    | Free-text description of the problem                                |
+| `occurred_at`      | string  | now     | ISO-8601 datetime of when the problem occurred                      |
+| `reported_by_name` | string  | `""`    | Attribution for the reporter (e.g. service name)                    |
+| `mark_broken`      | boolean | `false` | When `true`, also sets `operational_status = broken` on the machine |
+
+**Example request:**
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <write-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "priority": "unplayable",
+        "description": "Auto power-off: sustained overload (175W vs 49W baseline)",
+        "reported_by_name": "Juice (automated overload detection)",
+        "mark_broken": true
+      }' \
+  https://flipfix.example.com/api/v1/machines/M0001/problem-reports/
+```
+
+**Example response (`201 Created`):**
+
+```json
+{
+  "problem_report": {
+    "id": 42,
+    "machine_asset_id": "M0001",
+    "status": "open",
+    "priority": "unplayable",
+    "problem_type": "other",
+    "description": "Auto power-off: sustained overload (175W vs 49W baseline)",
+    "reported_by_name": "Juice (automated overload detection)",
+    "occurred_at": "2026-06-14T21:41:25+00:00",
+    "created_at": "2026-06-14T21:41:25+00:00"
+  }
+}
+```
+
+**Idempotency.** If `priority` is `unplayable` and the machine already has an **open** `unplayable`
+report, that existing report is returned with `200 OK` instead of creating a duplicate — so a
+service that re-detects the same fault won't pile up reports. Other priorities always create a new
+report.
+
+When `mark_broken` is `true`, the status change is written through the machine's history (a "Status
+changed → Broken" log entry is recorded automatically). Closing the report does **not** revert the
+machine to `good` — that's left to a maintainer.
 
 ## Versioning
 

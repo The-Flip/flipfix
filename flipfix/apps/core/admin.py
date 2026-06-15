@@ -5,7 +5,8 @@ from flipfix.apps.core.models import ApiKey
 
 @admin.register(ApiKey)
 class ApiKeyAdmin(admin.ModelAdmin):
-    list_display = ("app_name", "key_preview", "created_at")
+    list_display = ("app_name", "key_preview", "can_write", "created_at")
+    list_filter = ("can_write",)
     readonly_fields = ("key", "created_at")
     search_fields = ("app_name",)
 
