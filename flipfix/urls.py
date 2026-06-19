@@ -43,6 +43,7 @@ from flipfix.apps.core.views.api import (
     MachineDetailApiView,
     MachineListApiView,
     MachineProblemReportCreateApiView,
+    ProblemReportLogEntryCreateApiView,
 )
 from flipfix.apps.core.views.feed import GlobalActivityFeedPartialView
 from flipfix.apps.core.views.health import healthz
@@ -430,6 +431,13 @@ urlpatterns = [
         "api/v1/machines/<str:asset_id>/problem-reports/",
         MachineProblemReportCreateApiView.as_view(),
         name="api-v1-machine-problem-report-create",
+        access="always_public",
+    ),
+    # Write: append a log entry to a problem report (requires can_write key)
+    path(
+        "api/v1/problem-reports/<int:pk>/log-entries/",
+        ProblemReportLogEntryCreateApiView.as_view(),
+        name="api-v1-problem-report-log-entry-create",
         access="always_public",
     ),
     # Worker: download source video for transcoding

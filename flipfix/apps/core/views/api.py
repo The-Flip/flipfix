@@ -15,7 +15,37 @@ from django.views.decorators.csrf import csrf_exempt
 
 from flipfix.apps.catalog.models import MachineInstance
 from flipfix.apps.core.api_auth import json_api_view, validate_api_key
-from flipfix.apps.maintenance.models import ProblemReport
+from flipfix.apps.maintenance.models import LogEntry, ProblemReport
+
+
+def _load_json_body(request) -> dict:
+    """Parse a request body as a JSON object.
+
+    Raises ``ValidationError`` (rendered as 400) on malformed or non-object input.
+    """
+    try:
+        body = json.loads(request.body or b"{}")
+    except json.JSONDecodeError as e:
+        raise ValidationError("Request body must be valid JSON") from e
+    if not isinstance(body, dict):
+        raise ValidationError("Request body must be a JSON object")
+    return body
+
+
+def _parse_occurred_at(raw):
+    """Parse an optional ISO-8601 ``occurred_at`` value, defaulting to now.
+
+    Naive datetimes are made timezone-aware.  Raises ``ValidationError``
+    (rendered as 400) when a value is given but cannot be parsed.
+    """
+    if not raw:
+        return timezone.now()
+    occurred_at = parse_datetime(raw)
+    if occurred_at is None:
+        raise ValidationError("Invalid occurred_at: expected an ISO-8601 datetime")
+    if timezone.is_naive(occurred_at):
+        occurred_at = timezone.make_aware(occurred_at)
+    return occurred_at
 
 
 def _serialize_machine(m: MachineInstance) -> dict:
@@ -154,12 +184,7 @@ class MachineProblemReportCreateApiView(View):
 
         Raises ``ValidationError`` (rendered as 400) on malformed input.
         """
-        try:
-            body = json.loads(request.body or b"{}")
-        except json.JSONDecodeError as e:
-            raise ValidationError("Request body must be valid JSON") from e
-        if not isinstance(body, dict):
-            raise ValidationError("Request body must be a JSON object")
+        body = _load_json_body(request)
 
         priority = body.get("priority", ProblemReport.Priority.MINOR)
         if priority not in ProblemReport.Priority.values:
@@ -169,21 +194,71 @@ class MachineProblemReportCreateApiView(View):
         if problem_type not in ProblemReport.ProblemType.values:
             raise ValidationError(f"Invalid problem_type: {problem_type!r}")
 
-        occurred_at_raw = body.get("occurred_at")
-        if occurred_at_raw:
-            occurred_at = parse_datetime(occurred_at_raw)
-            if occurred_at is None:
-                raise ValidationError("Invalid occurred_at: expected an ISO-8601 datetime")
-            if timezone.is_naive(occurred_at):
-                occurred_at = timezone.make_aware(occurred_at)
-        else:
-            occurred_at = timezone.now()
-
         return {
             "priority": priority,
             "problem_type": problem_type,
             "description": body.get("description", ""),
             "reported_by_name": body.get("reported_by_name", ""),
-            "occurred_at": occurred_at,
+            "occurred_at": _parse_occurred_at(body.get("occurred_at")),
             "mark_broken": bool(body.get("mark_broken", False)),
         }
+
+
+def _serialize_log_entry(entry: LogEntry) -> dict:
+    """Serialize a LogEntry to a dict for JSON responses."""
+    return {
+        "id": entry.pk,
+        "problem_report_id": entry.problem_report_id,
+        "machine_asset_id": entry.machine.asset_id,
+        "text": entry.text,
+        "maintainer_names": entry.maintainer_names,
+        "occurred_at": entry.occurred_at.isoformat(),
+        "created_at": entry.created_at.isoformat(),
+    }
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ProblemReportLogEntryCreateApiView(View):
+    """Write API: append a log entry to an existing problem report.
+
+    Requires an API key with ``can_write`` enabled.  Lets services such as
+    juice record a *recurrence* (e.g. shutting an already-broken machine down
+    again) on a report that the idempotent problem-report endpoint returned
+    without creating anything new.
+    """
+
+    @json_api_view
+    def post(self, request, pk: int):
+        api_key = validate_api_key(request, require_write=True)
+
+        try:
+            report = ProblemReport.objects.select_related("machine").get(pk=pk)
+        except ProblemReport.DoesNotExist as e:
+            raise Http404(f"Problem report with ID '{pk}' not found") from e
+
+        body = _load_json_body(request)
+
+        text = str(body.get("text", "")).strip()
+        if not text:
+            raise ValidationError("text is required")
+
+        # reported_by_name maps to LogEntry.maintainer_names.  Fall back to the
+        # key's app_name so the model's "a maintainer or a name is required"
+        # invariant holds and the entry always carries attribution.
+        maintainer_names = str(body.get("reported_by_name", "")).strip() or api_key.app_name
+        max_name_length = LogEntry._meta.get_field("maintainer_names").max_length or 120
+        if len(maintainer_names) > max_name_length:
+            raise ValidationError(
+                f"reported_by_name is too long (max {max_name_length} characters)"
+            )
+
+        with transaction.atomic():
+            entry = LogEntry.objects.create(
+                machine=report.machine,
+                problem_report=report,
+                text=text,
+                occurred_at=_parse_occurred_at(body.get("occurred_at")),
+                maintainer_names=maintainer_names,
+            )
+
+        return JsonResponse({"log_entry": _serialize_log_entry(entry)}, status=201)
