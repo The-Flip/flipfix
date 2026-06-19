@@ -127,6 +127,13 @@ class LogEntryCreateApiBehaviorTests(TestCase):
     def test_invalid_occurred_at_returns_400(self):
         response = self._post({"text": "x", "occurred_at": "not-a-date"})
         self.assertEqual(response.status_code, 400)
+        self.assertFalse(LogEntry.objects.exists())
+
+    def test_non_string_occurred_at_returns_400(self):
+        """A non-string occurred_at is a 400, not a 500 (parse_datetime TypeError)."""
+        response = self._post({"text": "x", "occurred_at": 123})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(LogEntry.objects.exists())
 
     def test_overlong_reported_by_name_returns_400(self):
         response = self._post({"text": "x", "reported_by_name": "z" * 121})
@@ -141,3 +148,4 @@ class LogEntryCreateApiBehaviorTests(TestCase):
             HTTP_AUTHORIZATION=self.auth,
         )
         self.assertEqual(response.status_code, 400)
+        self.assertFalse(LogEntry.objects.exists())

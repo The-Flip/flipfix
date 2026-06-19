@@ -40,6 +40,9 @@ def _parse_occurred_at(raw):
     """
     if not raw:
         return timezone.now()
+    if not isinstance(raw, str):
+        # parse_datetime() raises TypeError on non-strings; surface a 400, not a 500.
+        raise ValidationError("Invalid occurred_at: expected an ISO-8601 datetime string")
     occurred_at = parse_datetime(raw)
     if occurred_at is None:
         raise ValidationError("Invalid occurred_at: expected an ISO-8601 datetime")

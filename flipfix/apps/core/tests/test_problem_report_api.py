@@ -150,6 +150,13 @@ class ProblemReportCreateApiBehaviorTests(TestCase):
     def test_invalid_occurred_at_returns_400(self):
         response = self._post({"priority": "minor", "occurred_at": "not-a-date"})
         self.assertEqual(response.status_code, 400)
+        self.assertFalse(ProblemReport.objects.exists())
+
+    def test_non_string_occurred_at_returns_400(self):
+        """A non-string occurred_at is a 400, not a 500 (parse_datetime TypeError)."""
+        response = self._post({"priority": "minor", "occurred_at": 123})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(ProblemReport.objects.exists())
 
     def test_malformed_json_returns_400(self):
         response = self.client.post(
