@@ -221,6 +221,61 @@ When `mark_broken` is `true`, the status change is written through the machine's
 changed → Broken" log entry is recorded automatically). Closing the report does **not** revert the
 machine to `good` — that's left to a maintainer.
 
+### `POST /api/v1/problem-reports/<pk>/log-entries/`
+
+**Write endpoint** — requires a key with the **write** capability (see [Read vs. write
+keys](#read-vs-write-keys)).
+
+Appends a log entry to an existing problem report. This is the companion to the idempotent
+problem-report create above: when a recurrence (e.g. juice shutting an already-broken machine down
+_again_) hits the `200` idempotent path and creates no new report, the caller uses the returned
+`problem_report.id` here to record what happened.
+
+**Request body:**
+
+| Field              | Type   | Default        | Description                                       |
+| ------------------ | ------ | -------------- | ------------------------------------------------- |
+| `text`             | string | **required**   | The log entry body (must be non-empty)            |
+| `occurred_at`      | string | now            | ISO-8601 datetime of when the work/event occurred |
+| `reported_by_name` | string | key `app_name` | Display name for the author (max 120 chars)       |
+
+`reported_by_name` is stored as the entry's `maintainer_names`. When omitted, it defaults to the API
+key's `app_name`, so an entry always carries attribution.
+
+**Example request:**
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <write-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "text": "Auto power-off recurrence: 182W peak vs 49W baseline over 3m12s",
+        "reported_by_name": "Juice"
+      }' \
+  https://flipfix.example.com/api/v1/problem-reports/42/log-entries/
+```
+
+**Example response (`201 Created`):**
+
+```json
+{
+  "log_entry": {
+    "id": 7,
+    "problem_report_id": 42,
+    "machine_asset_id": "M0001",
+    "text": "Auto power-off recurrence: 182W peak vs 49W baseline over 3m12s",
+    "maintainer_names": "Juice",
+    "occurred_at": "2026-06-19T15:51:00+00:00",
+    "created_at": "2026-06-19T15:51:00+00:00"
+  }
+}
+```
+
+Returns `404` if no problem report has the given `pk`, and `400` for a missing/empty `text`, an
+unparseable `occurred_at`, malformed JSON, or a `reported_by_name` longer than 120 characters. The
+log entry is linked to the report's machine, so it appears on both the report and the machine
+timeline (and posts to the Discord #logs channel like any other log entry).
+
 ## Versioning
 
 Endpoints are prefixed with `/api/v1/`. Breaking changes will use a new version prefix (`/api/v2/`, etc.).
