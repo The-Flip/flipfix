@@ -2019,6 +2019,74 @@ body {
   background-color: var(--color-gray-100);
 }
 
+/* "Last done" indicator shown when the list is sorted by a maintenance task.
+   Static row (not a link), so it mirrors __problem without the hover. */
+.machine-card__maint {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--color-border-soft);
+  color: var(--color-text-muted);
+}
+
+/* Sidebar "Sort by maintenance task" link list */
+.sort-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sort-list__item {
+  display: block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+}
+
+.sort-list__item:hover {
+  background-color: var(--color-gray-100);
+}
+
+.sort-list__item--active {
+  font-weight: 600;
+  background-color: var(--color-gray-100);
+}
+
+/* Sidebar "Maintenance" panel: task name, last-done, optional mark-done button */
+.maint-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.maint-list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.maint-list__name {
+  flex: 1 1 auto;
+}
+
+.maint-list__when {
+  flex: 0 0 auto;
+  font-size: var(--font-size-sm);
+}
+
+.maint-list__action {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 /* --- User Directory & Cards --- */
 .user-directory {
   display: grid;

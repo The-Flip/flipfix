@@ -12,6 +12,7 @@ from django.db import models
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
 from flipfix.apps.accounts.models import Maintainer
@@ -366,6 +367,40 @@ class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
         )
 
 
+class MaintenanceTaskType(models.Model):
+    """Admin-editable vocabulary of recurring maintenance tasks.
+
+    Examples: "Clean the playfield", "Replace the balls". The list grows over
+    time, so this is a lookup table (editable in admin) rather than a code enum.
+    """
+
+    name = models.CharField(
+        max_length=100, unique=True, help_text="Display name, e.g. 'Clean the playfield'."
+    )
+    slug = models.SlugField(
+        max_length=100, unique=True, blank=True, help_text="URL-friendly identifier."
+    )
+    description = models.TextField(blank=True, help_text="Optional guidance shown to maintainers.")
+    sort_order = models.PositiveIntegerField(default=0, help_text="Order in which tasks appear.")
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Inactive tasks are hidden from forms and lists but keep their history.",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "Maintenance task type"
+        verbose_name_plural = "Maintenance task types"
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name) or "task"
+        super().save(*args, **kwargs)
+
+
 class LogEntry(TimeStampedMixin):
     """Maintainer log entry documenting work on a machine."""
 
@@ -383,6 +418,12 @@ class LogEntry(TimeStampedMixin):
         help_text="Optional link to a problem report this log entry addresses.",
     )
     maintainers = models.ManyToManyField(Maintainer, blank=True, related_name="log_entries")
+    maintenance_tasks = models.ManyToManyField(
+        MaintenanceTaskType,
+        blank=True,
+        related_name="log_entries",
+        help_text="Recurring maintenance tasks completed in this entry.",
+    )
     maintainer_names = models.CharField(
         max_length=120,
         blank=True,

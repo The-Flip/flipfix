@@ -65,6 +65,7 @@ from flipfix.apps.maintenance.views.log_entries import (
     LogListPartialView,
     LogListView,
     MachineLogCreateView,
+    MarkTaskDoneView,
 )
 from flipfix.apps.maintenance.views.media_api import ReceiveMediaView
 from flipfix.apps.maintenance.views.problem_reports import (
@@ -513,6 +514,12 @@ urlpatterns = [
         "logs/new/problem-report/<int:pk>/",
         MachineLogCreateView.as_view(),
         name="log-create-problem-report",
+    ),
+    # One-click "mark recurring task done" for a machine
+    path(
+        "machines/<slug:slug>/mark-task/<slug:task_slug>/",
+        MarkTaskDoneView.as_view(),
+        name="machine-mark-task-done",
     ),
     ###
     # Parts requests

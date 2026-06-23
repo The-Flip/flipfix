@@ -42,6 +42,7 @@ from flipfix.apps.maintenance.forms import LogEntryEditForm, LogEntryQuickForm
 from flipfix.apps.maintenance.models import (
     LogEntry,
     LogEntryMedia,
+    MaintenanceTaskType,
     ProblemReport,
 )
 
@@ -143,6 +144,10 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
         )
         sync_references(log_entry, log_entry.text)
         self.machine = machine
+
+        tasks = form.cleaned_data.get("maintenance_tasks")
+        if tasks:
+            log_entry.maintenance_tasks.set(tasks)
 
         self._link_maintainers(log_entry, maintainers, freetext_names)
         self._attach_media(log_entry, media_files)
@@ -253,6 +258,40 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
                     reverse("log-detail", kwargs={"pk": log_entry.pk}),
                 ),
             )
+
+
+class MarkTaskDoneView(View):
+    """One-click: record a recurring maintenance task as done now for a machine.
+
+    Creates a minimal LogEntry tagged with the task so it flows through the same
+    "last done" logic as fully written work entries. POST-only and CSRF-protected.
+    """
+
+    def post(self, request, slug, task_slug):
+        if not can_access_maintainer_portal(request.user):
+            raise PermissionDenied
+        machine = get_object_or_404(MachineInstance, slug=slug)
+        task = get_object_or_404(MaintenanceTaskType, slug=task_slug, is_active=True)
+        with transaction.atomic():
+            log_entry = LogEntry.objects.create(
+                machine=machine,
+                text=f"Routine: {task.name}",
+                occurred_at=timezone.now(),
+                created_by=request.user,
+            )
+            log_entry.maintenance_tasks.add(task)
+            maintainer = Maintainer.objects.filter(
+                user=request.user, is_shared_account=False
+            ).first()
+            if maintainer:
+                log_entry.maintainers.add(maintainer)
+            else:
+                log_entry.maintainer_names = (
+                    request.user.get_full_name() or request.user.get_username()
+                )
+                log_entry.save(update_fields=["maintainer_names"])
+        messages.success(request, f"Marked “{task.name}” done.")
+        return redirect("maintainer-machine-detail", slug=machine.slug)
 
 
 class LogListView(TemplateView):

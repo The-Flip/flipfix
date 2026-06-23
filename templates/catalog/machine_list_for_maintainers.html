@@ -20,6 +20,20 @@
 {% sidebar_section label="Location" %}
 {% stat_grid stats=location_stats %}
 {% endsidebar_section %}
+{% if task_sort_options|length > 1 %}
+  {% sidebar_section label="Maintenance due" %}
+  <ul class="sort-list">
+    {% for opt in task_sort_options %}
+      <li>
+        <a href="{{ opt.url }}"
+           class="sort-list__item{% if opt.active %} sort-list__item--active{% endif %}"
+           {% if opt.active %}aria-current="true"{% endif %}>{{ opt.label }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+  <p class="form-hint">Sorts by when each task was last logged — oldest first.</p>
+{% endsidebar_section %}
+{% endif %}
 {% sidebar_section %}
 {% if user|can_manage_catalog %}
   <a href="{% url 'machine-create-landing' %}"

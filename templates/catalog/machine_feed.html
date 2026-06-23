@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 {% load ui_tags %}
 {% load list_tags %}
 {% load catalog_tags %}
@@ -92,6 +93,37 @@
             {% endif %}
           </div>
         </div>
+        <!-- MAINTENANCE -->
+        {% if maintenance_tasks %}
+          <div class="sidebar__section">
+            <div class="sidebar__title">Maintenance</div>
+            <ul class="maint-list">
+              {% for row in maintenance_tasks %}
+                <li class="maint-list__row">
+                  <span class="maint-list__name">{{ row.task.name }}</span>
+                  <span class="maint-list__when text-muted">
+                    {% if row.last_done %}
+                      {{ row.last_done|naturaltime }}
+                    {% else %}
+                      Unknown
+                    {% endif %}
+                  </span>
+                  {% if user.is_authenticated %}
+                    <form method="post"
+                          action="{% url 'machine-mark-task-done' machine.slug row.task.slug %}"
+                          class="maint-list__action">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="btn btn--icon-only btn--secondary btn--sm"
+                              title="Mark “{{ row.task.name }}” done now"
+                              aria-label="Mark {{ row.task.name }} done now">{% icon "check" %}</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
       </div>
     </aside>
     <!-- MAIN COLUMN -->
