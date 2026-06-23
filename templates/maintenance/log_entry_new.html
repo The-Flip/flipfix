@@ -87,6 +87,21 @@
       {{ form.text }}
       {% field_errors form.text %}
     </div>
+    <fieldset class="form-field">
+      <legend class="form-label">Tasks performed (optional)</legend>
+      {% for choice in form.maintenance_tasks %}
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 name="{{ form.maintenance_tasks.html_name }}"
+                 value="{{ choice.data.value }}"
+                 class="checkbox"
+                 {% if choice.data.selected %}checked{% endif %}>
+          <span>{{ choice.choice_label }}</span>
+        </label>
+      {% endfor %}
+      {% field_help_text form.maintenance_tasks %}
+      {% field_errors form.maintenance_tasks %}
+    </fieldset>
     {% form_field form.time_spent %}
     <!-- MEDIA UPLOAD -->
     {% media_file_input form.media_file %}

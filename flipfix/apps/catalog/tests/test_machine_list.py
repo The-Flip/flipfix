@@ -2,14 +2,17 @@
 
 from django.test import TestCase, tag
 from django.urls import reverse
+from django.utils import timezone
 
 from flipfix.apps.catalog.models import Location, MachineInstance
 from flipfix.apps.core.test_utils import (
     AccessControlTestCase,
+    create_log_entry,
     create_machine,
     create_maintainer_user,
     create_user,
 )
+from flipfix.apps.maintenance.models import MaintenanceTaskType
 
 
 @tag("views")
@@ -136,3 +139,44 @@ class MachineListFilterTests(TestCase):
         status_stats = response.context["status_stats"]
         all_stat = next(s for s in status_stats if s["label"] == "All")
         self.assertNotIn("status=", all_stat["url"])
+
+
+@tag("views")
+class MachineListMaintenanceSortTests(TestCase):
+    """Tests for sorting/indicating machines by a maintenance task's last-done date."""
+
+    def setUp(self):
+        self.user = create_maintainer_user()
+        self.client.force_login(self.user)
+        self.url = reverse("maintainer-machine-list")
+        self.task = MaintenanceTaskType.objects.get(slug="clean-playfield")
+        self.never = create_machine(name="Never Cleaned", slug="never")
+        self.recent = create_machine(name="Recent Clean", slug="recent")
+        entry = create_log_entry(machine=self.recent, occurred_at=timezone.now())
+        entry.maintenance_tasks.add(self.task)
+
+    def test_unknown_machines_sort_first(self):
+        """Machines with no record for the task (Unknown) sort ahead of recently-done ones."""
+        response = self.client.get(self.url, {"task": self.task.slug, "sort": "task"})
+        self.assertEqual(response.status_code, 200)
+        machines = list(response.context["machines"])
+        self.assertLess(machines.index(self.never), machines.index(self.recent))
+
+    def test_card_shows_unknown_for_no_record(self):
+        response = self.client.get(self.url, {"task": self.task.slug, "sort": "task"})
+        self.assertContains(response, "Unknown")
+
+    def test_selected_task_in_context(self):
+        response = self.client.get(self.url, {"task": self.task.slug, "sort": "task"})
+        self.assertEqual(response.context["selected_task"], self.task)
+
+    def test_no_task_param_leaves_selected_task_none(self):
+        response = self.client.get(self.url)
+        self.assertIsNone(response.context["selected_task"])
+
+    def test_task_sort_composes_with_status_filter(self):
+        """Selecting a task preserves an existing status filter in the option URLs."""
+        response = self.client.get(self.url, {"status": "good", "task": self.task.slug})
+        options = response.context["task_sort_options"]
+        non_default = [o for o in options if o["label"] != "Default"]
+        self.assertTrue(all("status=good" in o["url"] for o in non_default))

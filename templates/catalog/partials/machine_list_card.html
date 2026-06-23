@@ -1,4 +1,5 @@
 {% load ui_tags %}
+{% load humanize %}
 {% load catalog_tags %}
 {% load maintenance_tags %}
 <article class="machine-card"
@@ -37,5 +38,17 @@
       <span class="snippet-label text-problem">{% icon "bug" %}Problem:</span>
       <span class="snippet-text">{{ machine.latest_open_report.0|problem_report_summary }}</span>
     </a>
+  {% endif %}
+  {% if selected_task %}
+    <p class="machine-card__maint">
+      <span class="snippet-label">{% icon "wrench" %}{{ selected_task.name }}:</span>
+      <span class="snippet-text">
+        {% if machine.last_done %}
+          {{ machine.last_done|naturaltime }}
+        {% else %}
+          <strong>Unknown</strong>
+        {% endif %}
+      </span>
+    </p>
   {% endif %}
 </article>

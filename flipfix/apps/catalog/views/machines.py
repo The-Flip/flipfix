@@ -1,7 +1,19 @@
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
-from django.db.models import Case, CharField, Count, F, Max, Prefetch, Q, Value, When
+from django.db.models import (
+    Case,
+    CharField,
+    Count,
+    F,
+    Max,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
 from django.db.models.functions import Lower
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -23,7 +35,7 @@ from flipfix.apps.catalog.models import Location, MachineInstance, MachineModel
 from flipfix.apps.core.feed import FEED_CONFIGS, PageCursor, get_feed_page
 from flipfix.apps.core.forms import SearchForm
 from flipfix.apps.core.url_utils import build_filter_url
-from flipfix.apps.maintenance.models import ProblemReport
+from flipfix.apps.maintenance.models import LogEntry, MaintenanceTaskType, ProblemReport
 
 VALID_MACHINE_STATUSES = {s.value for s in MachineInstance.OperationalStatus}
 
@@ -88,6 +100,27 @@ class MachineListView(ListView):
         location_filter = self.request.GET.get("location", "")
         if location_filter and Location.objects.filter(slug=location_filter).exists():
             qs = qs.filter(location__slug=location_filter)
+
+        # Optional "time since maintenance task last done" annotation + sort.
+        # Use a correlated Subquery (NOT a second to-many aggregate) so we don't
+        # fan out the existing problem-report aggregates above.
+        task_slug = self.request.GET.get("task", "")
+        self.selected_task = (
+            MaintenanceTaskType.objects.filter(slug=task_slug, is_active=True).first()
+            if task_slug
+            else None
+        )
+        if self.selected_task:
+            last_done = Subquery(
+                LogEntry.objects.filter(
+                    machine=OuterRef("pk"), maintenance_tasks=self.selected_task
+                )
+                .order_by("-occurred_at")
+                .values("occurred_at")[:1]
+            )
+            qs = qs.annotate(last_done=last_done)
+            if self.request.GET.get("sort") == "task":
+                qs = qs.order_by(F("last_done").asc(nulls_first=True), Lower("model__sort_name"))
 
         return qs
 
@@ -167,6 +200,27 @@ class MachineListView(ListView):
 
         context["status_stats"] = status_stats
         context["location_stats"] = location_stats
+
+        # "Sort by maintenance task" options (compose with status/location filters)
+        task_slug = params.get("task", "")
+        task_sort_options = [
+            {
+                "label": "Default",
+                "url": build_filter_url(path, params, task=None, sort=None),
+                "active": not task_slug,
+            }
+        ]
+        for task in MaintenanceTaskType.objects.filter(is_active=True):
+            task_sort_options.append(
+                {
+                    "label": task.name,
+                    "url": build_filter_url(path, params, task=task.slug, sort="task"),
+                    "active": task_slug == task.slug,
+                }
+            )
+        context["task_sort_options"] = task_sort_options
+        context["selected_task"] = getattr(self, "selected_task", None)
+
         context["meta_description"] = (
             "Pinball machines at The Flip, Chicago's playable pinball museum"
             " — status, repairs, and logs."
@@ -232,6 +286,19 @@ class MachineFeedView(TemplateView):
                 ),
             }
         )
+
+        # Per-task "last done" for this machine (one grouped query), joined with
+        # the full active task list so never-logged tasks still show as Unknown.
+        last_done_map = dict(
+            MaintenanceTaskType.objects.filter(is_active=True, log_entries__machine=self.machine)
+            .values("id")
+            .annotate(last=Max("log_entries__occurred_at"))
+            .values_list("id", "last")
+        )
+        context["maintenance_tasks"] = [
+            {"task": task, "last_done": last_done_map.get(task.id)}
+            for task in MaintenanceTaskType.objects.filter(is_active=True)
+        ]
         return context
 
 

@@ -4,7 +4,13 @@ from simple_history.admin import SimpleHistoryAdmin
 
 from flipfix.apps.core.admin import MediaInline
 
-from .models import LogEntry, LogEntryMedia, ProblemReport, ProblemReportMedia
+from .models import (
+    LogEntry,
+    LogEntryMedia,
+    MaintenanceTaskType,
+    ProblemReport,
+    ProblemReportMedia,
+)
 
 
 class LogEntryAdminForm(forms.ModelForm):
@@ -14,6 +20,7 @@ class LogEntryAdminForm(forms.ModelForm):
             "machine",
             "problem_report",
             "maintainers",
+            "maintenance_tasks",
             "maintainer_names",
             "text",
             "occurred_at",
@@ -85,6 +92,7 @@ class LogEntryAdmin(SimpleHistoryAdmin):
         "problem_report__description",
     )
     autocomplete_fields = ("machine", "problem_report", "maintainers", "created_by")
+    filter_horizontal = ("maintenance_tasks",)
     readonly_fields = ("created_at", "updated_at", "text")
     inlines = (LogEntryMediaInline,)
     form = LogEntryAdminForm
@@ -127,3 +135,12 @@ class ProblemReportMediaAdmin(SimpleHistoryAdmin):
     )
     autocomplete_fields = ("problem_report",)
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(MaintenanceTaskType)
+class MaintenanceTaskTypeAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    search_fields = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
+    ordering = ("sort_order", "name")

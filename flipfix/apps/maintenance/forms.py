@@ -13,7 +13,7 @@ from flipfix.apps.core.forms import (
     clean_occurred_at_or_now,
 )
 from flipfix.apps.core.markdown_links import sync_references
-from flipfix.apps.maintenance.models import LogEntry, ProblemReport
+from flipfix.apps.maintenance.models import LogEntry, MaintenanceTaskType, ProblemReport
 
 
 class ProblemReportForm(StyledFormMixin, forms.ModelForm):
@@ -210,6 +210,13 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         widget=forms.NumberInput(
             attrs={"step": "any", "min": "0", "class": "form-input--no-spinner"}
         ),
+    )
+    maintenance_tasks = forms.ModelMultipleChoiceField(
+        label="Tasks performed",
+        queryset=MaintenanceTaskType.objects.filter(is_active=True),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        help_text="Recurring maintenance tasks completed during this work.",
     )
 
     def clean_text(self):

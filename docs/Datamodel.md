@@ -18,6 +18,7 @@ erDiagram
     ProblemReport |o--o{ LogEntry : "addressed by"
     User |o--o{ ProblemReport : "reported by"
     LogEntry }o--o{ Maintainer : "performed by"
+    LogEntry }o--o{ MaintenanceTaskType : "completed tasks"
     ProblemReport ||--o{ ProblemReportMedia : "has"
     LogEntry ||--o{ LogEntryMedia : "has"
 
@@ -74,7 +75,11 @@ Issue reported by museum visitor.
 
 ### Log Entry ([`LogEntry`](../flipfix/apps/maintenance/models.py))
 
-Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work.
+Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work. A many-to-many `maintenance_tasks` links the entry to the recurring `MaintenanceTaskType`s it completed; the entry's `occurred_at` is used as the "last done" date for those tasks.
+
+### Maintenance Task Type ([`MaintenanceTaskType`](../flipfix/apps/maintenance/models.py))
+
+Admin-editable lookup vocabulary of recurring maintenance tasks (e.g. "Clean the playfield", "Replace the balls"). The list grows at runtime, so it's a table rather than a code enum. There is no cadence/interval: a machine's "last done" for a task is `Max(occurred_at)` over its log entries tagged with that task, and the machine list can sort by that ascending (no record sorts first, shown as "Unknown").
 
 ### Problem Report Media ([`ProblemReportMedia`](../flipfix/apps/maintenance/models.py))
 
