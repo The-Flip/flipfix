@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.railpack.com",
   "deploy": {
-    "startCommand": "DJANGO_SETTINGS_MODULE=flipfix.settings.web python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} flipfix.wsgi:application"
+    "startCommand": "DJANGO_SETTINGS_MODULE=flipfix.settings.web python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 2 --threads 4 --timeout 60 flipfix.wsgi:application"
   }
 }
