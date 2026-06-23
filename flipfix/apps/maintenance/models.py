@@ -397,7 +397,13 @@ class MaintenanceTaskType(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name) or "task"
+            base_slug = slugify(self.name) or "task"
+            slug = base_slug
+            counter = 2
+            while type(self)._default_manager.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
 

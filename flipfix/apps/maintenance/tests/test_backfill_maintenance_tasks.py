@@ -3,6 +3,7 @@
 from io import StringIO
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, tag
 
 from flipfix.apps.core.test_utils import (
@@ -55,6 +56,14 @@ class BackfillWorkLogTests(TestCase):
         entry = create_log_entry(machine=self.machine, text="Adjusted the flippers")
         run(apply=True)
         self.assertEqual(entry.maintenance_tasks.count(), 0)
+
+    def test_invalid_threshold_raises(self):
+        with self.assertRaises(CommandError):
+            run(intake_threshold=1.5)
+
+    def test_unknown_task_slug_raises(self):
+        with self.assertRaises(CommandError):
+            run(task="bogus-task")
 
 
 @tag("commands")

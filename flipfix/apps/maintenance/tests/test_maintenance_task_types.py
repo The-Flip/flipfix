@@ -42,6 +42,12 @@ class MaintenanceTaskTypeModelTests(TestCase):
         slugs = set(MaintenanceTaskType.objects.values_list("slug", flat=True))
         self.assertTrue(SEED_SLUGS <= slugs)
 
+    def test_slug_collision_dedupes(self):
+        first = MaintenanceTaskType.objects.create(name="Clean!!")
+        second = MaintenanceTaskType.objects.create(name="Clean??")
+        self.assertEqual(first.slug, "clean")
+        self.assertEqual(second.slug, "clean-2")
+
     def test_log_entry_m2m(self):
         entry = create_log_entry()
         task = MaintenanceTaskType.objects.get(slug="clean-playfield")

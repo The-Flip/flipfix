@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from flipfix.apps.maintenance.models import LogEntry, MaintenanceTaskType, ProblemReport
@@ -81,6 +81,8 @@ class Command(BaseCommand):
         apply = options["apply"]
         only_task = options.get("task")
         threshold = options["intake_threshold"]
+        if not 0 <= threshold <= 1:
+            raise CommandError("--intake-threshold must be between 0 and 1.")
         tasks = {t.slug: t for t in MaintenanceTaskType.objects.all()}
 
         self._backfill_work_logs(tasks, only_task, apply)
@@ -99,8 +101,7 @@ class Command(BaseCommand):
             if slug in tasks and (not only_task or slug == only_task)
         }
         if only_task and only_task not in compiled:
-            self.stdout.write(self.style.ERROR(f"Unknown/unsupported task slug: {only_task}"))
-            return
+            raise CommandError(f"Unknown/unsupported task slug: {only_task}")
 
         self.stdout.write(self.style.MIGRATE_HEADING("Work-log keyword matches:"))
         counts = dict.fromkeys(compiled, 0)

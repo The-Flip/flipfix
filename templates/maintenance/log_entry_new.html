@@ -87,8 +87,8 @@
       {{ form.text }}
       {% field_errors form.text %}
     </div>
-    <div class="form-field">
-      <span class="form-label">Tasks performed (optional)</span>
+    <fieldset class="form-field">
+      <legend class="form-label">Tasks performed (optional)</legend>
       {% for choice in form.maintenance_tasks %}
         <label class="checkbox-label">
           <input type="checkbox"
@@ -101,7 +101,7 @@
       {% endfor %}
       {% field_help_text form.maintenance_tasks %}
       {% field_errors form.maintenance_tasks %}
-    </div>
+    </fieldset>
     {% form_field form.time_spent %}
     <!-- MEDIA UPLOAD -->
     {% media_file_input form.media_file %}
