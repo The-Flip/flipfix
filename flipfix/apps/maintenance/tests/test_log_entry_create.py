@@ -1,6 +1,7 @@
 """Tests for log entry creation views."""
 
 from datetime import timedelta
+from uuid import uuid4
 
 from django.test import TestCase, tag
 from django.urls import reverse
@@ -287,6 +288,94 @@ class LogEntryProblemReportTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.problem_report.refresh_from_db()
         self.assertEqual(self.problem_report.status, ProblemReport.Status.OPEN)
+
+
+@tag("views")
+class MachineLogCreateViewIdempotencyTests(TestDataMixin, TestCase):
+    """The submission_id token collapses retried submissions into one entry."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_url = reverse("log-create-machine", kwargs={"slug": self.machine.slug})
+        self.client.force_login(self.maintainer_user)
+
+    def _payload(self, token, text="Adjusted the flippers"):
+        return {
+            "submission_id": str(token),
+            "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+            "maintainer_freetext": "Test User",
+            "text": text,
+        }
+
+    def test_resubmitting_same_token_does_not_duplicate(self):
+        """The same rendered form submitted twice creates only one entry."""
+        token = uuid4()
+
+        first = self.client.post(self.create_url, self._payload(token))
+        second = self.client.post(self.create_url, self._payload(token))
+
+        self.assertEqual(first.status_code, 302)
+        self.assertEqual(second.status_code, 302)
+        self.assertEqual(LogEntry.objects.count(), 1)
+        self.assertEqual(LogEntry.objects.get().submission_id, token)
+
+    def test_different_tokens_create_separate_entries(self):
+        """Two different people (different tokens) both get their entries kept."""
+        self.client.post(self.create_url, self._payload(uuid4()))
+        self.client.post(self.create_url, self._payload(uuid4()))
+
+        self.assertEqual(LogEntry.objects.count(), 2)
+
+    def test_missing_token_still_creates_entry(self):
+        """A submission without a token falls back to an unconditional create."""
+        response = self.client.post(
+            self.create_url,
+            {
+                "occurred_at": timezone.now().strftime(DATETIME_INPUT_FORMAT),
+                "maintainer_freetext": "Test User",
+                "text": "No token here",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(LogEntry.objects.count(), 1)
+        self.assertIsNone(LogEntry.objects.get().submission_id)
+
+    def test_get_form_seeds_a_submission_token(self):
+        """The rendered form carries a fresh hidden submission_id."""
+        response = self.client.get(self.create_url)
+        self.assertContains(response, 'name="submission_id"')
+
+    def test_token_from_a_different_entry_is_rejected(self):
+        """A token already tied to another entry is rejected, not silently swallowed."""
+        from flipfix.apps.core.test_utils import create_machine
+
+        other_machine = create_machine(name="Other Machine")
+        token = uuid4()
+        LogEntry.objects.create(
+            machine=other_machine,
+            text="prior work",
+            submission_id=token,
+            created_by=self.maintainer_user,
+        )
+
+        response = self.client.post(self.create_url, self._payload(token))
+
+        self.assertEqual(response.status_code, 200)  # re-rendered form, not a redirect
+        self.assertContains(response, "already used for a different entry")
+        self.assertEqual(LogEntry.objects.filter(machine=self.machine).count(), 0)
+
+    def test_duplicate_takes_the_already_recorded_path(self):
+        """The retry hits the duplicate branch (info message), not a second create."""
+        token = uuid4()
+
+        first = self.client.post(self.create_url, self._payload(token), follow=True)
+        second = self.client.post(self.create_url, self._payload(token), follow=True)
+
+        self.assertContains(first, "Log entry added")
+        self.assertNotContains(first, "already recorded")
+        self.assertContains(second, "That log entry was already recorded.")
+        self.assertEqual(LogEntry.objects.count(), 1)
 
 
 @tag("views")

@@ -171,6 +171,11 @@ class LogEntryEditForm(StyledFormMixin, forms.ModelForm):
 
 class LogEntryQuickForm(StyledFormMixin, forms.Form):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
+    # Idempotency token: one value per rendered form (seeded in the view's
+    # get_initial). Resubmitting the same rendered page carries the same token,
+    # letting the view collapse duplicate submissions from a slow/retried
+    # connection. Optional so a stale cached page without a token still works.
+    submission_id = forms.UUIDField(required=False, widget=forms.HiddenInput())
     occurred_at = forms.DateTimeField(
         label="Date of work",
         widget=forms.DateTimeInput(

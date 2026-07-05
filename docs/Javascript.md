@@ -180,9 +180,10 @@ These are utility functions called by other components rather than auto-initiali
 
 ### Forms
 
-| File                 | Purpose                                                  |
-| -------------------- | -------------------------------------------------------- |
-| template_selector.js | Template dropdown on create forms, fetched from wiki API |
+| File                 | Purpose                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| template_selector.js | Template dropdown on create forms, fetched from wiki API                                                     |
+| submit_guard.js      | Disables and relabels the submit button after a valid submit to prevent double-submits (`data-submit-guard`) |
 
 ### Page-Specific
 

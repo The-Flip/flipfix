@@ -284,6 +284,23 @@ class ProblemReport(TimeStampedMixin):
 class LogEntryQuerySet(SearchableQuerySetMixin, models.QuerySet):
     """Custom queryset for LogEntry with common filters."""
 
+    def create_or_reuse(self, submission_id, **fields):
+        """Create a log entry, or reuse the one already made for this token.
+
+        ``submission_id`` is a client idempotency token. With a token, a retried
+        submission (a slow or timed-out connection the user re-sent) collapses
+        onto the first entry via ``get_or_create``; the unique constraint plus
+        ``get_or_create``'s ``IntegrityError`` retry make this safe even when the
+        retry races the original request. A ``None`` token always creates a fresh
+        entry — multiple untokenised entries are independent and must never
+        collapse (``NULL`` is distinct under both Postgres and SQLite).
+
+        Returns ``(entry, created)`` like ``get_or_create``.
+        """
+        if submission_id is None:
+            return self.create(**fields), True
+        return self.get_or_create(submission_id=submission_id, defaults=fields)
+
     def _build_text_and_maintainer_q(self, query: str) -> Q:
         """Build Q object for searching text and maintainer fields.
 
@@ -454,6 +471,16 @@ class LogEntry(TimeStampedMixin):
         blank=True,
         related_name="log_entries_created",
         help_text="The user who created this log entry (for audit trail).",
+    )
+    submission_id = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True,
+        help_text=(
+            "Idempotency token supplied by the client (web form render or API call). "
+            "Collapses accidental resubmits from a slow or timed-out connection. "
+            "NULL for entries created without a token."
+        ),
     )
 
     objects = LogEntryQuerySet.as_manager()
