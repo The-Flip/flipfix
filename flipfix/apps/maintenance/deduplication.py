@@ -16,7 +16,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import timedelta
 
-from django.db.models import Count
+from django.db.models import Count, Q
 
 # Two submissions with identical content by the same author within this window
 # are treated as one retried submission rather than two intentional entries.
@@ -70,8 +70,16 @@ def _merge_cluster(cluster, log_entry_cls, log_entry_media, record_reference, lo
 
     # The post_delete cleanup signal is bound to the real model, so it does not
     # fire for frozen-model deletes inside a migration — prune references here.
+    # A log entry can be both a reference source (its own outbound links) and a
+    # target (an inbound `[[log:N]]` backlink), so drop the losers on both sides
+    # to avoid leaving rows that point at a deleted PK.  A rare inbound link to a
+    # collapsed duplicate is dropped; the surviving copy stays findable via its
+    # machine and problem report.
     if log_entry_ct is not None:
-        record_reference.objects.filter(source_type=log_entry_ct, source_id__in=loser_pks).delete()
+        record_reference.objects.filter(
+            Q(source_type=log_entry_ct, source_id__in=loser_pks)
+            | Q(target_type=log_entry_ct, target_id__in=loser_pks)
+        ).delete()
 
     log_entry_cls.objects.filter(pk__in=loser_pks).delete()
     return len(loser_pks), media_repointed

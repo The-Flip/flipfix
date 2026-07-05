@@ -150,6 +150,21 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             time_spent=form.cleaned_data.get("time_spent") or 0,
         )
         if not created:
+            # submission_id is a plain, client-supplied hidden field, so a stale
+            # or tampered token could point at an entry for a different machine or
+            # problem report.  Treat it as a duplicate only when the existing entry
+            # matches this submission's context (mirrors the write API's guard);
+            # otherwise reject rather than silently discard the new submission.
+            expected_report_id = self.problem_report.pk if self.problem_report else None
+            mismatched_context = (
+                log_entry.machine_id != machine.pk
+                or log_entry.problem_report_id != expected_report_id
+            )
+            if mismatched_context:
+                form.add_error(
+                    None, "This submission token was already used for a different entry."
+                )
+                return self.form_invalid(form)
             # Duplicate submission (a retried, slow, or double-clicked request).
             # The original request already did the follow-up work; just point the
             # user at the entry it created.

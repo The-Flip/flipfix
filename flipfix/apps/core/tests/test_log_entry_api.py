@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from uuid import uuid4
 
 from django.test import TestCase, tag
 
@@ -174,7 +175,7 @@ class LogEntryCreateApiIdempotencyTests(TestCase):
 
     def test_same_key_is_idempotent(self):
         """A retry with the same key returns the first entry with 200, no duplicate."""
-        key = "3f8b1c1e-2a4d-4f6a-9b0c-1d2e3f4a5b6c"
+        key = str(uuid4())
 
         first = self._post({"text": "shut down again", "idempotency_key": key})
         second = self._post({"text": "shut down again", "idempotency_key": key})
@@ -186,8 +187,8 @@ class LogEntryCreateApiIdempotencyTests(TestCase):
 
     def test_different_keys_create_separate_entries(self):
         """Distinct keys are distinct submissions and each creates an entry."""
-        self._post({"text": "event one", "idempotency_key": "11111111-1111-4111-8111-111111111111"})
-        self._post({"text": "event two", "idempotency_key": "22222222-2222-4222-8222-222222222222"})
+        self._post({"text": "event one", "idempotency_key": str(uuid4())})
+        self._post({"text": "event two", "idempotency_key": str(uuid4())})
         self.assertEqual(LogEntry.objects.count(), 2)
 
     def test_without_key_every_call_creates(self):
@@ -206,7 +207,7 @@ class LogEntryCreateApiIdempotencyTests(TestCase):
 
     def test_key_reused_across_reports_returns_400(self):
         """A key already used on another report is rejected, not silently misdirected."""
-        key = "3f8b1c1e-2a4d-4f6a-9b0c-1d2e3f4a5b6c"
+        key = str(uuid4())
         self._post({"text": "first report", "idempotency_key": key})
 
         other_report = ProblemReport.objects.create(

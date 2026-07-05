@@ -159,3 +159,27 @@ class DeduplicateLogEntriesTests(TemporaryMediaMixin, TestDataMixin, TestCase):
             RecordReference.objects.filter(source_type=logentry_ct, source_id=loser.pk).exists()
         )
         self.assertTrue(LogEntry.objects.filter(pk=survivor.pk).exists())
+
+    def test_inbound_references_to_a_loser_are_pruned(self):
+        """A backlink pointing at a collapsed duplicate is removed, not left dangling."""
+        survivor = _make_entry(self.machine, self.user, "Fixed flippers", self.base)
+        loser = _make_entry(
+            self.machine, self.user, "Fixed flippers", self.base + timedelta(seconds=30)
+        )
+        logentry_ct = ContentType.objects.get_for_model(LogEntry)
+        # A separate entry links TO the loser (the loser is the reference target).
+        source = _make_entry(self.machine, self.user, f"See [[log:{loser.pk}]]", self.base)
+        RecordReference.objects.create(
+            source_type=logentry_ct,
+            source_id=source.pk,
+            target_type=logentry_ct,
+            target_id=loser.pk,
+        )
+
+        _run()
+
+        self.assertFalse(
+            RecordReference.objects.filter(target_type=logentry_ct, target_id=loser.pk).exists()
+        )
+        self.assertTrue(LogEntry.objects.filter(pk=survivor.pk).exists())
+        self.assertTrue(LogEntry.objects.filter(pk=source.pk).exists())

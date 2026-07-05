@@ -346,6 +346,25 @@ class MachineLogCreateViewIdempotencyTests(TestDataMixin, TestCase):
         response = self.client.get(self.create_url)
         self.assertContains(response, 'name="submission_id"')
 
+    def test_token_from_a_different_entry_is_rejected(self):
+        """A token already tied to another entry is rejected, not silently swallowed."""
+        from flipfix.apps.core.test_utils import create_machine
+
+        other_machine = create_machine(name="Other Machine")
+        token = uuid4()
+        LogEntry.objects.create(
+            machine=other_machine,
+            text="prior work",
+            submission_id=token,
+            created_by=self.maintainer_user,
+        )
+
+        response = self.client.post(self.create_url, self._payload(token))
+
+        self.assertEqual(response.status_code, 200)  # re-rendered form, not a redirect
+        self.assertContains(response, "already used for a different entry")
+        self.assertEqual(LogEntry.objects.filter(machine=self.machine).count(), 0)
+
     def test_duplicate_takes_the_already_recorded_path(self):
         """The retry hits the duplicate branch (info message), not a second create."""
         token = uuid4()
