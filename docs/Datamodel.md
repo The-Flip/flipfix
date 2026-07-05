@@ -75,7 +75,7 @@ Issue reported by museum visitor.
 
 ### Log Entry ([`LogEntry`](../flipfix/apps/maintenance/models.py))
 
-Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work. A many-to-many `maintenance_tasks` links the entry to the recurring `MaintenanceTaskType`s it completed; the entry's `occurred_at` is used as the "last done" date for those tasks.
+Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work. A many-to-many `maintenance_tasks` links the entry to the recurring `MaintenanceTaskType`s it completed; the entry's `occurred_at` is used as the "last done" date for those tasks. A nullable, unique `submission_id` (UUID) is the client idempotency token that collapses a resubmitted entry (from a slow or retried connection) instead of creating a duplicate.
 
 ### Maintenance Task Type ([`MaintenanceTaskType`](../flipfix/apps/maintenance/models.py))
 

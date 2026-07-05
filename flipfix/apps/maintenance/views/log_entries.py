@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib import messages
@@ -102,6 +103,10 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             )
         if self.machine:
             initial["machine_slug"] = self.machine.slug
+        # Fresh idempotency token per rendered form. A resubmission of this same
+        # page (e.g. after a timed-out connection) carries the same token, so
+        # form_valid collapses it instead of creating a duplicate.
+        initial["submission_id"] = uuid4()
         # occurred_at default is set by JavaScript to use browser's local timezone
         return initial
 
@@ -134,7 +139,9 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             return self.form_invalid(form)
         maintainers, freetext_names = result
 
-        log_entry = LogEntry.objects.create(
+        self.machine = machine
+        log_entry, created = LogEntry.objects.create_or_reuse(
+            form.cleaned_data.get("submission_id"),
             machine=machine,
             problem_report=self.problem_report,
             text=description,
@@ -142,8 +149,14 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             created_by=self.request.user,
             time_spent=form.cleaned_data.get("time_spent") or 0,
         )
+        if not created:
+            # Duplicate submission (a retried, slow, or double-clicked request).
+            # The original request already did the follow-up work; just point the
+            # user at the entry it created.
+            messages.info(self.request, "That log entry was already recorded.")
+            return self._redirect_after_save()
+
         sync_references(log_entry, log_entry.text)
-        self.machine = machine
 
         tasks = form.cleaned_data.get("maintenance_tasks")
         if tasks:
@@ -154,6 +167,10 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
         problem_closed = self._maybe_close_problem_report()
         self._build_success_message(log_entry, problem_closed)
 
+        return self._redirect_after_save()
+
+    def _redirect_after_save(self):
+        """Redirect to the problem report or machine the entry belongs to."""
         if self.problem_report:
             return redirect("problem-report-detail", pk=self.problem_report.pk)
         return redirect("maintainer-machine-detail", slug=self.machine.slug)

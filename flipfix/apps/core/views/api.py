@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from uuid import UUID
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -49,6 +50,20 @@ def _parse_occurred_at(raw):
     if timezone.is_naive(occurred_at):
         occurred_at = timezone.make_aware(occurred_at)
     return occurred_at
+
+
+def _parse_idempotency_key(raw) -> UUID | None:
+    """Parse an optional ``idempotency_key``, returning a ``UUID`` or ``None``.
+
+    Raises ``ValidationError`` (rendered as 400) when a value is given but is not
+    a valid UUID.
+    """
+    if not raw:
+        return None
+    try:
+        return UUID(str(raw))
+    except ValueError as e:
+        raise ValidationError("Invalid idempotency_key: expected a UUID") from e
 
 
 def _serialize_machine(m: MachineInstance) -> dict:
@@ -255,8 +270,15 @@ class ProblemReportLogEntryCreateApiView(View):
                 f"reported_by_name is too long (max {max_name_length} characters)"
             )
 
+        idempotency_key = _parse_idempotency_key(body.get("idempotency_key"))
+
+        # A retried request (slow or timed-out connection) reuses the same key, so
+        # create_or_reuse collapses it onto the first entry instead of appending a
+        # duplicate.  Mirrors the idempotent problem-report create endpoint:
+        # existing match -> 200, new entry -> 201.
         with transaction.atomic():
-            entry = LogEntry.objects.create(
+            entry, created = LogEntry.objects.create_or_reuse(
+                idempotency_key,
                 machine=report.machine,
                 problem_report=report,
                 text=text,
@@ -264,4 +286,10 @@ class ProblemReportLogEntryCreateApiView(View):
                 maintainer_names=maintainer_names,
             )
 
-        return JsonResponse({"log_entry": _serialize_log_entry(entry)}, status=201)
+        # submission_id is globally unique, so a key reused across reports would
+        # silently return the wrong report's entry.  Reject that explicitly.
+        if not created and entry.problem_report_id != report.pk:
+            raise ValidationError("idempotency_key was already used for a different problem report")
+
+        status = 201 if created else 200
+        return JsonResponse({"log_entry": _serialize_log_entry(entry)}, status=status)

@@ -50,10 +50,12 @@
   <form id="log-entry-form"
         method="post"
         enctype="multipart/form-data"
-        class="form-main">
+        class="form-main"
+        data-submit-guard>
     {% csrf_token %}
     {% form_non_field_errors form %}
     <input type="hidden" name="browser_timezone" id="browser-timezone">
+    {{ form.submission_id }}
     {% if is_shared_account %}
       {% maintainer_chip_input_field label="Who did the work?" errors=maintainer_errors %}
     {% endif %}
@@ -130,6 +132,7 @@
   <script src="{% static 'core/maintainer_chip_input.js' %}" defer></script>
   <script src="{% static 'core/file_accumulator.js' %}" defer></script>
   <script src="{% static 'core/template_selector.js' %}" defer></script>
+  <script src="{% static 'core/submit_guard.js' %}" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Set browser timezone for form submission (handles DST correctly)

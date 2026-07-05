@@ -238,9 +238,17 @@ _again_) hits the `200` idempotent path and creates no new report, the caller us
 | `text`             | string | **required**   | The log entry body (must be non-empty)            |
 | `occurred_at`      | string | now            | ISO-8601 datetime of when the work/event occurred |
 | `reported_by_name` | string | key `app_name` | Display name for the author (max 120 chars)       |
+| `idempotency_key`  | string | none           | UUID that makes retries safe (see below)          |
 
 `reported_by_name` is stored as the entry's `maintainer_names`. When omitted, it defaults to the API
 key's `app_name`, so an entry always carries attribution.
+
+**Idempotency.** Supply a client-generated UUID `idempotency_key` to make retries safe: if a request
+with that key already created an entry, the existing entry is returned with `200 OK` instead of
+appending a duplicate — so a caller that retries after a slow or timed-out connection won't double-log.
+A new entry returns `201 Created`. The key is optional and backwards-compatible: omit it and every
+call creates a new entry (`201`) as before. Reuse a key **only** for retries of the same submission —
+a genuinely new event needs a fresh key.
 
 **Example request:**
 
@@ -272,7 +280,8 @@ curl -X POST \
 ```
 
 Returns `404` if no problem report has the given `pk`, and `400` for a missing/empty `text`, an
-unparseable `occurred_at`, malformed JSON, or a `reported_by_name` longer than 120 characters. The
+unparseable `occurred_at`, malformed JSON, a `reported_by_name` longer than 120 characters, a
+non-UUID `idempotency_key`, or an `idempotency_key` already used on a different problem report. The
 log entry is linked to the report's machine, so it appears on both the report and the machine
 timeline (and posts to the Discord #logs channel like any other log entry).
 
