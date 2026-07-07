@@ -24,7 +24,7 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.url = reverse("public-problem-report-create", kwargs={"slug": self.machine.slug})
+        self.url = reverse("public-problem-report-create", kwargs={"code": self.machine.asset_id})
 
     def test_create_view_accessible_without_login(self):
         """Problem report form should be accessible to anonymous users."""
@@ -37,12 +37,52 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, self.machine.name)
 
+    def test_resolves_by_asset_id_case_insensitively(self):
+        """The QR route resolves a machine by its asset ID, ignoring case."""
+        url = reverse(
+            "public-problem-report-create",
+            kwargs={"code": self.machine.asset_id.lower()},
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["machine"], self.machine)
+
+    def test_resolves_by_legacy_slug(self):
+        """Older QR codes encoding the machine slug still resolve (backward compat)."""
+        url = reverse("public-problem-report-create", kwargs={"code": self.machine.slug})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["machine"], self.machine)
+
+    def test_legacy_slug_submission_creates_report(self):
+        """A report submitted via a legacy slug URL is created and redirects."""
+        url = reverse("public-problem-report-create", kwargs={"code": self.machine.slug})
+        response = self.client.post(url, {"description": "Ball stuck"}, REMOTE_ADDR="192.168.1.100")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ProblemReport.objects.count(), 1)
+        self.assertEqual(ProblemReport.objects.first().machine, self.machine)
+
+    def test_unknown_code_returns_404(self):
+        """A code matching neither an asset ID nor a slug returns 404."""
+        url = reverse("public-problem-report-create", kwargs={"code": "no-such-machine"})
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_form_has_no_problem_type_field(self):
+        """The problem-type radios were removed from the public form."""
+        response = self.client.get(self.url)
+        self.assertNotContains(response, 'name="problem_type"')
+        self.assertNotIn("problem_type", response.context["form"].fields)
+
+    def test_description_is_required(self):
+        """An empty submission is rejected: describing the problem is required."""
+        response = self.client.post(self.url, {"description": ""}, REMOTE_ADDR="192.168.1.100")
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(response.context["form"], "description", "This field is required.")
+        self.assertEqual(ProblemReport.objects.count(), 0)
+
     def test_create_problem_report_success(self):
         """Successfully creating a problem report should save it with correct data."""
-        data = {
-            "problem_type": ProblemReport.ProblemType.STUCK_BALL,
-            "description": "Ball is stuck behind the bumpers",
-        }
+        data = {"description": "Ball is stuck behind the bumpers"}
         response = self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
 
         self.assertEqual(response.status_code, 302)
@@ -51,40 +91,22 @@ class ProblemReportCreateViewTests(TestDataMixin, TestCase):
         self.assertEqual(ProblemReport.objects.count(), 1)
         report = ProblemReport.objects.first()
         self.assertEqual(report.machine, self.machine)
-        self.assertEqual(report.problem_type, ProblemReport.ProblemType.STUCK_BALL)
+        # Public reports no longer collect a type; it falls back to the model default.
+        self.assertEqual(report.problem_type, ProblemReport.ProblemType.OTHER)
         self.assertEqual(report.description, "Ball is stuck behind the bumpers")
         self.assertEqual(report.status, ProblemReport.Status.OPEN)
         self.assertEqual(report.ip_address, "192.168.1.100")
 
     def test_visitor_report_gets_untriaged_priority(self):
         """Public submissions should always be set to UNTRIAGED priority."""
-        data = {
-            "problem_type": ProblemReport.ProblemType.STUCK_BALL,
-            "description": "Ball stuck",
-        }
-        self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
+        self.client.post(self.url, {"description": "Ball stuck"}, REMOTE_ADDR="192.168.1.100")
 
         report = ProblemReport.objects.first()
         self.assertEqual(report.priority, ProblemReport.Priority.UNTRIAGED)
 
-    def test_create_problem_report_with_other_type(self):
-        """Problem type can be explicitly set to 'other'."""
-        data = {
-            "problem_type": ProblemReport.ProblemType.OTHER,
-            "description": "Something is wrong",
-        }
-        response = self.client.post(self.url, data, REMOTE_ADDR="192.168.1.100")
-
-        self.assertEqual(response.status_code, 302)
-        report = ProblemReport.objects.first()
-        self.assertEqual(report.problem_type, ProblemReport.ProblemType.OTHER)
-
     def test_create_problem_report_captures_user_agent(self):
         """Problem report should capture the User-Agent header."""
-        data = {
-            "problem_type": ProblemReport.ProblemType.NO_CREDITS,
-            "description": "Credits not working",
-        }
+        data = {"description": "Credits not working"}
         self.client.post(
             self.url,
             data,

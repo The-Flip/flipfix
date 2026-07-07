@@ -18,31 +18,36 @@ from flipfix.apps.maintenance.models import LogEntry, MaintenanceTaskType, Probl
 
 class ProblemReportForm(StyledFormMixin, forms.ModelForm):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
+    media_file = MultiFileField(label="Photo or video", required=False)
 
     class Meta:
         model = ProblemReport
-        fields = ["problem_type", "description"]
-        widgets = {
-            "problem_type": forms.RadioSelect(),
+        fields = ["description"]
+        # Annotated with the base Widget type so subclasses can override with
+        # other widget classes (e.g. the maintainer form's Select for priority).
+        widgets: dict[str, forms.Widget] = {
             "description": forms.Textarea(
-                attrs={"rows": 4, "placeholder": "Describe the problem..."}
+                attrs={
+                    "rows": 4,
+                    "placeholder": "stuck ball, sticky flipper, target not working...",
+                }
             ),
         }
         labels = {
-            "problem_type": "What type of problem?",
-            "description": "",
+            "description": "What's wrong?",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A report must describe the problem: it's now the only substantive field.
+        self.fields["description"].required = True
 
     def clean_machine_slug(self):
         return clean_machine_slug(self.cleaned_data)
 
-    def clean(self):
-        cleaned = super().clean()
-        problem_type = cleaned.get("problem_type")
-        description = (cleaned.get("description") or "").strip()
-        if problem_type == ProblemReport.ProblemType.OTHER and not description:
-            self.add_error("description", "Please describe the problem.")
-        return cleaned
+    def clean_media_file(self):
+        """Validate uploaded media (photos or video). Supports multiple files."""
+        return clean_media_files(self.files, self.cleaned_data)
 
 
 class MaintainerProblemReportForm(ProblemReportForm):
@@ -54,15 +59,14 @@ class MaintainerProblemReportForm(ProblemReportForm):
 
     class Meta(ProblemReportForm.Meta):
         fields = ["description", "priority", "occurred_at"]
-        widgets = {
-            **ProblemReportForm.Meta.widgets,
+        # Annotated so the mixed widget types (Textarea + Select) share a base type.
+        widgets: dict[str, forms.Widget] = {
             "description": MarkdownTextarea(
                 attrs={"rows": 4, "placeholder": "Describe the problem..."}
             ),
             "priority": forms.Select(),
         }
         labels = {
-            **ProblemReportForm.Meta.labels,
             "description": "Description",
         }
 
@@ -77,7 +81,7 @@ class MaintainerProblemReportForm(ProblemReportForm):
         widget=forms.TextInput(attrs={"placeholder": "Who is reporting this?"}),
     )
 
-    media_file = MultiFileField(label="Photo", required=False)
+    # media_file and clean_media_file are inherited from ProblemReportForm.
 
     # occurred_at is optional; model has default=timezone.now.
     # JS pre-fills client-side, but tests/API can omit it.
@@ -92,10 +96,6 @@ class MaintainerProblemReportForm(ProblemReportForm):
     def clean_description(self):
         """Convert authoring format links to storage format."""
         return clean_markdown_field(self.cleaned_data, "description")
-
-    def clean_media_file(self):
-        """Validate uploaded media (photo or video). Supports multiple files."""
-        return clean_media_files(self.files, self.cleaned_data)
 
     def clean_occurred_at(self):
         """Default to now if occurred_at is empty."""

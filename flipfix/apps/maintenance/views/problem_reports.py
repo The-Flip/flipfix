@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -92,6 +93,12 @@ class ProblemReportLogEntriesPartialView(InfiniteScrollMixin, View):
         )
 
 
+# Newly printed QR codes encode the machine's asset ID (e.g. M0001); older ones
+# encode the slug. A single route resolves both, trying the asset ID first when the
+# code matches the asset-ID shape so legacy slug codes keep working unchanged.
+_ASSET_ID_RE = re.compile(rf"^{re.escape(MachineInstance.ASSET_ID_PREFIX)}\d+$", re.IGNORECASE)
+
+
 class PublicProblemReportCreateView(FormView):
     """Public-facing problem report submission (minimal shell)."""
 
@@ -99,8 +106,20 @@ class PublicProblemReportCreateView(FormView):
     form_class = ProblemReportForm
 
     def dispatch(self, request, *args, **kwargs):
-        self.machine = get_object_or_404(MachineInstance, slug=kwargs["slug"])
+        code = kwargs["code"]
+        machine = None
+        if _ASSET_ID_RE.match(code):
+            machine = MachineInstance.objects.filter(asset_id__iexact=code).first()
+        if machine is None:
+            machine = MachineInstance.objects.filter(slug=code).first()
+        if machine is None:
+            raise Http404("No machine matches the given code.")
+        self.machine = machine
         return super().dispatch(request, *args, **kwargs)
+
+    def _self_url_code(self) -> str:
+        """Canonical code for redirecting back to this form (asset ID preferred)."""
+        return self.machine.asset_id or self.machine.slug
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -112,7 +131,7 @@ class PublicProblemReportCreateView(FormView):
         ip_address = get_real_ip(request)
         if ip_address and not self._check_rate_limit(ip_address):
             messages.error(request, "Too many reports submitted recently. Please try again later.")
-            return redirect("public-problem-report-create", slug=self.machine.slug)
+            return redirect("public-problem-report-create", code=self._self_url_code())
         return super().post(request, *args, **kwargs)
 
     def _check_rate_limit(self, ip_address: str) -> bool:
@@ -122,6 +141,7 @@ class PublicProblemReportCreateView(FormView):
         ).count()
         return recent_reports < settings.RATE_LIMIT_REPORTS_PER_IP
 
+    @transaction.atomic
     def form_valid(self, form):
         report = form.save(commit=False)
         report.machine = self.machine
@@ -131,8 +151,19 @@ class PublicProblemReportCreateView(FormView):
         if self.request.user.is_authenticated:
             report.reported_by_user = self.request.user
         report.save()
+
+        # Attach any photos/videos the reporter uploaded. Must run inside the
+        # transaction: attach_media_files schedules video transcoding on_commit.
+        media_files = form.cleaned_data.get("media_file", [])
+        if media_files:
+            attach_media_files(
+                media_files=media_files,
+                parent=report,
+                media_model=ProblemReportMedia,
+            )
+
         messages.success(self.request, "Thanks! The maintenance team has been notified.")
-        return redirect("public-problem-report-create", slug=self.machine.slug)
+        return redirect("public-problem-report-create", code=self._self_url_code())
 
 
 class ProblemReportCreateView(FormPrefillMixin, SharedAccountMixin, FormView):

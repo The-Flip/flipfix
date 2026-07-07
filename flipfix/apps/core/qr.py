@@ -14,7 +14,7 @@ from qrcode.constants import ERROR_CORRECT_H
 
 # QR code configuration
 QR_BOX_SIZE_SINGLE = 10  # Larger boxes for single QR display
-QR_BOX_SIZE_BULK = 8  # Smaller boxes for bulk printing
+QR_BOX_SIZE_BULK = 10  # Keep bulk rasters crisp when scaled up to the chosen print size
 QR_BORDER = 4
 QR_LOGO_SIZE_RATIO = 0.28  # Logo takes 28% of QR width (within 30% error correction)
 QR_LOGO_SIZE_RATIO_BULK = 0.25  # Slightly smaller for bulk
