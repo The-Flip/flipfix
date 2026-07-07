@@ -18,7 +18,7 @@ from flipfix.apps.maintenance.models import LogEntry, MaintenanceTaskType, Probl
 
 class ProblemReportForm(StyledFormMixin, forms.ModelForm):
     machine_slug = forms.CharField(required=False, widget=forms.HiddenInput())
-    media_file = MultiFileField(label="Photo", required=False)
+    media_file = MultiFileField(label="Photo or video", required=False)
 
     class Meta:
         model = ProblemReport
