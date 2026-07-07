@@ -44,3 +44,15 @@ class MachineBulkQRCodeViewAccessTests(SuppressRequestLogsMixin, TestDataMixin, 
         self.client.force_login(self.superuser)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+
+    def test_shows_report_a_problem_label_and_controls(self):
+        """The bulk page labels each QR and offers size + machine-selection controls."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+
+        self.assertContains(response, "Report a Problem")
+        self.assertContains(response, self.machine.name)
+        self.assertContains(response, "data-qr-size-input")
+        self.assertContains(response, "data-qr-machine-toggle")
+        # Each card carries its machine id so JS can toggle print visibility.
+        self.assertContains(response, f'data-machine-id="{self.machine.pk}"')

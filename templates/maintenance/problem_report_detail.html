@@ -81,7 +81,11 @@
   <!-- DESCRIPTION CARD -->
   {% include "core/partials/text_card_editable.html" with content=report.description %}
   <!-- MEDIA CARD -->
-  {% include "core/partials/media_card_editable.html" with media_items=report.media.all alt="Problem report photo" model_name="ProblemReportMedia" %}
+  {# Untriaged reports are unreviewed visitor submissions: hide their media from #}
+  {# the public until a maintainer triages. Logged-in maintainers always see it. #}
+  {% if user.is_authenticated or report.priority != report.Priority.UNTRIAGED %}
+    {% include "core/partials/media_card_editable.html" with media_items=report.media.all alt="Problem report photo" model_name="ProblemReportMedia" %}
+  {% endif %}
   <!-- LOG ENTRIES SECTION -->
   <div class="space-above-lg">
     <div class="section-header{% if not log_entries %} section-header--divider{% endif %}">

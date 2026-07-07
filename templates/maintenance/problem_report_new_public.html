@@ -1,41 +1,20 @@
 {% extends "base_public_minimal.html" %}
-{% load form_tags %}
+{% load form_tags static %}
 {% block title %}Report a Problem with {{ machine.name }} · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="card card--padded">
     <h2 class="space-below-md">Report a Problem with {{ machine.name }}</h2>
-    <form method="post" class="form-main">
+    <form method="post" enctype="multipart/form-data" class="form-main">
       {% csrf_token %}
       {% form_non_field_errors form %}
-      <div class="form-field">
-        <label class="form-label">What's wrong?</label>
-        <div class="radio-group">
-          {% for value, label in form.problem_type.field.choices %}
-            <label class="radio-label">
-              <input type="radio"
-                     name="{{ form.problem_type.html_name }}"
-                     value="{{ value }}"
-                     {% if value == form.problem_type.value or forloop.first and not form.problem_type.value %}checked{% endif %}>
-              {{ label }}
-            </label>
-          {% endfor %}
-        </div>
-        {% field_errors form.problem_type %}
-      </div>
-      <div class="form-field">
-        <label for="{{ form.description.id_for_label }}" class="form-label">
-          Details <span class="text-muted text-xs">(optional)</span>
-        </label>
-        <textarea id="{{ form.description.id_for_label }}"
-                  name="{{ form.description.html_name }}"
-                  class="form-input form-textarea"
-                  placeholder="Any additional details..."
-                  rows="3">{{ form.description.value|default:'' }}</textarea>
-        {% field_errors form.description %}
-      </div>
+      {% form_field form.description %}
+      {% media_file_input form.media_file %}
       <div class="form-actions">
         <button type="submit" class="btn btn--primary btn--full">Submit Report</button>
       </div>
     </form>
   </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/file_accumulator.js' %}" defer></script>
 {% endblock %}

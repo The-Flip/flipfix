@@ -291,5 +291,5 @@ def report_problem_button(context, machine, btn_class="btn btn--report", label="
     if can_access_maintainer_portal(context["user"]):
         url = reverse("problem-report-create-machine", kwargs={"slug": machine.slug})
     else:
-        url = reverse("public-problem-report-create", kwargs={"slug": machine.slug})
+        url = reverse("public-problem-report-create", kwargs={"code": machine.asset_id})
     return {"url": url, "btn_class": btn_class, "label": label}

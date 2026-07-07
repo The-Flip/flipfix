@@ -283,9 +283,10 @@ urlpatterns = [
         name="public-machine-detail",
         access="always_public",
     ),
-    # Public problem report form (from QR code)
+    # Public problem report form (from QR code). ``code`` is a machine asset ID
+    # (e.g. M0001) for newly printed codes, or a legacy slug for older ones.
     path(
-        "p/<slug:slug>/",
+        "p/<str:code>/",
         PublicProblemReportCreateView.as_view(),
         name="public-problem-report-create",
         access="always_public",

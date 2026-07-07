@@ -23,7 +23,7 @@ class MachineQRView(DetailView):
         machine = self.object
 
         public_url = self.request.build_absolute_uri(
-            reverse("public-problem-report-create", args=[machine.slug])
+            reverse("public-problem-report-create", args=[machine.asset_id])
         )
 
         context["qr_code_data"] = generate_qr_code_base64(public_url)
@@ -44,7 +44,7 @@ class MachineBulkQRCodeView(TemplateView):
 
         for machine in machines:
             public_url = self.request.build_absolute_uri(
-                reverse("public-problem-report-create", args=[machine.slug])
+                reverse("public-problem-report-create", args=[machine.asset_id])
             )
             qr_entries.append(
                 {
