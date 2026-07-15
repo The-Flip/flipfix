@@ -1,5 +1,5 @@
 # Django Web Framework
-Django==5.2.15
+Django==5.2.16
 
 # Configuration Management
 python-decouple==3.8
@@ -17,7 +17,7 @@ whitenoise==6.11.0
 
 # QR Code Generation
 qrcode[pil]==8.2
-Pillow==12.2.0
+Pillow==12.3.0
 django-q2==1.9.0
 
 # HTTP Requests (for worker → web service transfer)

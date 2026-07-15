@@ -7,5 +7,5 @@
 # - audioop-lts: Python 3.13 compatibility shim for discord.py voice.
 #   Only needed on Python >= 3.13 (audioop was removed from stdlib).
 
-pillow-heif==1.2.0
+pillow-heif==1.4.0
 audioop-lts==0.2.2
