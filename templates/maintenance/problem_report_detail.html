@@ -159,6 +159,10 @@
           if (!container) {
             container = document.createElement('div');
             container.className = 'messages';
+            // Match the server-rendered container (base.html) so screen readers
+            // announce the prompt.
+            container.setAttribute('role', 'alert');
+            container.setAttribute('aria-live', 'polite');
             (document.querySelector('.main-content') || document.body).prepend(container);
           }
           const msg = document.createElement('div');

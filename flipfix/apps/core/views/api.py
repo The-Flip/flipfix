@@ -172,6 +172,7 @@ class MachineProblemReportCreateApiView(View):
                     status=ProblemReport.Status.OPEN,
                     priority=ProblemReport.Priority.UNPLAYABLE,
                 )
+                .select_related("machine")
                 .order_by("-occurred_at")
                 .first()
             )
