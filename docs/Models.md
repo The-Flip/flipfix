@@ -258,6 +258,21 @@ photos = media.exclude(thumbnail_file="")
 
 The `__gt=""` pattern works because any non-empty path is greater than `""`, while both NULL and `""` fail the comparison.
 
+## Cross-Model Invariants
+
+When a rule must hold _across_ models (e.g. "an open `Unplayable` problem report
+means the machine is `Broken`"), enforce it with an explicit, well-named helper
+called at each write site rather than a model `save()` override or a signal.
+Helpers can accept the acting user, so audit/log side effects are attributed
+correctly, and they keep the coupling greppable instead of hidden. See
+[`maintenance/status_rules.py`](../flipfix/apps/maintenance/status_rules.py)
+(`enforce_unplayable_breaks_machine`), which the create/priority views and the
+write API all call. Prefer a signal only when the invariant must survive writes
+from code paths you don't control. Back-fill pre-existing violations with a
+one-time data migration whose logic lives in an `apps`-registry function (see
+[`reconcile_machine_status.py`](../flipfix/apps/maintenance/reconcile_machine_status.py)
+and `deduplication.py`) so it is unit-testable against real models.
+
 ## Model Checklist
 
 When creating or modifying models:

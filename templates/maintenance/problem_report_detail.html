@@ -18,7 +18,8 @@
   <div class="mobile-meta"
        data-update-url="{% url 'problem-report-detail' report.pk %}"
        data-report-pk="{{ report.pk }}"
-       data-machine-name="{{ machine.short_display_name }}">
+       data-machine-name="{{ machine.short_display_name }}"
+       data-machine-update-url="{% url 'machine-inline-update' machine.slug %}">
     {# Settable status and priority pills #}
     <div class="mobile-meta__row">
       {% settable_problem_status_pill report %}
@@ -40,7 +41,8 @@
   <div class="flex flex-wrap stack-tight space-above-sm"
        data-update-url="{% url 'problem-report-detail' report.pk %}"
        data-report-pk="{{ report.pk }}"
-       data-machine-name="{{ machine.short_display_name }}">
+       data-machine-name="{{ machine.short_display_name }}"
+       data-machine-update-url="{% url 'machine-inline-update' machine.slug %}">
     {% settable_problem_status_pill report %}
     {% settable_problem_priority_pill report %}
     {% problem_report_type_pill report %}
@@ -129,34 +131,109 @@
     <script src="{% static 'core/searchable_dropdown.js' %}" defer></script>
     <script src="{% static 'core/sidebar_card_edit.js' %}" defer></script>
     <script>
-      // Problem report side effects: Close/Re-Open button toggle, toasts
-      document.addEventListener('pill:updated', (event) => {
-        const { field, value, label, data } = event.detail;
-        const wrapper = event.target.closest('[data-update-url]') || event.target;
-        const updateUrl = wrapper.dataset.updateUrl;
-        const reportPk = wrapper.dataset.reportPk;
-        const machineName = escapeHtml(wrapper.dataset.machineName || '');
+      // Problem report side effects: Close/Re-Open toggle, toasts, and the
+      // machine-status coupling (Unplayable -> Broken, and the prompt back to Good).
+      (function () {
+        'use strict';
 
-        if (field === 'status') {
-          const isOpen = value === 'open';
-          const closeBtn = document.querySelector('[data-status-action="close"]');
-          const reopenBtn = document.querySelector('[data-status-action="reopen"]');
-          if (closeBtn) closeBtn.classList.toggle('hidden', !isOpen);
-          if (reopenBtn) reopenBtn.classList.toggle('hidden', isOpen);
-          showMessage(
-            'success',
-            `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} ${isOpen ? 're-opened' : 'closed'}`
-          );
-        } else if (field === 'priority') {
-          const { pillClass, iconClass } = readPillStyling('priority');
-          const iconHtml = iconClass ? `<i class="fa-solid ${iconClass} meta"></i> ` : '';
-          const pillHtml = `<span class="pill ${pillClass}">${iconHtml}${escapeHtml(label)}</span>`;
-          showMessage(
-            'success',
-            `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} set to ${pillHtml}`
-          );
+        const MACHINE_STATUS_STYLES = {
+          good: { pill: 'pill--status-good', icon: 'check', label: 'Good' },
+          fixing: { pill: 'pill--status-fixing', icon: 'wrench', label: 'Fixing' },
+          broken: { pill: 'pill--status-broken', icon: 'circle-xmark', label: 'Broken' },
+        };
+
+        // Update the static machine status pill in the sidebar card in place.
+        function setMachineStatusPill(status) {
+          const style = MACHINE_STATUS_STYLES[status];
+          const pill = document.querySelector('[data-machine-status-pill]');
+          if (!pill || !style) return;
+          pill.className = `pill ${style.pill}`;
+          pill.innerHTML = `<i class="fa-solid fa-${style.icon} meta" aria-hidden="true"></i> ${style.label}`;
         }
-      });
+
+        // After the last open Unplayable report is closed, offer to return the
+        // machine to service (one-click POST to the machine status endpoint).
+        function renderMachineGoodPrompt(prompt, machineUpdateUrl) {
+          if (!machineUpdateUrl) return;
+          let container = document.querySelector('.messages');
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'messages';
+            // Match the server-rendered container (base.html) so screen readers
+            // announce the prompt.
+            container.setAttribute('role', 'alert');
+            container.setAttribute('aria-live', 'polite');
+            (document.querySelector('.main-content') || document.body).prepend(container);
+          }
+          const msg = document.createElement('div');
+          msg.className = 'message message--info';
+          msg.innerHTML =
+            `<span>${escapeHtml(prompt.message)}</span> ` +
+            '<button type="button" class="btn btn--status-good btn--sm" data-set-machine-good>Set machine to Good</button>';
+          const button = msg.querySelector('[data-set-machine-good]');
+          button.addEventListener('click', () => {
+            button.disabled = true;
+            const body = new FormData();
+            body.append('action', 'update_status');
+            body.append('operational_status', 'good');
+            fetch(machineUpdateUrl, {
+              method: 'POST',
+              body,
+              credentials: 'same-origin',
+              headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() },
+            })
+              .then((res) => {
+                if (!res.ok) throw new Error('Request failed');
+                return res.json();
+              })
+              .then(() => {
+                setMachineStatusPill('good');
+                msg.remove();
+                showMessage('success', 'Machine set to Good.');
+              })
+              .catch(() => {
+                button.disabled = false;
+                showMessage('error', 'Could not update machine status.');
+              });
+          });
+          container.appendChild(msg);
+        }
+
+        document.addEventListener('pill:updated', (event) => {
+          const { field, value, label, data } = event.detail;
+          const wrapper = event.target.closest('[data-update-url]') || event.target;
+          const updateUrl = wrapper.dataset.updateUrl;
+          const reportPk = wrapper.dataset.reportPk;
+          const machineName = escapeHtml(wrapper.dataset.machineName || '');
+
+          if (field === 'status') {
+            const isOpen = value === 'open';
+            const closeBtn = document.querySelector('[data-status-action="close"]');
+            const reopenBtn = document.querySelector('[data-status-action="reopen"]');
+            if (closeBtn) closeBtn.classList.toggle('hidden', !isOpen);
+            if (reopenBtn) reopenBtn.classList.toggle('hidden', isOpen);
+            showMessage(
+              'success',
+              `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} ${isOpen ? 're-opened' : 'closed'}`
+            );
+            if (data && data.machine_status_prompt) {
+              renderMachineGoodPrompt(data.machine_status_prompt, wrapper.dataset.machineUpdateUrl);
+            }
+          } else if (field === 'priority') {
+            const { pillClass, iconClass } = readPillStyling('priority');
+            const iconHtml = iconClass ? `<i class="fa-solid ${iconClass} meta"></i> ` : '';
+            const pillHtml = `<span class="pill ${pillClass}">${iconHtml}${escapeHtml(label)}</span>`;
+            showMessage(
+              'success',
+              `<a href="${updateUrl}">Problem #${reportPk}</a> on ${machineName} set to ${pillHtml}`
+            );
+            if (data && data.machine_marked_broken) {
+              setMachineStatusPill('broken');
+              showMessage('info', `${machineName} marked Broken to match the Unplayable report.`);
+            }
+          }
+        });
+      })();
     </script>
   {% endif %}
 {% endblock %}

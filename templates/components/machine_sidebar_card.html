@@ -7,7 +7,8 @@
   <div class="sidebar-card__header">{{ machine.name }}</div>
   <p class="sidebar-card__meta">{{ machine.model|manufacturer_year }}</p>
   <div class="sidebar-card__badges">
-    <span class="pill {{ machine.operational_status|machine_status_css_class }}">
+    <span class="pill {{ machine.operational_status|machine_status_css_class }}"
+          data-machine-status-pill>
       {% icon machine.operational_status|machine_status_icon class="meta" %}
       {{ machine.get_operational_status_display }}
     </span>

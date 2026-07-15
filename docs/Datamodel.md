@@ -61,7 +61,11 @@ A model of pinball machine (e.g., "Star Trek", "Godzilla").
 
 ### Machine Instance ([`MachineInstance`](../flipfix/apps/catalog/models.py))
 
-A specific physical machine in the museum (e.g., "Star Trek #2").
+A specific physical machine in the museum (e.g., "Star Trek #2"). Its
+`operational_status` (`OperationalStatus`: Good / Fixing / Broken / Unknown) is
+coupled to its problem reports by an invariant: **an open `Unplayable` report
+forces the machine to `Broken`** (see Problem Report, below). The coupling is
+one-directional — returning a machine to service is always a human decision.
 
 ### Location ([`Location`](../flipfix/apps/catalog/models.py))
 
@@ -71,7 +75,16 @@ Physical location where machines can be placed (e.g., "Main Floor", "Workshop").
 
 ### Problem Report ([`ProblemReport`](../flipfix/apps/maintenance/models.py))
 
-Issue reported by museum visitor.
+Issue reported by a museum visitor or maintainer. `priority` (`Priority`:
+Untriaged / Unplayable / Major / Minor / Task) drives list ordering and is
+coupled to machine status: creating or re-prioritising a report to `Unplayable`
+marks its machine `Broken`, enforced at every write path by
+[`status_rules.enforce_unplayable_breaks_machine`](../flipfix/apps/maintenance/status_rules.py).
+Closing the last open `Unplayable` report does **not** auto-restore the machine;
+instead the UI offers the maintainer a one-click "Set machine to Good?" via
+[`status_rules.machine_status_downgrade_prompt`](../flipfix/apps/maintenance/status_rules.py).
+Pre-existing drift was reconciled once by migration
+`maintenance/0024_reconcile_unplayable_machine_status`.
 
 ### Log Entry ([`LogEntry`](../flipfix/apps/maintenance/models.py))
 
