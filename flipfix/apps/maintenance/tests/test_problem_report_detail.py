@@ -5,6 +5,7 @@ from django.test import TestCase, tag
 from django.urls import reverse
 
 from flipfix.apps.accounts.models import Maintainer
+from flipfix.apps.catalog.models import MachineInstance
 from flipfix.apps.core.models import RecordReference
 from flipfix.apps.core.test_utils import (
     SuppressRequestLogsMixin,
@@ -411,6 +412,34 @@ class ProblemReportPriorityUpdateTests(SuppressRequestLogsMixin, TestDataMixin, 
 
         self.assertEqual(LogEntry.objects.count(), initial_log_count)
 
+    def test_update_priority_to_unplayable_marks_machine_broken(self):
+        """Raising priority to Unplayable breaks the machine and flags it in JSON."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.UNPLAYABLE},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["machine_marked_broken"])
+        self.machine.refresh_from_db()
+        self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.BROKEN)
+
+    def test_update_priority_to_major_leaves_machine_unchanged(self):
+        """A non-Unplayable priority does not touch machine status."""
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_priority", "priority": ProblemReport.Priority.MAJOR},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["machine_marked_broken"])
+        self.machine.refresh_from_db()
+        self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.GOOD)
+
 
 @tag("views")
 class ProblemReportStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, TestCase):
@@ -491,6 +520,66 @@ class ProblemReportStatusUpdateTests(SuppressRequestLogsMixin, TestDataMixin, Te
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def _make_broken_with_unplayable(self):
+        """Put the machine in Broken with a single open Unplayable report."""
+        self.machine.operational_status = MachineInstance.OperationalStatus.BROKEN
+        self.machine.save(update_fields=["operational_status"])
+        self.report.priority = ProblemReport.Priority.UNPLAYABLE
+        self.report.save(update_fields=["priority"])
+
+    def test_closing_last_unplayable_returns_downgrade_prompt(self):
+        """Closing the last open Unplayable report offers to return to service."""
+        self._make_broken_with_unplayable()
+        create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.MINOR,
+        )
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.CLOSED},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        prompt = response.json()["machine_status_prompt"]
+        self.assertEqual(prompt["remaining_open"], 1)
+        self.assertEqual(prompt["machine_slug"], self.machine.slug)
+        self.assertIn("Set machine to Good?", prompt["message"])
+
+    def test_closing_unplayable_with_others_open_no_prompt(self):
+        """No prompt while another open Unplayable report remains."""
+        self._make_broken_with_unplayable()
+        create_problem_report(
+            machine=self.machine,
+            status=ProblemReport.Status.OPEN,
+            priority=ProblemReport.Priority.UNPLAYABLE,
+        )
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.CLOSED},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("machine_status_prompt", response.json())
+
+    def test_closing_non_unplayable_report_no_prompt(self):
+        """Closing an ordinary report never prompts, even on a broken machine."""
+        self.machine.operational_status = MachineInstance.OperationalStatus.BROKEN
+        self.machine.save(update_fields=["operational_status"])
+        self.client.force_login(self.maintainer_user)
+
+        response = self.client.post(
+            self.detail_url,
+            {"action": "update_status", "status": ProblemReport.Status.CLOSED},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("machine_status_prompt", response.json())
 
 
 @tag("views")

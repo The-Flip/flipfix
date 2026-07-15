@@ -49,6 +49,10 @@ from flipfix.apps.maintenance.models import (
     ProblemReport,
     ProblemReportMedia,
 )
+from flipfix.apps.maintenance.status_rules import (
+    enforce_unplayable_breaks_machine,
+    machine_status_downgrade_prompt,
+)
 
 
 class ProblemReportListView(TemplateView):
@@ -235,6 +239,9 @@ class ProblemReportCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
         report.save()
         sync_references(report, report.description)
 
+        # An open Unplayable report means the machine is broken.
+        enforce_unplayable_breaks_machine(report, actor=self.request.user)
+
         # Handle media uploads
         media_files = form.cleaned_data.get("media_file", [])
         if media_files:
@@ -385,14 +392,20 @@ class ProblemReportDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView)
             return JsonResponse({"success": False, "error": "Invalid priority"}, status=400)
         if new_priority == self.object.priority:
             return JsonResponse({"success": True, "status": "noop"})
-        self.object.priority = new_priority
-        self.object.save(update_fields=["priority", "updated_at"])
+        with transaction.atomic():
+            self.object.priority = new_priority
+            self.object.save(update_fields=["priority", "updated_at"])
+            # Raising priority to Unplayable breaks the machine.
+            machine_marked_broken = enforce_unplayable_breaks_machine(
+                self.object, actor=request.user
+            )
         return JsonResponse(
             {
                 "success": True,
                 "status": "success",
                 "priority": new_priority,
                 "priority_display": self.object.get_priority_display(),
+                "machine_marked_broken": machine_marked_broken,
             }
         )
 
@@ -411,16 +424,18 @@ class ProblemReportDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView)
             {"entry": log_entry},
             request=request,
         )
-        return JsonResponse(
-            {
-                "success": True,
-                "status": "success",
-                "new_status": new_status,
-                "new_status_display": self.object.get_status_display(),
-                "log_entry_html": log_entry_html,
-                "entry_type": "log",
-            }
-        )
+        response = {
+            "success": True,
+            "status": "success",
+            "new_status": new_status,
+            "new_status_display": self.object.get_status_display(),
+            "log_entry_html": log_entry_html,
+            "entry_type": "log",
+        }
+        prompt = machine_status_downgrade_prompt(self.object)
+        if prompt is not None:
+            response["machine_status_prompt"] = prompt
+        return JsonResponse(response)
 
     def _handle_toggle_status(self, request):
         """Form POST: toggle between open/closed (desktop Close/Re-Open button)."""
@@ -441,6 +456,18 @@ class ProblemReportDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView)
                 action_text,
             ),
         )
+        prompt = machine_status_downgrade_prompt(self.object)
+        if prompt is not None:
+            machine = self.object.machine
+            messages.info(
+                request,
+                format_html(
+                    '{} <a href="{}">Update {} status</a>.',
+                    prompt["message"],
+                    reverse("machine-details", kwargs={"slug": machine.slug}),
+                    machine.short_display_name,
+                ),
+            )
         return redirect("problem-report-detail", pk=self.object.pk)
 
     def _change_report_status(self, new_status, user):

@@ -105,8 +105,15 @@ class ProblemReportCreateApiBehaviorTests(TestCase):
             LogEntry.objects.filter(machine=self.machine, text__icontains="Broken").exists()
         )
 
-    def test_without_mark_broken_leaves_status_untouched(self):
+    def test_unplayable_marks_broken_without_mark_broken(self):
+        """An open Unplayable report breaks the machine even without mark_broken."""
         self._post({"priority": "unplayable"})
+        self.machine.refresh_from_db()
+        self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.BROKEN)
+
+    def test_non_unplayable_leaves_status_untouched(self):
+        """A non-Unplayable report without mark_broken does not change status."""
+        self._post({"priority": "minor"})
         self.machine.refresh_from_db()
         self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.GOOD)
 

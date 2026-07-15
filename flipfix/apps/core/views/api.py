@@ -17,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from flipfix.apps.catalog.models import MachineInstance
 from flipfix.apps.core.api_auth import json_api_view, validate_api_key
 from flipfix.apps.maintenance.models import LogEntry, ProblemReport
+from flipfix.apps.maintenance.status_rules import enforce_unplayable_breaks_machine
 
 
 def _load_json_body(request) -> dict:
@@ -175,6 +176,8 @@ class MachineProblemReportCreateApiView(View):
                 .first()
             )
             if existing is not None:
+                # Repair any drift: an open unplayable report means broken.
+                enforce_unplayable_breaks_machine(existing)
                 return JsonResponse(
                     {"problem_report": _serialize_problem_report(existing)}, status=200
                 )
@@ -188,6 +191,8 @@ class MachineProblemReportCreateApiView(View):
                 reported_by_name=payload["reported_by_name"],
                 occurred_at=payload["occurred_at"],
             )
+            # An open Unplayable report means the machine is broken.
+            enforce_unplayable_breaks_machine(report)
             if payload["mark_broken"] and (
                 machine.operational_status != MachineInstance.OperationalStatus.BROKEN
             ):

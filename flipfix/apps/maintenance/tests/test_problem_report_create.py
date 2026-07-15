@@ -8,6 +8,7 @@ from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
+from flipfix.apps.catalog.models import MachineInstance
 from flipfix.apps.core.models import RecordReference
 from flipfix.apps.core.test_utils import (
     DATETIME_INPUT_FORMAT,
@@ -285,6 +286,22 @@ class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         report = ProblemReport.objects.first()
         self.assertEqual(report.priority, ProblemReport.Priority.UNPLAYABLE)
+
+    def test_creating_unplayable_report_marks_machine_broken(self):
+        """A maintainer filing an Unplayable report breaks the machine."""
+        self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.GOOD)
+        response = self.client.post(
+            self.url,
+            {
+                "description": "Board is fried",
+                "priority": ProblemReport.Priority.UNPLAYABLE,
+                "occurred_at": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.machine.refresh_from_db()
+        self.assertEqual(self.machine.operational_status, MachineInstance.OperationalStatus.BROKEN)
 
     def test_create_rejects_future_date(self):
         """View rejects problem reports with future occurred_at dates."""
