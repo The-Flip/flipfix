@@ -6,10 +6,10 @@ from datetime import timedelta
 
 from django.test import TestCase, tag
 from django.utils import timezone
-from django.utils.text import slugify
 
 from flipfix.apps.catalog.models import Location, MachineInstance
 from flipfix.apps.core.test_utils import (
+    create_location,
     create_log_entry,
     create_machine,
     create_machine_model,
@@ -21,18 +21,6 @@ from flipfix.apps.maintenance.reports import build_report
 S = MachineInstance.OperationalStatus
 P = ProblemReport.Priority
 Z = Location.Zone
-
-
-def _loc(name, zone, sort_order=0):
-    # Idempotent: migration 0002 seeds Workshop/Storage, so re-zone rather than
-    # collide on the unique slug.
-    loc, _ = Location.objects.get_or_create(
-        slug=slugify(name), defaults={"name": name, "sort_order": sort_order}
-    )
-    loc.zone = zone
-    loc.sort_order = sort_order
-    loc.save()
-    return loc
 
 
 def _machine(location, *, status=S.GOOD, year=1990, name=None):
@@ -47,10 +35,10 @@ def _machine(location, *, status=S.GOOD, year=1990, name=None):
 @tag("models")
 class BuildReportTests(TestCase):
     def setUp(self):
-        self.front = _loc("Coin-Op", Z.FRONT, 1)
-        self.museum = _loc("Museum", Z.FRONT, 2)
-        self.workshop = _loc("Workshop", Z.WORKSHOP, 3)
-        self.storage = _loc("Storage", Z.STORAGE, 4)
+        self.front = create_location("Coin-Op", Z.FRONT, 1)
+        self.museum = create_location("Museum", Z.FRONT, 2)
+        self.workshop = create_location("Workshop", Z.WORKSHOP, 3)
+        self.storage = create_location("Storage", Z.STORAGE, 4)
         self.now = timezone.now()
 
     def _zone(self, report, key):
@@ -61,7 +49,7 @@ class BuildReportTests(TestCase):
         self.assertEqual([z.key for z in report.zones], ["front", "back"])
 
     def test_hidden_zone_machines_excluded(self):
-        hidden = _loc("Basement", Z.HIDDEN, 9)
+        hidden = create_location("Basement", Z.HIDDEN, 9)
         _machine(hidden)
         _machine(self.front)
         report = build_report(self.now)

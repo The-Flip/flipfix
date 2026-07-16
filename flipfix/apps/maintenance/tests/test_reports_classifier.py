@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from django.test import SimpleTestCase, tag
+from django.test import TestCase, tag
 from django.utils import timezone
 
 from flipfix.apps.catalog.models import MachineInstance
@@ -21,7 +21,7 @@ P = ProblemReport.Priority
 
 
 @tag("models")
-class ClassifyTests(SimpleTestCase):
+class ClassifyTests(TestCase):
     def test_broken_status_is_down(self):
         self.assertEqual(classify(S.BROKEN, set()), "down")
 
@@ -60,7 +60,7 @@ class ClassifyTests(SimpleTestCase):
 
 
 @tag("models")
-class StateDateTests(SimpleTestCase):
+class StateDateTests(TestCase):
     def setUp(self):
         self.now = timezone.now()
 
@@ -87,7 +87,7 @@ class StateDateTests(SimpleTestCase):
 
 
 @tag("models")
-class HumanizeAgoTests(SimpleTestCase):
+class HumanizeAgoTests(TestCase):
     def setUp(self):
         self.now = timezone.now()
 

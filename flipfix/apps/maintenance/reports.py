@@ -280,15 +280,21 @@ def build_report(now: datetime | None = None) -> Report:
         )
     )
 
+    # Restrict the report/log scans to the machines actually in the report, so
+    # runtime scales with the report population, not the whole database.
+    machine_ids = [m.id for m in machines]
+
     reports_by_machine: dict[int, list[dict]] = defaultdict(list)
-    for r in ProblemReport.objects.filter(status=ProblemReport.Status.OPEN).values(
-        "machine_id", "id", "priority", "occurred_at"
-    ):
+    for r in ProblemReport.objects.filter(
+        status=ProblemReport.Status.OPEN, machine_id__in=machine_ids
+    ).values("machine_id", "id", "priority", "occurred_at"):
         reports_by_machine[r["machine_id"]].append(r)
 
     last_log: dict[int, dict] = {}
-    for row in LogEntry.objects.order_by("machine_id", "-occurred_at").values(
-        "machine_id", "id", "occurred_at"
+    for row in (
+        LogEntry.objects.filter(machine_id__in=machine_ids)
+        .order_by("machine_id", "-occurred_at")
+        .values("machine_id", "id", "occurred_at")
     ):
         last_log.setdefault(row["machine_id"], row)
 

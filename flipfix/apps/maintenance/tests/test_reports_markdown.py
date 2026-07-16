@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from django.test import TestCase, tag
 from django.utils import timezone
-from django.utils.text import slugify
 
 from flipfix.apps.catalog.models import Location, MachineInstance
-from flipfix.apps.core.test_utils import create_machine, create_machine_model
+from flipfix.apps.core.test_utils import (
+    create_location,
+    create_machine,
+    create_machine_model,
+)
 from flipfix.apps.maintenance.reports import (
     build_report,
     render_markdown,
@@ -18,18 +21,11 @@ S = MachineInstance.OperationalStatus
 Z = Location.Zone
 
 
-def _loc(name, zone):
-    loc, _ = Location.objects.get_or_create(slug=slugify(name), defaults={"name": name})
-    loc.zone = zone
-    loc.save()
-    return loc
-
-
 @tag("models")
 class MarkdownTests(TestCase):
     def setUp(self):
-        self.front = _loc("Coin-Op", Z.FRONT)
-        self.workshop = _loc("Workshop", Z.WORKSHOP)
+        self.front = create_location("Coin-Op", Z.FRONT)
+        self.workshop = create_location("Workshop", Z.WORKSHOP)
         self.now = timezone.now()
 
     def _report(self):
