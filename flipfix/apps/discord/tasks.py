@@ -166,7 +166,8 @@ def post_daily_maintenance_report() -> WebhookDeliveryResult:
         return WebhookDeliveryResult(status="skipped", reason="webhooks globally disabled")
 
     board_url = settings.SITE_URL.rstrip("/") + reverse("daily-maintenance-report")
-    content = _fit_discord_content(render_markdown(build_report()), f"🔗 Full board: {board_url}")
+    # Angle brackets suppress Discord's link-preview embed card.
+    content = _fit_discord_content(render_markdown(build_report()), f"🔗 Full board: <{board_url}>")
     try:
         response = requests.post(
             webhook_url,
