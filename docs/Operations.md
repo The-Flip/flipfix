@@ -104,13 +104,16 @@ creates/refreshes this dev superuser; override with `DEV_SUPERUSER` /
 
 **What the sync does and does not include:**
 
-- **Scope:** the "maintenance core" — machines, models, locations, owners
-  (contact details scrubbed), problem reports (reporter/IP/device scrubbed),
-  log entries, maintenance tasks, and users/maintainers (emails faked, passwords
-  made unusable). Parts, wiki, comments, and Discord links are emptied.
-- **Never copied:** OAuth tokens, `constance` secrets (Discord/Anthropic keys,
-  webhook URL), API keys, invitations, sessions, background-job payloads, and the
-  `simple_history` audit tables — excluded at dump time so they never touch disk.
+- **Included:** a realistic copy of production — machines, owners, problem
+  reports, log entries, tasks, parts, wiki, comments, and the `simple_history`
+  edit history — so most dev works against real data.
+- **PII scrubbed** (live rows and their history): user emails/names + passwords,
+  owner contact details, and problem-report reporter/IP/device.
+- **Never copied** (withheld at dump time so they never touch disk): `constance`
+  secrets (Discord/Anthropic keys, webhook URL), OAuth tokens + app
+  registrations, API keys, invitations, sessions, background-job payloads,
+  Discord account links, and owner documents (sensitive attachments; their files
+  aren't synced anyway).
 - **Media files are not synced** — image/video thumbnails will be broken links.
 - **Production is only ever read** (the dump session is forced read-only).
 
