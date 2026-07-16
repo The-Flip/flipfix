@@ -200,10 +200,15 @@ class Command(BaseCommand):
 
             machine = self.find_machine(machine_name)
             if not machine:
-                raise CommandError(
-                    f"Machine not found: '{machine_name}'. "
-                    "Run create_sample_machines first or fix logs_problems.json."
+                # machines.json is regenerated from the prod API and drifts from
+                # this hand-maintained fixture; skip the stale reference rather
+                # than aborting the whole seed.
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Skipping problem report — machine not found: '{machine_name}'."
+                    )
                 )
+                continue
 
             # Find reporter
             reporter_name = problem_entry.get("reported_by", "").strip()
@@ -268,10 +273,12 @@ class Command(BaseCommand):
 
             machine = self.find_machine(machine_name)
             if not machine:
-                raise CommandError(
-                    f"Machine not found: '{machine_name}'. "
-                    "Run create_sample_machines first or fix logs_problems.json."
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Skipping log entry — machine not found: '{machine_name}'."
+                    )
                 )
+                continue
 
             if self._create_log_entry(log_entry_data, machine, problem_report=None):
                 display_name = machine.short_name or machine.name
