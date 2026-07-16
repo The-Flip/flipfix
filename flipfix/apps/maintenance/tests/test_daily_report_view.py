@@ -81,6 +81,16 @@ class DailyReportViewTests(TestDataMixin, TestCase):
         # no open problems → no date, so its log entry is not linked
         self.assertNotContains(resp, reverse("log-detail", args=[log.id]))
 
+    def test_down_machine_with_no_report_shows_no_date(self):
+        # Broken by hand, no open problems: it reads as 😭 but carries no date.
+        m = create_machine(
+            location=self.workshop, operational_status=S.BROKEN, model=create_machine_model()
+        )
+        log = create_log_entry(machine=m, occurred_at=timezone.now() - timedelta(days=2))
+        self.client.force_login(self.maintainer_user)
+        resp = self.client.get(self.url)
+        self.assertNotContains(resp, reverse("log-detail", args=[log.id]))
+
     def test_hidden_zone_machine_not_rendered(self):
         hidden = create_location("Basement", Z.HIDDEN)
         create_machine(location=hidden, name="SecretMachine", model=create_machine_model())

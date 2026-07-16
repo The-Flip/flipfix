@@ -84,10 +84,13 @@ the surfaces can't drift:
   to the landing page. Posted by a django-q2 `Schedule` (the first recurring job)
   running on the existing `qcluster` worker. The Discord _bot_ is read-only, so
   posting goes through the webhook (`discord/tasks.py`).
-- **Maintainer web landing page** (`/logs/daily-report/`) — the verbose board as
-  HTML, where machines link to their detail page, report mentions link to the
-  driving report, and durations link to the log entry (a bare history-driven
-  "down" date, with no linkable entry, stays plain text).
+- **Maintainer web landing page** (`/logs/daily-report/`) — the report as HTML:
+  each machine's face runs down the left, then its name (→ machine detail), every
+  open problem listed by severity highest-first (each → its report), and the
+  latest-log date (→ the log entry). A machine with **no open problems shows no
+  date**. Links read as plain text and reveal an underline on hover. (Unlike the
+  Discord digest, the page has no per-zone emoji row and uses the latest-log date
+  rather than the per-state date.)
 
 ## Rejected alternatives
 
