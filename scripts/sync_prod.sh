@@ -4,10 +4,12 @@
 #   make sync-prod            # or: scripts/sync_prod.sh [--yes]
 #
 # What it does:
-#   1. pg_dump production (READ-ONLY), excluding secret / history / out-of-scope
-#      table DATA so those rows never touch your disk.
+#   1. pg_dump production (READ-ONLY). Dev gets a realistic copy — including edit
+#      history, parts, wiki, and comments — with only secrets/credentials,
+#      session/job state, Discord links, and owner documents withheld at dump
+#      time (so those rows never touch your disk).
 #   2. Drop & recreate your LOCAL Postgres database and restore the dump.
-#   3. Run scripts/sanitize_dev_db.sql to scrub residual PII.
+#   3. Run scripts/sanitize_dev_db.sql to scrub PII (live rows and their history).
 #   4. Run migrations (a no-op unless your branch has unapplied migrations).
 #   5. Create/refresh a dev superuser so you can log in (all prod passwords are
 #      scrubbed).
@@ -105,7 +107,6 @@ trap cleanup EXIT
 info "Dumping production (read-only)... this can take a moment."
 $DC exec -T -e PGOPTIONS='-c default_transaction_read_only=on' db pg_dump "$PROD_URL" \
   --no-owner --no-privileges \
-  --exclude-table-data='public.*historical*' \
   --exclude-table-data='public.constance_*' \
   --exclude-table-data='public.oauth2_provider_*' \
   --exclude-table-data='public.oauth_*' \
@@ -114,12 +115,9 @@ $DC exec -T -e PGOPTIONS='-c default_transaction_read_only=on' db pg_dump "$PROD
   --exclude-table-data='public.django_session' \
   --exclude-table-data='public.django_admin_log' \
   --exclude-table-data='public.django_q_*' \
-  --exclude-table-data='public.parts_*' \
-  --exclude-table-data='public.wiki_*' \
   --exclude-table-data='public.discord_*' \
-  --exclude-table-data='public.catalog_machinecomment' \
-  --exclude-table-data='public.catalog_ownercomment' \
   --exclude-table-data='public.catalog_ownerdocument' \
+  --exclude-table-data='public.catalog_historicalownerdocument' \
   > "$DUMP"
 info "Dump written ($(wc -c < "$DUMP" | tr -d ' ') bytes)."
 
