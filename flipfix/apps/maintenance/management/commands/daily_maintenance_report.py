@@ -20,6 +20,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Show a per-machine breakdown of why each machine got its emoji.",
         )
+        parser.add_argument(
+            "--post",
+            action="store_true",
+            help="Also post the digest to the configured Discord webhook.",
+        )
 
     def handle(self, *args: object, **options: object) -> None:
         report = build_report()
@@ -27,3 +32,10 @@ class Command(BaseCommand):
             self.stdout.write(render_verbose_text(report))
         else:
             self.stdout.write(render_markdown(report))
+
+        if options["post"]:
+            from flipfix.apps.discord.tasks import post_daily_maintenance_report
+
+            result = post_daily_maintenance_report()
+            style = self.style.SUCCESS if result.status == "success" else self.style.WARNING
+            self.stdout.write(style(f"\nDiscord: {result.status} — {result.reason or 'ok'}"))

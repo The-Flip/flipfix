@@ -3,10 +3,16 @@
 An at-a-glance "emoji board" of every machine's health, grouped by museum area,
 posted to Discord each morning and browsable as a web page.
 
-Status: IN PROGRESS. The health model, zone grouping, report builder
+Status: IMPLEMENTED. The report builder
 ([`flipfix/apps/maintenance/reports.py`](../../flipfix/apps/maintenance/reports.py)),
-the `daily_maintenance_report` management command, and the maintainer web landing
-page (`/logs/daily-report/`) are implemented. The daily Discord post is next.
+the `daily_maintenance_report` management command (`--verbose`, `--post`), the
+maintainer web landing page (`/logs/daily-report/`), and the daily Discord post
+(`discord.tasks.post_daily_maintenance_report`, scheduled by the
+`ensure_scheduled_tasks` command) are all in place.
+
+To turn on the daily post: run `ensure_scheduled_tasks` (registers a django-q
+`DAILY` schedule, run by the existing `qcluster` worker) and set the
+`DISCORD_WEBHOOK_URL` + `DISCORD_WEBHOOKS_ENABLED` constance settings.
 
 ## Rationale
 
@@ -79,11 +85,12 @@ the surfaces can't drift:
 
 - **`daily_maintenance_report` command** — prints the compact digest, or a
   per-machine `--verbose` breakdown.
-- **Daily Discord post** _(planned)_ — the compact **emoji-digest** as webhook
-  `content` (fits the 2000-char cap; backtick rows stay monospace), with a link
-  to the landing page. Posted by a django-q2 `Schedule` (the first recurring job)
-  running on the existing `qcluster` worker. The Discord _bot_ is read-only, so
-  posting goes through the webhook (`discord/tasks.py`).
+- **Daily Discord post** — the compact **emoji-digest** as webhook `content`
+  (truncated to the 2000-char cap if needed, always keeping the landing-page
+  link; backtick rows stay monospace). Posted by a django-q2 `DAILY` `Schedule`
+  (the repo's first recurring job) running on the existing `qcluster` worker. The
+  Discord _bot_ is read-only, so posting goes through the webhook
+  (`discord/tasks.py`).
 - **Maintainer web landing page** (`/logs/daily-report/`) — the report as HTML:
   each machine's face runs down the left, then its name (→ machine detail), every
   open problem listed by severity highest-first (each → its report), and the

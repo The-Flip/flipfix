@@ -132,6 +132,55 @@ def _deliver_to_url(
         return WebhookDeliveryResult(status="error", reason=str(e))
 
 
+DISCORD_CONTENT_LIMIT = 2000
+
+
+def _fit_discord_content(body: str, link_line: str) -> str:
+    """Join the digest body and its landing-page link within Discord's 2000-char
+    ``content`` cap, truncating the body (but keeping the link) if it overflows."""
+    footer = f"\n\n{link_line}"
+    budget = DISCORD_CONTENT_LIMIT - len(footer)
+    if len(body) > budget:
+        body = body[: budget - 1].rstrip() + "…"
+    return body + footer
+
+
+def post_daily_maintenance_report() -> WebhookDeliveryResult:
+    """Build the daily maintenance digest and post it to the Discord webhook.
+
+    Runs on the qcluster worker via a daily Schedule (see the
+    ``ensure_scheduled_tasks`` management command). The Discord bot is read-only,
+    so posting goes through the webhook; the content is the compact emoji-digest
+    markdown plus a link to the full landing page.
+    """
+    from constance import config
+    from django.conf import settings
+    from django.urls import reverse
+
+    from flipfix.apps.maintenance.reports import build_report, render_markdown
+
+    webhook_url = config.DISCORD_WEBHOOK_URL
+    if not webhook_url:
+        return WebhookDeliveryResult(status="skipped", reason="no webhook URL configured")
+    if not config.DISCORD_WEBHOOKS_ENABLED:
+        return WebhookDeliveryResult(status="skipped", reason="webhooks globally disabled")
+
+    board_url = settings.SITE_URL.rstrip("/") + reverse("daily-maintenance-report")
+    content = _fit_discord_content(render_markdown(build_report()), f"🔗 Full board: {board_url}")
+    try:
+        response = requests.post(
+            webhook_url,
+            json={"content": content},
+            timeout=10,
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        return WebhookDeliveryResult(status="success", status_code=response.status_code)
+    except requests.RequestException as e:
+        logger.warning("daily_report_webhook_failed", extra={"error": str(e)})
+        return WebhookDeliveryResult(status="error", reason=str(e))
+
+
 def send_test_webhook(event_type: str) -> dict:
     """Send a test webhook to the configured URL.
 
