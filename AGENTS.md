@@ -134,7 +134,15 @@ make migrate        # Run migrations
 make migrations     # Create new migrations
 make superuser      # Create superuser
 make sample-data    # Create sample data (dev only)
+make db-up          # Start local Postgres (docker compose); dev uses SQLite unless DATABASE_URL is set
+make sync-prod      # Refresh local DB with sanitized production data (needs Docker + PROD_DATABASE_URL)
 ```
+
+Dev defaults to SQLite. Set `DATABASE_URL` in `.env` (see `.env.example`) to run
+dev on the local Postgres from `docker-compose.yml` — this matches production's
+engine and is required for `make sync-prod`. See
+[`docs/Operations.md`](Operations.md) for the prod-sync workflow (what it scrubs
+and excludes; media is not synced).
 
 Run a single test:
 

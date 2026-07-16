@@ -71,6 +71,51 @@ Railway automatically backs up the PostgreSQL database daily.
 3. Select backup
 4. Click restore (point and click)
 
+### Sync production data into local dev
+
+To develop against realistic data, refresh a local Postgres database with a
+**sanitized** copy of production. This dumps prod read-only, restores into a
+local container, and scrubs all PII and secrets.
+
+**One-time setup:**
+
+1. Install Docker.
+2. Get the production Postgres **public** URL: Railway → `flip-fix` → the
+   `Postgres` service → Variables → `DATABASE_PUBLIC_URL`. (The
+   `*.railway.internal` host is unreachable from your machine.)
+3. In `.env`, set `PROD_DATABASE_URL=<that public URL>` and uncomment the
+   `DATABASE_URL` line (it points at the local Postgres from
+   `docker-compose.yml`; see `.env.example`). With `DATABASE_URL` set, dev runs
+   on Postgres instead of SQLite.
+4. Confirm the local Postgres major version is ≥ prod's — verify prod's with
+   `psql "$PROD_DATABASE_URL" -tAc 'show server_version'` and, if needed, bump
+   the `image:` in `docker-compose.yml`.
+
+**Each refresh:**
+
+```bash
+make db-up      # start the local Postgres container (first run only per boot)
+make sync-prod  # dump prod (read-only) → restore locally → scrub PII
+```
+
+Then log in at <http://localhost:8000/admin/> as `admin` / `admin` (the sync
+creates/refreshes this dev superuser; override with `DEV_SUPERUSER` /
+`DEV_PASSWORD`).
+
+**What the sync does and does not include:**
+
+- **Scope:** the "maintenance core" — machines, models, locations, owners
+  (contact details scrubbed), problem reports (reporter/IP/device scrubbed),
+  log entries, maintenance tasks, and users/maintainers (emails faked, passwords
+  made unusable). Parts, wiki, comments, and Discord links are emptied.
+- **Never copied:** OAuth tokens, `constance` secrets (Discord/Anthropic keys,
+  webhook URL), API keys, invitations, sessions, background-job payloads, and the
+  `simple_history` audit tables — excluded at dump time so they never touch disk.
+- **Media files are not synced** — image/video thumbnails will be broken links.
+- **Production is only ever read** (the dump session is forced read-only).
+
+`make db-down` stops the container (keeps data); `make db-reset` deletes it.
+
 ## File Storage
 
 ### Photo & Video Storage

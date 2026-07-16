@@ -89,3 +89,8 @@ else:
             conn_health_checks=True,
         )
     }
+
+    # Real production/staging: never allow sample-data commands to run against
+    # this database. PR environments (the SQLite branch above) keep the base
+    # default of True so their seeded fixtures still work.
+    ALLOW_SAMPLE_DATA = False

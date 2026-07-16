@@ -194,3 +194,5 @@ DJANGO_SETTINGS_MODULE=flipfix.settings.dev "$VENV_DIR/bin/python" manage.py mig
 
 info ""
 info "Bootstrap complete! Run 'make runserver' to start developing."
+info "For realistic data, either 'make sample-data' (curated fixtures) or"
+info "'make db-up && make sync-prod' (sanitized production data; needs Docker + PROD_DATABASE_URL)."

@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
+from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
 
 
 class Command(BaseCommand):
     help = "Create all sample data (dev/PR environments only, not prod)."
 
     def handle(self, *args: object, **options: object) -> None:
-        # Safety check: SQLite only (blocks production PostgreSQL)
-        if "sqlite" not in connection.settings_dict["ENGINE"].lower():
+        # Safety check: never populate the real production/staging database.
+        if not settings.ALLOW_SAMPLE_DATA:
             raise CommandError(
-                "This command only runs on SQLite databases (local dev or PR environments)"
+                "Sample data commands are disabled in this environment (production/staging)."
             )
 
         self.stdout.write(self.style.SUCCESS("Creating sample data..."))

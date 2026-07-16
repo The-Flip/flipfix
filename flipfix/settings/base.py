@@ -86,6 +86,12 @@ DATABASES = {
     }
 }
 
+# Whether sample-data management commands are allowed to run. True for dev, test,
+# and PR environments; production/staging set this False (see settings/prod_base).
+# The commands must never populate the real production database. This flag
+# replaces per-command engine checks so dev can run on Postgres.
+ALLOW_SAMPLE_DATA = True
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
