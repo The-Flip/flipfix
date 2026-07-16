@@ -96,6 +96,7 @@ class MachineHealth:
     health: str
     status: str = "good"
     open_priorities: tuple[str, ...] = ()
+    open_reports: tuple[tuple[int, str], ...] = ()  # (report_id, priority) per open report
     # dates (aware datetimes; renderers humanize):
     marked_down_at: datetime | None = None
     report_dates: Mapping[str, datetime] = field(default_factory=dict)
@@ -333,6 +334,7 @@ def build_report(now: datetime | None = None) -> Report:
             health=health,
             status=m.operational_status,
             open_priorities=tuple(r["priority"] for r in reports),
+            open_reports=tuple((r["id"], r["priority"]) for r in reports),
             marked_down_at=m_marked_down,
             report_dates=report_dates,
             last_worked_at=log["occurred_at"] if log else None,

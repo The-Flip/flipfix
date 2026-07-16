@@ -12,70 +12,59 @@ from dataclasses import dataclass
 from django.urls import reverse
 from django.views.generic import TemplateView
 
+from flipfix.apps.maintenance.models import ProblemReport
 from flipfix.apps.maintenance.reports import (
     EMOJI,
-    LABELS,
     STORAGE_BOX,
     MachineHealth,
     build_report,
     humanize_ago,
-    state_date,
 )
+
+# Priority declaration order is severity order (untriaged/unplayable first).
+_SEVERITY = {value: i for i, (value, _) in enumerate(ProblemReport.Priority.choices)}
+
+
+@dataclass(frozen=True)
+class Problem:
+    label: str  # priority name, e.g. "major"
+    url: str  # → problem-report-detail
 
 
 @dataclass(frozen=True)
 class MachineCell:
     """A machine prepared for the template, with resolved link URLs."""
 
-    row_glyph: str  # box for storage, health emoji otherwise (for the zone row)
-    emoji: str  # always the real health emoji (for the per-machine list)
+    glyph: str  # health emoji, or a box for parked storage machines
     name: str
     year: int | None
-    status: str
-    health: str
-    health_label: str
-    reports: str
     machine_url: str
-    report_url: str | None
-    duration_text: str
-    duration_url: str | None
+    problems: list[Problem]  # every open report, most severe first, each linked
+    date_text: str | None  # last-log time, shown only when there are problems
+    date_url: str | None  # → log-detail for the latest log entry
 
 
-def _report_url(m: MachineHealth) -> str | None:
-    if m.driving_report_id:
-        return reverse("problem-report-detail", args=[m.driving_report_id])
-    return None
-
-
-def _duration_url(m: MachineHealth) -> str | None:
-    """Where the "N ago" duration links.
-
-    Log-based dates (being fixed, and the minor/good fallback) point at the log
-    entry; report-based dates (untriaged/major, and a report-driven "down") point
-    at the driving report. A "down" machine with no report — only a bare history
-    status change — has no linkable entry, so the duration stays plain text.
-    """
-    if m.health in ("untriaged", "major", "down") and m.driving_report_id:
-        return reverse("problem-report-detail", args=[m.driving_report_id])
-    if m.last_log_id:
-        return reverse("log-detail", args=[m.last_log_id])
-    return None
+def _problems(m: MachineHealth) -> list[Problem]:
+    ordered = sorted(m.open_reports, key=lambda pr: _SEVERITY.get(pr[1], 99))
+    return [
+        Problem(label=priority, url=reverse("problem-report-detail", args=[report_id]))
+        for report_id, priority in ordered
+    ]
 
 
 def _cell(m: MachineHealth, now, *, as_box: bool) -> MachineCell:
+    has_problems = bool(m.open_reports)
+    # The date is the machine's latest log entry; a machine with no problems
+    # needs no date at all.
+    show_date = has_problems and m.last_log_id is not None
     return MachineCell(
-        row_glyph=STORAGE_BOX if as_box else EMOJI[m.health],
-        emoji=EMOJI[m.health],
+        glyph=STORAGE_BOX if as_box else EMOJI[m.health],
         name=m.name,
         year=m.year,
-        status=m.status,
-        health=m.health,
-        health_label=LABELS[m.health],
-        reports=", ".join(sorted(m.open_priorities)) or "none",
         machine_url=reverse("maintainer-machine-detail", args=[m.slug]),
-        report_url=_report_url(m),
-        duration_text=humanize_ago(state_date(m), now),
-        duration_url=_duration_url(m),
+        problems=_problems(m),
+        date_text=humanize_ago(m.last_worked_at, now) if show_date else None,
+        date_url=reverse("log-detail", args=[m.last_log_id]) if show_date else None,
     )
 
 
