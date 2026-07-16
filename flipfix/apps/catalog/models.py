@@ -22,12 +22,33 @@ from flipfix.apps.core.text import strip_leading_articles
 class Location(models.Model):
     """Physical location where a machine can be placed."""
 
+    class Zone(models.TextChoices):
+        """Area of the museum, driving the daily maintenance report grouping.
+
+        Front-of-house machines are expected to play; workshop machines are the
+        active repair queue; storage machines are parked (shown as boxes, not
+        health faces, and kept out of the queue). Hidden locations are excluded
+        from the report — the safe default for a newly created location.
+        """
+
+        FRONT = "front", "Front of house"
+        WORKSHOP = "workshop", "Workshop (back of house)"
+        STORAGE = "storage", "Storage (back of house)"
+        HIDDEN = "hidden", "Hidden from report"
+
     name = models.CharField(max_length=100, unique=True, help_text="Display name for this location")
     slug = models.SlugField(
         max_length=100, unique=True, blank=True, help_text="URL-friendly identifier"
     )
     sort_order = models.PositiveIntegerField(
         default=0, help_text="Order in which locations appear in lists"
+    )
+    zone = models.CharField(
+        max_length=10,
+        choices=Zone.choices,
+        default=Zone.HIDDEN,
+        db_index=True,
+        help_text="Groups machines in the daily maintenance report.",
     )
 
     class Meta:

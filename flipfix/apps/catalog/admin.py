@@ -15,8 +15,9 @@ from .models import (
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "sort_order", "machine_count")
-    list_editable = ("sort_order",)
+    list_display = ("name", "slug", "sort_order", "zone", "machine_count")
+    list_editable = ("sort_order", "zone")
+    list_filter = ("zone",)
     search_fields = ("name", "slug")
     ordering = ("sort_order", "name")
     prepopulated_fields = {"slug": ("name",)}
