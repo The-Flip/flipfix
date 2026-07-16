@@ -70,6 +70,11 @@ one-directional — returning a machine to service is always a human decision.
 ### Location ([`Location`](../flipfix/apps/catalog/models.py))
 
 Physical location where machines can be placed (e.g., "Main Floor", "Workshop").
+Its `zone` (`Zone`: Front / Workshop / Storage / Hidden) groups machines in the
+[daily maintenance report](plans/DailyMaintenanceReport.md): Front-of-house
+machines are expected to play; workshop machines are the active repair queue;
+storage machines are parked (rendered as boxes, excluded from the queue); Hidden
+(the default for a new location) is excluded from the report entirely.
 
 ## Maintenance app
 

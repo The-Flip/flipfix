@@ -22,9 +22,10 @@ from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.utils.text import slugify
 
 from flipfix.apps.accounts.models import Maintainer
-from flipfix.apps.catalog.models import MachineInstance, MachineModel
+from flipfix.apps.catalog.models import Location, MachineInstance, MachineModel
 from flipfix.apps.maintenance.models import LogEntry, ProblemReport
 from flipfix.apps.oauth.models import AppCapability, AppCapabilityGrant, AppCapabilityGroupGrant
 from flipfix.apps.parts.models import PartRequest, PartRequestUpdate
@@ -236,6 +237,29 @@ def create_machine_model(
         era=era,
         **kwargs,
     )
+
+
+def create_location(
+    name: str | None = None,
+    zone: str = Location.Zone.HIDDEN,
+    sort_order: int = 0,
+    **kwargs,
+) -> Location:
+    """Create (or re-zone) a test Location.
+
+    Idempotent by slug so it coexists with the standard locations seeded by
+    migration ``catalog.0002`` (Workshop/Storage): an existing location is
+    re-zoned rather than colliding on the unique slug.
+    """
+    if name is None:
+        name = f"Location {_unique_suffix()}"
+    location, _ = Location.objects.get_or_create(
+        slug=slugify(name), defaults={"name": name, "sort_order": sort_order, **kwargs}
+    )
+    location.zone = zone
+    location.sort_order = sort_order
+    location.save()
+    return location
 
 
 def create_machine(
