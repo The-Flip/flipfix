@@ -190,10 +190,14 @@ class Command(BaseCommand):
             # Find machine (optional for part requests)
             machine = self.find_machine(machine_name) if machine_name else None
             if machine_name and not machine:
-                raise CommandError(
-                    f"Machine not found: '{machine_name}'. "
-                    "Run create_sample_machines first or fix part_requests.json."
+                # machines.json drifts from this hand-maintained fixture; skip the
+                # stale reference rather than aborting the whole seed.
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Skipping part request — machine not found: '{machine_name}'."
+                    )
                 )
+                continue
 
             # Find requester
             requester_name = request_entry.get("requested_by", "").strip()

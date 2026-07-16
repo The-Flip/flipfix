@@ -62,13 +62,18 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("\nGenerating records to test infinite scrolling..."))
 
-        # Find target machine
-        machine = MachineInstance.objects.filter(short_name=self.TARGET_MACHINE_SHORT_NAME).first()
+        # Scroll testing just needs one machine with many records. Prefer the
+        # named target, but fall back to any machine so a drifted machines.json
+        # doesn't abort the seed; only skip when there are no machines at all.
+        machine = (
+            MachineInstance.objects.filter(short_name=self.TARGET_MACHINE_SHORT_NAME).first()
+            or MachineInstance.objects.order_by("id").first()
+        )
         if not machine:
-            raise CommandError(
-                f"Target machine '{self.TARGET_MACHINE_SHORT_NAME}' not found. "
-                "Run create_sample_machines first."
+            self.stdout.write(
+                self.style.WARNING("  No machines exist; skipping infinite-scroll data.")
             )
+            return
 
         # Base time: 200 minutes ago (ensures no future dates)
         base_time = timezone.now() - timedelta(minutes=200)
