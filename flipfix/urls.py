@@ -55,6 +55,7 @@ from flipfix.apps.maintenance.views.autocomplete import (
     MaintainerAutocompleteView,
     ProblemReportAutocompleteView,
 )
+from flipfix.apps.maintenance.views.daily_report import DailyReportView
 from flipfix.apps.maintenance.views.labor_report import (
     LaborDetailView,
     LaborWeeklySummaryView,
@@ -494,6 +495,8 @@ urlpatterns = [
     path("logs/", LogListView.as_view(), name="log-list", access="public"),
     # AJAX: infinite scroll for log list
     path("logs/entries/", LogListPartialView.as_view(), name="log-list-entries", access="public"),
+    # Daily maintenance report (emoji health board), maintainer-only
+    path("logs/daily-report/", DailyReportView.as_view(), name="daily-maintenance-report"),
     # Labor report: weekly summary
     path("logs/labor/", LaborWeeklySummaryView.as_view(), name="labor-report-weekly"),
     # Labor report: drill-down detail
