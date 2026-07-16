@@ -3656,3 +3656,49 @@ a.stat:focus-visible {
   color: var(--color-text-muted);
   margin-top: var(--space-1);
 }
+
+/* ── Daily maintenance report (/logs/daily-report/) ─────────────────────── */
+.daily-report__zone {
+  margin-block: var(--space-4);
+}
+.daily-report__pulse {
+  color: var(--color-text-muted);
+  margin-block: var(--space-1) var(--space-2);
+}
+.daily-report__row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.daily-report__location {
+  font-weight: 600;
+  min-width: 8rem;
+}
+.daily-report__glyphs {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+.daily-report__glyph {
+  text-decoration: none;
+}
+.daily-report__machines {
+  list-style: none;
+  padding-left: var(--space-4);
+  margin-block: var(--space-1) var(--space-3);
+}
+.daily-report__machine {
+  padding-block: 0.1rem;
+}
+.daily-report__year,
+.daily-report__state,
+.daily-report__duration {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.daily-report__legend {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-border-soft);
+  padding-top: var(--space-2);
+}

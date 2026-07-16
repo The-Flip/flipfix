@@ -3,10 +3,10 @@
 An at-a-glance "emoji board" of every machine's health, grouped by museum area,
 posted to Discord each morning and browsable as a web page.
 
-Status: IN PROGRESS. The health model, zone grouping, report builder, and
-`daily_maintenance_report` management command are implemented
-([`flipfix/apps/maintenance/reports.py`](../../flipfix/apps/maintenance/reports.py)).
-The daily Discord post and the web landing page are the next step.
+Status: IN PROGRESS. The health model, zone grouping, report builder
+([`flipfix/apps/maintenance/reports.py`](../../flipfix/apps/maintenance/reports.py)),
+the `daily_maintenance_report` management command, and the maintainer web landing
+page (`/logs/daily-report/`) are implemented. The daily Discord post is next.
 
 ## Rationale
 
@@ -84,9 +84,10 @@ the surfaces can't drift:
   to the landing page. Posted by a django-q2 `Schedule` (the first recurring job)
   running on the existing `qcluster` worker. The Discord _bot_ is read-only, so
   posting goes through the webhook (`discord/tasks.py`).
-- **Maintainer web landing page** _(planned)_ — the verbose board as HTML, where
-  machines link to their detail page, report mentions link to the report, and
-  durations link to the log entry.
+- **Maintainer web landing page** (`/logs/daily-report/`) — the verbose board as
+  HTML, where machines link to their detail page, report mentions link to the
+  driving report, and durations link to the log entry (a bare history-driven
+  "down" date, with no linkable entry, stays plain text).
 
 ## Rejected alternatives
 

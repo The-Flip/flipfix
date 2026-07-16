@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+{% block title %}Daily Maintenance · {{ block.super }}{% endblock %}
+{% block content %}
+  <div class="daily-report">
+    <h1>Daily Maintenance</h1>
+    <p class="daily-report__generated">Generated {{ generated_at|smart_date }}</p>
+    {% for zone in zones %}
+      <section class="daily-report__zone">
+        <h2>{{ zone.title }}</h2>
+        <p class="daily-report__pulse">{{ zone.pulse }}</p>
+        {% for row in zone.rows %}
+          <div class="daily-report__row">
+            <span class="daily-report__location">{{ row.location_name }}</span>
+            <span class="daily-report__glyphs">
+              {% for cell in row.cells %}
+                <a href="{{ cell.machine_url }}"
+                   title="{{ cell.name }}"
+                   class="daily-report__glyph">{{ cell.row_glyph }}</a>
+              {% endfor %}
+            </span>
+          </div>
+          <ul class="daily-report__machines">
+            {% for cell in row.cells %}
+              <li class="daily-report__machine">
+                <span class="daily-report__emoji">{{ cell.emoji }}</span>
+                <a href="{{ cell.machine_url }}" class="daily-report__name">{{ cell.name }}</a>
+                <span class="daily-report__year">({{ cell.year|default:"?" }})</span>
+                <span class="daily-report__state">{{ cell.health_label }}</span>
+                {% if cell.report_url %}· <a href="{{ cell.report_url }}">report</a>{% endif %}
+                ·
+                {% if cell.duration_url %}
+                  <a href="{{ cell.duration_url }}">{{ cell.duration_text }}</a>
+                {% else %}
+                  <span class="daily-report__duration">{{ cell.duration_text }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    <p class="daily-report__legend">
+      {% for emoji, label in legend %}
+        <span>{{ emoji }} {{ label }}</span>
+        {% if not forloop.last %}·{% endif %}
+      {% endfor %}
+    </p>
+  </div>
+{% endblock %}
