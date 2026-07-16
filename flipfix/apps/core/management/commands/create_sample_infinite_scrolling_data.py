@@ -5,8 +5,8 @@ from __future__ import annotations
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
 from django.utils import timezone
 
 from flipfix.apps.catalog.models import MachineInstance
@@ -54,10 +54,10 @@ class Command(BaseCommand):
     RECORDS_PER_TYPE = 25
 
     def handle(self, *args: object, **options: object) -> None:
-        # Safety check: SQLite only (blocks production PostgreSQL)
-        if "sqlite" not in connection.settings_dict["ENGINE"].lower():
+        # Safety check: never populate the real production/staging database.
+        if not settings.ALLOW_SAMPLE_DATA:
             raise CommandError(
-                "This command only runs on SQLite databases (local dev or PR environments)"
+                "Sample data commands are disabled in this environment (production/staging)."
             )
 
         self.stdout.write(self.style.SUCCESS("\nGenerating records to test infinite scrolling..."))

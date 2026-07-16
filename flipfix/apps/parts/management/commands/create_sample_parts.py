@@ -8,9 +8,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection
 from django.utils import timezone
 
 from flipfix.apps.accounts.models import Maintainer
@@ -37,10 +37,10 @@ class Command(BaseCommand):
         }
 
     def handle(self, *args: object, **options: object) -> None:
-        # Safety check: SQLite only (blocks production PostgreSQL)
-        if "sqlite" not in connection.settings_dict["ENGINE"].lower():
+        # Safety check: never populate the real production/staging database.
+        if not settings.ALLOW_SAMPLE_DATA:
             raise CommandError(
-                "This command only runs on SQLite databases (local dev or PR environments)"
+                "Sample data commands are disabled in this environment (production/staging)."
             )
 
         # Safety check: empty database only

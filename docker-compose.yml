@@ -1,0 +1,33 @@
+# Local Postgres for development, to mirror production (which runs Postgres on
+# Railway) and to back the `make sync-prod` workflow. Dev defaults to SQLite; set
+# DATABASE_URL in .env to opt into this database (see .env.example).
+#
+# Running pg_dump/psql *inside* this container (as scripts/sync_prod.sh does)
+# guarantees the client version is >= the prod server version, which pg_dump
+# requires. Pin `image` to at least prod's Postgres major version — verify with:
+#   psql "$PROD_DATABASE_URL" -tAc 'show server_version'
+services:
+  db:
+    image: postgres:18
+    # 54321 (mnemonic 5-4-3-2-1) instead of the default 5432 to avoid clashing
+    # with any other Postgres already running locally. If 54321 is also taken,
+    # change both this and the DATABASE_URL port in your .env (e.g. 54322).
+    ports:
+      - "54321:5432"
+    environment:
+      POSTGRES_USER: flipfix
+      POSTGRES_PASSWORD: flipfix
+      POSTGRES_DB: flipfix
+    volumes:
+      # Postgres 18+ stores data in a version subdirectory and wants the volume
+      # mounted at /var/lib/postgresql (not /var/lib/postgresql/data, the pre-18
+      # convention). See https://github.com/docker-library/postgres/pull/1259
+      - flipfix_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flipfix -d flipfix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  flipfix_pgdata:

@@ -40,6 +40,10 @@ help:
 	@echo "  make superuser      - Create superuser"
 	@echo "  make sample-data    - Create sample data (dev only)"
 	@echo "  make pull-sample-machines - Refresh machines.json fixture from prod API (needs SAMPLE_DATA_API_KEY)"
+	@echo "  make db-up          - Start the local Postgres container (docker compose)"
+	@echo "  make db-down        - Stop the local Postgres container (keeps data)"
+	@echo "  make db-reset       - Stop the local Postgres container and DELETE its data"
+	@echo "  make sync-prod      - Refresh local DB with sanitized production data (needs PROD_DATABASE_URL)"
 	@echo ""
 	@echo "Documentation:"
 	@echo "  make agent-docs     - Regenerate CLAUDE.md and AGENTS.md from source"
@@ -114,6 +118,22 @@ sample-data:
 .PHONY: pull-sample-machines
 pull-sample-machines:
 	$(PYTHON) manage.py pull_sample_machines
+
+.PHONY: db-up
+db-up:
+	docker compose up -d db
+
+.PHONY: db-down
+db-down:
+	docker compose down
+
+.PHONY: db-reset
+db-reset:
+	docker compose down -v
+
+.PHONY: sync-prod
+sync-prod:
+	scripts/sync_prod.sh
 
 .PHONY: lint
 lint:
