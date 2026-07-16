@@ -36,7 +36,7 @@ EMOJI = {
     "major": "😟",
     "fixing": "🔧",
     "down": "😭",
-    "unknown": "😐",
+    "unknown": "😶",
 }
 
 LABELS = {
@@ -448,7 +448,8 @@ def render_markdown(report: Report, *, link_url: str | None = None) -> str:
 
     parts = [*blocks, _legend_line(report)]
     if link_url:
-        parts.append(f"🔗 Full board: {link_url}")
+        # Angle brackets suppress Discord's link-preview embed card.
+        parts.append(f"🔗 Full board: <{link_url}>")
     return "\n\n".join(parts)
 
 

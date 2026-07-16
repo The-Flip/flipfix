@@ -53,6 +53,11 @@ class MarkdownTests(TestCase):
         md = render_markdown(self._report(), link_url="https://flip/report")
         self.assertIn("https://flip/report", md)
 
+    def test_link_wrapped_in_angle_brackets_to_suppress_embed(self):
+        # Discord renders a bare URL as a preview card; angle brackets suppress it.
+        md = render_markdown(self._report(), link_url="https://flip/report")
+        self.assertIn("<https://flip/report>", md)
+
     def test_omits_link_when_no_url(self):
         md = render_markdown(self._report())
         self.assertNotIn("🔗", md)
@@ -61,6 +66,7 @@ class MarkdownTests(TestCase):
         md = render_markdown(self._report())
         self.assertIn("😀 good", md)
         self.assertIn("😭 down", md)
+        self.assertIn("😶 unknown", md)  # face with no mouth
 
     def test_verbose_lists_every_machine_with_inputs(self):
         create_machine(
