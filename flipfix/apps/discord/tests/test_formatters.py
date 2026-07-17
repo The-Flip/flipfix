@@ -292,8 +292,12 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         description = message["embeds"][0]["description"]
 
         self.assertIn("…", description)
+        self.assertIn("word0 ", description)  # the head is kept
+        # Pin the boundary: the last kept word (index MAX-1) stays as the cut
+        # point, the next word (index MAX) is dropped.
+        self.assertIn(f"word{NOTIFICATION_BODY_MAX_WORDS - 1}…", description)
+        self.assertNotIn(f"word{NOTIFICATION_BODY_MAX_WORDS}", description)
         self.assertNotIn("word499", description)  # the tail was dropped
-        self.assertIn("word0", description)  # the head is kept
         # Body is capped near the limit (attribution adds a couple of words).
         self.assertLessEqual(len(description.split()), NOTIFICATION_BODY_MAX_WORDS + 5)
 

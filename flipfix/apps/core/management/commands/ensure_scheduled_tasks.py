@@ -84,16 +84,21 @@ class Command(BaseCommand):
             return schedule
 
         changed = False
+        cadence_changed = False
         if schedule.func != func:
             schedule.func = func
             changed = True
         if schedule.schedule_type != schedule_type:
             schedule.schedule_type = schedule_type
             changed = True
+            cadence_changed = True
         if minutes is not None and schedule.minutes != minutes:
             schedule.minutes = minutes
             changed = True
-        if schedule.next_run is None:
+            cadence_changed = True
+        # A cadence change invalidates the old next_run (it may sit far in the
+        # future on the previous schedule), so recompute it; otherwise preserve it.
+        if schedule.next_run is None or cadence_changed:
             schedule.next_run = next_run
             changed = True
         if changed:

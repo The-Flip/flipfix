@@ -52,3 +52,8 @@ class PendingNotificationAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request) -> bool:
         return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        # The flush task owns this buffer; deleting an unsent row would silently
+        # drop a notification instead of letting it retry.
+        return False

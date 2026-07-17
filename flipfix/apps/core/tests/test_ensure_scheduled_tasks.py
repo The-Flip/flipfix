@@ -48,3 +48,24 @@ class EnsureScheduledTasksTests(TestCase):
         original = Schedule.objects.get(name=DAILY_REPORT_NAME).next_run
         self._run()
         self.assertEqual(Schedule.objects.get(name=DAILY_REPORT_NAME).next_run, original)
+
+    def test_resets_next_run_when_cadence_changes(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # An existing flush schedule left on the wrong (daily) cadence with a
+        # far-future next_run should be corrected to the minute cadence, and its
+        # stale next_run recomputed so the first flush isn't delayed.
+        stale = timezone.now() + timedelta(days=30)
+        Schedule.objects.create(
+            name=FLUSH_NAME,
+            func=FLUSH_FUNC,
+            schedule_type=Schedule.DAILY,
+            next_run=stale,
+        )
+        self._run()
+        schedule = Schedule.objects.get(name=FLUSH_NAME)
+        self.assertEqual(schedule.schedule_type, Schedule.MINUTES)
+        self.assertEqual(schedule.minutes, FLUSH_EVERY_MINUTES)
+        self.assertLess(schedule.next_run, stale)

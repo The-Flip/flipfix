@@ -36,7 +36,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.utils import timezone
 
 from flipfix.apps.accounts.models import Maintainer
@@ -326,6 +326,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
+        for name in ("gap", "bucket", "min_peak", "top"):
+            if options[name] < 1:
+                raise CommandError(f"--{name.replace('_', '-')} must be a positive integer.")
+
         gap = timedelta(minutes=options["gap"])
         bucket = timedelta(minutes=options["bucket"])
         min_peak: int = options["min_peak"]
@@ -337,12 +341,10 @@ class Command(BaseCommand):
             self.stderr.write(f"Unknown timezone {options['tz']!r}; falling back to UTC.")
             self.tz = zoneinfo.ZoneInfo("UTC")
 
-        events = StreamReconstructor().collect()
+        cutoff = self._parse_since(options["since"])
 
-        if options["since"]:
-            cutoff = timezone.make_aware(
-                datetime.fromisoformat(options["since"]), zoneinfo.ZoneInfo("UTC")
-            )
+        events = StreamReconstructor().collect()
+        if cutoff is not None:
             events = [e for e in events if e.fired_at >= cutoff]
 
         if not events:
@@ -365,8 +367,11 @@ class Command(BaseCommand):
         )
 
         # Lens B — per-machine bursts (one machine spamming the channel).
+        # Exclude machine-less events (e.g. part requests with no machine); a
+        # shared None key would otherwise fuse them into one bogus "machine".
+        machine_events = [e for e in events if e.machine_id is not None]
         machine_clusters = [
-            c for c in gap_clusters(events, lambda e: e.machine_id, gap) if c.size >= 2
+            c for c in gap_clusters(machine_events, lambda e: e.machine_id, gap) if c.size >= 2
         ]
         self._render_lens(
             "LENS B — Per-machine bursts",
@@ -387,6 +392,19 @@ class Command(BaseCommand):
             top,
             show_actor=False,
         )
+
+    @staticmethod
+    def _parse_since(raw: str | None) -> datetime | None:
+        """Parse the ``--since`` ISO date/datetime into an aware UTC cutoff."""
+        if not raw:
+            return None
+        try:
+            parsed = datetime.fromisoformat(raw)
+        except ValueError as exc:
+            raise CommandError(f"--since must be an ISO date/datetime: {exc}") from exc
+        if timezone.is_naive(parsed):
+            return timezone.make_aware(parsed, zoneinfo.ZoneInfo("UTC"))
+        return parsed.astimezone(zoneinfo.ZoneInfo("UTC"))
 
     # -- rendering helpers --------------------------------------------------
 
@@ -430,6 +448,8 @@ class Command(BaseCommand):
         w("    suppression of bot-originated records cannot be replayed here.")
         w("  * Actors are grouped by history user id (parts unified via Maintainer→user);")
         w("    PII is scrubbed in dev, so names are unavailable.")
+        w("  * Part-update machines come from the request's *current* row, so a since-")
+        w("    deleted or reassigned request may misattribute (or drop) its machine.")
 
     def _render_lens(
         self,

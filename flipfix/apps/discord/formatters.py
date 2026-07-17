@@ -28,21 +28,31 @@ DISCORD_POST_DESCRIPTION_MAX_CHARS = 4096
 NOTIFICATION_BODY_MAX_WORDS = 200
 
 
+_MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\([^)]*\)")
+
+
 def _truncate_words(text: str, max_words: int) -> str:
     """Trim ``text`` to at most ``max_words`` words, cutting on a word boundary.
 
     Preserves the original spacing and Markdown of the kept portion (only the
-    tail is dropped) and appends an ellipsis when anything was removed.
+    tail is dropped) and appends an ellipsis when anything was removed. If the
+    cut would fall inside a Markdown link ``[label](url)`` (whose multi-word
+    label could otherwise be sliced apart), it extends to the link's end so the
+    link stays intact.
     """
     words = re.findall(r"\S+", text)
     if len(words) <= max_words:
         return text
-    # Walk to the end of the max_words-th word to keep the original substring.
     kept = 0
     for match in re.finditer(r"\S+", text):
         kept += 1
         if kept == max_words:
-            return text[: match.end()].rstrip() + "…"
+            cut = match.end()
+            for link in _MARKDOWN_LINK.finditer(text):
+                if link.start() < cut < link.end():
+                    cut = link.end()
+                    break
+            return text[:cut].rstrip() + "…"
     return text
 
 

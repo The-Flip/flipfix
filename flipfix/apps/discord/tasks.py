@@ -184,9 +184,13 @@ def flush_pending_notifications() -> WebhookDeliveryResult:
     ``COALESCE_QUIET_PERIOD`` (a true debounce) or the oldest event has waited
     ``COALESCE_MAX_WAIT`` (a latency cap for continuously-active actors).
 
-    Idempotent and safe under concurrent workers: each actor's rows are claimed
-    with ``select_for_update(skip_locked=True)`` and marked ``sent_at`` only after
-    a successful post, so a failed delivery is retried on the next run.
+    Delivery is **at-least-once**. Each actor's due rows are selected under a
+    short row lock (``select_for_update(skip_locked=True)``) that is released
+    before the network call, so the Discord POST never runs inside a database
+    transaction; rows are marked ``sent_at`` only after a successful post, so a
+    failed delivery (or a crash mid-flight) simply retries next run. A crash
+    between a successful POST and the ``sent_at`` write can repost a digest —
+    preferred here to dropping a maintainer's activity summary.
     """
     from constance import config
 
@@ -204,6 +208,8 @@ def flush_pending_notifications() -> WebhookDeliveryResult:
 
     flushed = 0
     for actor_id in actor_ids:
+        # Select the actor's due rows under a brief lock, then release it — the
+        # HTTP POST below must not hold a transaction/connection open.
         with transaction.atomic():
             rows = list(
                 PendingNotification.objects.select_for_update(skip_locked=True)
@@ -215,15 +221,19 @@ def flush_pending_notifications() -> WebhookDeliveryResult:
             quiet = now - rows[-1].buffered_at >= COALESCE_QUIET_PERIOD
             capped = now - rows[0].buffered_at >= COALESCE_MAX_WAIT
             if not (quiet or capped):
-                continue
+                rows = []
+        if not rows:
+            continue
 
-            result = _deliver_pending(config.DISCORD_WEBHOOK_URL, rows)
-            # "empty" means every referenced record has since vanished; consume
-            # the rows anyway so they don't linger. On a delivery error, leave
-            # them un-sent to retry next run.
-            if result.status in ("success", "empty"):
-                PendingNotification.objects.filter(pk__in=[r.pk for r in rows]).update(sent_at=now)
-                flushed += 1
+        result = _deliver_pending(config.DISCORD_WEBHOOK_URL, rows)
+        # "empty" means every referenced record has since vanished; consume the
+        # rows anyway so they don't linger. On a delivery error, leave them
+        # un-sent to retry next run.
+        if result.status in ("success", "empty"):
+            PendingNotification.objects.filter(
+                pk__in=[r.pk for r in rows], sent_at__isnull=True
+            ).update(sent_at=now)
+            flushed += 1
 
     return WebhookDeliveryResult(status="success", reason=f"flushed {flushed} actor(s)")
 
