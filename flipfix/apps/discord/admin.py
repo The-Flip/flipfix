@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import DiscordUserLink
+from .models import DiscordUserLink, PendingNotification
 
 
 @admin.register(DiscordUserLink)
@@ -38,3 +38,17 @@ class DiscordUserLinkAdmin(admin.ModelAdmin):
         ("Linked Maintainer", {"fields": ("maintainer",)}),
         ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
+
+
+@admin.register(PendingNotification)
+class PendingNotificationAdmin(admin.ModelAdmin):
+    """Read-only view of the debounced notification buffer (for observability)."""
+
+    list_display = ("handler_name", "object_id", "actor", "buffered_at", "sent_at")
+    list_filter = ("handler_name", "sent_at")
+    search_fields = ("actor__username", "actor__first_name", "actor__last_name")
+    readonly_fields = ("handler_name", "object_id", "actor", "buffered_at", "sent_at")
+    date_hierarchy = "buffered_at"
+
+    def has_add_permission(self, request) -> bool:
+        return False

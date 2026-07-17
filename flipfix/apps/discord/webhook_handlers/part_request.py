@@ -30,6 +30,15 @@ class PartRequestWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: PartRequest) -> str:
         return reverse("part-request-detail", kwargs={"pk": obj.pk})
 
+    def get_actor_user(self, obj: PartRequest):
+        return obj.requested_by.user if obj.requested_by else None
+
+    def get_machine(self, obj: PartRequest):
+        return obj.machine
+
+    def get_digest_text(self, obj: PartRequest) -> str:
+        return f"Parts request: {render_all_links(obj.text, plain_text=True)}"
+
     def format_webhook_message(self, obj: PartRequest) -> dict:
         from flipfix.apps.parts.models import PartRequestMedia
 

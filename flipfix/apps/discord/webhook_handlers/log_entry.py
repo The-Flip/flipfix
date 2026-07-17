@@ -32,6 +32,15 @@ class LogEntryWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: LogEntry) -> str:
         return reverse("log-detail", kwargs={"pk": obj.pk})
 
+    def get_actor_user(self, obj: LogEntry):
+        return obj.created_by
+
+    def get_machine(self, obj: LogEntry):
+        return obj.machine
+
+    def get_digest_text(self, obj: LogEntry) -> str:
+        return render_all_links(obj.text, plain_text=True)
+
     def format_webhook_message(self, obj: LogEntry) -> dict:
         from flipfix.apps.maintenance.models import LogEntryMedia
 

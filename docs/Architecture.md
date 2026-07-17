@@ -35,7 +35,7 @@ Wiki for maintainer documentation. Supports templates that pre-fill create forms
 
 Discord integration with two main features:
 
-- **Outbound webhooks**: Posts notifications to Discord when events occur (problem reports, log entries, parts requests)
+- **Outbound webhooks**: Posts notifications to Discord when events occur (problem reports, log entries, parts requests). Optionally coalesced — a maintainer's burst of activity is debounced into one combined message (see [`docs/Discord.md`](Discord.md))
 - **Inbound bot**: Listens to a configured Discord channel and creates tickets from employee messages
 
 ### `oauth`

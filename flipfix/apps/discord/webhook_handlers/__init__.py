@@ -74,6 +74,27 @@ class WebhookHandler:
         """Build the Discord webhook payload for this record."""
         raise NotImplementedError
 
+    # --- Coalescing support (used by the debounced notification buffer) ---
+
+    def get_actor_user(self, obj: Any):
+        """Return the User whose activity this event belongs to (the grouping key).
+
+        Return ``None`` for anonymous events (e.g. visitor problem reports); those
+        are posted immediately rather than debounced. Default: anonymous.
+        """
+        return None
+
+    def get_machine(self, obj: Any):
+        """Return the MachineInstance this event concerns, or ``None``.
+
+        Used to group a combined digest message by machine.
+        """
+        return None
+
+    def get_digest_text(self, obj: Any) -> str:
+        """Return a short one-line summary for a combined digest message."""
+        return self.display_name
+
 
 def register(handler: WebhookHandler) -> None:
     """Register a webhook handler instance."""

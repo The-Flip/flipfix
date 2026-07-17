@@ -28,6 +28,32 @@ Configure the system to post to Discord when problem reports, log entries, or pa
 - Set `DISCORD_WEBHOOK_URL` to the webhook URL
 - Set `DISCORD_WEBHOOKS_ENABLED` = True
 
+### Coalescing (debounced notifications)
+
+A single stretch of work by one person can create many records in a few minutes
+(adding a machine auto-creates a log entry, a status change another, plus any
+problem reports), which floods the channel. Coalescing batches each person's
+activity into **one combined message**.
+
+- Set `DISCORD_NOTIFICATION_COALESCING_ENABLED` = True (Admin → Constance → Config).
+- **How it works:** each would-fire event is buffered in the `PendingNotification`
+  table keyed by the acting maintainer. The `flush-discord-notifications` schedule
+  runs every minute and posts one message per maintainer once they've been quiet
+  for **5 minutes**, or after a **15-minute** cap for someone working continuously.
+  A lone event keeps its rich single-record embed (with photos); two or more
+  collapse into a per-machine digest.
+- **Anonymous events are never debounced.** Visitor-submitted problem reports (no
+  associated maintainer) post immediately, so the floor still gets real-time alerts.
+- **Requires the background worker.** Buffered events are only delivered by the
+  qcluster worker (`make runq`) running the flush schedule; ensure it's up and that
+  `ensure_scheduled_tasks` has run (it runs at deploy). With coalescing off, every
+  event posts immediately as before.
+- Tuning: the 5-/15-minute windows are `COALESCE_QUIET_PERIOD` / `COALESCE_MAX_WAIT`
+  in `flipfix/apps/discord/tasks.py`.
+
+To reconstruct and cluster the historical notification stream (e.g. to re-evaluate
+these windows), run the dev-only `analyze_notification_clusters` management command.
+
 <a id="discord-to-flipfix"></a>
 
 ## Discord → Flipfix (Discord Bot)

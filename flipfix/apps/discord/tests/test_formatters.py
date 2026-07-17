@@ -15,6 +15,7 @@ from flipfix.apps.core.test_utils import (
 )
 from flipfix.apps.discord.formatters import (
     DISCORD_POST_DESCRIPTION_MAX_CHARS,
+    NOTIFICATION_BODY_MAX_WORDS,
     format_test_message,
     get_base_url,
 )
@@ -278,6 +279,23 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         # The description should not end with "..." from truncation
         # (it may have "— Username" at the end, which is fine)
         self.assertNotIn("AAA...", embed["description"])
+
+    def test_log_entry_capped_to_a_couple_hundred_words(self):
+        """A long multi-word entry (e.g. a pasted checklist) is capped, not dumped."""
+        long_text = " ".join(f"word{i}" for i in range(500))
+        log_entry = create_log_entry(
+            machine=self.machine,
+            created_by=self.maintainer_user,
+            text=long_text,
+        )
+        message = format_discord_message("log_entry_created", log_entry)
+        description = message["embeds"][0]["description"]
+
+        self.assertIn("…", description)
+        self.assertNotIn("word499", description)  # the tail was dropped
+        self.assertIn("word0", description)  # the head is kept
+        # Body is capped near the limit (attribution adds a couple of words).
+        self.assertLessEqual(len(description.split()), NOTIFICATION_BODY_MAX_WORDS + 5)
 
     def test_log_entry_truncates_description_preserving_attribution(self):
         """Log entry with 5000+ char description truncates but preserves user attribution."""

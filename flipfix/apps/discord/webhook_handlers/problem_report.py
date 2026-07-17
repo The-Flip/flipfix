@@ -22,6 +22,21 @@ class ProblemReportWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: ProblemReport) -> str:
         return reverse("problem-report-detail", kwargs={"pk": obj.pk})
 
+    def get_actor_user(self, obj: ProblemReport):
+        # Usually None (visitor-submitted) → posted immediately, not debounced.
+        return obj.reported_by_user
+
+    def get_machine(self, obj: ProblemReport):
+        return obj.machine
+
+    def get_digest_text(self, obj: ProblemReport) -> str:
+        parts: list[str] = []
+        if obj.problem_type != ProblemReport.ProblemType.OTHER:
+            parts.append(obj.get_problem_type_display())
+        if obj.description:
+            parts.append(render_all_links(obj.description, plain_text=True))
+        return ": ".join(parts) if parts else "Problem report"
+
     def format_webhook_message(self, obj: ProblemReport) -> dict:
         from flipfix.apps.maintenance.models import ProblemReportMedia
 
