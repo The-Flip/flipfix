@@ -176,6 +176,13 @@ CONSTANCE_CONFIG = {
         "Master switch for all Discord webhook notifications",
         bool,
     ),
+    "DISCORD_NOTIFICATION_COALESCING_ENABLED": (
+        False,
+        "Debounce notifications: buffer each maintainer's events and post one "
+        "combined message once they go quiet (needs the qcluster worker running). "
+        "Off = post every event immediately.",
+        bool,
+    ),
 }
 
 CONSTANCE_CONFIG_FIELDSETS = (
@@ -188,6 +195,7 @@ CONSTANCE_CONFIG_FIELDSETS = (
         (
             "DISCORD_WEBHOOK_URL",
             "DISCORD_WEBHOOKS_ENABLED",
+            "DISCORD_NOTIFICATION_COALESCING_ENABLED",
         ),
     ),
     (

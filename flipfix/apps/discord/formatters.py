@@ -8,6 +8,7 @@ format_webhook_message() method.
 from __future__ import annotations
 
 import logging
+import re
 import urllib.parse
 from typing import TYPE_CHECKING, Any
 
@@ -18,8 +19,41 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from flipfix.apps.accounts.models import Maintainer
 
-# Discord embed limits
+# Discord's hard ceiling for an embed description.
 DISCORD_POST_DESCRIPTION_MAX_CHARS = 4096
+
+# Notifications summarise; they are not the record. Cap the body at roughly a
+# couple hundred words so a long entry (e.g. a pasted intake checklist) doesn't
+# fill several screens — the title always links to the full record.
+NOTIFICATION_BODY_MAX_WORDS = 200
+
+
+_MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\([^)]*\)")
+
+
+def _truncate_words(text: str, max_words: int) -> str:
+    """Trim ``text`` to at most ``max_words`` words, cutting on a word boundary.
+
+    Preserves the original spacing and Markdown of the kept portion (only the
+    tail is dropped) and appends an ellipsis when anything was removed. If the
+    cut would fall inside a Markdown link ``[label](url)`` (whose multi-word
+    label could otherwise be sliced apart), it extends to the link's end so the
+    link stays intact.
+    """
+    words = re.findall(r"\S+", text)
+    if len(words) <= max_words:
+        return text
+    kept = 0
+    for match in re.finditer(r"\S+", text):
+        kept += 1
+        if kept == max_words:
+            cut = match.end()
+            for link in _MARKDOWN_LINK.finditer(text):
+                if link.start() < cut < link.end():
+                    cut = link.end()
+                    break
+            return text[:cut].rstrip() + "…"
+    return text
 
 
 def get_base_url() -> str:
@@ -137,6 +171,10 @@ def build_discord_embed(
     Returns:
         Dict ready for Discord webhook payload with "embeds" key.
     """
+    # A notification summarises; cap the body to a couple hundred words so long
+    # entries don't dominate the channel (the title links to the full record).
+    record_description = _truncate_words(record_description, NOTIFICATION_BODY_MAX_WORDS)
+
     # Build the suffix that must be preserved (linked_record + user attribution)
     suffix_parts = []
     if linked_record:
@@ -167,6 +205,71 @@ def build_discord_embed(
     }
 
     return {"embeds": _build_gallery_embeds(main_embed, photos, title_url, base_url, color)}
+
+
+def get_actor_display_name(user: Any) -> str:
+    """Best display name for a user in a coalesced digest (Discord name if linked)."""
+    maintainer = getattr(user, "maintainer", None)
+    if maintainer is not None:
+        return get_maintainer_display_name(maintainer)
+    return user.get_full_name() or user.get_username()
+
+
+def _sanitize_link_text(text: str) -> str:
+    """Flatten text so it is safe inside a Markdown ``[text](url)`` link.
+
+    Collapses whitespace and neutralises the brackets that would otherwise
+    terminate the link, and truncates to keep digest lines scannable.
+    """
+    flattened = " ".join(text.split())
+    flattened = flattened.replace("[", "(").replace("]", ")")
+    if len(flattened) > 80:
+        flattened = flattened[:79].rstrip() + "…"
+    return flattened or "(no description)"
+
+
+# Discord colour for the combined per-actor digest (blue, matching log entries).
+DIGEST_COLOR = 3447003
+
+
+def build_actor_digest(
+    *,
+    actor_name: str,
+    sections: list[tuple[str, list[tuple[str, str, str]]]],
+    total: int,
+) -> dict:
+    """Build one combined Discord message summarising an actor's buffered events.
+
+    Args:
+        actor_name: Display name of the person whose activity this summarises.
+        sections: ``(machine_label, [(emoji, text, url), ...])`` groups, in display
+            order. Each event becomes one linked line under its machine heading.
+        total: Total number of events summarised (for the header count).
+
+    Returns:
+        Dict ready for a Discord webhook payload with an ``embeds`` key.
+    """
+    blocks = []
+    for label, events in sections:
+        lines = [f"{emoji} [{_sanitize_link_text(text)}]({url})" for emoji, text, url in events]
+        blocks.append(f"**{label}**\n" + "\n".join(lines))
+    description = "\n\n".join(blocks)
+
+    # Reserve a little room for a truncation marker within Discord's limit.
+    limit = DISCORD_POST_DESCRIPTION_MAX_CHARS - 2
+    if len(description) > limit:
+        description = description[: limit - 1].rstrip() + "…"
+
+    noun = "update" if total == 1 else "updates"
+    return {
+        "embeds": [
+            {
+                "title": f"🔧 {actor_name} — {total} {noun}",
+                "description": description,
+                "color": DIGEST_COLOR,
+            }
+        ]
+    }
 
 
 def format_test_message(event_type: str) -> dict:

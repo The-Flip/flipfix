@@ -1,5 +1,6 @@
 """Discord integration models."""
 
+from django.conf import settings
 from django.db import models
 from django.db.models import Model
 
@@ -122,3 +123,53 @@ class DiscordMessageMapping(models.Model):
 
         content_type = ContentType.objects.get_for_model(model_class)
         return cls.objects.filter(content_type=content_type, object_id=object_id).exists()
+
+
+class PendingNotification(models.Model):
+    """A buffered outbound notification awaiting a debounced flush.
+
+    When ``DISCORD_NOTIFICATION_COALESCING_ENABLED`` is on, each record creation
+    that would fire a real-time webhook is appended here instead of being
+    delivered immediately. The periodic ``flush_pending_notifications`` task
+    groups an actor's un-sent rows into a single Discord message once the actor
+    has gone quiet (or a max-wait cap is reached). See ``discord/tasks.py``.
+
+    Anonymous events (e.g. visitor problem reports, which have no actor) are
+    never buffered — they post immediately — so ``actor`` is always set here.
+    """
+
+    handler_name = models.CharField(
+        max_length=50,
+        help_text="Webhook handler name, e.g. 'log_entry' (see webhook_handlers/).",
+    )
+    object_id = models.PositiveIntegerField(
+        help_text="Primary key of the record to notify about.",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="+",
+        help_text="The user whose activity this event belongs to; the grouping key.",
+    )
+    buffered_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the event was buffered (≈ when the record was created).",
+    )
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this event was flushed to Discord; null while pending.",
+    )
+
+    class Meta:
+        ordering = ["buffered_at"]
+        verbose_name = "Pending notification"
+        verbose_name_plural = "Pending notifications"
+        indexes = [
+            # Drives the flush scan: unsent rows, grouped by actor, oldest first.
+            models.Index(fields=["sent_at", "actor", "buffered_at"]),
+        ]
+
+    def __str__(self) -> str:
+        state = "sent" if self.sent_at else "pending"
+        return f"{self.handler_name} #{self.object_id} for user {self.actor_id} ({state})"

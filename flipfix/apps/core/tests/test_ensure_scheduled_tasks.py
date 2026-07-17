@@ -11,6 +11,9 @@ from django_q.models import Schedule
 from flipfix.apps.core.management.commands.ensure_scheduled_tasks import (
     DAILY_REPORT_FUNC,
     DAILY_REPORT_NAME,
+    FLUSH_EVERY_MINUTES,
+    FLUSH_FUNC,
+    FLUSH_NAME,
 )
 
 
@@ -26,13 +29,43 @@ class EnsureScheduledTasksTests(TestCase):
         self.assertEqual(schedule.schedule_type, Schedule.DAILY)
         self.assertIsNotNone(schedule.next_run)
 
+    def test_creates_flush_schedule(self):
+        self._run()
+        schedule = Schedule.objects.get(name=FLUSH_NAME)
+        self.assertEqual(schedule.func, FLUSH_FUNC)
+        self.assertEqual(schedule.schedule_type, Schedule.MINUTES)
+        self.assertEqual(schedule.minutes, FLUSH_EVERY_MINUTES)
+        self.assertIsNotNone(schedule.next_run)
+
     def test_is_idempotent(self):
         self._run()
         self._run()
         self.assertEqual(Schedule.objects.filter(name=DAILY_REPORT_NAME).count(), 1)
+        self.assertEqual(Schedule.objects.filter(name=FLUSH_NAME).count(), 1)
 
     def test_preserves_next_run_across_runs(self):
         self._run()
         original = Schedule.objects.get(name=DAILY_REPORT_NAME).next_run
         self._run()
         self.assertEqual(Schedule.objects.get(name=DAILY_REPORT_NAME).next_run, original)
+
+    def test_resets_next_run_when_cadence_changes(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # An existing flush schedule left on the wrong (daily) cadence with a
+        # far-future next_run should be corrected to the minute cadence, and its
+        # stale next_run recomputed so the first flush isn't delayed.
+        stale = timezone.now() + timedelta(days=30)
+        Schedule.objects.create(
+            name=FLUSH_NAME,
+            func=FLUSH_FUNC,
+            schedule_type=Schedule.DAILY,
+            next_run=stale,
+        )
+        self._run()
+        schedule = Schedule.objects.get(name=FLUSH_NAME)
+        self.assertEqual(schedule.schedule_type, Schedule.MINUTES)
+        self.assertEqual(schedule.minutes, FLUSH_EVERY_MINUTES)
+        self.assertLess(schedule.next_run, stale)

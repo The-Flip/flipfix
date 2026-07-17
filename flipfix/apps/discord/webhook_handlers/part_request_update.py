@@ -34,6 +34,21 @@ class PartRequestUpdateWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: PartRequestUpdate) -> str:
         return reverse("part-request-detail", kwargs={"pk": obj.part_request.pk})
 
+    def get_actor_user(self, obj: PartRequestUpdate):
+        return obj.posted_by.user if obj.posted_by else None
+
+    def get_machine(self, obj: PartRequestUpdate):
+        return obj.part_request.machine
+
+    def get_digest_text(self, obj: PartRequestUpdate) -> str:
+        # Name the part being discussed (the update's own text is often an
+        # auto-generated "Status changed: …" that says nothing about the part).
+        # For a status change, lead with the status so it survives line trimming.
+        part = render_all_links(obj.part_request.text, plain_text=True)
+        if obj.new_status:
+            return f"Marked {obj.get_new_status_display()}: {part}"
+        return f"{part}: {render_all_links(obj.text, plain_text=True)}"
+
     def format_webhook_message(self, obj: PartRequestUpdate) -> dict:
         from flipfix.apps.parts.models import PartRequestUpdateMedia
 
