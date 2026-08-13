@@ -67,6 +67,15 @@
       </div>
       <!-- MEDIA UPLOAD -->
       {% media_file_input form.media_file %}
+      <!-- DISCORD ANNOUNCEMENT -->
+      <div class="form-field">
+        <label class="checkbox-label">
+          {{ form.announce }}
+          <span>{{ form.announce.label }}</span>
+        </label>
+        {% field_help_text form.announce %}
+        {% field_errors form.announce %}
+      </div>
       <!-- FORM ACTIONS -->
       <div class="form-actions">
         <a href="{% if machine %}{% url 'maintainer-machine-detail' machine.slug %}?f=problems{% else %}{% url 'problem-report-list' %}{% endif %}"

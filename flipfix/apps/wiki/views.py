@@ -384,9 +384,11 @@ class WikiTemplatePrefillView(View):
             ),
         }
 
-        extra_initial = {}
+        extra_initial: dict[str, object] = {}
         if action.priority:
             extra_initial["priority"] = action.priority
+        if not action.announce:
+            extra_initial["announce"] = False
         if extra_initial:
             prefill_data["extra_initial"] = extra_initial
 
@@ -507,8 +509,11 @@ class WikiTemplateContentView(View):
 
         from flipfix.apps.core.markdown_links import convert_storage_to_authoring
 
-        data: dict[str, str | list[str]] = {
+        data: dict[str, str | bool | list[str]] = {
             "content": convert_storage_to_authoring(action.content),
+            # Lets the create form untick "Announce in Discord" for templates
+            # marked announce="no" (routine paperwork like an intake checklist).
+            "announce": action.announce,
         }
 
         if action.record_type == "page":

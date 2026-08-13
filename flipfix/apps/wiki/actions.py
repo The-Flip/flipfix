@@ -21,7 +21,8 @@ Markers:
       The ``action`` attribute accepts ``button``, ``option``, or
       ``button,option``.
       Optional: ``machine``, ``location``, ``tags`` (for ``type="page"``),
-      ``title`` (for ``type="page"``), ``priority`` (for ``type="problem"``).
+      ``title`` (for ``type="page"``), ``priority`` (for ``type="problem"``),
+      ``announce="no"`` to keep records made from the template out of Discord.
 """
 
 from __future__ import annotations
@@ -57,6 +58,10 @@ _ACTION_REQUIRED_ATTRS = {"name", "action", "type", "label"}
 
 # Valid individual parts of the action attribute (comma-separated, order-independent)
 _VALID_ACTION_PARTS = {"button", "option"}
+
+# announce="no" marks a template whose records are routine paperwork: created
+# normally, but not posted to Discord (an intake checklist, for instance).
+_VALID_ANNOUNCE = {"yes", "no"}
 
 # Valid priority values for type="problem" — derived from the enum so
 # adding/removing priorities in the model automatically updates validation.
@@ -180,6 +185,7 @@ class ActionBlock:
     tags: str = ""
     title: str = ""
     priority: str = ""
+    announce: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +217,11 @@ def _validate_action_attrs(attrs: dict[str, str]) -> str | None:
         return (
             f"invalid priority '{priority}' (must be one of {', '.join(sorted(_VALID_PRIORITIES))})"
         )
+    announce = attrs.get("announce", "")
+    if announce and announce not in _VALID_ANNOUNCE:
+        return (
+            f"invalid announce '{announce}' (must be one of {', '.join(sorted(_VALID_ANNOUNCE))})"
+        )
     return None
 
 
@@ -227,6 +238,7 @@ def _make_action_block(attrs: dict[str, str], content: str) -> ActionBlock:
         tags=attrs.get("tags", ""),
         title=attrs.get("title", ""),
         priority=attrs.get("priority", ""),
+        announce=attrs.get("announce", "yes") != "no",
     )
 
 

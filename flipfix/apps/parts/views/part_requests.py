@@ -43,6 +43,7 @@ from flipfix.apps.parts.models import (
     PartRequestMedia,
     PartRequestUpdate,
 )
+from flipfix.apps.parts.status_log import status_change_text
 
 
 def _latest_update_prefetch():
@@ -405,7 +406,7 @@ class PartRequestStatusUpdateView(View):
         update = PartRequestUpdate.objects.create(
             part_request=self.part_request,
             posted_by=maintainer,
-            text=f"Status changed: {old_display} \u2192 {new_display}",
+            text=status_change_text(old_display, new_display),
             new_status=new_status,
         )
 

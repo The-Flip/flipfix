@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 
+from flipfix.apps.core.markdown_links import render_all_links
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -22,10 +24,15 @@ if TYPE_CHECKING:
 # Discord's hard ceiling for an embed description.
 DISCORD_POST_DESCRIPTION_MAX_CHARS = 4096
 
-# Notifications summarise; they are not the record. Cap the body at roughly a
-# couple hundred words so a long entry (e.g. a pasted intake checklist) doesn't
-# fill several screens — the title always links to the full record.
-NOTIFICATION_BODY_MAX_WORDS = 200
+# Notifications summarise; they are not the record. Cap the body so a long entry
+# (e.g. a pasted intake checklist) doesn't fill several screens — the title always
+# links to the full record. Generous enough that a real repair write-up survives
+# whole; the longest genuine log entry in production history is ~450 words.
+NOTIFICATION_BODY_MAX_WORDS = 500
+
+# How much of a related record (a linked problem report, a part's name) fits on
+# one line before it stops being scannable.
+SUMMARY_MAX_CHARS = 50
 
 
 _MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\([^)]*\)")
@@ -54,6 +61,32 @@ def _truncate_words(text: str, max_words: int) -> str:
                     break
             return text[:cut].rstrip() + "…"
     return text
+
+
+_URL = re.compile(r"https?://\S+")
+
+
+def summarize(text: str, max_chars: int = SUMMARY_MAX_CHARS) -> str:
+    """Flatten ``text`` onto one line and trim it to ``max_chars``.
+
+    Used where a record is mentioned inside another record's message, so a
+    multi-line description doesn't push the real content off the screen.
+    """
+    flattened = " ".join((text or "").split())
+    if len(flattened) <= max_chars:
+        return flattened
+    return flattened[:max_chars].rstrip() + "..."
+
+
+def part_name(text: str, max_chars: int = 60) -> str:
+    """Name the part a request is about, without its shopping links.
+
+    Parts requests are usually "what I need" followed by a supplier URL. The URL
+    is the least useful thing to spend a summary line on, and a raw link in a
+    Discord embed also drags an unwanted preview card along with it.
+    """
+    rendered = render_all_links(text or "", plain_text=True)
+    return summarize(_URL.sub("", rendered), max_chars) or "(unnamed part)"
 
 
 def get_base_url() -> str:
@@ -149,6 +182,7 @@ def build_discord_embed(
     photos: list,
     base_url: str,
     linked_record: str | None = None,
+    followups: list[str] | None = None,
 ) -> dict:
     """Build Discord webhook payload.
 
@@ -167,19 +201,24 @@ def build_discord_embed(
         base_url: Site URL prefix for building absolute photo URLs
         linked_record: Optional related record with link, in markdown format,
             e.g. "📎 [PR #5](url): description"
+        followups: Optional one-per-line summaries of the rest of the same work
+            session — the status change and the move to the floor that went with
+            this repair. Listed below the attribution.
 
     Returns:
         Dict ready for Discord webhook payload with "embeds" key.
     """
-    # A notification summarises; cap the body to a couple hundred words so long
-    # entries don't dominate the channel (the title links to the full record).
+    # A notification summarises; cap the body so long entries don't dominate the
+    # channel (the title links to the full record).
     record_description = _truncate_words(record_description, NOTIFICATION_BODY_MAX_WORDS)
 
-    # Build the suffix that must be preserved (linked_record + user attribution)
+    # Build the suffix that must be preserved (linked record, attribution, followups)
     suffix_parts = []
     if linked_record:
         suffix_parts.append(linked_record)
     suffix_parts.append(f"— {user_attribution}")
+    if followups:
+        suffix_parts.append("\n".join(followups))
     suffix = "\n\n".join(suffix_parts)
 
     # Calculate available space for record_description
@@ -208,7 +247,7 @@ def build_discord_embed(
 
 
 def get_actor_display_name(user: Any) -> str:
-    """Best display name for a user in a coalesced digest (Discord name if linked)."""
+    """Best display name for a user in a coalesced message (Discord name if linked)."""
     maintainer = getattr(user, "maintainer", None)
     if maintainer is not None:
         return get_maintainer_display_name(maintainer)
@@ -228,31 +267,42 @@ def _sanitize_link_text(text: str) -> str:
     return flattened or "(no description)"
 
 
-# Discord colour for the combined per-actor digest (blue, matching log entries).
+# Discord colour for the combined summary message (blue, matching log entries).
 DIGEST_COLOR = 3447003
 
 
-def build_actor_digest(
+def build_followup_line(text: str, url: str | None = None) -> str:
+    """One line describing a record folded into somebody else's post.
+
+    Routine actions ("Status changed: Unknown → Good") read as plain sentences —
+    linking them adds noise for a page nobody needs. Anything a person wrote gets
+    a link so the full record is one click away.
+    """
+    flattened = _sanitize_link_text(text)
+    return f"[{flattened}]({url})" if url else flattened
+
+
+def build_sweep_message(
     *,
     actor_name: str,
-    sections: list[tuple[str, list[tuple[str, str, str]]]],
+    sections: list[tuple[str, list[str]]],
     total: int,
 ) -> dict:
-    """Build one combined Discord message summarising an actor's buffered events.
+    """Build one message summarising a stretch of routine record-keeping.
+
+    Grouped by *action* rather than by machine: somebody moving fifteen machines
+    onto the floor wants one "Moved to the floor" heading with fifteen names
+    under it, not fifteen headings with one line each.
 
     Args:
         actor_name: Display name of the person whose activity this summarises.
-        sections: ``(machine_label, [(emoji, text, url), ...])`` groups, in display
-            order. Each event becomes one linked line under its machine heading.
-        total: Total number of events summarised (for the header count).
+        sections: ``(action_label, [entry, ...])`` groups, in display order.
+        total: Total number of records summarised (for the header count).
 
     Returns:
         Dict ready for a Discord webhook payload with an ``embeds`` key.
     """
-    blocks = []
-    for label, events in sections:
-        lines = [f"{emoji} [{_sanitize_link_text(text)}]({url})" for emoji, text, url in events]
-        blocks.append(f"**{label}**\n" + "\n".join(lines))
+    blocks = [f"**{label}**\n{', '.join(entries)}" for label, entries in sections]
     description = "\n\n".join(blocks)
 
     # Reserve a little room for a truncation marker within Discord's limit.

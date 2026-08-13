@@ -107,6 +107,15 @@
     {% form_field form.time_spent %}
     <!-- MEDIA UPLOAD -->
     {% media_file_input form.media_file %}
+    <!-- DISCORD ANNOUNCEMENT -->
+    <div class="form-field">
+      <label class="checkbox-label">
+        {{ form.announce }}
+        <span>{{ form.announce.label }}</span>
+      </label>
+      {% field_help_text form.announce %}
+      {% field_errors form.announce %}
+    </div>
     <div class="form-actions">
       {% if problem_report %}
         <label class="checkbox-label">

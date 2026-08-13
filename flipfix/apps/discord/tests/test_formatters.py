@@ -282,7 +282,7 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
 
     def test_log_entry_capped_to_a_couple_hundred_words(self):
         """A long multi-word entry (e.g. a pasted checklist) is capped, not dumped."""
-        long_text = " ".join(f"word{i}" for i in range(500))
+        long_text = " ".join(f"word{i}" for i in range(NOTIFICATION_BODY_MAX_WORDS + 100))
         log_entry = create_log_entry(
             machine=self.machine,
             created_by=self.maintainer_user,
@@ -297,7 +297,9 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         # point, the next word (index MAX) is dropped.
         self.assertIn(f"word{NOTIFICATION_BODY_MAX_WORDS - 1}…", description)
         self.assertNotIn(f"word{NOTIFICATION_BODY_MAX_WORDS}", description)
-        self.assertNotIn("word499", description)  # the tail was dropped
+        self.assertNotIn(
+            f"word{NOTIFICATION_BODY_MAX_WORDS + 99}", description
+        )  # the tail was dropped
         # Body is capped near the limit (attribution adds a couple of words).
         self.assertLessEqual(len(description.split()), NOTIFICATION_BODY_MAX_WORDS + 5)
 

@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 # Registry of webhook handlers, keyed by handler name (e.g., "log_entry")
 _registry: dict[str, WebhookHandler] = {}
 
+# Discord shows at most four images in an embed gallery.
+DISCORD_GALLERY_MAX_PHOTOS = 4
+
 
 class WebhookHandler:
     """Base class for Discord webhook handlers.
@@ -50,6 +53,26 @@ class WebhookHandler:
         """Whether this save should post to Discord. Default: creation only."""
         return created
 
+    def should_announce(self, object_id: int) -> bool:
+        """Whether the record wants announcing at all.
+
+        Record types with an ``announce`` field let the author mark routine
+        paperwork — an intake checklist pasted in as a problem report — as
+        something the channel does not need to hear about. Types without the
+        field always announce.
+        """
+        from django.core.exceptions import FieldDoesNotExist
+
+        model_class = self.get_model_class()
+        try:
+            model_class._meta.get_field("announce")
+        except FieldDoesNotExist:
+            return True
+        return (
+            model_class.objects.filter(pk=object_id).values_list("announce", flat=True).first()
+            is not False
+        )
+
     def get_model_class(self):
         """Get the Django model class for this handler."""
         from django.apps import apps
@@ -70,30 +93,100 @@ class WebhookHandler:
         """Return the URL path for the record's detail page."""
         raise NotImplementedError
 
-    def format_webhook_message(self, obj: Any) -> dict:
-        """Build the Discord webhook payload for this record."""
+    def format_webhook_message(
+        self,
+        obj: Any,
+        *,
+        followups: list[str] | None = None,
+        photos: list | None = None,
+    ) -> dict:
+        """Build the Discord webhook payload for this record.
+
+        Args:
+            obj: The record to render.
+            followups: Extra lines appended below the attribution, describing the
+                rest of the same work session (see ``build_discord_embed``).
+            photos: Override the gallery, e.g. with photos gathered from every
+                record in the session. ``None`` means use this record's own.
+        """
         raise NotImplementedError
+
+    def get_photos(self, obj: Any) -> list:
+        """Return this record's gallery photos, in display order.
+
+        Every notifiable record has a ``media`` related manager of
+        :class:`~flipfix.apps.core.models.AbstractMedia` rows. Videos and photos
+        that never got a thumbnail are skipped — Discord webhooks can only show
+        images, and an embed without a usable URL renders as a broken box.
+        """
+        from flipfix.apps.core.models import AbstractMedia
+
+        return list(
+            obj.media.filter(media_type=AbstractMedia.MediaType.PHOTO)
+            .filter(thumbnail_file__gt="")
+            .order_by("display_order", "created_at")[:DISCORD_GALLERY_MAX_PHOTOS]
+        )
 
     # --- Coalescing support (used by the debounced notification buffer) ---
 
-    def get_actor_user(self, obj: Any):
-        """Return the User whose activity this event belongs to (the grouping key).
+    def get_submitting_user(self, obj: Any):
+        """Return the User whose activity this record belongs to — the grouping key.
 
-        Return ``None`` for anonymous events (e.g. visitor problem reports); those
-        are posted immediately rather than debounced. Default: anonymous.
+        Prefers who *saved* the record, which ``django-simple-history`` captures
+        on the creation row, over the record's attribution field
+        (``reported_by_user``/``requested_by``/``posted_by``). Attribution says
+        who the record is *about*, and `core.attribution` leaves it null whenever
+        somebody files on another person's behalf — which is how the great
+        majority of records ended up looking anonymous to the coalescer.
+
+        Falls back to attribution for records created outside a request (the
+        Discord bot, management commands, tests), where there is no history user.
+
+        Returns ``None`` only when neither is known — the public QR problem
+        report flow. Those post immediately rather than being debounced.
         """
+        creation = obj.history.filter(history_type="+").order_by("history_date").first()
+        if creation is not None and creation.history_user is not None:
+            return creation.history_user
+        return self.get_attributed_user(obj)
+
+    def get_attributed_user(self, obj: Any):
+        """Return the User the record credits, or ``None``. See get_submitting_user."""
         return None
 
     def get_machine(self, obj: Any):
         """Return the MachineInstance this event concerns, or ``None``.
 
-        Used to group a combined digest message by machine.
+        Records are grouped into one message per machine, so this is what decides
+        which records belong to the same piece of work.
         """
         return None
 
-    def get_digest_text(self, obj: Any) -> str:
-        """Return a short one-line summary for a combined digest message."""
+    def is_substantive(self, obj: Any) -> bool:
+        """Whether a person wrote this, as opposed to Flipfix recording an action.
+
+        A session containing something substantive is worth a full post — body
+        text and photos — and everything else about that machine is folded into
+        it as a one-line follow-up. A session of nothing but recorded actions
+        collapses into a single summary message.
+        """
+        return True
+
+    def get_summary_line(self, obj: Any) -> str:
+        """Return a one-line plain-text summary of this record."""
         return self.display_name
+
+    def get_sweep_label(self, obj: Any) -> str:
+        """Return the action this record represents, e.g. "Marked Good".
+
+        Records sharing a label are listed together in the summary message.
+        """
+        return self.display_name
+
+    def get_sweep_entry(self, obj: Any) -> str:
+        """Return what the action was performed on, e.g. a machine name."""
+        machine = self.get_machine(obj)
+        return machine.short_display_name if machine is not None else self.display_name
 
 
 def register(handler: WebhookHandler) -> None:

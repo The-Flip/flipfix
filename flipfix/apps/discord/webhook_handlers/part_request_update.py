@@ -11,8 +11,10 @@ from flipfix.apps.discord.formatters import (
     build_discord_embed,
     get_base_url,
     get_maintainer_display_name,
+    part_name,
 )
 from flipfix.apps.discord.webhook_handlers import WebhookHandler, register
+from flipfix.apps.parts.status_log import status_change_comment
 
 if TYPE_CHECKING:
     from flipfix.apps.parts.models import PartRequestUpdate
@@ -34,34 +36,46 @@ class PartRequestUpdateWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: PartRequestUpdate) -> str:
         return reverse("part-request-detail", kwargs={"pk": obj.part_request.pk})
 
-    def get_actor_user(self, obj: PartRequestUpdate):
+    def get_attributed_user(self, obj: PartRequestUpdate):
         return obj.posted_by.user if obj.posted_by else None
 
     def get_machine(self, obj: PartRequestUpdate):
         return obj.part_request.machine
 
-    def get_digest_text(self, obj: PartRequestUpdate) -> str:
-        # Name the part being discussed (the update's own text is often an
-        # auto-generated "Status changed: …" that says nothing about the part).
-        # For a status change, lead with the status so it survives line trimming.
-        part = render_all_links(obj.part_request.text, plain_text=True)
+    def is_substantive(self, obj: PartRequestUpdate) -> bool:
+        """A bare status flip is bookkeeping; a status flip plus a note is not."""
+        return bool(status_change_comment(obj.text))
+
+    def get_summary_line(self, obj: PartRequestUpdate) -> str:
+        # Name the part being discussed — the update's own text is often an
+        # auto-generated "Status changed: …" that says nothing about the part.
+        part = part_name(obj.part_request.text)
+        comment = status_change_comment(obj.text) if obj.new_status else obj.text
+        comment = " ".join(render_all_links(comment, plain_text=True).split())
         if obj.new_status:
-            return f"Marked {obj.get_new_status_display()}: {part}"
-        return f"{part}: {render_all_links(obj.text, plain_text=True)}"
+            marked = f"Marked {obj.get_new_status_display()}: {part}"
+            return f"{marked} — {comment}" if comment else marked
+        return f"{part}: {comment}"
 
-    def format_webhook_message(self, obj: PartRequestUpdate) -> dict:
-        from flipfix.apps.parts.models import PartRequestUpdateMedia
+    def get_sweep_label(self, obj: PartRequestUpdate) -> str:
+        return f"Marked {obj.get_new_status_display()}" if obj.new_status else "Commented on"
 
+    def get_sweep_entry(self, obj: PartRequestUpdate) -> str:
+        return part_name(obj.part_request.text)
+
+    def format_webhook_message(
+        self,
+        obj: PartRequestUpdate,
+        *,
+        followups: list[str] | None = None,
+        photos: list | None = None,
+    ) -> dict:
         base_url = get_base_url()
         url = base_url + self.get_detail_url(obj)
 
         # Build linked_record for the parent parts request
         pr = obj.part_request
-        rendered_text = render_all_links(pr.text, plain_text=True)
-        pr_desc = rendered_text[:50]
-        if len(rendered_text) > 50:
-            pr_desc += "..."
-        linked_record = f"📎 [Parts Request #{pr.pk}]({url}): {pr_desc}"
+        linked_record = f"📎 [Parts Request #{pr.pk}]({url}): {part_name(pr.text)}"
 
         # Get user attribution (use Discord name if available, or fall back to display property)
         if obj.posted_by:
@@ -78,22 +92,16 @@ class PartRequestUpdateWebhookHandler(WebhookHandler):
         else:
             title = f"{self.emoji} Update on Parts Request"
 
-        # Get photos with thumbnails (up to 4 for Discord gallery)
-        photos = list(
-            obj.media.filter(media_type=PartRequestUpdateMedia.MediaType.PHOTO)
-            .filter(thumbnail_file__gt="")
-            .order_by("display_order", "created_at")[:4]
-        )
-
         return build_discord_embed(
             title=title,
             title_url=url,
             record_description=render_all_links(obj.text, base_url=base_url),
             user_attribution=user_attribution,
             color=self.color,
-            photos=photos,
+            photos=self.get_photos(obj) if photos is None else photos,
             base_url=base_url,
             linked_record=linked_record,
+            followups=followups,
         )
 
 

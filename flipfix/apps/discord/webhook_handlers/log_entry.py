@@ -11,8 +11,10 @@ from flipfix.apps.discord.formatters import (
     build_discord_embed,
     get_base_url,
     get_maintainer_display_name,
+    summarize,
 )
 from flipfix.apps.discord.webhook_handlers import WebhookHandler, register
+from flipfix.apps.maintenance import auto_log
 from flipfix.apps.maintenance.models import ProblemReport
 
 if TYPE_CHECKING:
@@ -32,18 +34,39 @@ class LogEntryWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: LogEntry) -> str:
         return reverse("log-detail", kwargs={"pk": obj.pk})
 
-    def get_actor_user(self, obj: LogEntry):
-        return obj.created_by
+    def get_submitting_user(self, obj: LogEntry):
+        # Log entries record their creator directly, so no history lookup is needed.
+        return obj.created_by or super().get_submitting_user(obj)
 
     def get_machine(self, obj: LogEntry):
         return obj.machine
 
-    def get_digest_text(self, obj: LogEntry) -> str:
-        return render_all_links(obj.text, plain_text=True)
+    def is_substantive(self, obj: LogEntry) -> bool:
+        """A log entry counts unless Flipfix wrote it (status change, close, …)."""
+        return auto_log.classify(obj.text) is None
 
-    def format_webhook_message(self, obj: LogEntry) -> dict:
-        from flipfix.apps.maintenance.models import LogEntryMedia
+    def get_summary_line(self, obj: LogEntry) -> str:
+        """One line for this entry inside somebody else's post.
 
+        For a close/re-open the entry's own text ("Closed problem report") says
+        nothing about *which* report, so name the report instead.
+        """
+        text = render_all_links(obj.text, plain_text=True)
+        if obj.problem_report and auto_log.classify(obj.text) is not None:
+            return f"{text}: {_problem_report_summary(obj.problem_report)}"
+        return text
+
+    def get_sweep_label(self, obj: LogEntry) -> str:
+        recognised = auto_log.classify(obj.text)
+        return recognised.action_label if recognised else "Logged"
+
+    def format_webhook_message(
+        self,
+        obj: LogEntry,
+        *,
+        followups: list[str] | None = None,
+        photos: list | None = None,
+    ) -> dict:
         base_url = get_base_url()
         url = base_url + self.get_detail_url(obj)
 
@@ -52,17 +75,7 @@ class LogEntryWebhookHandler(WebhookHandler):
         if obj.problem_report:
             pr = obj.problem_report
             pr_url = base_url + reverse("problem-report-detail", kwargs={"pk": pr.pk})
-            # Build PR text: [problem type]: [truncated description]
-            pr_text_parts: list[str] = []
-            if pr.problem_type != ProblemReport.ProblemType.OTHER:
-                pr_text_parts.append(pr.get_problem_type_display())
-            if pr.description:
-                rendered_desc = render_all_links(pr.description, plain_text=True)
-                pr_desc = rendered_desc[:50]
-                if len(rendered_desc) > 50:
-                    pr_desc += "..."
-                pr_text_parts.append(pr_desc)
-            pr_text = ": ".join(pr_text_parts) if pr_text_parts else ""
+            pr_text = _problem_report_summary(pr)
             # Format: 📎 Problem Report #N: [text] (hyperlink the #N)
             if pr_text:
                 linked_record = f"📎 [Problem Report #{pr.pk}]({pr_url}): {pr_text}"
@@ -87,23 +100,27 @@ class LogEntryWebhookHandler(WebhookHandler):
 
         user_attribution = ", ".join(maintainer_names) if maintainer_names else "Unknown"
 
-        # Get photos with thumbnails (up to 4 for Discord gallery)
-        photos = list(
-            obj.media.filter(media_type=LogEntryMedia.MediaType.PHOTO)  # type: ignore[attr-defined]
-            .filter(thumbnail_file__gt="")
-            .order_by("display_order", "created_at")[:4]
-        )
-
         return build_discord_embed(
             title=f"{self.emoji} {obj.machine.short_display_name}",
             title_url=url,
             record_description=render_all_links(obj.text, base_url=base_url),
             user_attribution=user_attribution,
             color=self.color,
-            photos=photos,
+            photos=self.get_photos(obj) if photos is None else photos,
             base_url=base_url,
             linked_record=linked_record,
+            followups=followups,
         )
+
+
+def _problem_report_summary(report: ProblemReport) -> str:
+    """ "[problem type]: [short description]" for a linked report."""
+    parts: list[str] = []
+    if report.problem_type != ProblemReport.ProblemType.OTHER:
+        parts.append(report.get_problem_type_display())
+    if report.description:
+        parts.append(summarize(render_all_links(report.description, plain_text=True)))
+    return ": ".join(parts)
 
 
 register(LogEntryWebhookHandler())

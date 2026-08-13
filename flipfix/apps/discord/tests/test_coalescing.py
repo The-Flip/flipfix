@@ -2,11 +2,12 @@
 
 Covers the two halves of the mechanism:
 
-* ``dispatch_webhook`` routing — buffer maintainer activity, but post anonymous
-  (visitor) events and Discord-originated echoes without debouncing.
-* ``flush_pending_notifications`` — combine a quiet actor's buffered events into a
-  single message, honour the max-wait cap, keep single events rich, and cope with
-  records deleted before the flush.
+* ``dispatch_webhook`` routing — buffer the activity of whoever saved a record,
+  but post signed-out (visitor) events and Discord-originated echoes without
+  debouncing.
+* ``flush_pending_notifications`` — one message per machine somebody worked on,
+  led by what they wrote; routine record-keeping collapsed into a single summary;
+  the max-wait cap; and records deleted before the flush.
 """
 
 from datetime import timedelta
@@ -27,6 +28,7 @@ from flipfix.apps.core.test_utils import (
 )
 from flipfix.apps.discord.models import DiscordMessageMapping, PendingNotification
 from flipfix.apps.discord.tasks import dispatch_webhook, flush_pending_notifications
+from flipfix.apps.maintenance import auto_log
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/123/abc"
 
@@ -36,6 +38,19 @@ def _ok_response() -> MagicMock:
     response.status_code = 200
     response.raise_for_status.return_value = None
     return response
+
+
+def _set_history_user(obj, user):
+    """Record who saved ``obj``, as the history middleware does for a real request."""
+    type(obj).history.filter(id=obj.pk, history_type="+").update(history_user_id=user.pk)
+
+
+def _payloads(mock_post) -> list[dict]:
+    return [call.kwargs["json"] for call in mock_post.call_args_list]
+
+
+def _descriptions(mock_post) -> list[str]:
+    return [payload["embeds"][0]["description"] for payload in _payloads(mock_post)]
 
 
 @tag("tasks")
@@ -84,6 +99,65 @@ class DispatchRoutingTests(TestCase):
         self.assertEqual(PendingNotification.objects.count(), 1)
 
     @patch("flipfix.apps.discord.tasks.async_task")
+    def test_report_filed_on_someone_elses_behalf_is_buffered(self, mock_async):
+        """Free-text attribution leaves reported_by_user null; the saver still groups it.
+
+        This is the common case in production: a maintainer types a visitor's name
+        into the attribution box rather than picking a maintainer, so the record
+        credits nobody in the system even though a signed-in person filed it.
+        """
+        report = create_problem_report(machine=self.machine, reported_by_name="A visitor")
+        _set_history_user(report, self.user)
+
+        dispatch_webhook("problem_report", report.pk)
+
+        mock_async.assert_not_called()
+        self.assertEqual(PendingNotification.objects.get().actor, self.user)
+
+    @patch("flipfix.apps.discord.tasks.async_task")
+    def test_parts_request_without_requester_is_buffered(self, mock_async):
+        request = create_part_request(machine=self.machine, text="Flipper coil")
+        _set_history_user(request, self.user)
+
+        dispatch_webhook("part_request", request.pk)
+
+        mock_async.assert_not_called()
+        self.assertEqual(PendingNotification.objects.get().actor, self.user)
+
+    @patch("flipfix.apps.discord.tasks.async_task")
+    def test_record_marked_not_to_announce_is_dropped(self, mock_async):
+        """An intake checklist and friends are recorded, but not announced."""
+        report = create_problem_report(
+            machine=self.machine, reported_by_user=self.user, announce=False
+        )
+
+        dispatch_webhook("problem_report", report.pk)
+
+        mock_async.assert_not_called()
+        self.assertEqual(PendingNotification.objects.count(), 0)
+
+    @override_config(DISCORD_NOTIFICATION_COALESCING_ENABLED=False)
+    @patch("flipfix.apps.discord.tasks.async_task")
+    def test_record_marked_not_to_announce_is_dropped_with_coalescing_off(self, mock_async):
+        log = create_log_entry(machine=self.machine, created_by=self.user, announce=False)
+
+        dispatch_webhook("log_entry", log.pk)
+
+        mock_async.assert_not_called()
+
+    @patch("flipfix.apps.discord.tasks.async_task")
+    def test_records_without_an_announce_field_still_post(self, mock_async):
+        """Parts records have no announce field; they must not be suppressed."""
+        request = create_part_request(machine=self.machine, text="Flipper coil")
+
+        dispatch_webhook("part_request", request.pk)
+
+        self.assertEqual(
+            mock_async.call_count + PendingNotification.objects.count(),
+            1,
+        )
+
+    @patch("flipfix.apps.discord.tasks.async_task")
     def test_discord_originated_event_is_skipped(self, mock_async):
         log = create_log_entry(machine=self.machine, created_by=self.user)
         DiscordMessageMapping.mark_processed("discord_msg_1", log)
@@ -127,30 +201,144 @@ class FlushTests(TestCase):
         return pending
 
     @patch("flipfix.apps.discord.tasks.requests.post")
-    def test_combines_events_by_machine(self, mock_post):
+    def test_work_on_a_machine_becomes_one_post_led_by_what_was_written(self, mock_post):
+        """The motivating case: fix a machine, mark it Good, move it to the floor."""
         mock_post.return_value = _ok_response()
-        other = create_machine()
-        log1 = create_log_entry(machine=self.machine, created_by=self.user, text="Replaced coil")
-        report = create_problem_report(machine=self.machine, reported_by_user=self.user)
-        log2 = create_log_entry(machine=other, created_by=self.user, text="Cleaned playfield")
-        for handler_name, obj in (
-            ("log_entry", log1),
-            ("problem_report", report),
-            ("log_entry", log2),
-        ):
-            self._buffer(handler_name, obj, minutes_ago=6)  # quiet period elapsed
+        repair = create_log_entry(
+            machine=self.machine,
+            created_by=self.user,
+            text="Replaced all elastics and cleaned playfield.",
+        )
+        status = create_log_entry(
+            machine=self.machine,
+            created_by=self.user,
+            text=auto_log.status_changed_text("Unknown", "Good"),
+        )
+        moved = create_log_entry(
+            machine=self.machine,
+            created_by=self.user,
+            text=auto_log.moved_to_floor_text(self.machine.name),
+        )
+        for entry in (repair, status, moved):
+            self._buffer("log_entry", entry, minutes_ago=6)
 
         result = flush_pending_notifications()
 
         self.assertEqual(result.status, "success")
         mock_post.assert_called_once()
-        payload = mock_post.call_args.kwargs["json"]
-        self.assertEqual(len(payload["embeds"]), 1)
-        embed = payload["embeds"][0]
-        self.assertIn("3 updates", embed["title"])
+        embed = mock_post.call_args.kwargs["json"]["embeds"][0]
+        self.assertIn(self.machine.short_display_name, embed["title"])
+        # The substantive entry leads, and the routine ones follow it as plain lines.
+        self.assertIn("Replaced all elastics and cleaned playfield.", embed["description"])
+        self.assertIn(auto_log.status_changed_text("Unknown", "Good"), embed["description"])
+        self.assertIn("has moved to the floor!", embed["description"])
+        self.assertEqual(PendingNotification.objects.filter(sent_at__isnull=True).count(), 0)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_two_machines_worked_on_become_two_posts(self, mock_post):
+        mock_post.return_value = _ok_response()
+        other = create_machine()
+        log1 = create_log_entry(machine=self.machine, created_by=self.user, text="Replaced coil")
+        log2 = create_log_entry(machine=other, created_by=self.user, text="Cleaned playfield")
+        for entry in (log1, log2):
+            self._buffer("log_entry", entry, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        self.assertEqual(mock_post.call_count, 2)
+        descriptions = _descriptions(mock_post)
+        self.assertTrue(any("Replaced coil" in d for d in descriptions))
+        self.assertTrue(any("Cleaned playfield" in d for d in descriptions))
+        self.assertEqual(PendingNotification.objects.filter(sent_at__isnull=True).count(), 0)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_routine_changes_across_machines_become_one_summary(self, mock_post):
+        """A sweep of status changes is grouped by action, not by machine."""
+        mock_post.return_value = _ok_response()
+        other = create_machine()
+        for machine in (self.machine, other):
+            entry = create_log_entry(
+                machine=machine,
+                created_by=self.user,
+                text=auto_log.status_changed_text("Unknown", "Good"),
+            )
+            self._buffer("log_entry", entry, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        mock_post.assert_called_once()
+        embed = mock_post.call_args.kwargs["json"]["embeds"][0]
+        self.assertIn("2 updates", embed["title"])
+        self.assertIn("**Marked Good**", embed["description"])
         self.assertIn(self.machine.short_display_name, embed["description"])
         self.assertIn(other.short_display_name, embed["description"])
-        self.assertEqual(PendingNotification.objects.filter(sent_at__isnull=True).count(), 0)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_written_work_and_an_unrelated_sweep_split(self, mock_post):
+        """A repair on one machine and bookkeeping on another are different news."""
+        mock_post.return_value = _ok_response()
+        other = create_machine()
+        repair = create_log_entry(
+            machine=self.machine, created_by=self.user, text="Rebuilt flipper"
+        )
+        routine = create_log_entry(
+            machine=other,
+            created_by=self.user,
+            text=auto_log.status_changed_text("Good", "Fixing"),
+        )
+        for entry in (repair, routine):
+            self._buffer("log_entry", entry, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        self.assertEqual(mock_post.call_count, 2)
+        titles = [payload["embeds"][0]["title"] for payload in _payloads(mock_post)]
+        self.assertIn(f"🗒️ {self.machine.short_display_name}", titles)
+        self.assertTrue(any("1 update" in title for title in titles))
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_closing_a_report_names_the_report(self, mock_post):
+        """ "Closed problem report" alone says nothing; the follow-up line names it."""
+        mock_post.return_value = _ok_response()
+        report = create_problem_report(
+            machine=self.machine,
+            reported_by_user=self.user,
+            description="Left flipper is dead",
+        )
+        repair = create_log_entry(
+            machine=self.machine, created_by=self.user, text="New coil fitted"
+        )
+        closed = create_log_entry(
+            machine=self.machine,
+            created_by=self.user,
+            problem_report=report,
+            text=auto_log.CLOSED_REPORT_TEXT,
+        )
+        for handler_name, obj in (("log_entry", repair), ("log_entry", closed)):
+            self._buffer(handler_name, obj, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        mock_post.assert_called_once()
+        description = mock_post.call_args.kwargs["json"]["embeds"][0]["description"]
+        self.assertIn(f"{auto_log.CLOSED_REPORT_TEXT}: ", description)
+        self.assertIn("Left flipper is dead", description)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_one_post_failing_does_not_repost_the_others(self, mock_post):
+        import requests
+
+        other = create_machine()
+        log1 = create_log_entry(machine=self.machine, created_by=self.user, text="Replaced coil")
+        log2 = create_log_entry(machine=other, created_by=self.user, text="Cleaned playfield")
+        rows = [self._buffer("log_entry", entry, minutes_ago=6) for entry in (log1, log2)]
+        mock_post.side_effect = [_ok_response(), requests.RequestException("Discord down")]
+
+        flush_pending_notifications()
+
+        self.assertEqual(mock_post.call_count, 2)
+        unsent = PendingNotification.objects.filter(sent_at__isnull=True)
+        self.assertEqual([row.pk for row in unsent], [rows[1].pk])
 
     @patch("flipfix.apps.discord.tasks.requests.post")
     def test_waits_while_actor_still_active(self, mock_post):
@@ -276,7 +464,37 @@ class FlushTests(TestCase):
 
         mock_post.assert_called_once()
         embed = mock_post.call_args.kwargs["json"]["embeds"][0]
-        self.assertIn("2 updates", embed["title"])
-        # The update line names the part (not just "Status changed") and its status.
-        self.assertIn("Flipper coil A-12345", embed["description"])
-        self.assertIn("Ordered", embed["description"])
+        # The request leads (somebody wrote it); the bare status flip follows it,
+        # naming the part rather than repeating "Status changed".
+        self.assertIn("📦", embed["title"])
+        self.assertIn("Marked Ordered: Flipper coil A-12345", embed["description"])
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_parts_summary_line_drops_the_supplier_url(self, mock_post):
+        from flipfix.apps.parts.models import PartRequest
+
+        mock_post.return_value = _ok_response()
+        request = create_part_request(
+            requested_by=self.maintainer,
+            machine=self.machine,
+            text="Drop target stickers\n\nhttps://www.pinballlife.com/some-very-long-product-url",
+        )
+        update = create_part_request_update(
+            part_request=request,
+            posted_by=self.maintainer,
+            text=auto_log.status_changed_text("Requested", "Ordered"),
+            new_status=PartRequest.Status.ORDERED,
+        )
+        repair = create_log_entry(machine=self.machine, created_by=self.user, text="Fitted them")
+        for handler_name, obj in (
+            ("log_entry", repair),
+            ("part_request", request),
+            ("part_request_update", update),
+        ):
+            self._buffer(handler_name, obj, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        description = mock_post.call_args.kwargs["json"]["embeds"][0]["description"]
+        self.assertIn("Marked Ordered: Drop target stickers", description)
+        self.assertNotIn("pinballlife.com", description.split("— ")[-1])

@@ -125,10 +125,27 @@ function initTemplateSelector(container) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  // ---------------------------------------------------------------------------
+  // Discord announcement
+  // ---------------------------------------------------------------------------
+
+  // A template marked announce="no" in the wiki (an intake checklist, say)
+  // unticks the form's "Announce this in Discord" box. Choosing another
+  // template, or clearing the selection, puts it back.
+  function announceCheckbox() {
+    return form.querySelector('input[type="checkbox"][name="announce"]');
+  }
+
+  function applyAnnounce(announce) {
+    const checkbox = announceCheckbox();
+    if (checkbox) checkbox.checked = announce !== false;
+  }
+
   select.addEventListener('change', () => {
     const contentUrl = select.value;
     if (!contentUrl) {
       clearContent();
+      applyAnnounce(true);
       clearPageFields();
       return;
     }
@@ -137,6 +154,7 @@ function initTemplateSelector(container) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
         applyContent(data.content || '');
+        applyAnnounce(data.announce);
         applyPageFields(data);
       })
       .catch(() => {
