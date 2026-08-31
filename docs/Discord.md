@@ -61,12 +61,37 @@ finish, then posts **one message per machine they worked on**.
   qcluster worker (`make runq`) running the flush schedule; ensure it's up and that
   `ensure_scheduled_tasks` has run (it runs at deploy). With coalescing off, every
   event posts immediately as before.
+- **At most four full posts per flush.** Grouping per machine means a session
+  touching twenty machines would otherwise post twenty times. Past
+  `MAX_RICH_POSTS_PER_FLUSH`, the remaining machines give up their own post and
+  become lines in the summary message. The ones that keep a full post are those
+  with the most hand-written text, so the cap never sacrifices a long repair
+  write-up to make room for a one-word note. A summary line carries no body text,
+  so a demoted record does lose its wording — that is the trade for bounded volume.
 - Tuning: the 5-/15-minute windows are `COALESCE_QUIET_PERIOD` / `COALESCE_MAX_WAIT`
-  in `flipfix/apps/discord/tasks.py`; the body cap is `NOTIFICATION_BODY_MAX_WORDS`
-  in `formatters.py`.
+  in `flipfix/apps/discord/tasks.py`, alongside `MAX_RICH_POSTS_PER_FLUSH`; the body
+  cap is `NOTIFICATION_BODY_MAX_WORDS` in `formatters.py`.
 
-To reconstruct and cluster the historical notification stream (e.g. to re-evaluate
-these windows), run the dev-only `analyze_notification_clusters` management command.
+Two dev-only management commands work on the historical stream, both reading local
+history only — neither writes data or contacts Discord:
+
+- `analyze_notification_clusters` reconstructs the stream and clusters it, for
+  re-evaluating the debounce windows.
+- `replay_notification_coalescing` replays it through the live coalescer and writes
+  `discord_coalescing_cases.md`, an evidence document showing what the channel would
+  actually receive. That output is **deliberately not committed**: it reproduces real
+  maintainer usernames and the text of real reports, and this repository is public.
+  Generate it locally when you need it, and re-run after changing the formatters or
+  the grouping rules to see what moved:
+
+  ```bash
+  make db-up && scripts/sync_prod.sh --yes    # sanitized production data
+  DJANGO_SETTINGS_MODULE=flipfix.settings.dev .venv/bin/python manage.py \
+      replay_notification_coalescing
+  ```
+
+  It picks its cases by rule (biggest session, most photos, longest write-up, …)
+  rather than by hard-coded ids, so the document survives a re-sync.
 
 ### Keeping routine paperwork out of the channel
 

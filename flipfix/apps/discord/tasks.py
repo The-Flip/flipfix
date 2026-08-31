@@ -181,6 +181,11 @@ COALESCE_QUIET_PERIOD = timedelta(minutes=5)
 # ...but never hold a still-active actor's events longer than this cap.
 COALESCE_MAX_WAIT = timedelta(minutes=15)
 
+# Most full posts one flush may produce. Grouping per machine means a session
+# touching twenty machines would otherwise post twenty times; past this many the
+# rest degrade to lines in the summary message.
+MAX_RICH_POSTS_PER_FLUSH = 4
+
 
 def flush_pending_notifications() -> WebhookDeliveryResult:
     """Post the Discord messages for every actor whose buffered events are due.
@@ -190,7 +195,7 @@ def flush_pending_notifications() -> WebhookDeliveryResult:
     ``COALESCE_QUIET_PERIOD`` (a true debounce) or the oldest event has waited
     ``COALESCE_MAX_WAIT`` (a latency cap for continuously-active actors).
 
-    One flush can produce several messages — see :func:`_build_pending_posts` —
+    One flush can produce several messages — see :func:`build_pending_posts` —
     and each is delivered and marked independently, so a failure partway through
     doesn't repost what already landed.
 
@@ -239,7 +244,7 @@ def flush_pending_notifications() -> WebhookDeliveryResult:
         if not rows:
             continue
 
-        posts, orphan_pks = _build_pending_posts(rows)
+        posts, orphan_pks = build_pending_posts(rows)
         # Rows whose record has since been deleted can never be delivered;
         # consume them so they don't linger in the buffer forever.
         sent_pks = list(orphan_pks)
@@ -268,7 +273,7 @@ class PendingPost:
 Buffered = tuple["WebhookHandler", "Model", PendingNotification]
 
 
-def _build_pending_posts(
+def build_pending_posts(
     rows: list[PendingNotification],
 ) -> tuple[list[PendingPost], list[int]]:
     """Turn one actor's due rows into the messages to post.
@@ -286,6 +291,10 @@ def _build_pending_posts(
       no content worth a post each, so every such group for this actor merges
       into one summary message grouped by action ("Moved to the floor: Comet,
       Cyclone, Star Trek").
+
+    At most ``MAX_RICH_POSTS_PER_FLUSH`` full posts come out of one flush; the
+    machines that miss the cut join the summary message. See
+    :func:`_rank_by_written_content` for which ones those are.
 
     Returns the posts plus the row pks whose record no longer exists.
     """
@@ -316,10 +325,21 @@ def _build_pending_posts(
         group = next(iter(groups.values()))
         return [_build_rich_post(group)], orphan_pks
 
-    posts: list[PendingPost] = []
+    written: list[list[Buffered]] = []
     routine: list[Buffered] = []
     for group in groups.values():
         if any(handler.is_substantive(obj) for handler, obj, _ in group):
+            written.append(group)
+        else:
+            routine.extend(group)
+
+    # Beyond the cap, the machines with the least written about them give up
+    # their own post and join the summary instead. Selection is by content but
+    # delivery stays in the order the work happened.
+    promoted = set(_rank_by_written_content(written)[:MAX_RICH_POSTS_PER_FLUSH])
+    posts: list[PendingPost] = []
+    for index, group in enumerate(written):
+        if index in promoted:
             posts.append(_build_rich_post(group))
         else:
             routine.extend(group)
@@ -327,6 +347,30 @@ def _build_pending_posts(
     if routine:
         posts.append(_build_sweep_post(routine))
     return posts, orphan_pks
+
+
+def _rank_by_written_content(groups: list[list[Buffered]]) -> list[int]:
+    """Order group indexes by how much a person actually wrote, most first.
+
+    The cap has to drop somebody's machine from a full post to a summary line,
+    and a summary line carries no body text at all. Dropping the *newest* work
+    would throw away a long repair write-up to make room for a one-word note, so
+    rank by the amount of hand-written text instead and let the shortest go.
+    """
+
+    def written_words(group: list[Buffered]) -> int:
+        return sum(
+            len(handler.get_summary_line(obj).split())
+            for handler, obj, _ in group
+            if handler.is_substantive(obj)
+        )
+
+    # Score once rather than inside the sort key: get_summary_line renders
+    # markdown links. Ties fall back to the index, so equally-wordy machines keep
+    # the order the work happened in.
+    scored = [(written_words(group), index) for index, group in enumerate(groups)]
+    scored.sort(key=lambda pair: (-pair[0], pair[1]))
+    return [index for _, index in scored]
 
 
 def _build_rich_post(group: list[Buffered]) -> PendingPost:

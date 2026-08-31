@@ -27,7 +27,11 @@ from flipfix.apps.core.test_utils import (
     create_problem_report,
 )
 from flipfix.apps.discord.models import DiscordMessageMapping, PendingNotification
-from flipfix.apps.discord.tasks import dispatch_webhook, flush_pending_notifications
+from flipfix.apps.discord.tasks import (
+    MAX_RICH_POSTS_PER_FLUSH,
+    dispatch_webhook,
+    flush_pending_notifications,
+)
 from flipfix.apps.maintenance import auto_log
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/123/abc"
@@ -377,6 +381,72 @@ class FlushTests(TestCase):
         # The rich single-record embed is titled by machine, not the digest header.
         self.assertNotIn("update", title.lower())
         self.assertIn(self.machine.short_display_name, title)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_written_work_on_many_machines_is_capped(self, mock_post):
+        """Past the cap, the extra machines degrade to lines in the summary."""
+        mock_post.return_value = _ok_response()
+        machines = [create_machine() for _ in range(MAX_RICH_POSTS_PER_FLUSH + 3)]
+        for index, machine in enumerate(machines):
+            entry = create_log_entry(
+                machine=machine,
+                created_by=self.user,
+                # Descending length, so the ranking below is unambiguous.
+                text=" ".join(["word"] * (len(machines) - index)),
+            )
+            self._buffer("log_entry", entry, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        # The capped full posts, plus one summary carrying the remainder.
+        self.assertEqual(mock_post.call_count, MAX_RICH_POSTS_PER_FLUSH + 1)
+        titles = [payload["embeds"][0]["title"] for payload in _payloads(mock_post)]
+        summary = next(title for title in titles if "updates" in title)
+        self.assertIn(f"{len(machines) - MAX_RICH_POSTS_PER_FLUSH} updates", summary)
+        self.assertEqual(PendingNotification.objects.filter(sent_at__isnull=True).count(), 0)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_the_cap_keeps_the_longest_write_ups(self, mock_post):
+        """The machine somebody wrote most about keeps its post; a one-liner yields."""
+        mock_post.return_value = _ok_response()
+        wordy = create_machine()
+        terse = [create_machine() for _ in range(MAX_RICH_POSTS_PER_FLUSH)]
+
+        # The long write-up happens last, so a first-come cap would drop it.
+        for machine in terse:
+            entry = create_log_entry(machine=machine, created_by=self.user, text="Cleaned.")
+            self._buffer("log_entry", entry, minutes_ago=6)
+        long_note = create_log_entry(
+            machine=wordy,
+            created_by=self.user,
+            text="Stripped the flipper assembly, replaced both coils and rebuilt the EOS switch.",
+        )
+        self._buffer("log_entry", long_note, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        descriptions = _descriptions(mock_post)
+        self.assertTrue(any("rebuilt the EOS switch" in d for d in descriptions))
+        # ...and a one-line entry is what lost its own post. Ties break on the
+        # order the work happened, so the last of the equally-terse ones yields.
+        summary = next(d for d in descriptions if "**Logged**" in d)
+        self.assertIn(terse[-1].short_display_name, summary)
+
+    @patch("flipfix.apps.discord.tasks.requests.post")
+    def test_machines_at_the_cap_all_keep_their_posts(self, mock_post):
+        """Exactly at the limit nothing degrades — no summary message appears."""
+        mock_post.return_value = _ok_response()
+        for index in range(MAX_RICH_POSTS_PER_FLUSH):
+            entry = create_log_entry(
+                machine=create_machine(), created_by=self.user, text=f"Repair {index}"
+            )
+            self._buffer("log_entry", entry, minutes_ago=6)
+
+        flush_pending_notifications()
+
+        self.assertEqual(mock_post.call_count, MAX_RICH_POSTS_PER_FLUSH)
+        titles = [payload["embeds"][0]["title"] for payload in _payloads(mock_post)]
+        self.assertFalse(any("updates" in title for title in titles))
 
     @patch("flipfix.apps.discord.tasks.requests.post")
     def test_separate_actors_get_separate_messages(self, mock_post):
