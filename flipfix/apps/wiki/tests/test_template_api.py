@@ -27,7 +27,7 @@ def _make_action(name="test", action="option", record_type="problem", label="Go"
         f'type="{record_type}"',
         f'label="{label}"',
     ]
-    for key in ("machine", "location", "priority", "tags", "title"):
+    for key in ("machine", "location", "priority", "tags", "title", "announce"):
         if key in extra:
             attrs.append(f'{key}="{extra[key]}"')
     return "<!-- template:action " + " ".join(attrs) + " -->"
@@ -207,6 +207,38 @@ class WikiTemplateContentViewTests(SuppressRequestLogsMixin, TestDataMixin, Test
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn("- [ ] step one", data["content"])
+
+    def test_announces_by_default(self):
+        page = _make_page(content=_make_template("intake", label="Intake"))
+        response = self.client.get(self._url(page.pk, "intake"))
+
+        self.assertIs(json.loads(response.content)["announce"], True)
+
+    def test_template_marked_announce_no(self):
+        """A quiet template tells the create form not to post it to Discord."""
+        page = _make_page(content=_make_template("intake", label="Intake", announce="no"))
+        response = self.client.get(self._url(page.pk, "intake"))
+
+        self.assertIs(json.loads(response.content)["announce"], False)
+
+    def test_invalid_announce_value_makes_the_marker_invalid(self):
+        page = _make_page(content=_make_template("intake", label="Intake", announce="maybe"))
+        response = self.client.get(self._url(page.pk, "intake"))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_announce_on_a_record_type_that_cannot_be_quiet_is_rejected(self):
+        """Only problem reports and log entries carry an `announce` field.
+
+        Accepting the marker on a parts request would silently fail to suppress
+        the post; the template author should hear about it instead.
+        """
+        page = _make_page(
+            content=_make_template("parts", record_type="partrequest", label="Order", announce="no")
+        )
+        response = self.client.get(self._url(page.pk, "parts"))
+
+        self.assertEqual(response.status_code, 404)
 
     def test_returns_tags_for_page_type(self):
         page = _make_page(

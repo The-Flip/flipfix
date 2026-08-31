@@ -148,6 +148,7 @@ class MachineLogCreateView(FormPrefillMixin, SharedAccountMixin, FormView):
             occurred_at=occurred_at,
             created_by=self.request.user,
             time_spent=form.cleaned_data.get("time_spent") or 0,
+            announce=form.cleaned_data.get("announce", True),
         )
         if not created:
             # submission_id is a plain, client-supplied hidden field, so a stale

@@ -15,7 +15,9 @@ from flipfix.apps.core.test_utils import (
 )
 from flipfix.apps.discord.formatters import (
     DISCORD_POST_DESCRIPTION_MAX_CHARS,
+    FOLLOWUP_MAX_LINES,
     NOTIFICATION_BODY_MAX_WORDS,
+    build_discord_embed,
     format_test_message,
     get_base_url,
 )
@@ -282,7 +284,7 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
 
     def test_log_entry_capped_to_a_couple_hundred_words(self):
         """A long multi-word entry (e.g. a pasted checklist) is capped, not dumped."""
-        long_text = " ".join(f"word{i}" for i in range(500))
+        long_text = " ".join(f"word{i}" for i in range(NOTIFICATION_BODY_MAX_WORDS + 100))
         log_entry = create_log_entry(
             machine=self.machine,
             created_by=self.maintainer_user,
@@ -297,7 +299,9 @@ class DiscordFormatterTests(TemporaryMediaMixin, TestCase):
         # point, the next word (index MAX) is dropped.
         self.assertIn(f"word{NOTIFICATION_BODY_MAX_WORDS - 1}…", description)
         self.assertNotIn(f"word{NOTIFICATION_BODY_MAX_WORDS}", description)
-        self.assertNotIn("word499", description)  # the tail was dropped
+        self.assertNotIn(
+            f"word{NOTIFICATION_BODY_MAX_WORDS + 99}", description
+        )  # the tail was dropped
         # Body is capped near the limit (attribution adds a couple of words).
         self.assertLessEqual(len(description.split()), NOTIFICATION_BODY_MAX_WORDS + 5)
 
@@ -736,3 +740,46 @@ class GetBaseUrlTests(TestCase):
         with self.settings(SITE_URL=""):
             with self.assertRaises(ValueError):
                 get_base_url()
+
+
+@tag("formatters")
+class FollowupBudgetTests(TestCase):
+    """A long session must not build an embed Discord will reject."""
+
+    def _embed(self, followups):
+        return build_discord_embed(
+            title="🗒️ Kicker",
+            title_url="https://example.com/logs/1/",
+            record_description="Rebuilt the flippers. " * 200,
+            user_attribution="william",
+            color=1,
+            photos=[],
+            base_url="https://example.com",
+            followups=followups,
+        )["embeds"][0]
+
+    def test_a_huge_session_still_fits_discords_description_limit(self):
+        # Each line is about as long as a real one gets: 80 characters of text
+        # plus a link. Fifty of them would overflow the embed on their own.
+        followups = [f"[{'x' * 79}…](https://example.com/problem-reports/{i}/)" for i in range(50)]
+
+        embed = self._embed(followups)
+
+        self.assertLessEqual(len(embed["description"]), DISCORD_POST_DESCRIPTION_MAX_CHARS)
+
+    def test_omitted_followups_are_declared_not_dropped_silently(self):
+        followups = [f"line {i}" for i in range(FOLLOWUP_MAX_LINES + 7)]
+
+        description = self._embed(followups)["description"]
+
+        self.assertIn("line 0", description)
+        self.assertIn("…and 7 more on this machine", description)
+        self.assertNotIn(f"line {FOLLOWUP_MAX_LINES + 6}", description)
+
+    def test_a_short_session_lists_every_followup(self):
+        followups = [f"line {i}" for i in range(FOLLOWUP_MAX_LINES)]
+
+        description = self._embed(followups)["description"]
+
+        self.assertIn(f"line {FOLLOWUP_MAX_LINES - 1}", description)
+        self.assertNotIn("more on this machine", description)

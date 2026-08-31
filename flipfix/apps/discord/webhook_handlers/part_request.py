@@ -11,6 +11,7 @@ from flipfix.apps.discord.formatters import (
     build_discord_embed,
     get_base_url,
     get_maintainer_display_name,
+    part_name,
 )
 from flipfix.apps.discord.webhook_handlers import WebhookHandler, register
 
@@ -30,18 +31,28 @@ class PartRequestWebhookHandler(WebhookHandler):
     def get_detail_url(self, obj: PartRequest) -> str:
         return reverse("part-request-detail", kwargs={"pk": obj.pk})
 
-    def get_actor_user(self, obj: PartRequest):
+    def get_attributed_user(self, obj: PartRequest):
         return obj.requested_by.user if obj.requested_by else None
 
     def get_machine(self, obj: PartRequest):
         return obj.machine
 
-    def get_digest_text(self, obj: PartRequest) -> str:
-        return f"Parts request: {render_all_links(obj.text, plain_text=True)}"
+    def get_summary_line(self, obj: PartRequest) -> str:
+        return f"Parts request: {part_name(obj.text)}"
 
-    def format_webhook_message(self, obj: PartRequest) -> dict:
-        from flipfix.apps.parts.models import PartRequestMedia
+    def get_sweep_label(self, obj: PartRequest) -> str:
+        return "Requested"
 
+    def get_sweep_entry(self, obj: PartRequest) -> str:
+        return part_name(obj.text)
+
+    def format_webhook_message(
+        self,
+        obj: PartRequest,
+        *,
+        followups: list[str] | None = None,
+        photos: list | None = None,
+    ) -> dict:
         base_url = get_base_url()
         url = base_url + self.get_detail_url(obj)
 
@@ -57,21 +68,15 @@ class PartRequestWebhookHandler(WebhookHandler):
         else:
             title = f"{self.emoji} Parts Request"
 
-        # Get photos with thumbnails (up to 4 for Discord gallery)
-        photos = list(
-            obj.media.filter(media_type=PartRequestMedia.MediaType.PHOTO)
-            .filter(thumbnail_file__gt="")
-            .order_by("display_order", "created_at")[:4]
-        )
-
         return build_discord_embed(
             title=title,
             title_url=url,
             record_description=render_all_links(obj.text, base_url=base_url),
             user_attribution=user_attribution,
             color=self.color,
-            photos=photos,
+            photos=self.get_photos(obj) if photos is None else photos,
             base_url=base_url,
+            followups=followups,
         )
 
 

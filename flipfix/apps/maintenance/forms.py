@@ -58,7 +58,7 @@ class MaintainerProblemReportForm(ProblemReportForm):
     """
 
     class Meta(ProblemReportForm.Meta):
-        fields = ["description", "priority", "occurred_at"]
+        fields = ["description", "priority", "occurred_at", "announce"]
         # Annotated so the mixed widget types (Textarea + Select) share a base type.
         widgets: dict[str, forms.Widget] = {
             "description": MarkdownTextarea(
@@ -68,6 +68,10 @@ class MaintainerProblemReportForm(ProblemReportForm):
         }
         labels = {
             "description": "Description",
+            "announce": "Announce this in Discord",
+        }
+        help_texts = {
+            "announce": "Leave off for routine paperwork, such as an intake checklist.",
         }
 
     def __init__(self, *args, **kwargs):
@@ -204,6 +208,12 @@ class LogEntryQuickForm(StyledFormMixin, forms.Form):
         widget=MarkdownTextarea(attrs={"rows": 4, "placeholder": "Describe the work performed..."}),
     )
     media_file = MultiFileField(label="Photo", required=False)
+    announce = forms.BooleanField(
+        label="Announce this in Discord",
+        required=False,
+        initial=True,
+        help_text="Leave off for routine paperwork, such as a pasted checklist.",
+    )
     time_spent = forms.DecimalField(
         label="Time spent (hours)",
         max_digits=5,

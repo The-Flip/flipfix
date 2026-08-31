@@ -39,6 +39,7 @@ from flipfix.apps.core.mixins import (
     MediaUploadMixin,
     SharedAccountMixin,
 )
+from flipfix.apps.maintenance import auto_log
 from flipfix.apps.maintenance.forms import (
     MaintainerProblemReportForm,
     ProblemReportEditForm,
@@ -478,9 +479,9 @@ class ProblemReportDetailView(InlineTextEditMixin, MediaUploadMixin, DetailView)
         """
         self.object.status = new_status
         log_text = (
-            "Closed problem report"
+            auto_log.CLOSED_REPORT_TEXT
             if new_status == ProblemReport.Status.CLOSED
-            else "Re-opened problem report"
+            else auto_log.REOPENED_REPORT_TEXT
         )
 
         with transaction.atomic():

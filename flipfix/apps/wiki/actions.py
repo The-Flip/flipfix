@@ -21,7 +21,8 @@ Markers:
       The ``action`` attribute accepts ``button``, ``option``, or
       ``button,option``.
       Optional: ``machine``, ``location``, ``tags`` (for ``type="page"``),
-      ``title`` (for ``type="page"``), ``priority`` (for ``type="problem"``).
+      ``title`` (for ``type="page"``), ``priority`` (for ``type="problem"``),
+      ``announce="no"`` to keep records made from the template out of Discord.
 """
 
 from __future__ import annotations
@@ -57,6 +58,14 @@ _ACTION_REQUIRED_ATTRS = {"name", "action", "type", "label"}
 
 # Valid individual parts of the action attribute (comma-separated, order-independent)
 _VALID_ACTION_PARTS = {"button", "option"}
+
+# announce="no" marks a template whose records are routine paperwork: created
+# normally, but not posted to Discord (an intake checklist, for instance).
+_VALID_ANNOUNCE = {"yes", "no"}
+
+# Record types carrying an `announce` field (see maintenance/models.py). Parts
+# requests and wiki pages always announce, so the marker is rejected for them.
+_ANNOUNCE_RECORD_TYPES = {"problem", "log"}
 
 # Valid priority values for type="problem" — derived from the enum so
 # adding/removing priorities in the model automatically updates validation.
@@ -180,6 +189,7 @@ class ActionBlock:
     tags: str = ""
     title: str = ""
     priority: str = ""
+    announce: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +221,19 @@ def _validate_action_attrs(attrs: dict[str, str]) -> str | None:
         return (
             f"invalid priority '{priority}' (must be one of {', '.join(sorted(_VALID_PRIORITIES))})"
         )
+    announce = attrs.get("announce", "")
+    if announce and announce not in _VALID_ANNOUNCE:
+        return (
+            f"invalid announce '{announce}' (must be one of {', '.join(sorted(_VALID_ANNOUNCE))})"
+        )
+    if announce and attrs["type"] not in _ANNOUNCE_RECORD_TYPES:
+        # Only records with an `announce` field can be kept out of Discord.
+        # Accepting the marker anywhere else would silently do nothing, which is
+        # worse for a template author than being told at authoring time.
+        return (
+            f"announce is not supported for type '{attrs['type']}'"
+            f" (only {', '.join(sorted(_ANNOUNCE_RECORD_TYPES))})"
+        )
     return None
 
 
@@ -227,6 +250,7 @@ def _make_action_block(attrs: dict[str, str], content: str) -> ActionBlock:
         tags=attrs.get("tags", ""),
         title=attrs.get("title", ""),
         priority=attrs.get("priority", ""),
+        announce=attrs.get("announce", "yes") != "no",
     )
 
 

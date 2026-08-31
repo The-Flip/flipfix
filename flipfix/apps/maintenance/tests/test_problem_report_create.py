@@ -239,6 +239,35 @@ class MaintainerProblemReportCreateViewTests(TestDataMixin, TestCase):
         self.client.force_login(self.maintainer_user)
         self.url = reverse("problem-report-create-machine", kwargs={"slug": self.machine.slug})
 
+    def test_reports_announce_by_default(self):
+        """The checkbox is ticked on a fresh form, so an ordinary report announces."""
+        response = self.client.post(
+            self.url,
+            {
+                "description": "Machine is broken",
+                "priority": ProblemReport.Priority.MINOR,
+                "occurred_at": "",
+                "announce": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(ProblemReport.objects.get().announce)
+
+    def test_unticking_announce_keeps_the_report_out_of_discord(self):
+        """An unticked checkbox submits nothing at all — that must mean "quiet"."""
+        response = self.client.post(
+            self.url,
+            {
+                "description": "# intake checklist",
+                "priority": ProblemReport.Priority.MINOR,
+                "occurred_at": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ProblemReport.objects.get().announce)
+
     def test_create_with_empty_occurred_at_defaults_to_now(self):
         """When occurred_at is submitted empty, it should default to now.
 

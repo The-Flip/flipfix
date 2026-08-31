@@ -250,6 +250,13 @@ class ProblemReport(TimeStampedMixin):
     )
     device_info = models.CharField(max_length=200, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    announce = models.BooleanField(
+        default=True,
+        help_text=(
+            "Post this to Discord when it is created. Turn off for routine "
+            "paperwork such as an intake checklist."
+        ),
+    )
 
     objects = ProblemReportQuerySet.as_manager()
     history = HistoricalRecords()
@@ -480,6 +487,13 @@ class LogEntry(TimeStampedMixin):
             "Idempotency token supplied by the client (web form render or API call). "
             "Collapses accidental resubmits from a slow or timed-out connection. "
             "NULL for entries created without a token."
+        ),
+    )
+    announce = models.BooleanField(
+        default=True,
+        help_text=(
+            "Post this to Discord when it is created. Turn off for routine "
+            "paperwork such as a pasted checklist."
         ),
     )
 

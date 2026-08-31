@@ -90,10 +90,13 @@ instead the UI offers the maintainer a one-click "Set machine to Good?" via
 [`status_rules.machine_status_downgrade_prompt`](../flipfix/apps/maintenance/status_rules.py).
 Pre-existing drift was reconciled once by migration
 `maintenance/0024_reconcile_unplayable_machine_status`.
+`announce` (default `True`) controls whether creating the report posts to Discord;
+unticking it on the create form records routine paperwork, such as a pasted intake
+checklist, without notifying the channel (see [Discord.md](Discord.md)).
 
 ### Log Entry ([`LogEntry`](../flipfix/apps/maintenance/models.py))
 
-Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work. A many-to-many `maintenance_tasks` links the entry to the recurring `MaintenanceTaskType`s it completed; the entry's `occurred_at` is used as the "last done" date for those tasks. A nullable, unique `submission_id` (UUID) is the client idempotency token that collapses a resubmitted entry (from a slow or retried connection) instead of creating a duplicate.
+Journal-type entry created by maintainers to document work on a machine. Includes `time_spent` (DecimalField, default 0) tracking total person-hours spent on the work. A many-to-many `maintenance_tasks` links the entry to the recurring `MaintenanceTaskType`s it completed; the entry's `occurred_at` is used as the "last done" date for those tasks. A nullable, unique `submission_id` (UUID) is the client idempotency token that collapses a resubmitted entry (from a slow or retried connection) instead of creating a duplicate. `announce` (default `True`) controls whether creating the entry posts to Discord (see [Discord.md](Discord.md)). Entries Flipfix writes on a person's behalf — machine added, status changed, moved to the floor, problem report closed — use the vocabulary in [`auto_log.py`](../flipfix/apps/maintenance/auto_log.py), whose builders and classifier stay in step so notification code can tell them from hand-written ones.
 
 ### Maintenance Task Type ([`MaintenanceTaskType`](../flipfix/apps/maintenance/models.py))
 

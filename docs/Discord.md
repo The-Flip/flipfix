@@ -32,27 +32,84 @@ Configure the system to post to Discord when problem reports, log entries, or pa
 
 A single stretch of work by one person can create many records in a few minutes
 (adding a machine auto-creates a log entry, a status change another, plus any
-problem reports), which floods the channel. Coalescing batches each person's
-activity into **one combined message**.
+problem reports), which floods the channel. Coalescing waits for the person to
+finish, then posts **one message per machine they worked on**.
 
 - Set `DISCORD_NOTIFICATION_COALESCING_ENABLED` = True (Admin → Constance → Config).
 - **How it works:** each would-fire event is buffered in the `PendingNotification`
-  table keyed by the acting maintainer. The `flush-discord-notifications` schedule
-  runs every minute and posts one message per maintainer once they've been quiet
-  for **5 minutes**, or after a **15-minute** cap for someone working continuously.
-  A lone event keeps its rich single-record embed (with photos); two or more
-  collapse into a per-machine digest.
-- **Anonymous events are never debounced.** Visitor-submitted problem reports (no
-  associated maintainer) post immediately, so the floor still gets real-time alerts.
+  table. The `flush-discord-notifications` schedule runs every minute and delivers
+  a person's buffer once they've been quiet for **5 minutes**, or after a
+  **15-minute** cap for someone working continuously.
+- **What gets posted.** The buffer is grouped by machine, since that is what makes
+  a set of records one piece of work. Each group goes one of two ways:
+  - **Somebody wrote something** — a repair note, problem report or parts request.
+    That becomes a full post with its body text and its photos, and the rest of
+    the group (status change, move to the floor, reports closed) is listed
+    underneath it. Fixing two machines therefore posts twice.
+  - **Nothing but recorded actions** — status flips, location moves. Every such
+    group for that person merges into one summary grouped by action, e.g.
+    "Moved to the floor: Comet, Cyclone, Star Trek".
+- **The grouping key is who _saved_ the record**, taken from the
+  `django-simple-history` creation row, not the record's attribution field
+  (`reported_by_user`/`requested_by`/`posted_by`). Attribution is null whenever
+  someone files on another person's behalf, which would otherwise make most
+  records look anonymous. `WebhookHandler.get_submitting_user()` falls back to
+  attribution for records created outside a request (the bot, management commands).
+- **Signed-out events are never debounced.** Visitor problem reports from the
+  public QR flow post immediately, so the floor still gets real-time alerts.
 - **Requires the background worker.** Buffered events are only delivered by the
   qcluster worker (`make runq`) running the flush schedule; ensure it's up and that
   `ensure_scheduled_tasks` has run (it runs at deploy). With coalescing off, every
   event posts immediately as before.
+- **At most four full posts per flush.** Grouping per machine means a session
+  touching twenty machines would otherwise post twenty times. Past
+  `MAX_RICH_POSTS_PER_FLUSH`, the remaining machines give up their own post and
+  become lines in the summary message. The ones that keep a full post are those
+  with the most hand-written text, so the cap never sacrifices a long repair
+  write-up to make room for a one-word note. A summary line carries no body text,
+  so a demoted record does lose its wording — that is the trade for bounded volume.
 - Tuning: the 5-/15-minute windows are `COALESCE_QUIET_PERIOD` / `COALESCE_MAX_WAIT`
-  in `flipfix/apps/discord/tasks.py`.
+  in `flipfix/apps/discord/tasks.py`, alongside `MAX_RICH_POSTS_PER_FLUSH`; the body
+  cap is `NOTIFICATION_BODY_MAX_WORDS` in `formatters.py`.
 
-To reconstruct and cluster the historical notification stream (e.g. to re-evaluate
-these windows), run the dev-only `analyze_notification_clusters` management command.
+Two dev-only management commands work on the historical stream, both reading local
+history only — neither writes data or contacts Discord:
+
+- `analyze_notification_clusters` reconstructs the stream and clusters it, for
+  re-evaluating the debounce windows.
+- `replay_notification_coalescing` replays it through the live coalescer and writes
+  `discord_coalescing_cases.md`, an evidence document showing what the channel would
+  actually receive. That output is **deliberately not committed**: it reproduces real
+  maintainer usernames and the text of real reports, and this repository is public.
+  Generate it locally when you need it, and re-run after changing the formatters or
+  the grouping rules to see what moved:
+
+  ```bash
+  make db-up && scripts/sync_prod.sh --yes    # sanitized production data
+  DJANGO_SETTINGS_MODULE=flipfix.settings.dev .venv/bin/python manage.py \
+      replay_notification_coalescing
+  ```
+
+  It picks its cases by rule (biggest session, most photos, longest write-up, …)
+  rather than by hard-coded ids, so the document survives a re-sync.
+
+### Keeping routine paperwork out of the channel
+
+Problem reports and log entries have an `announce` flag, surfaced as an
+"Announce this in Discord" checkbox on the create forms. Unticking it records the
+entry normally but posts nothing — intended for paperwork such as a pasted intake
+checklist.
+
+A wiki template can preset it. Add `announce="no"` to the template's
+`template:action` marker and the create form unticks the box whenever that
+template is chosen:
+
+```html
+<!-- template:action name="intake" action="button,option" type="problem"
+     label="Intake checklist" announce="no" -->
+```
+
+Records without the field (parts requests and their updates) always announce.
 
 <a id="discord-to-flipfix"></a>
 

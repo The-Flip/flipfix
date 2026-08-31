@@ -62,6 +62,7 @@ Attributes on `template:action`:
 | `priority` | no       | Pre-selects priority (`type="problem"` only): `unplayable`, `major`, `minor`, `task`.          |
 | `tags`     | no       | Comma-separated tags for new page (`type="page"` only). `@source` inherits source page's tags. |
 | `title`    | no       | Pre-fills the title field (`type="page"` only).                                                |
+| `announce` | no       | `no` unticks "Announce this in Discord" on the create form (`problem` and `log` types).        |
 
 ### Buttons on Wiki Pages
 
@@ -78,7 +79,10 @@ A `<!--template:action action="option" ...-->` registers the template in create 
 - **Machine** — the machine the record is for
 - **Location** — the location of the machine
 
-Selecting a template populates the description field with the template content.
+Selecting a template populates the description field with the template content. A
+template marked `announce="no"` also unticks the form's "Announce this in Discord"
+checkbox, so routine paperwork (an intake checklist, say) is recorded without
+posting to the channel. See [Discord.md](Discord.md).
 
 ### Buttons and Options are Independent
 

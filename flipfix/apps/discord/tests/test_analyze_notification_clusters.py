@@ -32,7 +32,10 @@ def _event(fired_at, *, actor="u:1", machine_id=1, event_type="log_entry") -> Ev
 @tag("commands")
 class ClusteringHelperTests(TestCase):
     def setUp(self):
-        self.base = timezone.now()
+        # global_peaks() buckets on fixed wall-clock boundaries, so anchor the
+        # events to the top of an hour. Starting from a bare timezone.now() makes
+        # the peak tests fail whenever the run happens to straddle a boundary.
+        self.base = timezone.now().replace(minute=0, second=0, microsecond=0)
 
     def test_gap_splits_when_silence_exceeds_threshold(self):
         events = [

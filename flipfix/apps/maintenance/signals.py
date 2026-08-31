@@ -11,6 +11,7 @@ from django.dispatch import receiver
 from flipfix.apps.accounts.models import Maintainer
 from flipfix.apps.catalog.models import Location, MachineInstance
 
+from . import auto_log
 from .models import LogEntry
 
 # =============================================================================
@@ -33,7 +34,7 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
     if created:
         log_entry = LogEntry.objects.create(
             machine=instance,
-            text=f"New machine added: {instance.name}",
+            text=auto_log.machine_added_text(instance.name),
             created_by=instance.created_by,
         )
         _add_maintainer_if_exists(log_entry, instance.created_by)
@@ -50,7 +51,7 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
             new_display = instance.get_operational_status_display()
             log_entry = LogEntry.objects.create(
                 machine=instance,
-                text=f"Status changed: {old_display} \u2192 {new_display}",
+                text=auto_log.status_changed_text(old_display, new_display),
                 created_by=instance.updated_by,
             )
             _add_maintainer_if_exists(log_entry, instance.updated_by)
@@ -71,9 +72,9 @@ def create_auto_log_entries(sender, instance, created, **kwargs):
         if old_name != new_name:
             # Celebrate moving to the floor!
             if instance.location and instance.location.slug == "floor":
-                text = f"\U0001f389\U0001f38a {instance.name} has moved to the floor!"
+                text = auto_log.moved_to_floor_text(instance.name)
             else:
-                text = f"Location changed: {old_name} \u2192 {new_name}"
+                text = auto_log.location_changed_text(old_name, new_name)
 
             log_entry = LogEntry.objects.create(
                 machine=instance,
