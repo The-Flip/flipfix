@@ -34,6 +34,11 @@ NOTIFICATION_BODY_MAX_WORDS = 500
 # one line before it stops being scannable.
 SUMMARY_MAX_CHARS = 50
 
+# How many "also in this session" lines a post carries. Each runs to roughly 145
+# characters with its link, so this keeps the suffix clear of the 4,096-character
+# description limit even before the body is added. See _fit_followups.
+FOLLOWUP_MAX_LINES = 20
+
 
 _MARKDOWN_LINK = re.compile(r"\[[^\]]*\]\([^)]*\)")
 
@@ -218,7 +223,7 @@ def build_discord_embed(
         suffix_parts.append(linked_record)
     suffix_parts.append(f"— {user_attribution}")
     if followups:
-        suffix_parts.append("\n".join(followups))
+        suffix_parts.append("\n".join(_fit_followups(followups)))
     suffix = "\n\n".join(suffix_parts)
 
     # Calculate available space for record_description
@@ -227,13 +232,15 @@ def build_discord_embed(
     separator = "\n\n"
     available = DISCORD_POST_DESCRIPTION_MAX_CHARS - 5 - len(suffix) - len(separator)
 
-    # Truncate record_description if needed
+    # Truncate record_description if needed. A suffix long enough to fill the
+    # embed on its own leaves nothing for the body: max(0, …) keeps the slice
+    # from running backwards from the end and smuggling the whole body through.
     if len(record_description) > available:
-        # Leave room for ellipsis
-        record_description = record_description[: available - 3] + "..."
+        record_description = record_description[: max(available - 3, 0)]
+        record_description = record_description + "..." if record_description else ""
 
     # Combine into final description
-    description = record_description + separator + suffix
+    description = record_description + separator + suffix if record_description else suffix
 
     # Build the main embed
     main_embed: dict[str, Any] = {
@@ -244,6 +251,25 @@ def build_discord_embed(
     }
 
     return {"embeds": _build_gallery_embeds(main_embed, photos, title_url, base_url, color)}
+
+
+def _fit_followups(followups: list[str]) -> list[str]:
+    """Bound the follow-up list so the embed cannot exceed Discord's limit.
+
+    A session on one machine can hold dozens of records, and each follow-up line
+    runs to roughly 145 characters once its link is attached. Left unbounded they
+    fill the 4,096-character description on their own, Discord rejects the post
+    with a 400, and because the flush only marks rows sent on success the whole
+    group retries every minute forever.
+
+    Listing every record is not worth that, so keep the first
+    ``FOLLOWUP_MAX_LINES`` and say plainly how many were left out — the reader
+    can still open the machine to see the rest.
+    """
+    if len(followups) <= FOLLOWUP_MAX_LINES:
+        return followups
+    hidden = len(followups) - FOLLOWUP_MAX_LINES
+    return [*followups[:FOLLOWUP_MAX_LINES], f"…and {hidden} more on this machine"]
 
 
 def get_actor_display_name(user: Any) -> str:

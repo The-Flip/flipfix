@@ -5,14 +5,14 @@ a person's behalf must be recognisable as such afterwards, and anything a person
 typed must not be mistaken for it.
 """
 
-from django.test import SimpleTestCase, tag
+from django.test import TestCase, tag
 
 from flipfix.apps.maintenance import auto_log
 from flipfix.apps.maintenance.auto_log import AutoLogKind
 
 
 @tag("models")
-class AutoLogClassifyTests(SimpleTestCase):
+class AutoLogClassifyTests(TestCase):
     def test_every_builder_round_trips(self):
         cases = [
             (auto_log.machine_added_text("Gorgar"), AutoLogKind.MACHINE_ADDED, "Gorgar"),

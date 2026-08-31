@@ -63,6 +63,10 @@ _VALID_ACTION_PARTS = {"button", "option"}
 # normally, but not posted to Discord (an intake checklist, for instance).
 _VALID_ANNOUNCE = {"yes", "no"}
 
+# Record types carrying an `announce` field (see maintenance/models.py). Parts
+# requests and wiki pages always announce, so the marker is rejected for them.
+_ANNOUNCE_RECORD_TYPES = {"problem", "log"}
+
 # Valid priority values for type="problem" — derived from the enum so
 # adding/removing priorities in the model automatically updates validation.
 _VALID_PRIORITIES = {v for v, _ in ProblemReport.Priority.maintainer_settable()}
@@ -221,6 +225,14 @@ def _validate_action_attrs(attrs: dict[str, str]) -> str | None:
     if announce and announce not in _VALID_ANNOUNCE:
         return (
             f"invalid announce '{announce}' (must be one of {', '.join(sorted(_VALID_ANNOUNCE))})"
+        )
+    if announce and attrs["type"] not in _ANNOUNCE_RECORD_TYPES:
+        # Only records with an `announce` field can be kept out of Discord.
+        # Accepting the marker anywhere else would silently do nothing, which is
+        # worse for a template author than being told at authoring time.
+        return (
+            f"announce is not supported for type '{attrs['type']}'"
+            f" (only {', '.join(sorted(_ANNOUNCE_RECORD_TYPES))})"
         )
     return None
 

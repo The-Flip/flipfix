@@ -1,12 +1,12 @@
 """Tests for the part request status-change vocabulary in parts/status_log.py."""
 
-from django.test import SimpleTestCase, tag
+from django.test import TestCase, tag
 
 from flipfix.apps.parts.status_log import status_change_comment, status_change_text
 
 
 @tag("models")
-class StatusChangeCommentTests(SimpleTestCase):
+class StatusChangeCommentTests(TestCase):
     def test_bare_status_change_has_no_comment(self):
         self.assertEqual(status_change_comment(status_change_text("Requested", "Ordered")), "")
 
