@@ -109,13 +109,13 @@ maintainer = create_maintainer_user(username="alice", first_name="Alice")
 
 Mixins provide reusable test fixtures and behaviors.
 
-| Mixin                      | When to Use                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TestDataMixin`            | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser`                       |
-| `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise. Also precomposed as `AccessControlTestCase`.                              |
-| `AccessControlTestCase`    | Access control tests that trigger 4xx responses. Extends `SuppressRequestLogsMixin + TestCase`. Use for auth/permission tests.              |
-| `SharedAccountTestMixin`   | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer` |
-| `TemporaryMediaMixin`      | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations.          |
+| Mixin                      | When to Use                                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TestDataMixin`            | Most tests. Provides `self.machine`, `self.maintainer_user`, `self.maintainer`, `self.regular_user`, `self.superuser`                                        |
+| `SuppressRequestLogsMixin` | View tests that expect 302/403/400 responses. Silences log noise, including requests made from `setUpTestData`. Also precomposed as `AccessControlTestCase`. |
+| `AccessControlTestCase`    | Access control tests that trigger 4xx responses. Extends `SuppressRequestLogsMixin + TestCase`. Use for auth/permission tests.                               |
+| `SharedAccountTestMixin`   | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer`                  |
+| `TemporaryMediaMixin`      | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations.                           |
 
 #### Put Mixins Before TestCase
 
