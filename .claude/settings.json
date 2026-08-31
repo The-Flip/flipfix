@@ -1,4 +1,20 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__railway__whoami",
+      "mcp__railway__list-projects",
+      "mcp__railway__list-services",
+      "mcp__railway__list-deployments",
+      "mcp__railway__get-status",
+      "mcp__railway__get-logs"
+    ],
+    "deny": [
+      "mcp__railway__accept-deploy",
+      "mcp__railway__create-project",
+      "mcp__railway__redeploy",
+      "mcp__railway__railway-agent"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
