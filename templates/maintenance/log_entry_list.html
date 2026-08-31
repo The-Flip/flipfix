@@ -2,12 +2,6 @@
 {% load static %}
 {% load ui_tags %}
 {% block list_title %}Logs{% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'log-create-global' %}" class="btn btn--log">
-    {% icon "plus" class="meta" %}
-    New Log
-  </a>
-{% endblock %}
 {% block sidebar_stats %}
   <div class="sidebar__label">Log Entries</div>
   <div class="stat-grid">

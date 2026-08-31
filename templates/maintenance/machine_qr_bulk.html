@@ -4,15 +4,6 @@
 {% block title %}QR Codes · {{ block.super }}{% endblock %}
 {% block content %}
   <div class="two-column">
-    <!-- Mobile actions -->
-    <div class="mobile-actions">
-      <button type="button"
-              class="btn btn--primary btn--full"
-              onclick="window.print()">
-        {% icon "print" class="meta" %}
-        Print all
-      </button>
-    </div>
     <!-- Sidebar (screen-only) -->
     <aside class="two-column__sidebar no-print">
       <div class="card card--padded sidebar--sticky"
@@ -145,7 +136,6 @@
 
           header,
           .no-print,
-          .mobile-actions,
           #log-loading,
           #log-sentinel {
               display: none !important;

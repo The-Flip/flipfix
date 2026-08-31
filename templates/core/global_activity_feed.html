@@ -3,16 +3,6 @@
 {% load ui_tags %}
 {% load list_tags %}
 {% block list_title %}Activity{% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'problem-report-create' %}" class="btn btn--report">
-    {% icon "bug" class="meta" %}
-    Report
-  </a>
-  <a href="{% url 'log-create-global' %}" class="btn btn--log">
-    {% icon "screwdriver-wrench" class="meta" %}
-    Log
-  </a>
-{% endblock %}
 {% block sidebar_stats %}
   <div class="sidebar__label">Activity</div>
   {% stat_grid stats=stats %}

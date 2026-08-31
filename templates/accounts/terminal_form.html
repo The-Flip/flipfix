@@ -21,27 +21,6 @@
     {% endif %}
   </span>
 {% endblock %}
-{% block mobile_actions %}
-  {% if not is_create %}
-    {% if terminal.user.is_active %}
-      <form method="post" action="{% url 'terminal-deactivate' terminal.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn--danger btn--full">
-          {% icon "ban" class="meta" %}
-          Deactivate
-        </button>
-      </form>
-    {% else %}
-      <form method="post" action="{% url 'terminal-reactivate' terminal.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn--success btn--full">
-          {% icon "rotate-left" class="meta" %}
-          Reactivate
-        </button>
-      </form>
-    {% endif %}
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Shared Terminal" %}
   {% if not is_create %}

@@ -22,8 +22,8 @@ make test-js      # Run JavaScript tests.  Requires `npm install`
 
 `make test` includes a gate (tagged `views`) that renders every page at a phone
 and a desktop width and fails if anything becomes reachable only on desktop.
-When it fires, run `manage.py check_mobile_parity` to see the findings. After
-fixing a gap, drop its record with `--update-baseline`. See
+The baseline is currently **empty** — there are no known gaps — so any failure
+means a real regression. Run `manage.py check_mobile_parity` to see it. See
 [MobileParity.md](MobileParity.md).
 
 ## Python Tests

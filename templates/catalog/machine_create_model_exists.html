@@ -9,12 +9,6 @@
   <a href="{% url 'machine-create-landing' %}">Add Machine</a>
   <span>{{ machine_model.name }}</span>
 {% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
-    {% icon "arrow-left" class="meta" %}
-    Back
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Selected Model" %}
   <div class="sidebar__title">{{ machine_model.name }}</div>

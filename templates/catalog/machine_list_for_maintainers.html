@@ -5,14 +5,6 @@
 {% load list_tags %}
 {% load accounts_tags %}
 {% block title %}Machines · {{ block.super }}{% endblock %}
-{% block mobile_actions %}
-  {% if user|can_manage_catalog %}
-    <a href="{% url 'machine-create-landing' %}" class="btn btn--secondary">
-      {% icon "plus" class="meta" %}
-      New Machine
-    </a>
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Status" %}
   {% stat_grid stats=status_stats %}

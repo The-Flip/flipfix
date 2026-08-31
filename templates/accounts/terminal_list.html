@@ -4,12 +4,6 @@
 {% load sidebar_tags %}
 {% block title %}Shared Terminals · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}<span>Shared Terminal Accounts</span>{% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'terminal-add' %}" class="btn btn--secondary">
-    {% icon "plus" class="meta" %}
-    Add Terminal
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Shared Terminal Accounts" %}
   <p class="text-muted text-sm">These user accounts are for shared machines, like in the workshop or floor.</p>

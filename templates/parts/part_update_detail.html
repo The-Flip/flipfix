@@ -20,23 +20,6 @@
     <span>{% icon "comment" %} Update</span>
   {% endif %}
 {% endblock %}
-{% block mobile_actions %}
-  <div class="mobile-meta">
-    {# Part Request info #}
-    <div class="mobile-meta__row">
-      <span class="pill pill--neutral">{{ part_request.get_status_display }}</span>
-      {% if part_request.machine %}
-        <span class="text-muted text-sm">{{ part_request.machine.short_display_name }}</span>
-      {% endif %}
-    </div>
-    {# Update info #}
-    <div class="mobile-meta__row text-muted text-sm">{% part_update_meta update %}</div>
-  </div>
-  {% if user.is_authenticated %}
-    <a href="{% url 'part-request-update-edit' update.pk %}"
-       class="btn btn--secondary btn--full">{% icon "pen" class="meta" label="Edit Details" %}</a>
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=update.get_admin_history_url %}
   {% sidebar_section label="Parts Request" %}

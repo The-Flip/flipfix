@@ -6,12 +6,6 @@
   <a href="{% url 'maintainer-machine-list' %}">Machines</a>
   <span>Add Machine</span>
 {% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'maintainer-machine-list' %}" class="btn btn--secondary">
-    {% icon "arrow-left" class="meta" %}
-    Back to Machines
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Add Machine" %}
   <p class="sidebar__subtitle">Select a model to add, or create a new model if it's not listed.</p>

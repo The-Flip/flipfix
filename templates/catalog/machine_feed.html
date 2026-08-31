@@ -19,28 +19,7 @@
   </nav>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
   <div class="two-column">
-    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions"
-         data-update-url="{% url 'machine-inline-update' machine.slug %}">
-      {% settable_machine_status_pill machine trigger_style="button" %}
-      {% settable_machine_location_pill machine locations trigger_style="button" %}
-      {% if user.is_authenticated %}
-        <a href="{% url 'machine-edit' machine.slug %}"
-           class="btn btn--icon-only btn--secondary"
-           aria-label="Edit machine"
-           title="Edit machine">{% icon "pencil" %}</a>
-      {% endif %}
-      {% report_problem_button machine btn_class="btn btn--report" label="Report" %}
-      {% if user.is_authenticated %}
-        <a href="{% url 'log-create-machine' machine.slug %}"
-           class="btn btn--log"
-           title="Log maintenance work">
-          {% icon "screwdriver-wrench" class="meta" %}
-          Log
-        </a>
-      {% endif %}
-    </div>
-    <!-- SIDEBAR (desktop only) -->
+    <!-- SIDEBAR: shown at every width -->
     <aside class="two-column__sidebar">
       <div class="card card--padded sidebar--sticky">
         {% include "components/history_link.html" with history_url=machine.get_admin_history_url %}

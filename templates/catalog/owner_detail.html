@@ -11,13 +11,6 @@
   <a href="{% url 'owner-list' %}">Owners</a>
   <span>{{ object.name }}</span>
 {% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'owner-edit' object.slug %}"
-     class="btn btn--secondary btn--full">
-    {% icon "pencil" class="meta" %}
-    Edit
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section %}
   <div class="sidebar__title">{{ object.name }}</div>

@@ -3,12 +3,6 @@
 {% load sidebar_tags %}
 {% block title %}Owners · {{ block.super }}{% endblock %}
 {% block breadcrumbs %}<span>Owners</span>{% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'owner-create' %}" class="btn btn--secondary btn--full">
-    {% icon "plus" class="meta" %}
-    New Owner
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section %}
   <div class="sidebar__title">Owners</div>

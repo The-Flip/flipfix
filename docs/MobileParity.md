@@ -1,21 +1,19 @@
 # Mobile/Desktop UI Parity
 
-The site keeps each page's actions in two places, and only CSS decides which one
-you see:
+`layouts/two_column.html` renders `{% block sidebar %}` and `{% block main %}` as
+siblings of a flex column. The sidebar is **never hidden**: below 1024px it stacks
+above the main column, and from 1024px it sits alongside it.
 
-```django
-{# templates/layouts/two_column.html #}
-<div class="mobile-actions">        {% block mobile_actions %}{% endblock %}   </div>
-<aside class="two-column__sidebar"> {% block sidebar %}{% endblock %}          </aside>
-```
+That was not always true. It used to be `display: none` below 1024px, with a
+parallel `{% block mobile_actions %}` that each page had to keep in step by hand.
+They drifted, and this tool was built to find out how far: **92 affordances** were
+reachable on a desktop and not on a phone, including the entire docs navigation and
+the buttons for marking maintenance tasks done. The fix was structural — stop hiding
+the sidebar, delete `mobile_actions` — so the baseline is now empty and this tool's
+job is to keep it that way.
 
-Both are always in the DOM. `.two-column__sidebar` is `display: none` until
-1024px; `.mobile-actions` is hidden from 1024px up. Keeping the two in step is
-entirely manual, so they drift, and the drift is invisible on a developer's wide
-monitor.
-
-`manage.py check_mobile_parity` finds that drift, and
-`flipfix/apps/core/tests/test_mobile_parity_audit.py` stops it growing.
+`manage.py check_mobile_parity` finds any new drift, and
+`flipfix/apps/core/tests/test_mobile_parity_audit.py` fails the build on it.
 
 ## Running it
 
@@ -56,8 +54,10 @@ The pipeline, in `flipfix/apps/core/mobile_parity/`:
 | `baseline.py`    | Read, diff and write `baseline.json`.                                                        |
 
 A gap is a plain set difference: keys visible at 1280px minus keys visible at
-390px. Counting is never involved, so the same button rendered in both blocks
-cancels itself out.
+390px. Counting is never involved, so the same affordance rendered twice cancels
+itself out. That mattered when pages carried two copies of their actions; they no
+longer do, and duplicating markup is **not** the way to fix a gap now — make the
+affordance reachable at both widths instead.
 
 ### Keys
 
@@ -130,7 +130,9 @@ skipped, never quietly dropped.
 
 ## The baseline
 
-`flipfix/apps/core/mobile_parity/baseline.json` has two sections:
+`flipfix/apps/core/mobile_parity/baseline.json` is **currently empty** — there are
+no known gaps, so any finding is a regression. It keeps two sections for when one
+is needed:
 
 - **`gaps`** — real defects not yet fixed. This is the ratchet. The test fails
   when it grows, and equally when an entry stops reproducing but is left behind.
@@ -169,23 +171,30 @@ this firing means a genuine markup bug.
 
 **This tool does not see:**
 
-1. **Overflow and clipping.** `.filter-bar__filters { overflow-x: auto }` scrolls
+1. **Reachability.** It resolves `display`, so it reports an element as present the
+   moment it is in flow — even if nobody can practically scroll to it. The sharp
+   case is infinite scroll: the sentinel sits at the end of the main column, so a
+   sidebar placed _after_ main recedes as more rows load and is never reached. Both
+   orderings of the stack therefore look identical to the checker, and the choice
+   has to be made by eye. This is why `two-column--sidebar-last` must never be used
+   on a page with infinite scroll — see `HTML_CSS.md`.
+2. **Overflow and clipping.** `.filter-bar__filters { overflow-x: auto }` scrolls
    its pills off the side of a phone. The DOM says visible. This is the biggest
    false negative and there is no fix without real layout.
-2. **JavaScript that changes the DOM.** `catalog_chart.js` demotes the
+3. **JavaScript that changes the DOM.** `catalog_chart.js` demotes the
    `<table>` fallback in `catalog/explore.html` to `.visually-hidden` once the
    SVG paints, so the audit sees a table no user does. The audit is of the
    pre-JS server-rendered page.
-3. **Anything that is not `display`** — `visibility`, `opacity`, zero heights,
+4. **Anything that is not `display`** — `visibility`, `opacity`, zero heights,
    transforms, `pointer-events`, z-index occlusion.
-4. **Unpopulated template branches.** Only what `build_fixtures()` creates gets
+5. **Unpopulated template branches.** Only what `build_fixtures()` creates gets
    rendered. Affordances behind `{% if machine.owner %}` are invisible unless the
    fixture sets it. **The fixtures are a coverage surface** — extend them when
    you add conditional markup.
-5. **Empty-state markup**, which the populated fixtures never trigger.
-6. **Permission combinations beyond the three personas** — `can_manage_catalog`,
+6. **Empty-state markup**, which the populated fixtures never trigger.
+7. **Permission combinations beyond the three personas** — `can_manage_catalog`,
    catalog-manager-only, terminal-manager.
-7. **Click handlers on `<div>`s** and drag-reorder targets, which are not in
+8. **Click handlers on `<div>`s** and drag-reorder targets, which are not in
    `ACTION_TAGS`.
 
 **It can also over-report:** a desktop `<a>` and a mobile `<button>` that do the
@@ -194,6 +203,6 @@ every entry is a maintenance liability, so prefer fixing the markup.
 
 ## A note on the name
 
-"Mobile" understates the problem. The sidebar cutoff is 1024px, so a 900px
-tablet — and a half-width laptop window — lose it too. Every finding prints its
-real `revealed_at` width for that reason.
+"Mobile" understates what this checks. The layout breakpoint is 1024px, so a 900px
+tablet and a half-width laptop window are on the narrow side of it too. Every
+finding prints its real `revealed_at` width for that reason.

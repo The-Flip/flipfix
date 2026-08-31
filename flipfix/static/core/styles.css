@@ -369,10 +369,22 @@ body {
 .two-column__main {
   flex: 1;
   min-width: 0;
+  /* Stacked last by default. Pages whose main column grows by infinite
+     scroll would otherwise push the sidebar permanently out of reach. */
+  order: 3;
 }
 
 .two-column__sidebar {
-  display: none;
+  /* Stacks above the main column below 1024px, alongside it above. It is
+     never hidden: doing so put 92 affordances out of reach on phones. */
+  order: 2;
+}
+
+/* Opt-out for pages whose sidebar is long-form navigation and whose main
+   column is the thing the reader came for. Safe only where the main column
+   does not grow by infinite scroll, which would push the sidebar away. */
+.two-column--sidebar-last .two-column__sidebar {
+  order: 4;
 }
 
 /* ========================================
@@ -2787,37 +2799,6 @@ a.stat:focus-visible {
   outline-offset: -2px;
 }
 
-/* --- Mobile Action Buttons --- */
-.mobile-actions {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-2);
-}
-
-.mobile-actions > .btn {
-  flex: 1;
-  padding: var(--space-1-5) var(--space-3);
-}
-
-.mobile-actions > .dropdown {
-  display: flex;
-}
-
-/* Mobile metadata display (used within mobile-actions) */
-.mobile-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  width: 100%;
-}
-
-.mobile-meta__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
 /* ========================================
    UTILITIES
    Semantic classes preferred over numeric
@@ -3109,10 +3090,6 @@ a.stat:focus-visible {
   .breadcrumb-bar__action {
     margin-right: calc(var(--two-column-sidebar-width) + var(--two-column-gap));
   }
-
-  .mobile-actions {
-    display: none;
-  }
 }
 
 /* ========================================
@@ -3225,25 +3202,6 @@ a.stat:focus-visible {
   gap: var(--space-1);
   padding: var(--space-0-5) var(--space-2);
   margin-left: calc(-1 * var(--space-2));
-}
-
-/* ========================================
-   WIKI HOME
-   mobile shows nav, desktop shows recent pages
-   ======================================== */
-
-.wiki-home__desktop {
-  display: none;
-}
-
-@media (min-width: 1024px) {
-  .wiki-home__mobile-nav {
-    display: none;
-  }
-
-  .wiki-home__desktop {
-    display: block;
-  }
 }
 
 /* ========================================

@@ -3,6 +3,7 @@
 {% block breadcrumbs %}
   <a href="{% url 'wiki-home' %}">Docs</a>
 {% endblock %}
+{% block two_column_modifier %}two-column--sidebar-last{% endblock %}
 {% block sidebar %}
   <div class="sidebar__section">
     <form action="{% url 'wiki-search' %}" method="get">
