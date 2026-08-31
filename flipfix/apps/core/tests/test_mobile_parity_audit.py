@@ -11,8 +11,6 @@ See ``docs/MobileParity.md`` for the design and its blind spots.
 
 from __future__ import annotations
 
-import logging
-from contextlib import contextmanager
 from unittest import mock
 
 from django.test import SimpleTestCase, TestCase, tag
@@ -22,29 +20,13 @@ from flipfix.apps.core.mobile_parity.audit import run_audit
 from flipfix.apps.core.mobile_parity.baseline import diff_against, load_baseline
 from flipfix.apps.core.mobile_parity.routes import UnmappedRouteError, static_exclusion
 from flipfix.apps.core.routing import get_registered_routes
+from flipfix.apps.core.test_utils import SuppressRequestLogsMixin
 
 _REMEDY = "  python manage.py check_mobile_parity --update-baseline --accept-new"
 
 
-@contextmanager
-def _quiet_request_log():
-    """Silence django.request while the audit deliberately hits 405s and 404s.
-
-    ``SuppressRequestLogsMixin`` cannot help here: it raises the log level in
-    ``setUpClass`` *after* calling ``super().setUpClass()``, by which point
-    ``setUpTestData`` — where the audit runs — has already finished.
-    """
-    logger = logging.getLogger("django.request")
-    previous = logger.level
-    logger.setLevel(logging.CRITICAL)
-    try:
-        yield
-    finally:
-        logger.setLevel(previous)
-
-
 @tag("views")
-class MobileParityBaselineTests(TestCase):
+class MobileParityBaselineTests(SuppressRequestLogsMixin, TestCase):
     """The known parity gaps must never grow, and must never go stale."""
 
     @classmethod
@@ -52,8 +34,8 @@ class MobileParityBaselineTests(TestCase):
         super().setUpTestData()
         # One full pass for the whole class: the audit renders every page as
         # every relevant persona, which is far too expensive to repeat per test.
-        with _quiet_request_log():
-            cls.result = run_audit()
+        # The mixin keeps the deliberate 404s and 405s out of the log.
+        cls.result = run_audit()
         cls.baseline = load_baseline()
         cls.diff = diff_against(cls.result, cls.baseline)
 

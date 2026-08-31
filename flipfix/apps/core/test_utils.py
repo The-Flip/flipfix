@@ -14,6 +14,7 @@ Usage:
 
 from __future__ import annotations
 
+import logging
 import secrets
 import shutil
 import tempfile
@@ -582,6 +583,10 @@ class SuppressRequestLogsMixin:
     The mixin suppresses django.request logs at the class level, so all
     tests in the class run quietly, but logs are restored afterward.
 
+    Suppression starts *before* ``super().setUpClass()``, because Django calls
+    ``setUpTestData`` from there — fixtures that issue requests would otherwise
+    log before the mixin had taken effect.
+
     Usage:
         class MyAccessControlTests(SuppressRequestLogsMixin, TestCase):
             def test_unauthorized_returns_403(self):
@@ -593,12 +598,16 @@ class SuppressRequestLogsMixin:
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        import logging
-
         cls._request_logger = logging.getLogger("django.request")
         cls._original_level = cls._request_logger.level
         cls._request_logger.setLevel(logging.CRITICAL)
+        try:
+            super().setUpClass()
+        except Exception:
+            # tearDownClass never runs when setUpClass raises, so restore here
+            # or the rest of the suite runs with request logging muted.
+            cls._request_logger.setLevel(cls._original_level)
+            raise
 
     @classmethod
     def tearDownClass(cls):
