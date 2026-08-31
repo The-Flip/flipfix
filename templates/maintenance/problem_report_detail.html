@@ -14,27 +14,6 @@
   <a href="{% url 'maintainer-machine-detail' machine.slug %}?f=problems">Problems</a>
   <span>{% icon "bug" label="Problem" %} #{{ report.pk }}</span>
 {% endblock %}
-{% block mobile_actions %}
-  <div class="mobile-meta"
-       data-update-url="{% url 'problem-report-detail' report.pk %}"
-       data-report-pk="{{ report.pk }}"
-       data-machine-name="{{ machine.short_display_name }}"
-       data-machine-update-url="{% url 'machine-inline-update' machine.slug %}">
-    {# Settable status and priority pills #}
-    <div class="mobile-meta__row">
-      {% settable_problem_status_pill report %}
-      {% settable_problem_priority_pill report %}
-      {% problem_report_type_pill report %}
-      <span class="text-muted text-sm">{{ machine.short_display_name }}</span>
-    </div>
-    {# Reporter and timestamp #}
-    <div class="mobile-meta__row text-muted text-sm">{% problem_report_meta report %}</div>
-  </div>
-  {% if user.is_authenticated %}
-    <a href="{% url 'problem-report-edit' report.pk %}"
-       class="btn btn--secondary btn--full">{% icon "pen" class="meta" label="Edit Details" %}</a>
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=report.get_admin_history_url %}
   {% sidebar_section label="Problem Report #"|addstr:report.pk %}

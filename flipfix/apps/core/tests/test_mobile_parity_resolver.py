@@ -314,8 +314,23 @@ class ProjectStylesheetTests(SimpleTestCase):
     def test_breakpoints_match_the_documented_ladder(self):
         self.assertEqual(load_display_index().breakpoints, (420, 540, 640, 768, 900, 1024))
 
-    def test_the_layout_sidebar_is_a_viewport_toggle(self):
-        """If this stops being true, the audit's main finding class has moved."""
+    def test_the_layout_sidebar_is_never_hidden_by_width(self):
+        """The sidebar stacks on narrow screens; it does not disappear.
+
+        This is the invariant the whole parity fix rests on. It used to be
+        ``display: none`` below 1024px, which is what put 92 affordances out of
+        reach on phones. If a display rule ever hides it by width again, every
+        sidebar affordance silently vanishes on mobile — so fail loudly here
+        rather than waiting for the baseline to grow.
+        """
         index = load_display_index()
-        self.assertIn("two-column__sidebar", index.toggle_classes())
-        self.assertEqual(index.revealed_at("two-column__sidebar"), 1024)
+        classes = frozenset({"two-column__sidebar"})
+        for width in (320, 390, 768, 1023, 1280):
+            self.assertNotEqual(
+                index.display_for(classes, width),
+                "none",
+                f"the two-column sidebar is hidden at {width}px",
+            )
+        # revealed_at is None precisely when a class never hides its element,
+        # so there is no width at which the sidebar "comes back".
+        self.assertIsNone(index.revealed_at("two-column__sidebar"))

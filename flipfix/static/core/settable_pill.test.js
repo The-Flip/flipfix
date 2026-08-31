@@ -61,11 +61,11 @@ function createPillDropdown({ field, action, pillClass, iconName, label, items }
 }
 
 /**
- * Build a button-style settable dropdown (mobile action style).
+ * Build a button-style settable dropdown, as rendered in the sidebar.
  */
 function createButtonDropdown({ field, action, btnClass, iconName, items, titlePrefix }) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'mobile-actions';
+  wrapper.className = 'sidebar__section';
   wrapper.dataset.updateUrl = UPDATE_URL;
 
   const dropdown = document.createElement('div');

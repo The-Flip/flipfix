@@ -33,7 +33,7 @@ Most pages don't extend these directly — use the layout templates below instea
 
 ### Layout Templates
 
-Most pages extend `layouts/two_column.html`. See that file for available blocks (`breadcrumbs`, `breadcrumb_actions`, `mobile_actions`, `sidebar`, `main`).
+Most pages extend `layouts/two_column.html`. See that file for available blocks (`breadcrumbs`, `breadcrumb_actions`, `two_column_modifier`, `sidebar`, `main`).
 
 For list pages with search and infinite scroll, extend `maintenance/global_list_base.html` instead.
 
@@ -126,15 +126,25 @@ Breakpoints, all `min-width`:
 | 640px  | Filter bar goes horizontal; machine-card buttons gain short labels  |
 | 768px  | Desktop nav replaces the mobile nav; breadcrumb actions gain labels |
 | 900px  | Machine-card buttons gain full labels                               |
-| 1024px | Two-column layout appears: sidebar shown, `.mobile-actions` hidden  |
+| 1024px | Sidebar moves from stacked above the main column to beside it       |
 
 ### Mobile/desktop parity
 
-`layouts/two_column.html` renders `{% block mobile_actions %}` and `{% block sidebar %}` as siblings; **both are always in the DOM** and only CSS picks between them. So anything you put in `sidebar` disappears below 1024px unless you give it a counterpart.
+`layouts/two_column.html` renders `{% block sidebar %}` and `{% block main %}` as siblings of a flex column. **The sidebar is never hidden** — below 1024px it stacks above the main column, and from 1024px it sits alongside it. So anything you put in `sidebar` is reachable at every width, and no mobile counterpart is needed.
 
-**Every affordance in `{% block sidebar %}` needs a mobile counterpart.** A link, button or form field that exists only in the sidebar is unreachable on a phone.
+It used to be `display: none` below 1024px with a parallel `{% block mobile_actions %}` for phones. Keeping the two in step was manual, they drifted, and 92 affordances ended up unreachable on a phone — including the whole docs navigation and the "mark task done" buttons. `mobile_actions` no longer exists; do not reintroduce a second copy of anything.
 
-This is enforced. `manage.py check_mobile_parity` reports the differences and a test holds them against a baseline that may only shrink. See [`MobileParity.md`](MobileParity.md).
+**Sidebar above or below the main column.** The default is above, which is right for lists, feeds, detail pages and forms. Pages whose sidebar is long-form navigation and whose main column is the thing the reader came for can opt out:
+
+```django
+{% block two_column_modifier %}two-column--sidebar-last{% endblock %}
+```
+
+Only the wiki does this today (`wiki/base.html`, with `wiki/home.html` and `wiki/reorder.html` opting back out).
+
+**Do not use that modifier on a page whose main column grows by infinite scroll.** The scroll sentinel sits at the end of the main column, so scrolling toward the sidebar loads more rows and pushes it further away — it becomes permanently unreachable. The parity checker cannot detect this; it resolves `display`, not reachability. Affected pages today: the activity feed, logs and parts lists, the machine feed, and the problem-report and part-request detail timelines.
+
+This is enforced. `manage.py check_mobile_parity` reports affordances reachable at 1280px but not at 390px, and a test holds the result against a baseline that may only shrink. See [`MobileParity.md`](MobileParity.md).
 
 ## Accessibility & Interaction
 

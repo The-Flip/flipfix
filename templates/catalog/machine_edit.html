@@ -10,13 +10,6 @@
   <a href="{% url 'maintainer-machine-detail' object.slug %}">{{ object.short_display_name }}</a>
   <span>Edit</span>
 {% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'machine-model-edit' object.model.slug %}"
-     class="btn btn--secondary btn--full">
-    {% icon "pencil" class="meta" %}
-    Edit Model
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=object.get_admin_history_url %}
   {% sidebar_section %}

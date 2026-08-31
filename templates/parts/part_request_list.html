@@ -2,11 +2,6 @@
 {% load static %}
 {% load list_tags %}
 {% block list_title %}Parts Requests{% endblock %}
-{% block mobile_actions %}
-  {% if user.is_authenticated %}
-    <a href="{% url 'part-request-create' %}" class="btn btn--log">Request a Part</a>
-  {% endif %}
-{% endblock %}
 {% block sidebar_stats %}
   <div class="sidebar__label">Parts Requests</div>
   {% stat_grid stats=stats %}

@@ -12,12 +12,9 @@
     {% block breadcrumb_actions %}{% endblock %}
   </div>
   <!-- TWO COLUMN LAYOUT: Main Content + Sidebar -->
-  <div class="two-column">
-    <!-- MOBILE ACTION BUTTONS (visible on mobile only) -->
-    <div class="mobile-actions">
-      {% block mobile_actions %}{% endblock %}
-    </div>
-    <!-- SIDEBAR (desktop only) -->
+  <div class="two-column {% block two_column_modifier %}{% endblock %}">
+    <!-- SIDEBAR: shown at every width. Stacks above the main column on
+         narrow screens, sits alongside it from 1024px. -->
     <aside class="two-column__sidebar">
       <div class="card card--padded sidebar--sticky">
         {% block sidebar %}{% endblock %}

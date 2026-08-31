@@ -19,22 +19,6 @@
     <span>{% icon "box-open" %} #{{ part_request.pk }}</span>
   {% endif %}
 {% endblock %}
-{% block mobile_actions %}
-  <div class="mobile-meta">
-    <div class="mobile-meta__row"
-         data-update-url="{% url 'part-request-status-update' part_request.pk %}">
-      {% settable_part_request_status_pill part_request %}
-      {% if part_request.machine %}
-        <span class="text-muted text-sm">{{ part_request.machine.short_display_name }}</span>
-      {% endif %}
-    </div>
-    <div class="mobile-meta__row text-muted text-sm">{% part_request_meta part_request %}</div>
-  </div>
-  {% if user.is_authenticated %}
-    <a href="{% url 'part-request-edit' part_request.pk %}"
-       class="btn btn--secondary btn--full">{% icon "pen" class="meta" label="Edit Details" %}</a>
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=part_request.get_admin_history_url %}
   {% sidebar_section label="Parts Request" %}

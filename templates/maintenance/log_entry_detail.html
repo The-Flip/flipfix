@@ -17,15 +17,6 @@
   {% endif %}
   <span>Log Entry {% icon "screwdriver-wrench" %}</span>
 {% endblock %}
-{% block mobile_actions %}
-  <div class="mobile-meta">
-    <div class="mobile-meta__row text-muted text-sm">{% log_entry_meta entry %}</div>
-  </div>
-  {% if user.is_authenticated %}
-    <a href="{% url 'log-entry-edit' entry.pk %}"
-       class="btn btn--secondary btn--full">{% icon "pen" class="meta" label="Edit Details" %}</a>
-  {% endif %}
-{% endblock %}
 {% block sidebar %}
   {% include "components/history_link.html" with history_url=entry.get_admin_history_url %}
   {% sidebar_section label="Log Entry" %}

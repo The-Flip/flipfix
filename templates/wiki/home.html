@@ -3,61 +3,33 @@
 {% load list_tags %}
 {% load accounts_tags %}
 {% block title %}Docs · {{ block.super }}{% endblock %}
+{% block two_column_modifier %}{% endblock %}
 {% block main %}
-  <!-- Mobile only: sidebar content inline -->
-  <div class="wiki-home__mobile-nav card card--padded">
-    <div class="sidebar__section">
-      <form action="{% url 'wiki-search' %}" method="get">
-        <input type="text"
-               name="q"
-               placeholder="Search docs..."
-               class="form-input form-input--sm">
-      </form>
-    </div>
-    {% if nav_tree %}
-      <div class="sidebar__section sidebar__section--relative">
-        <a href="{% url 'wiki-reorder' %}"
-           class="sidebar__corner-link"
-           title="Reorder Nav">{% icon "arrows-up-down" label="Reorder Nav" %}</a>
-        {% include "wiki/partials/nav_tree.html" with tree=nav_tree %}
-      </div>
-    {% endif %}
-    <div class="sidebar__section">
-      <a href="{% url 'wiki-page-create' %}"
-         class="btn btn--secondary btn--full">
-        {% icon "plus" class="meta" %}
-        Create Doc
-      </a>
-    </div>
-  </div>
-  <!-- Desktop only: recently updated -->
-  <div class="wiki-home__desktop">
-    {% if recent_pages %}
-      <section>
-        <h2>Recently Updated</h2>
-        {% for page in recent_pages %}
-          <div class="card card--padded space-above-sm">
-            <div>
-              {% with first_tag=page.tags.all.0 %}
-                <a href="{% url 'wiki-page-detail' first_tag %}">{{ page.title }}</a>
-              {% endwith %}
-            </div>
-            <div class="text-sm text-muted">
-              Updated {{ page.updated_at|smart_date }}
-              {% if page.updated_by %}by {{ page.updated_by|display_name_with_username }}{% endif %}
-              {% if page.tags.all %}
-                · {% icon "hashtag" class="meta" %}
-                {% for tag in page.tags.all %}
-                  {{ tag.tag|default:"(root)" }}
-                  {% if not forloop.last %},{% endif %}
-                {% endfor %}
-              {% endif %}
-            </div>
+  {% if recent_pages %}
+    <section>
+      <h2>Recently Updated</h2>
+      {% for page in recent_pages %}
+        <div class="card card--padded space-above-sm">
+          <div>
+            {% with first_tag=page.tags.all.0 %}
+              <a href="{% url 'wiki-page-detail' first_tag %}">{{ page.title }}</a>
+            {% endwith %}
           </div>
-        {% endfor %}
-      </section>
-    {% else %}
-    {% empty_state empty_message="No docs yet." search_message="" is_search=False %}
-    {% endif %}
-  </div>
+          <div class="text-sm text-muted">
+            Updated {{ page.updated_at|smart_date }}
+            {% if page.updated_by %}by {{ page.updated_by|display_name_with_username }}{% endif %}
+            {% if page.tags.all %}
+              · {% icon "hashtag" class="meta" %}
+              {% for tag in page.tags.all %}
+                {{ tag.tag|default:"(root)" }}
+                {% if not forloop.last %},{% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+  {% else %}
+  {% empty_state empty_message="No docs yet." search_message="" is_search=False %}
+  {% endif %}
 {% endblock %}

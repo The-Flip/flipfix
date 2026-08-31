@@ -11,13 +11,6 @@
   <a href="{% url 'maintainer-machine-detail' machine.slug %}">{{ machine.short_display_name }}</a>
   <span>Details</span>
 {% endblock %}
-{% block mobile_actions %}
-  <a href="{% url 'machine-edit' machine.slug %}"
-     class="btn btn--secondary btn--full">
-    {% icon "pencil" class="meta" %}
-    Edit Machine
-  </a>
-{% endblock %}
 {% block sidebar %}
   {% sidebar_section %}
   <div class="sidebar__title">

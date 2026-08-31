@@ -36,8 +36,13 @@ class PartRequestDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test part request")
 
-    def test_detail_view_renders_status_dropdown_in_mobile_actions(self):
-        """Mobile and sidebar both contain interactive status dropdowns."""
+    def test_detail_view_renders_exactly_one_status_dropdown(self):
+        """One interactive status dropdown, in the sidebar, at every width.
+
+        This used to assert *two* — a mobile copy and a sidebar copy — because
+        the sidebar was hidden below 1024px. The sidebar is no longer hidden, so
+        a second copy would be visible duplication rather than parity.
+        """
         part_request = create_part_request(
             text="Test request",
             requested_by=self.maintainer,
@@ -45,13 +50,12 @@ class PartRequestDetailViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCa
         self.client.force_login(self.maintainer_user)
         response = self.client.get(reverse("part-request-detail", kwargs={"pk": part_request.pk}))
 
-        # Both mobile and sidebar should have a status dropdown with data-update-url
         status_url = reverse("part-request-status-update", kwargs={"pk": part_request.pk})
         content = response.content.decode()
         self.assertEqual(
             content.count(f'data-update-url="{status_url}"'),
-            2,
-            "Expected two status dropdowns (mobile + sidebar)",
+            1,
+            "Expected a single status dropdown now that the sidebar is always shown",
         )
 
 
