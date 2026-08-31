@@ -5,17 +5,16 @@ from django.urls import re_path
 from django.views.generic import RedirectView
 
 from flipfix.apps.accounts.forms import SimplePasswordChangeForm
-from flipfix.apps.accounts.views import (
-    ProfileUpdateView,
+from flipfix.apps.accounts.views.directory import UserDirectoryView, UserProfileDetailView
+from flipfix.apps.accounts.views.profile import ProfileUpdateView
+from flipfix.apps.accounts.views.registration import invitation_register
+from flipfix.apps.accounts.views.terminals import (
     TerminalCreateView,
     TerminalDeactivateView,
     TerminalListView,
     TerminalLoginView,
     TerminalReactivateView,
     TerminalUpdateView,
-    UserDirectoryView,
-    UserProfileDetailView,
-    invitation_register,
 )
 from flipfix.apps.catalog.views.explore import MachineExploreView
 from flipfix.apps.catalog.views.machines import (

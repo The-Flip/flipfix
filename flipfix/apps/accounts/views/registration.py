@@ -1,0 +1,55 @@
+"""Invitation-based account creation."""
+
+from typing import TYPE_CHECKING, cast
+
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login
+from django.shortcuts import get_object_or_404, redirect, render
+
+from ..forms import InvitationRegistrationForm
+from ..lifecycle import make_maintainer
+from ..models import Invitation
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User as UserType
+
+User = cast("type[UserType]", get_user_model())
+
+
+def invitation_register(request, token):
+    """Complete registration for an invited user."""
+    invitation = get_object_or_404(Invitation, token=token)
+
+    if invitation.used:
+        messages.error(request, "This invitation has already been used.")
+        return redirect("login")
+
+    if request.method == "POST":
+        form = InvitationRegistrationForm(request.POST)
+        if form.is_valid():
+            # Create the user
+            user = User.objects.create_user(
+                username=form.cleaned_data["username"],
+                email=form.cleaned_data["email"],
+                password=form.cleaned_data["password"],
+                first_name=form.cleaned_data.get("first_name", ""),
+                last_name=form.cleaned_data.get("last_name", ""),
+            )
+            make_maintainer(user)
+
+            # Mark invitation as used
+            invitation.used = True
+            invitation.save()
+
+            # Log the user in
+            login(request, user)
+            messages.success(request, "Welcome! Your account has been created.")
+            return redirect("home")
+    else:
+        form = InvitationRegistrationForm(initial={"email": invitation.email})
+
+    return render(
+        request,
+        "registration/invitation_register.html",
+        {"form": form, "invitation": invitation},
+    )

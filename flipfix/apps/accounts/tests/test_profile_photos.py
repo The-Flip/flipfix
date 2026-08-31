@@ -16,7 +16,7 @@ from django.test import TestCase, tag
 from django.urls import reverse
 
 from flipfix.apps.accounts.models import MaintainerMedia
-from flipfix.apps.accounts.views import MAX_PROFILE_MEDIA
+from flipfix.apps.accounts.views.profile import MAX_PROFILE_MEDIA
 from flipfix.apps.core.test_utils import (
     MINIMAL_PNG,
     TemporaryMediaMixin,
