@@ -1,0 +1,942 @@
+{
+  "accepted": [
+    {
+      "element": "h2",
+      "hidden_by": ".wiki-home__desktop",
+      "key": "content:recently-updated",
+      "kind": "content",
+      "label": "Recently Updated",
+      "persona": "maintainer",
+      "reason": "Deliberate. wiki/home.html renders paired markup: .wiki-home__mobile-nav carries the docs navigation on narrow screens, while the 'Recently Updated' panel is the desktop-only counterpart. Nothing actionable is lost on mobile.",
+      "revealed_at": 1024,
+      "route": "wiki-home"
+    }
+  ],
+  "gaps": [
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:open-problems",
+      "kind": "content",
+      "label": "Open Problems",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "home"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parts-reqd",
+      "kind": "content",
+      "label": "Parts Req'd",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "home"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:part-request-create",
+      "kind": "action",
+      "label": "Request Parts",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "home"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:entries",
+      "kind": "content",
+      "label": "Entries",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "labor-report-detail"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:total-hours",
+      "kind": "content",
+      "label": "Total Hours",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "labor-report-detail"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:total-hours",
+      "kind": "content",
+      "label": "Total Hours",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "labor-report-weekly"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:log-create-global",
+      "kind": "action",
+      "label": "New Log Entry",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "labor-report-weekly"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:maintainer_freetext",
+      "kind": "action",
+      "label": "Search users...",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-global"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-global"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:maintainer_freetext",
+      "kind": "action",
+      "label": "Search users...",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-machine"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-machine"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:maintainer_freetext",
+      "kind": "action",
+      "label": "Search users...",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-problem-report"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-create-problem-report"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "button:change-machine",
+      "kind": "action",
+      "label": "Change machine",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-detail"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "button:close",
+      "kind": "action",
+      "label": "Close",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-detail"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "button:link-to-problem-report",
+      "kind": "action",
+      "label": "Link to problem report",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-detail"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:this-week",
+      "kind": "content",
+      "label": "This Week",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:total",
+      "kind": "content",
+      "label": "Total",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:labor-report-weekly",
+      "kind": "action",
+      "label": "Labor Report",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:this-week",
+      "kind": "content",
+      "label": "This Week",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:total",
+      "kind": "content",
+      "label": "Total",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:labor-report-weekly",
+      "kind": "action",
+      "label": "Labor Report",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "log-list"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-model",
+      "kind": "content",
+      "label": "Parity Model",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-create-model-exists"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:maintainer-machine-detail",
+      "kind": "action",
+      "label": "Parity Machine",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-create-model-exists"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-machine-mn",
+      "kind": "content",
+      "label": "Parity Machine (M9001)",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-details"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-machine-mn",
+      "kind": "content",
+      "label": "Parity Machine (M9001)",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-edit"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:machine-qr",
+      "kind": "action",
+      "label": "QR Code",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-edit"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:owner-detail",
+      "kind": "action",
+      "label": "Parity Owner",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-edit"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-model",
+      "kind": "content",
+      "label": "Parity Model",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "machine-model-edit"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:maintenance",
+      "kind": "content",
+      "label": "Maintenance",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-machine-mn",
+      "kind": "content",
+      "label": "Parity Machine (M9001)",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:maintenance",
+      "kind": "content",
+      "label": "Maintenance",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-machine-mn",
+      "kind": "content",
+      "label": "Parity Machine (M9001)",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "form:machine-mark-task-done:post",
+      "kind": "action",
+      "label": "Mark Parity Task done now",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:machine-details",
+      "kind": "action",
+      "label": "Details",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:owner-detail",
+      "kind": "action",
+      "label": "Parity Owner",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:part-request-create-machine",
+      "kind": "action",
+      "label": "Request Parts",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-detail"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:all",
+      "kind": "content",
+      "label": "All",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:broken",
+      "kind": "content",
+      "label": "Broken",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:fixing",
+      "kind": "content",
+      "label": "Fixing",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:good",
+      "kind": "content",
+      "label": "Good",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-floor",
+      "kind": "content",
+      "label": "Parity Floor",
+      "persona": "anonymous",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:all",
+      "kind": "content",
+      "label": "All",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:broken",
+      "kind": "content",
+      "label": "Broken",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:fixing",
+      "kind": "content",
+      "label": "Fixing",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:good",
+      "kind": "content",
+      "label": "Good",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-floor",
+      "kind": "content",
+      "label": "Parity Floor",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "maintainer-machine-list"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:new-owner",
+      "kind": "content",
+      "label": "New Owner",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "owner-create"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-owner",
+      "kind": "content",
+      "label": "Parity Owner",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "owner-detail"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-owner",
+      "kind": "content",
+      "label": "Parity Owner",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "owner-edit"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:owners",
+      "kind": "content",
+      "label": "Owners",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "owner-list"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:requester_name",
+      "kind": "action",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-create-machine"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:requester_name",
+      "kind": "action",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-create-machine"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:n",
+      "kind": "content",
+      "label": "#974",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-detail"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:all",
+      "kind": "content",
+      "label": "All",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:ordered",
+      "kind": "content",
+      "label": "Ordered",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:received",
+      "kind": "content",
+      "label": "Received",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-list"
+    },
+    {
+      "element": "span",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:requested",
+      "kind": "content",
+      "label": "Requested",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-list"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-update-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:none:none:poster_name",
+      "kind": "action",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "part-request-update-create"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-maintainer",
+      "kind": "content",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "password_change"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-maintainer",
+      "kind": "content",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "password_change_done"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:self:post:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:self:post:reporter_name",
+      "kind": "action",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:self:post:occurred_at",
+      "kind": "action",
+      "label": "",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-create-machine"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:self:post:reporter_name",
+      "kind": "action",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-create-machine"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "button:change-machine",
+      "kind": "action",
+      "label": "Change machine",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-detail"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "button:close",
+      "kind": "action",
+      "label": "Close",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-detail"
+    },
+    {
+      "element": "button",
+      "hidden_by": ".two-column__sidebar",
+      "key": "form:self:post",
+      "kind": "action",
+      "label": "Close Problem Report",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "problem-report-detail"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:parity-maintainer",
+      "kind": "content",
+      "label": "parity-maintainer",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "profile"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:user-profile",
+      "kind": "action",
+      "label": "View public profile",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "profile"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:new-terminal",
+      "kind": "content",
+      "label": "New terminal",
+      "persona": "superuser",
+      "revealed_at": 1024,
+      "route": "terminal-add"
+    },
+    {
+      "element": "div",
+      "hidden_by": ".two-column__sidebar",
+      "key": "content:workshop-terminal-parity-terminal",
+      "kind": "content",
+      "label": "Workshop Terminal (parity-terminal)",
+      "persona": "superuser",
+      "revealed_at": 1024,
+      "route": "terminal-edit"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:wiki-search:get:q",
+      "kind": "action",
+      "label": "Search docs",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-create"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-create",
+      "kind": "action",
+      "label": "Create Doc",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-create"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-detail",
+      "kind": "action",
+      "label": "Repair Guide",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-create"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-reorder",
+      "kind": "action",
+      "label": "Reorder Nav",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-create"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:wiki-search:get:q",
+      "kind": "action",
+      "label": "Search docs",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-delete"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-create",
+      "kind": "action",
+      "label": "Create Doc",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-delete"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-reorder",
+      "kind": "action",
+      "label": "Reorder Nav",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-delete"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:wiki-search:get:q",
+      "kind": "action",
+      "label": "Search docs",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-create",
+      "kind": "action",
+      "label": "Create Doc",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-detail",
+      "kind": "action",
+      "label": "Repair Guide",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-detail"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-reorder",
+      "kind": "action",
+      "label": "Reorder Nav",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-detail"
+    },
+    {
+      "element": "input",
+      "hidden_by": ".two-column__sidebar",
+      "key": "field:form:wiki-search:get:q",
+      "kind": "action",
+      "label": "Search docs",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-edit"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-create",
+      "kind": "action",
+      "label": "Create Doc",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-edit"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-reorder",
+      "kind": "action",
+      "label": "Reorder Nav",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-page-edit"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-create",
+      "kind": "action",
+      "label": "Create Doc",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-search"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-page-detail",
+      "kind": "action",
+      "label": "Repair Guide",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-search"
+    },
+    {
+      "element": "a",
+      "hidden_by": ".two-column__sidebar",
+      "key": "link:wiki-reorder",
+      "kind": "action",
+      "label": "Reorder Nav",
+      "persona": "maintainer",
+      "revealed_at": 1024,
+      "route": "wiki-search"
+    }
+  ],
+  "schema_version": 1,
+  "widths": {
+    "desktop": 1280,
+    "mobile": 390
+  }
+}

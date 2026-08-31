@@ -41,6 +41,19 @@ path("terminals/", TerminalListView.as_view(), name="terminal-list", access="sup
 | Maintainer    | `None` (default)  | Logged-in + portal permission  | `LoginRequiredMiddleware` + `MaintainerAccessMiddleware` |
 | Superuser     | `"superuser"`     | Superuser only                 | Wrapper raises `PermissionDenied` for non-superusers     |
 
+### Inspecting the routing table
+
+`flipfix.apps.core.routing` records what each route declared, and exposes two read-only views of it:
+
+| Function                  | Returns                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `get_public_url_names()`  | The names of `access="public"` routes. Used by the nav tags to filter navigation for guests. |
+| `get_registered_routes()` | A `url_name -> access level` mapping for every route declared through our `path()`.          |
+
+`get_registered_routes()` lets tooling enumerate the site's pages together with the kind of user each expects — the mobile parity audit uses it to render every page as an appropriate persona (see [MobileParity.md](MobileParity.md)). Django's own admin is not declared through our `path()`, so it is absent from the mapping.
+
+Both registries fill as the URLconf is imported, which Django does lazily; touch `django.urls.get_resolver().url_patterns` first if you need a complete picture.
+
 ## Guest behavior
 
 On pages that are read-write for maintainers, here's how they change to read-only for the public:

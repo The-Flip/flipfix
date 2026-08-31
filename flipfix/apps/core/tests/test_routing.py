@@ -5,11 +5,13 @@ Uses a minimal test URLconf with dummy views wired through our path().
 
 from __future__ import annotations
 
+from types import MappingProxyType
+
 from constance.test import override_config
 from django.http import HttpResponse
 from django.test import override_settings, tag
 
-from flipfix.apps.core.routing import get_public_url_names, path
+from flipfix.apps.core.routing import get_public_url_names, get_registered_routes, path
 from flipfix.apps.core.test_utils import (
     AccessControlTestCase,
     create_maintainer_user,
@@ -197,3 +199,37 @@ class PathValidationTests(AccessControlTestCase):
         """path() with invalid access level raises ValueError."""
         with self.assertRaises(ValueError):
             path("bad/", _dummy_view, name="test-bad", access="invalid")
+
+
+# ---------------------------------------------------------------------------
+# Route access registry
+# ---------------------------------------------------------------------------
+
+
+@tag("views")
+class RouteAccessRegistryTests(AccessControlTestCase):
+    """get_registered_routes() exposes each route's declared access level.
+
+    The mobile parity audit uses this to enumerate every page and pick a user
+    with the right permissions for it, so the registry must stay complete.
+    """
+
+    def test_every_access_level_is_recorded(self):
+        routes = get_registered_routes()
+        self.assertEqual(routes["test-public"], "public")
+        self.assertEqual(routes["test-always-public"], "always_public")
+        self.assertEqual(routes["test-superuser"], "superuser")
+
+    def test_default_route_records_none(self):
+        """No access= means the default: a logged-in maintainer."""
+        self.assertIsNone(get_registered_routes()["test-default"])
+
+    def test_registry_is_read_only(self):
+        """Callers get a proxy, so nobody can reshape the routing table by accident."""
+        self.assertIsInstance(get_registered_routes(), MappingProxyType)
+
+    def test_real_urlconf_routes_are_registered(self):
+        """The project's own URLs register too, not just this test URLconf."""
+        routes = get_registered_routes()
+        self.assertIn("home", routes)
+        self.assertEqual(routes["healthz"], "always_public")

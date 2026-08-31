@@ -27,7 +27,9 @@ Usage in ``urls.py``::
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from functools import wraps
+from types import MappingProxyType
 from typing import Literal
 
 from constance import config
@@ -41,6 +43,11 @@ from django.utils.cache import patch_cache_control
 from flipfix.apps.accounts.permissions import can_access_maintainer_portal
 
 _public_url_names: set[str] = set()
+
+#: url_name -> declared access level, for every route registered through this
+#: module's ``path()``. Lets tooling enumerate the site's pages together with the
+#: kind of user each one expects. See ``flipfix/apps/core/mobile_parity/``.
+_route_access: dict[str, _AccessLevel | None] = {}
 
 PUBLIC_CACHE_MAX_AGE = 300  # 5 minutes
 
@@ -73,6 +80,9 @@ def path(
     if access is not None and access not in _VALID_ACCESS_LEVELS:
         msg = f"Invalid access level {access!r}. Must be one of {_VALID_ACCESS_LEVELS}"
         raise ValueError(msg)
+    route_name = kwargs.get("name", "")
+    if route_name:
+        _route_access[route_name] = access
     if access == "always_public":
         view = login_not_required(view)
     elif access == "authenticated":
@@ -132,6 +142,15 @@ def _wrap_require_superuser(view_func):
     return wrapped
 
 
+def get_registered_routes() -> Mapping[str, _AccessLevel | None]:
+    """Return url_name -> access level for every route declared via our ``path()``.
+
+    Read-only. Used by the mobile parity audit to enumerate every page and pick
+    a user with the right permissions for it.
+    """
+    return MappingProxyType(_route_access)
+
+
 def get_public_url_names() -> frozenset[str]:
     """Return the set of URL names marked access="public". Used by nav tags."""
     return frozenset(_public_url_names)
@@ -140,3 +159,8 @@ def get_public_url_names() -> frozenset[str]:
 def _reset_public_url_names() -> None:
     """Test utility — clear the public URL name registry."""
     _public_url_names.clear()
+
+
+def _reset_route_registry() -> None:
+    """Test utility — clear the route access registry."""
+    _route_access.clear()

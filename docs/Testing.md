@@ -18,6 +18,14 @@ make test-js      # Run JavaScript tests.  Requires `npm install`
   - GitHub Actions installs ffmpeg/ffprobe and runs the full suite, so `integration` tests are expected to pass there.
   - Keep `integration` tests runnable locally, but `make test` excludes them by default for quick iteration if you don't have ffmpeg installed; env-dependent checks will be skipped when the binaries are missing. Unit tests mock ffmpeg/probe/upload to stay fast and quiet.
 
+## Mobile/desktop UI parity
+
+`make test` includes a gate (tagged `views`) that renders every page at a phone
+and a desktop width and fails if anything becomes reachable only on desktop.
+When it fires, run `manage.py check_mobile_parity` to see the findings. After
+fixing a gap, drop its record with `--update-baseline`. See
+[MobileParity.md](MobileParity.md).
+
 ## Python Tests
 
 See [TestingPython.md](TestingPython.md) for running tests by tag and how to write Python tests.
