@@ -22,7 +22,7 @@ from django.urls import NoReverseMatch, get_resolver, reverse
 from flipfix.apps.core.routing import get_registered_routes
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
-    from flipfix.apps.accounts.models import Maintainer
+    from flipfix.apps.accounts.models import Invitation, Maintainer
     from flipfix.apps.catalog.models import MachineInstance, MachineModel, Owner
     from flipfix.apps.maintenance.models import LogEntry, ProblemReport
     from flipfix.apps.parts.models import PartRequest, PartRequestUpdate
@@ -129,12 +129,14 @@ class ParityFixtures:
     wiki_path: str
     task_slug: str
     terminal: Maintainer
+    invitation: Invitation
     maintainer: User
     superuser: User
 
 
 def build_fixtures() -> ParityFixtures:
     """Create the object graph the audit renders against."""
+    from flipfix.apps.accounts.models import Invitation
     from flipfix.apps.catalog.models import Owner
     from flipfix.apps.core.test_utils import (
         create_location,
@@ -189,6 +191,10 @@ def build_fixtures() -> ParityFixtures:
     )
     WikiPageTag.objects.create(page=wiki_page, tag="guides", slug=wiki_page.slug)
 
+    invitation = Invitation.objects.create(
+        email="parity-invitee@example.com", invited_by=maintainer
+    )
+
     return ParityFixtures(
         machine=machine,
         machine_model=machine_model,
@@ -201,6 +207,7 @@ def build_fixtures() -> ParityFixtures:
         wiki_path=f"guides/{wiki_page.slug}",
         task_slug=task.slug,
         terminal=terminal,
+        invitation=invitation,
         maintainer=maintainer,
         superuser=superuser,
     )
@@ -209,6 +216,10 @@ def build_fixtures() -> ParityFixtures:
 #: How to fill each parameterised route's URL kwargs. A parameterised route
 #: missing from here — and not excluded — raises :class:`UnmappedRouteError`.
 ROUTE_KWARGS: Mapping[str, Callable[[ParityFixtures], dict[str, object]]] = {
+    "invite-detail": lambda f: {"pk": f.invitation.pk},
+    "invite-prune": lambda f: {"pk": f.maintainer.pk},
+    "invite-resend": lambda f: {"pk": f.invitation.pk},
+    "invite-revoke": lambda f: {"pk": f.invitation.pk},
     "log-create-machine": lambda f: {"slug": f.machine.slug},
     "log-create-problem-report": lambda f: {"pk": f.problem_report.pk},
     "log-detail": lambda f: {"pk": f.log_entry.pk},

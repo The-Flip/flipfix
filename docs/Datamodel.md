@@ -51,7 +51,21 @@ Person who performs work on the pinball machines. Linked to Django User account.
 
 ### Invitation ([`Invitation`](../flipfix/apps/accounts/models.py))
 
-Token-based invitation for new maintainers to register.
+Token-based invitation for new maintainers to register, and the record of
+who invited whom.
+
+Two foreign keys form the invite chain: `invited_by` (the maintainer who
+sent it) and `accepted_by` (the user it created). Together they let you walk
+the chain from either end — `user.invitation.invited_by` goes up,
+`user.invitations_sent` goes down. Both are `SET_NULL`, so deleting a user
+never erases the audit trail.
+
+Status is **derived, not stored**: `revoked_at` → `accepted_at` →
+`expires_at` in the past → otherwise pending. `Invitation.objects.pending()`
+is the single source of truth for "still usable". `email` is deliberately
+not unique — see the model docstring before changing it.
+
+See [`Auth.md`](Auth.md) for the invitation workflow.
 
 ## Catalog app
 

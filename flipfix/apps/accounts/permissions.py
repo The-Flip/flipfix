@@ -56,3 +56,14 @@ def is_in_user_directory(user: AbstractUser | Any) -> bool:
     if not user.is_authenticated:
         return False
     return Maintainer.objects.in_user_directory().filter(user=user).exists()
+
+
+def can_invite_users(user: AbstractUser | Any) -> bool:
+    """Check if user can invite new people to the site.
+
+    Requires maintainer portal access and the invite permission. Granted to
+    the Maintainers group by migration, so every maintainer can invite by
+    default while the capability stays revocable per user or per group.
+    Superusers pass via ``has_perm()`` auto-pass.
+    """
+    return can_access_maintainer_portal(user) and user.has_perm("accounts.can_invite_users")

@@ -119,6 +119,46 @@ creates/refreshes this dev superuser; override with `DEV_SUPERUSER` /
 
 `make db-down` stops the container (keeps data); `make db-reset` deletes it.
 
+## Email
+
+Invitation delivery is the only thing in Flipfix that sends email. It is
+configured entirely through environment variables and defaults to Django's
+console backend, so with nothing set the app still works — invitations are
+created and their links are shareable, and the "email" is written to the
+service log.
+
+### Variables
+
+| Variable                                  | Notes                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| `EMAIL_BACKEND`                           | Set to `django.core.mail.backends.smtp.EmailBackend` to send for real |
+| `EMAIL_HOST` / `EMAIL_PORT`               | From your provider. Port 587 with TLS is the usual pairing            |
+| `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | Provider credentials. Railway variables, never committed              |
+| `EMAIL_USE_TLS`                           | `True` unless the provider says otherwise                             |
+| `EMAIL_TIMEOUT`                           | Seconds. Bounded because sending happens inside the request cycle     |
+| `DEFAULT_FROM_EMAIL`                      | Must be an address on a domain you control                            |
+
+### Setting up a provider
+
+1. Create an account with a transactional email provider (Resend, SendGrid
+   and Postmark all speak plain SMTP, so no new Python dependency is needed).
+2. Add the SPF and DKIM DNS records they give you to `theflip.museum`.
+   **Without these the invitations will land in spam**, which looks
+   identical to "the feature is broken" from the volunteer's side.
+3. Set the variables above on the Railway web service.
+4. Verify before anybody needs it:
+
+   ```bash
+   python manage.py send_test_email you@example.com
+   ```
+
+   The command prints the resolved backend and host first, warns if it is
+   still the console backend, and reports the send result.
+
+If delivery fails at invite time the maintainer is told so and shown the
+link to pass on by hand, so a misconfigured provider degrades rather than
+blocks. See [`Auth.md`](Auth.md) for why sending is synchronous.
+
 ## File Storage
 
 ### Photo & Video Storage

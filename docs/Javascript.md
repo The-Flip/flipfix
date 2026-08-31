@@ -162,6 +162,12 @@ All JavaScript files are in `flipfix/static/core/`.
 | save_status.js        | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events                   |
 | sidebar_card_edit.js  | Sidebar dropdown editing (machine, problem)                                                     |
 
+### Utilities
+
+| File           | Purpose                                                                        |
+| -------------- | ------------------------------------------------------------------------------ |
+| copy_button.js | Copy another element's value to the clipboard, on `[data-copy-target]` buttons |
+
 ### Lists & Navigation
 
 | File               | Purpose                                    |

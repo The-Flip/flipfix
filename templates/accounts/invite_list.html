@@ -1,0 +1,60 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load list_tags %}
+{% load sidebar_tags %}
+{% block title %}Invitations · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}<span>Invitations</span>{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Invitations" %}
+  <p class="text-muted text-sm">
+    Invite anybody who volunteers at the museum. They get a link that sets up their account and puts them in the Maintainers group.
+  </p>
+  <p class="text-muted text-sm">Links work once and expire after two weeks.</p>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'invite-create' %}" class="btn btn--secondary btn--full">
+  {% icon "user-plus" class="meta" %}
+  Invite Someone
+</a>
+{% endsidebar_section %}
+{% if invitations %}
+  {% sidebar_section label="Summary" %}
+  {% stat_grid stats=stats %}
+{% endsidebar_section %}
+{% endif %}
+{% endblock %}
+{% block main %}
+  {% if invitations %}
+    <div class="invite-list">
+      {% for invitation in invitations %}
+        <div class="invite-card">
+          <div class="invite-card__info">
+            <a href="{{ invitation.get_absolute_url }}" class="invite-card__email">{{ invitation.email }}</a>
+            {% if invitation.status == "pending" %}
+              {% pill label=invitation.status_label variant="open" %}
+            {% elif invitation.status == "accepted" %}
+              {% pill label=invitation.status_label variant="closed" %}
+            {% else %}
+              {% pill label=invitation.status_label variant="neutral" %}
+            {% endif %}
+            <span class="invite-card__meta text-muted text-sm">
+              {% if invitation.accepted_by %}
+                Joined as {{ invitation.accepted_by.username }} · {{ invitation.accepted_at|smart_date }}
+              {% elif invitation.last_sent_at %}
+                Sent {{ invitation.last_sent_at|smart_date }}
+              {% else %}
+                Created {{ invitation.created_at|smart_date }} · not yet emailed
+              {% endif %}
+            </span>
+          </div>
+          <div class="invite-card__actions">
+            <a href="{{ invitation.get_absolute_url }}"
+               class="btn btn--secondary btn--sm">Open</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+  {% empty_state empty_message="You haven't invited anybody yet." search_message="No invitations match your search." %}
+  {% endif %}
+{% endblock %}

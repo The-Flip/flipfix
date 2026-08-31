@@ -1,0 +1,17 @@
+{% autoescape off %}Hi,
+
+{{ inviter }} has invited you to join Flipfix, the maintenance tracking system
+for The Flip pinball museum.
+
+Set up your account here:
+
+{{ registration_url }}
+
+This link works once and expires on {{ expires_at|date:"j F Y" }}. If it has
+already expired, ask {{ inviter }} to send you another one.
+
+If you weren't expecting this, you can ignore this email — no account is
+created until somebody uses the link.
+
+— Flipfix
+{% endautoescape %}

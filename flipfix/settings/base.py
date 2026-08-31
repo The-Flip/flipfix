@@ -135,7 +135,21 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Email. Everything is env-driven and the default backend writes to the
+# console, so the app runs identically with no provider configured: invites
+# are still created and their links still shareable. Point EMAIL_BACKEND at
+# django.core.mail.backends.smtp.EmailBackend and fill in the host settings
+# to start delivering for real — no code change needed. See docs/Operations.md.
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+# Bounded because invitation email is sent inside the request cycle so that
+# delivery failures are visible to the person sending the invite.
+EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Flipfix <noreply@theflip.museum>")
 
 # Pagination size, used by infinite scrolling
 LIST_PAGE_SIZE = 10

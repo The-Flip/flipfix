@@ -6,6 +6,15 @@ from django.views.generic import RedirectView
 
 from flipfix.apps.accounts.forms import SimplePasswordChangeForm
 from flipfix.apps.accounts.views.directory import UserDirectoryView, UserProfileDetailView
+from flipfix.apps.accounts.views.invitations import (
+    InviteCreateView,
+    InviteDetailView,
+    InviteListView,
+    InviteResendView,
+    InviteRevokeView,
+    InviteSubtreePruneView,
+    InviteTreeView,
+)
 from flipfix.apps.accounts.views.profile import ProfileUpdateView
 from flipfix.apps.accounts.views.registration import invitation_register
 from flipfix.apps.accounts.views.terminals import (
@@ -202,6 +211,25 @@ urlpatterns = [
         name="oauth2-jwks",
         access="always_public",
     ),
+    ###
+    # Invitations
+    ###
+    # Any maintainer holding accounts.can_invite_users; the capability check
+    # is layered in each view's dispatch() since access= has no level for it.
+    path("invites/", InviteListView.as_view(), name="invite-list"),
+    path("invites/new/", InviteCreateView.as_view(), name="invite-create"),
+    # Declared above the <int:pk> routes for readability. It cannot actually
+    # be shadowed by them — int is a converter, not a catch-all.
+    path("invites/tree/", InviteTreeView.as_view(), name="invite-tree", access="superuser"),
+    path(
+        "invites/prune/<int:pk>/",
+        InviteSubtreePruneView.as_view(),
+        name="invite-prune",
+        access="superuser",
+    ),
+    path("invites/<int:pk>/", InviteDetailView.as_view(), name="invite-detail"),
+    path("invites/<int:pk>/resend/", InviteResendView.as_view(), name="invite-resend"),
+    path("invites/<int:pk>/revoke/", InviteRevokeView.as_view(), name="invite-revoke"),
     ###
     # User directory
     ###

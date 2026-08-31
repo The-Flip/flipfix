@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import secrets
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from flipfix.apps.core.models import AbstractMedia, TimeStampedMixin
@@ -71,6 +74,7 @@ class Maintainer(TimeStampedMixin):
             ("can_access_maintainer_portal", "Can access the maintainer portal"),
             ("can_manage_catalog", "Can manage catalog (create machines, print QR codes)"),
             ("can_view_user_profiles", "Can view the user directory and profile pages"),
+            ("can_invite_users", "Can invite new users"),
         ]
 
     def __str__(self) -> str:
@@ -103,24 +107,149 @@ class Maintainer(TimeStampedMixin):
         return None
 
 
+#: How long a fresh invitation stays usable.
+INVITATION_TTL = timedelta(days=14)
+
+#: Cap on live, unaccepted invitations one person may hold at a time. Blunts a
+#: compromised maintainer account minting registration links in bulk, without
+#: getting in the way of a volunteer onboarding a few people in an evening.
+MAX_OUTSTANDING_INVITES_PER_USER = 10
+
+
 def generate_invitation_token() -> str:
     """Generate a secure random token for invitations."""
     return secrets.token_urlsafe(32)
 
 
-class Invitation(TimeStampedMixin):
-    """Invitation for a new maintainer to register."""
+def default_invitation_expiry() -> datetime:
+    """Expiry stamped on a freshly created invitation."""
+    return timezone.now() + INVITATION_TTL
 
-    email = models.EmailField(unique=True)
+
+class InvitationQuerySet(models.QuerySet):
+    """Custom queryset for Invitation."""
+
+    def pending(self) -> models.QuerySet:
+        """Invitations that can still be accepted.
+
+        Single source of truth for "open" — every caller that means
+        "still usable" must go through here rather than re-deriving the
+        three conditions.
+        """
+        return self.filter(
+            accepted_at__isnull=True,
+            revoked_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        )
+
+    def accepted(self) -> models.QuerySet:
+        """Invitations that produced an account."""
+        return self.filter(accepted_at__isnull=False)
+
+    def sent_by(self, user) -> models.QuerySet:
+        """Invitations ``user`` created."""
+        return self.filter(invited_by=user)
+
+
+class Invitation(TimeStampedMixin):
+    """Invitation for a new maintainer to register.
+
+    Two deliberate design choices, both of which look like bugs if you
+    don't know why they're there:
+
+    **``email`` is not unique.** The rule we actually want is "at most one
+    *open* invitation per address", and openness depends on ``expires_at``
+    relative to now — which a partial unique index can't express without a
+    stored status column, and a stored status column is exactly the drift
+    the derived :attr:`status` avoids. The invite-create view instead looks
+    for an existing :meth:`InvitationQuerySet.pending` invitation for the
+    address and re-sends that one. Two racing creates at worst produce two
+    valid links to the same person, which is harmless. Do not "fix" this
+    back to ``unique=True``: it makes re-inviting somebody raise
+    IntegrityError, which is what it used to do.
+
+    **``token`` is stored in the clear**, unlike a password-reset token.
+    The invite page shows the link with a copy button so a maintainer can
+    hand it over in person or paste it into Discord when email delivery
+    fails, and that requires the link to be recoverable after creation.
+    The exposure is a 14-day, single-use, self-service signup link.
+    """
+
+    class Status(models.TextChoices):
+        """Display-only. Derived from the timestamps; never a DB column."""
+
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    email = models.EmailField()
     token = models.CharField(max_length=64, unique=True, default=generate_invitation_token)
-    used = models.BooleanField(default=False)
+    # SET_NULL, not CASCADE: deleting a user must not silently erase the
+    # audit trail of who they invited or who invited them.
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invitations_sent",
+        help_text="Who sent this invitation. Null for invitations predating invite tracking.",
+    )
+    # The other half of the chain edge. OneToOne so ``user.invitation``
+    # walks straight back to the inviter.
+    accepted_by = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invitation",
+    )
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    # Indexed because pending() filters on it on every invite page load.
+    expires_at = models.DateTimeField(default=default_invitation_expiry, db_index=True)
+    last_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the invitation email was last sent. Null if it has never been sent.",
+    )
+
+    objects = InvitationQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        status = "used" if self.used else "pending"
-        return f"{self.email} ({status})"
+        return f"{self.email} ({self.status.value})"
+
+    def get_absolute_url(self) -> str:
+        return reverse("invite-detail", kwargs={"pk": self.pk})
+
+    @property
+    def status(self) -> Status:
+        """Current state, derived from the timestamps.
+
+        Order matters: a revoked invitation reads as revoked even if it
+        has also expired, because revoking is the deliberate act and the
+        one worth reporting.
+        """
+        if self.revoked_at is not None:
+            return self.Status.REVOKED
+        if self.accepted_at is not None:
+            return self.Status.ACCEPTED
+        if self.expires_at <= timezone.now():
+            return self.Status.EXPIRED
+        return self.Status.PENDING
+
+    @property
+    def status_label(self) -> str:
+        """Human-readable status, for templates."""
+        return self.Status(self.status).label
+
+    @property
+    def is_pending(self) -> bool:
+        """Whether this invitation can still be accepted."""
+        return self.status == self.Status.PENDING
 
 
 def maintainer_media_upload_to(instance: MaintainerMedia, filename: str) -> str:
