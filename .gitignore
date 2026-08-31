@@ -58,3 +58,9 @@ node_modules/
 
 # Claude Code's local settings
 settings.local.json
+
+# Replay evidence document (manage.py replay_notification_coalescing).
+# Generated from the sanitized production copy, so it reproduces real maintainer
+# usernames and the text of real reports — and this repository is public.
+# Regenerate it locally when you need it; never commit it.
+discord_coalescing_cases.md
