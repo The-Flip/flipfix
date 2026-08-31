@@ -64,6 +64,7 @@ STOP and read the relevant doc before writing code. Code that doesn't follow doc
 | Task                             | Read First                                               |
 | -------------------------------- | -------------------------------------------------------- |
 | Templates, HTML, CSS             | [`docs/HTML_CSS.md`](docs/HTML_CSS.md)                   |
+| Mobile/desktop UI parity         | [`docs/MobileParity.md`](docs/MobileParity.md)           |
 | JavaScript patterns & components | [`docs/Javascript.md`](docs/Javascript.md)               |
 | Views, CBVs, query optimization  | [`docs/Views.md`](docs/Views.md)                         |
 | Forms & inputs                   | [`docs/Forms.md`](docs/Forms.md)                         |

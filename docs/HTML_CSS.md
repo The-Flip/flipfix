@@ -113,7 +113,28 @@ Use simple names for standalone utilities (`.card`, `.btn`, `.hidden`)
 
 ## Responsive Design
 
-The site must be optimized for mobile, tablet, and desktop. Breakpoints are defined in the stylesheet. Avoid tables; hard to make those responsive.
+The site must be optimized for mobile, tablet, and desktop. Avoid tables; hard to make those responsive.
+
+The stylesheet is **mobile-first**: unprefixed rules are the phone state, and `min-width` queries progressively re-enable wider layouts. There are no `max-width` queries, and adding one would break the parity checker (see below) on purpose.
+
+Breakpoints, all `min-width`:
+
+| Width  | What changes                                                        |
+| ------ | ------------------------------------------------------------------- |
+| 420px  | `Logs` enters the priority nav bar                                  |
+| 540px  | `Parts` enters the priority nav bar                                 |
+| 640px  | Filter bar goes horizontal; machine-card buttons gain short labels  |
+| 768px  | Desktop nav replaces the mobile nav; breadcrumb actions gain labels |
+| 900px  | Machine-card buttons gain full labels                               |
+| 1024px | Two-column layout appears: sidebar shown, `.mobile-actions` hidden  |
+
+### Mobile/desktop parity
+
+`layouts/two_column.html` renders `{% block mobile_actions %}` and `{% block sidebar %}` as siblings; **both are always in the DOM** and only CSS picks between them. So anything you put in `sidebar` disappears below 1024px unless you give it a counterpart.
+
+**Every affordance in `{% block sidebar %}` needs a mobile counterpart.** A link, button or form field that exists only in the sidebar is unreachable on a phone.
+
+This is enforced. `manage.py check_mobile_parity` reports the differences and a test holds them against a baseline that may only shrink. See [`MobileParity.md`](MobileParity.md).
 
 ## Accessibility & Interaction
 

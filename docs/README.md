@@ -9,6 +9,7 @@ The development documentation for The Flip maintenance system.
 - **[Models.md](Models.md)** - Data model patterns, custom querysets, database field conventions
 - **[Views.md](Views.md)** - View patterns, CBVs, query optimization, access control
 - **[HTML_CSS.md](HTML_CSS.md)** - HTML templates, CSS styling, page layouts, CSS component conventions
+- **[MobileParity.md](MobileParity.md)** - Finding and preventing UI that is reachable on desktop but missing on mobile
 - **[Javascript.md](Javascript.md)** - JavaScript patterns, JS component catalog, custom events
 - **[TemplateTags.md](TemplateTags.md)** - Template tag libraries, component reference, pill variants
 - **[Forms.md](Forms.md)** - Form rendering, markup patterns, optional field marking, CSS classes
