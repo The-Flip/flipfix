@@ -27,8 +27,13 @@ DESKTOP_WIDTH: Final = 1280
 #: element as well would report every form twice.
 ACTION_TAGS: Final = frozenset({"a", "button", "input", "select", "textarea"})
 
-#: Input types that are not really user-facing affordances.
-IGNORED_INPUT_TYPES: Final = frozenset({"hidden", "csrfmiddlewaretoken"})
+#: Input *types* that are not user-facing affordances.
+IGNORED_INPUT_TYPES: Final = frozenset({"hidden"})
+
+#: Input *names* that are plumbing rather than affordances. Kept separate from
+#: the type set: a field is not machinery just because it happens to be called
+#: one of these, and conflating the two silently drops real fields.
+IGNORED_FIELD_NAMES: Final = frozenset({"csrfmiddlewaretoken"})
 
 #: Tags that carry page *information*. A desktop-only heading is a warning: the
 #: page still works on a phone, but something is missing from it.

@@ -27,6 +27,7 @@ from flipfix.apps.core.mobile_parity.config import (
     CONTENT_CLASSES,
     CONTENT_TAGS,
     DISCLOSURE_ATTRS,
+    IGNORED_FIELD_NAMES,
     IGNORED_INPUT_TYPES,
     KEY_ALIASES,
     MAX_KEY_SLUG_LENGTH,
@@ -166,7 +167,7 @@ def _action_key(element: Element, label: str) -> str | None:
             return f"{_form_key(form)}{suffix}"
         if not name:
             return None
-        if name in IGNORED_INPUT_TYPES:
+        if name in IGNORED_FIELD_NAMES:
             return None
         scope = _form_key(form) if form is not None else "form:none:none"
         return f"field:{scope}:{name}"
@@ -198,18 +199,28 @@ def _is_content_anchor(element: Element) -> bool:
 
 
 def extract(root: Element) -> list[tuple[Element, Affordance]]:
-    """Collect every affordance in the document, paired with its element."""
-    found: list[tuple[Element, Affordance]] = []
+    """Collect every affordance in the document, paired with its element.
 
-    for element in root.descendants():
+    An ``aria-hidden`` element hides its whole subtree from assistive
+    technology, so the walk prunes rather than skipping the single node —
+    otherwise a link inside ``<div aria-hidden="true">`` would be reported as a
+    parity gap despite being invisible to the people the audit is for.
+    """
+    found: list[tuple[Element, Affordance]] = []
+    stack = list(reversed(root.children))
+
+    while stack:
+        element = stack.pop()
         if element.is_aria_hidden:
             continue
-
-        label = accessible_name(element)
+        stack.extend(reversed(element.children))
 
         if element.tag in ACTION_TAGS:
             if is_disclosure_control(element):
                 continue
+            # Naming walks the subtree, so only pay for it once we know the
+            # element is one we are going to key.
+            label = accessible_name(element)
             key = _action_key(element, label)
             if key is not None:
                 found.append(
@@ -225,18 +236,22 @@ def extract(root: Element) -> list[tuple[Element, Affordance]]:
                 )
             continue
 
-        if _is_content_anchor(element) and label:
-            key = f"content:{_slug(_normalise_content(label))}"
-            found.append(
-                (
-                    element,
-                    Affordance(
-                        key=KEY_ALIASES.get(key, key),
-                        kind="content",
-                        tag=element.tag,
-                        label=label,
-                    ),
-                )
+        if not _is_content_anchor(element):
+            continue
+        label = accessible_name(element)
+        if not label:
+            continue
+        key = f"content:{_slug(_normalise_content(label))}"
+        found.append(
+            (
+                element,
+                Affordance(
+                    key=KEY_ALIASES.get(key, key),
+                    kind="content",
+                    tag=element.tag,
+                    label=label,
+                ),
             )
+        )
 
     return found

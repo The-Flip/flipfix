@@ -144,6 +144,13 @@ class DocumentTreeTests(SimpleTestCase):
         with self.assertRaises(MalformedHtmlError):
             parse_document("<div><section>text</div>")
 
+    def test_script_and_style_bodies_are_not_element_text(self):
+        """Otherwise a JS fragment lands in an accessible name and a content key."""
+        root = parse_document(
+            '<h2>Machines<script>var x = "boom";</script><style>.a { color: red; }</style></h2>'
+        )
+        self.assertEqual(root.children[0].text(), "Machines")
+
     def test_ancestors_run_from_self_to_root(self):
         root = parse_document("<div class='outer'><p class='inner'>hi</p></div>")
         paragraph = root.children[0].children[0]
@@ -220,6 +227,27 @@ class AffordanceKeyTests(SimpleTestCase):
 
     def test_hidden_inputs_are_not_affordances(self):
         html = '<form method="post" action="/wiki/create/"><input type="hidden" name="csrf"></form>'
+        self.assertEqual(_keys(html), set())
+
+    def test_csrf_token_field_is_not_an_affordance(self):
+        html = (
+            '<form method="post" action="/wiki/create/">'
+            '<input name="csrfmiddlewaretoken" value="x"></form>'
+        )
+        self.assertEqual(_keys(html), set())
+
+    def test_a_visible_field_named_hidden_is_still_an_affordance(self):
+        """Field *names* and input *types* are different namespaces.
+
+        A text input that happens to be called ``hidden`` is a real control and
+        must not be dropped just because ``hidden`` is also an input type.
+        """
+        html = '<form method="get" action="/wiki/search/"><input name="hidden"></form>'
+        self.assertEqual(_keys(html), {"field:form:wiki-search:get:hidden"})
+
+    def test_aria_hidden_hides_its_whole_subtree(self):
+        """aria-hidden removes the subtree from assistive tech, not just the node."""
+        html = '<div aria-hidden="true"><a href="/wiki/">Docs</a><h2>Buried</h2></div>'
         self.assertEqual(_keys(html), set())
 
     def test_disclosure_controls_are_not_affordances(self):

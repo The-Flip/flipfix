@@ -60,6 +60,11 @@ _P_CLOSERS = frozenset(
 )  # fmt: skip
 
 
+#: Elements whose text content is code, not document text. ``html.parser``
+#: delivers their bodies through ``handle_data`` like any other text, which
+#: would otherwise fold JavaScript into an ancestor's accessible name.
+RAW_TEXT_TAGS = frozenset({"script", "style"})
+
 #: Elements whose closing tag may legitimately be left out.
 OPTIONAL_END_TAGS = frozenset({"p", "li", "dt", "dd", "option", "tr", "td", "th", "tbody"})
 
@@ -195,6 +200,8 @@ class _TreeBuilder(HTMLParser):
         return [element.tag for element in self._stack[1:] if element.tag not in OPTIONAL_END_TAGS]
 
     def handle_data(self, data: str) -> None:
+        if self._open.tag in RAW_TEXT_TAGS:
+            return
         stripped = " ".join(data.split())
         if stripped:
             self._open.text_parts.append(stripped)
