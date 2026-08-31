@@ -126,7 +126,7 @@ Breakpoints, all `min-width`:
 | 640px  | Filter bar goes horizontal; machine-card buttons gain short labels  |
 | 768px  | Desktop nav replaces the mobile nav; breadcrumb actions gain labels |
 | 900px  | Machine-card buttons gain full labels                               |
-| 1024px | Two-column layout appears: sidebar shown, `.mobile-actions` hidden  |
+| 1024px | Sidebar moves from stacked above the main column to beside it       |
 
 ### Mobile/desktop parity
 
