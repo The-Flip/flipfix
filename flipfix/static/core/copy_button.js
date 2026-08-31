@@ -7,14 +7,15 @@
  * CSS selector for the input to copy from:
  *
  *   <input id="invite-link" value="https://...">
- *   <button data-copy-target="#invite-link">
+ *   <button data-copy-target="#invite-link" data-copy-status="#invite-link-status">
  *     <span data-copy-label>Copy</span>
  *   </button>
- *   <p data-copy-status role="status" aria-live="polite"></p>
+ *   <p id="invite-link-status" data-copy-status role="status" aria-live="polite"></p>
  *
  * The button label flips to "Copied" for a moment, and the outcome is also
- * written to the nearest [data-copy-status] element so screen readers hear
- * it — a label change alone is silent.
+ * written to its [data-copy-status] element so screen readers hear it — a
+ * label change alone is silent. data-copy-status is optional; omit it and
+ * the single status element on the page is used.
  *
  * navigator.clipboard is unavailable outside secure contexts, which on this
  * project means plain-HTTP local development. The execCommand fallback is
@@ -85,7 +86,13 @@
     }
     const label = button.querySelector('[data-copy-label]');
     const originalLabel = label ? label.textContent : '';
-    const status = doc.querySelector('[data-copy-status]');
+    // Scoped per button via [data-copy-status] on the button, so a page with
+    // two copy buttons doesn't have the second one announcing into the
+    // first one's live region. Falls back to the sole status element when
+    // there is only one, which is the common case.
+    const status = button.dataset.copyStatus
+      ? doc.querySelector(button.dataset.copyStatus)
+      : doc.querySelector('[data-copy-status]');
     let resetTimer = null;
 
     button.addEventListener('click', async () => {

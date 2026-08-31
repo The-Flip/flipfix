@@ -124,16 +124,21 @@ same shape `UserDirectoryView` uses for `can_view_user_profiles`.
 
 ### The flow
 
-| Route                       | Who                     | What                                  |
-| --------------------------- | ----------------------- | ------------------------------------- |
-| `/invites/`                 | maintainer + capability | Invitations you sent, in every state  |
-| `/invites/new/`             | maintainer + capability | Send one                              |
-| `/invites/<pk>/`            | owner or superuser      | The shareable link, resend, revoke    |
-| `/invites/<pk>/resend/`     | owner or superuser      | Re-send; same token, fresh expiry     |
-| `/invites/<pk>/revoke/`     | owner or superuser      | Kill the link                         |
-| `/invites/tree/`            | superuser               | Who invited whom, site-wide           |
-| `/invites/prune/<user_pk>/` | superuser               | Deactivate an account and its subtree |
-| `/register/<token>/`        | anyone with the link    | Complete registration                 |
+| Route                       | Who                                 | What                                  |
+| --------------------------- | ----------------------------------- | ------------------------------------- |
+| `/invites/`                 | maintainer + capability             | Invitations you sent, in every state  |
+| `/invites/new/`             | maintainer + capability             | Send one                              |
+| `/invites/<pk>/`            | owner with capability, or superuser | The shareable link, resend, revoke    |
+| `/invites/<pk>/resend/`     | owner with capability, or superuser | Re-send; same token, fresh expiry     |
+| `/invites/<pk>/revoke/`     | owner with capability, or superuser | Kill the link                         |
+| `/invites/tree/`            | superuser                           | Who invited whom, site-wide           |
+| `/invites/prune/<user_pk>/` | superuser                           | Deactivate an account and its subtree |
+| `/register/<token>/`        | anyone with the link                | Complete registration                 |
+
+Owning an invitation is not on its own enough: every one of these views
+carries `CanInviteUsersMixin`, so revoking `can_invite_users` from somebody
+also stops them managing the invitations they already sent. That is
+deliberate — the capability is the thing you take away from a bad actor.
 
 Ownership is enforced in `get_queryset()`, not in templates: somebody else's
 invitation is not in your queryset, so it 404s rather than 403s — a 403

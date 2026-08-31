@@ -89,5 +89,31 @@ describe('copy_button', () => {
       document.body.innerHTML = '<button data-copy-target="#missing">Copy</button>';
       expect(() => initCopyButtons(document)).not.toThrow();
     });
+
+    it('keeps two copy buttons announcing into their own status regions', async () => {
+      stubClipboard(vi.fn().mockResolvedValue(undefined));
+      document.body.innerHTML = `
+        <input id="first" value="one">
+        <button data-copy-target="#first" data-copy-status="#first-status">
+          <span data-copy-label>Copy</span>
+        </button>
+        <p id="first-status" data-copy-status></p>
+        <input id="second" value="two">
+        <button data-copy-target="#second" data-copy-status="#second-status">
+          <span data-copy-label>Copy</span>
+        </button>
+        <p id="second-status" data-copy-status></p>
+      `;
+      initCopyButtons(document);
+
+      document.querySelector('[data-copy-target="#second"]').click();
+
+      await vi.waitFor(() =>
+        expect(document.querySelector('#second-status').textContent).toBe(
+          'Link copied to the clipboard.'
+        )
+      );
+      expect(document.querySelector('#first-status').textContent).toBe('');
+    });
   });
 });

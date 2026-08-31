@@ -73,12 +73,14 @@
                onclick="this.select();">
         <button type="button"
                 class="btn btn--secondary copy-field__button"
-                data-copy-target="#invite-link">
+                data-copy-target="#invite-link"
+                data-copy-status="#invite-link-status">
           {% icon "copy" class="meta" %}
           <span data-copy-label>Copy</span>
         </button>
       </div>
-      <p class="copy-field__status text-muted text-sm"
+      <p id="invite-link-status"
+         class="copy-field__status text-muted text-sm"
          data-copy-status
          role="status"
          aria-live="polite"></p>
