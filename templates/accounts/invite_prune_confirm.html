@@ -1,0 +1,46 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load accounts_tags %}
+{% block title %}Prune {{ target.username }} · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'invite-tree' %}">Invite Tree</a>
+  <span>Prune {{ target.username }}</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="What Pruning Does" %}
+  <p class="text-muted text-sm">
+    Deactivates these accounts so they can't log in, and cancels any invitations they still have outstanding.
+  </p>
+  <p class="text-muted text-sm">
+    Nothing is deleted. Their problem reports, log entries and photos stay exactly where they are — that's the record of what happened.
+  </p>
+  <p class="text-muted text-sm">To undo it, set an account active again in Django admin. There is no bulk undo.</p>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <h2 class="section-heading">
+      Deactivate {{ target|display_name_with_username }}
+      {% if descendants %}and everyone they invited?{% endif %}
+    </h2>
+    <ul class="invite-prune__list">
+      <li>{{ target|display_name_with_username }}</li>
+      {% for user in descendants %}<li>{{ user|display_name_with_username }}</li>{% endfor %}
+    </ul>
+    <p class="text-muted text-sm">{{ descendants|length|add:1 }} account(s) will be deactivated.</p>
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      <div class="form-actions">
+        <a href="{% url 'invite-tree' %}" class="btn btn--secondary">
+          {% icon "circle-xmark" class="meta" %}
+          Cancel
+        </a>
+        <button type="submit" class="btn btn--danger">
+          {% icon "scissors" class="meta" %}
+          Deactivate {{ descendants|length|add:1 }} Account(s)
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

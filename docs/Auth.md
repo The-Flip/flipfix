@@ -105,6 +105,83 @@ Shared editable includes (`text_card_editable.html`, `media_card_editable.html`)
 
 The `history_link.html` component self-guards with `{% if user.is_superuser %}` — no extra wrapper needed.
 
+## Invitations
+
+Accounts are created by invitation. There is no open sign-up.
+
+### Who can invite
+
+Any maintainer holding `accounts.can_invite_users`, which migration
+`0017_grant_invite_users_to_maintainers` grants to the Maintainers group.
+Composed like the other capabilities — `can_invite_users()` in
+`accounts/permissions.py` requires portal access **and** the codename — so
+inviting can be taken away from one person without removing their ability
+to do maintenance work.
+
+`access=` has no level for "maintainer plus a named capability", so the
+invite views layer the check in `dispatch()` via `CanInviteUsersMixin`, the
+same shape `UserDirectoryView` uses for `can_view_user_profiles`.
+
+### The flow
+
+| Route                       | Who                                 | What                                  |
+| --------------------------- | ----------------------------------- | ------------------------------------- |
+| `/invites/`                 | maintainer + capability             | Invitations you sent, in every state  |
+| `/invites/new/`             | maintainer + capability             | Send one                              |
+| `/invites/<pk>/`            | owner with capability, or superuser | The shareable link, resend, revoke    |
+| `/invites/<pk>/resend/`     | owner with capability, or superuser | Re-send; same token, fresh expiry     |
+| `/invites/<pk>/revoke/`     | owner with capability, or superuser | Kill the link                         |
+| `/invites/tree/`            | superuser                           | Who invited whom, site-wide           |
+| `/invites/prune/<user_pk>/` | superuser                           | Deactivate an account and its subtree |
+| `/register/<token>/`        | anyone with the link                | Complete registration                 |
+
+Owning an invitation is not on its own enough: every one of these views
+carries `CanInviteUsersMixin`, so revoking `can_invite_users` from somebody
+also stops them managing the invitations they already sent. That is
+deliberate — the capability is the thing you take away from a bad actor.
+
+Ownership is enforced in `get_queryset()`, not in templates: somebody else's
+invitation is not in your queryset, so it 404s rather than 403s — a 403
+would confirm the invitation exists and who it belongs to. Superusers see
+everything.
+
+Invitations expire after `INVITATION_TTL` (14 days) and one maintainer may
+hold at most `MAX_OUTSTANDING_INVITES_PER_USER` (10) live at a time;
+superusers are exempt from the cap. Both constants live in
+`accounts/models.py`.
+
+Re-inviting an address that already has an open invitation **resends the
+existing one** rather than minting a second live token.
+
+### Email, and why it's synchronous
+
+`accounts/emails.py` sends the invitation inside the request cycle rather
+than through django-q. The invite page shows the shareable link right next
+to the send, so a _visible_ failure lets the inviter hand the link over
+instead; a background failure would report "Sent!" and strand the new
+volunteer in a worker log. It also means invites work in development without
+`make runq`. The cost is a stall bounded by `EMAIL_TIMEOUT`.
+
+Delivery is configured entirely by environment variables and defaults to
+Django's console backend, so the feature works with no provider configured —
+the link is still created and shareable. See
+[`Operations.md`](Operations.md) for provider setup and
+`manage.py send_test_email`.
+
+### Pruning
+
+`/invites/prune/<user_pk>/` deactivates an account together with everyone it
+transitively invited, and revokes their outstanding invitations. It
+**deletes nothing** — their reports, log entries and photos stay readable,
+which is the entire point of keeping the chain. Reversal is a per-user
+`is_active` flip in Django admin. It refuses to prune a superuser or the
+requesting user; demote first if that is really what you want.
+
+Accounts with no recorded inviter are roots of the tree: superusers, shared
+terminals, and everyone who joined before invite tracking. The UI labels
+them **unknown**, never "self-registered" — we do not know how they joined
+and must not claim otherwise.
+
 ## OAuth2/OIDC Provider (SSO)
 
 FlipFix acts as an OAuth2/OIDC authorization server for other apps in the theflip.museum domain. External apps authenticate users via FlipFix — users log in once and get seamless SSO across all apps.

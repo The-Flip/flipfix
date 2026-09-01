@@ -117,6 +117,26 @@ Mixins provide reusable test fixtures and behaviors.
 | `SharedAccountTestMixin`   | Testing "who are you?" flows. Provides `self.shared_user`, `self.shared_maintainer`, `self.identifying_user`, `self.identifying_maintainer`                  |
 | `TemporaryMediaMixin`      | Tests that write actual files to disk (AJAX upload/delete). Isolates MEDIA_ROOT per test. Not needed when mocking file operations.                           |
 
+#### Never Use TransactionTestCase
+
+Use `TestCase` (or `SimpleTestCase` when no database is needed). **Do not
+reach for `TransactionTestCase`.**
+
+`TransactionTestCase` truncates every table between tests instead of rolling
+back, and this project seeds the `Maintainers` and `Catalog Managers` groups
+from data migrations. Truncation removes them, and since `make test` runs
+with `--keepdb` — against local Postgres when `DATABASE_URL` is set — the
+damage **outlives the run**: the next `make test` fails everywhere with
+`Group.DoesNotExist`, and so does `manage.py check_mobile_parity`.
+`serialized_rollback = True` does not save you, because the snapshot it
+restores is taken after the tables are already empty.
+
+If you think you need one (testing a historical data migration is the usual
+reason), extract the rule you actually want to pin into a plain function and
+test that instead — see
+`accounts/migrations/0015_backfill_invitation_acceptance.py` and
+`accounts/tests/test_invitation_backfill.py`.
+
 #### Put Mixins Before TestCase
 
 When combining multiple mixins, **order matters** due to Python's MRO. Always put mixins before `TestCase`:

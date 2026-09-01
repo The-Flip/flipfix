@@ -1,0 +1,113 @@
+{% extends "layouts/two_column.html" %}
+{% load static %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load accounts_tags %}
+{% block title %}Invitation for {{ invitation.email }} · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'invite-list' %}">Invitations</a>
+  <span>{{ invitation.email }}</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Invitation" %}
+  <div class="sidebar__title">{{ invitation.email }}</div>
+  <p class="text-muted text-sm">
+    {% if invitation.status == "pending" %}
+      Expires {{ invitation.expires_at|smart_date }}
+    {% elif invitation.status == "accepted" %}
+      Accepted {{ invitation.accepted_at|smart_date }}
+    {% elif invitation.status == "revoked" %}
+      Revoked {{ invitation.revoked_at|smart_date }}
+    {% else %}
+      Expired {{ invitation.expires_at|smart_date }}
+    {% endif %}
+  </p>
+  {% if invitation.invited_by %}
+    <p class="text-muted text-sm">Invited by {{ invitation.invited_by|display_name_with_username }}</p>
+  {% endif %}
+{% endsidebar_section %}
+{% if invitation.status == "pending" %}
+  {% sidebar_section %}
+  <form method="post" action="{% url 'invite-resend' invitation.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--secondary btn--full">
+      {% icon "paper-plane" class="meta" %}
+      Send Again
+    </button>
+  </form>
+{% endsidebar_section %}
+{% sidebar_section %}
+<form method="post" action="{% url 'invite-revoke' invitation.pk %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn--danger btn--full">
+    {% icon "ban" class="meta" %}
+    Revoke
+  </button>
+</form>
+{% endsidebar_section %}
+{% endif %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <div class="invite-detail__status">
+      {% if invitation.status == "pending" %}
+        {% pill label=invitation.status_label variant="open" %}
+      {% elif invitation.status == "accepted" %}
+        {% pill label=invitation.status_label variant="closed" %}
+      {% else %}
+        {% pill label=invitation.status_label variant="neutral" %}
+      {% endif %}
+    </div>
+    {% if registration_url %}
+      <h2 class="section-heading">Their sign-up link</h2>
+      <p class="text-muted text-sm">
+        We emailed this to {{ invitation.email }}. If it doesn't arrive, send it to them yourself — it works once, then stops.
+      </p>
+      <div class="copy-field">
+        <label class="visually-hidden" for="invite-link">Sign-up link</label>
+        <input id="invite-link"
+               class="form-input copy-field__input"
+               type="text"
+               value="{{ registration_url }}"
+               readonly
+               onclick="this.select();">
+        <button type="button"
+                class="btn btn--secondary copy-field__button"
+                data-copy-target="#invite-link"
+                data-copy-status="#invite-link-status">
+          {% icon "copy" class="meta" %}
+          <span data-copy-label>Copy</span>
+        </button>
+      </div>
+      <p id="invite-link-status"
+         class="copy-field__status text-muted text-sm"
+         data-copy-status
+         role="status"
+         aria-live="polite"></p>
+    {% elif invitation.status == "accepted" %}
+      <h2 class="section-heading">Accepted</h2>
+      <p class="text-muted">
+        {% if invitation.accepted_by %}
+          {{ invitation.accepted_by|display_name_with_username }} used this invitation
+          {{ invitation.accepted_at|smart_date }}.
+        {% else %}
+          This invitation was accepted {{ invitation.accepted_at|smart_date }}.
+        {% endif %}
+      </p>
+    {% else %}
+      <h2 class="section-heading">No link to share</h2>
+      <p class="text-muted">
+        This invitation is {{ invitation.status_label|lower }}, so its link no longer works. Invite them again to send a fresh one.
+      </p>
+      <div class="form-actions">
+        <a href="{% url 'invite-create' %}" class="btn btn--secondary">
+          {% icon "user-plus" class="meta" %}
+          Invite Someone
+        </a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'core/copy_button.js' %}" defer></script>
+{% endblock %}

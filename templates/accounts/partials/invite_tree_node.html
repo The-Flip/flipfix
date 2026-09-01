@@ -1,0 +1,32 @@
+{% load ui_tags %}
+{% load accounts_tags %}
+<li class="invite-tree__node">
+  <div class="invite-tree__account">
+    <span class="invite-tree__name">{{ node.user|display_name_with_username }}</span>
+    {% if not node.user.is_active %}
+      {% pill label="Deactivated" variant="neutral" %}
+    {% endif %}
+    {% if node.user.is_superuser %}
+      {% pill label="Superuser" variant="neutral" %}
+    {% endif %}
+    {% if node.invitation %}
+      <span class="invite-tree__meta text-muted text-sm">joined {{ node.invitation.accepted_at|smart_date }}</span>
+    {% else %}
+      <span class="invite-tree__meta text-muted text-sm">inviter unknown</span>
+    {% endif %}
+    {% if node.user.is_active and not node.user.is_superuser %}
+      <a href="{% url 'invite-prune' node.user.pk %}"
+         class="btn btn--secondary btn--sm invite-tree__action">
+        {% icon "scissors" class="meta" %}
+        Prune
+      </a>
+    {% endif %}
+  </div>
+  {% if node.children %}
+    <ul class="invite-tree__children">
+      {% for child in node.children %}
+        {% include "accounts/partials/invite_tree_node.html" with node=child %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</li>

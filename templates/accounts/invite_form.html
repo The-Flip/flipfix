@@ -1,0 +1,38 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% load form_tags %}
+{% block title %}Invite Someone · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}
+  <a href="{% url 'invite-list' %}">Invitations</a>
+  <span>Invite Someone</span>
+{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Inviting Someone" %}
+  <p class="text-muted text-sm">
+    We'll email them a link that sets up their account. You'll also get the link to copy, in case the email doesn't arrive.
+  </p>
+  <p class="text-muted text-sm">
+    Only invite people you know volunteer here. Your name stays attached to the invitation.
+  </p>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <form method="post" class="form-main">
+      {% csrf_token %}
+      {% form_non_field_errors form %}
+      {% form_fields form %}
+      <div class="form-actions">
+        <a href="{% url 'invite-list' %}" class="btn btn--secondary">
+          {% icon "circle-xmark" class="meta" %}
+          Cancel
+        </a>
+        <button type="submit" class="btn btn--log">
+          {% icon "paper-plane" class="meta" %}
+          Send Invitation
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

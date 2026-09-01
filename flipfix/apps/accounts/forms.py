@@ -10,12 +10,66 @@ from django.contrib.auth.password_validation import validate_password
 from flipfix.apps.core.forms import MarkdownTextarea, StyledFormMixin, clean_markdown_field
 from flipfix.apps.core.markdown_links import convert_storage_to_authoring
 
-from .models import RESERVED_USERNAMES, Maintainer
+from .models import (
+    MAX_OUTSTANDING_INVITES_PER_USER,
+    RESERVED_USERNAMES,
+    Invitation,
+    Maintainer,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User as UserType
 
 User = cast("type[UserType]", get_user_model())
+
+
+class InvitationForm(StyledFormMixin, forms.ModelForm):
+    """Form for a maintainer to invite somebody new.
+
+    Note what is *not* validated here: an address that already has an open
+    invitation is not an error. ``InviteCreateView`` resends the existing
+    invitation instead, so that re-inviting somebody who lost the email does
+    the obvious thing rather than minting a second live token.
+    """
+
+    class Meta:
+        model = Invitation
+        fields = ["email"]
+        labels = {"email": "Their email address"}
+        help_texts = {"email": "We'll email them a link that sets up their account."}
+        widgets = {
+            "email": forms.EmailInput(
+                attrs={"autocomplete": "email", "placeholder": "them@example.com"}
+            ),
+        }
+
+    def __init__(self, *args, inviter=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.inviter = inviter
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email__iexact=email, is_active=True).exists():
+            raise forms.ValidationError("Somebody with that email address already has an account.")
+        return email
+
+    def clean(self):
+        """Enforce the outstanding-invitation cap.
+
+        Superusers are exempt: the cap exists to limit the damage a
+        compromised maintainer account can do, and a superuser onboarding a
+        whole new intake of volunteers shouldn't have to fight it.
+        """
+        cleaned = super().clean()
+        if self.inviter is None or self.inviter.is_superuser:
+            return cleaned
+        outstanding = Invitation.objects.pending().sent_by(self.inviter).count()
+        if outstanding >= MAX_OUTSTANDING_INVITES_PER_USER:
+            raise forms.ValidationError(
+                f"You already have {outstanding} invitations waiting to be accepted, "
+                f"which is the maximum. Revoke one before sending another."
+            )
+        return cleaned
 
 
 class InvitationRegistrationForm(StyledFormMixin, forms.Form):

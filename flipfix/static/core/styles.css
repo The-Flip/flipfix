@@ -2267,6 +2267,104 @@ body {
   gap: var(--space-2);
 }
 
+/* --- Invitations --- */
+.invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.invite-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.invite-card__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.invite-card__email {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.invite-card__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The link sits in a readonly input rather than as text so that the
+   fallback path (select, Ctrl+C) works when the Clipboard API doesn't. */
+.copy-field {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.copy-field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: monospace;
+}
+
+.copy-field__button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.copy-field__status {
+  margin-top: var(--space-2);
+  min-height: 1.25em;
+}
+
+.invite-detail__status {
+  margin-bottom: var(--space-3);
+}
+
+.invite-tree,
+.invite-tree__children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.invite-tree__children {
+  margin-left: var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--color-border-soft);
+}
+
+.invite-tree__node {
+  padding: var(--space-1) 0;
+}
+
+.invite-tree__account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.invite-tree__name {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.invite-prune__list {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-4);
+}
+
 /* --- Sidebar --- */
 .sidebar__section {
   padding-bottom: var(--space-4);

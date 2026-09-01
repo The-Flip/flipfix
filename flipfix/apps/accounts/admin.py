@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.http import HttpResponseRedirect
-from django.urls import reverse
 from django.utils.html import format_html
 from simple_history.admin import SimpleHistoryAdmin
 
@@ -49,17 +48,54 @@ class MaintainerMediaAdmin(SimpleHistoryAdmin):
 
 @admin.register(Invitation)
 class InvitationAdmin(admin.ModelAdmin):
-    list_display = ("email", "used", "created_at")
-    list_filter = ("used",)
-    search_fields = ("email",)
-    readonly_fields = ("token", "used", "registration_link", "created_at")
+    """Superuser fallback for the maintainer-facing invite pages.
+
+    Everyday invitations are created at ``/invites/`` by any maintainer with
+    ``can_invite_users``. This exists for the cases the UI deliberately
+    doesn't cover — correcting a typo'd address, or inspecting somebody
+    else's invitation without walking the tree. The shareable link lives on
+    the invite detail page, which has a request to build an absolute URL
+    from; this one just points at it.
+    """
+
+    list_display = ("email", "status_label", "invited_by", "accepted_by", "created_at")
+    # ``status`` is derived from the timestamps, so it cannot be filtered on
+    # directly. These two EmptyFieldListFilters cover the same ground:
+    # accepted yes/no and revoked yes/no.
+    list_filter = (
+        ("accepted_at", admin.EmptyFieldListFilter),
+        ("revoked_at", admin.EmptyFieldListFilter),
+    )
+    search_fields = ("email", "invited_by__username", "accepted_by__username")
+    readonly_fields = (
+        "token",
+        "invite_page",
+        "accepted_by",
+        "accepted_at",
+        "last_sent_at",
+        "created_at",
+    )
+    raw_id_fields = ("invited_by",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("invited_by", "accepted_by")
 
     def get_fields(self, request, obj=None):
         """Show different fields for add vs change views."""
         if obj:  # Editing existing invitation
-            return ("email", "registration_link", "used", "created_at")
+            return (
+                "email",
+                "invite_page",
+                "invited_by",
+                "accepted_by",
+                "accepted_at",
+                "revoked_at",
+                "expires_at",
+                "last_sent_at",
+                "created_at",
+            )
         else:  # Adding new invitation
-            return ("email",)
+            return ("email", "invited_by")
 
     def has_module_permission(self, request):
         return request.user.is_superuser
@@ -77,22 +113,20 @@ class InvitationAdmin(admin.ModelAdmin):
         return request.user.is_superuser
 
     def response_add(self, request, obj, post_url_continue=None):
-        """After creating an invitation, redirect to its detail page to show the link."""
-        return HttpResponseRedirect(reverse("admin:accounts_invitation_change", args=[obj.pk]))
+        """After creating an invitation, send the superuser to its invite page.
 
-    @admin.display(description="Registration Link")
-    def registration_link(self, obj):
-        if obj.pk and not obj.used:
-            url = reverse("invitation-register", kwargs={"token": obj.token})
-            # Build absolute URL manually since we don't have request in this context
-            return format_html(
-                '<a href="{}" target="_blank">{}</a><br>'
-                '<input type="text" value="{}" readonly style="width:400px;" '
-                'onclick="this.select();">',
-                url,
-                url,
-                url,
-            )
-        elif obj.used:
-            return "Invitation already used"
-        return "Save to generate link"
+        That page renders the absolute shareable link and the resend button;
+        the admin change form has neither.
+        """
+        return HttpResponseRedirect(obj.get_absolute_url())
+
+    @admin.display(description="Status")
+    def status_label(self, obj):
+        return obj.status_label
+
+    @admin.display(description="Invite page")
+    def invite_page(self, obj):
+        if not obj.pk:
+            return "Save to generate the invitation link"
+        url = obj.get_absolute_url()
+        return format_html('<a href="{}" target="_blank">{}</a>', url, url)

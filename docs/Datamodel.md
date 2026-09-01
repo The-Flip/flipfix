@@ -39,7 +39,8 @@ erDiagram
 
 - A circle (○) on a relationship line indicates an optional (nullable) foreign key.
 - `LogEntry ↔ Maintainer` is a many-to-many relationship.
-- `Invitation`, `WikiTagOrder`, `RecordReference`, and `DiscordMessageMapping` are standalone or use polymorphic links (ContentType GFKs) and are not shown above.
+- `WikiTagOrder`, `RecordReference`, and `DiscordMessageMapping` are standalone or use polymorphic links (ContentType GFKs) and are not shown above.
+- `Invitation` is omitted too: its two foreign keys point at `User` rather than at the domain models the diagram covers. See its section below for the chain.
 - Audit fields (`created_by`, `updated_by`, `created_at`, `updated_at`) are omitted — most models with these have nullable FKs to `User`.
 - All media models inherit from `AbstractMedia` and share the same structure (media_type, file, thumbnail, transcode status, etc.).
 
@@ -51,7 +52,23 @@ Person who performs work on the pinball machines. Linked to Django User account.
 
 ### Invitation ([`Invitation`](../flipfix/apps/accounts/models.py))
 
-Token-based invitation for new maintainers to register.
+Token-based invitation for new maintainers to register, and the record of
+who invited whom.
+
+Two foreign keys form the invite chain: `invited_by` (the maintainer who
+sent it) and `accepted_by` (the user it created). Together they let you walk
+the chain from either end — `user.invitation.invited_by` goes up,
+`user.invitations_sent` goes down. Both are `SET_NULL`: deleting a user keeps
+the invitation row and the rest of the chain, but clears that end of the
+edge, so the person becomes unknown rather than the record disappearing.
+`build_chain()` handles this by re-rooting orphaned invitees.
+
+Status is **derived, not stored**: `revoked_at` → `accepted_at` →
+`expires_at` in the past → otherwise pending. `Invitation.objects.pending()`
+is the single source of truth for "still usable". `email` is deliberately
+not unique — see the model docstring before changing it.
+
+See [`Auth.md`](Auth.md) for the invitation workflow.
 
 ## Catalog app
 

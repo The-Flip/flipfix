@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 from django import template
 
 from flipfix.apps.accounts.permissions import can_access_maintainer_portal
+from flipfix.apps.accounts.permissions import can_invite_users as _can_invite_users
 from flipfix.apps.accounts.permissions import can_manage_catalog as _can_manage_catalog
 from flipfix.apps.accounts.permissions import can_view_user_profiles as _can_view_user_profiles
 from flipfix.apps.core.routing import get_public_url_names
@@ -85,12 +86,10 @@ ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
         icon="location-dot",
         track_active=False,
     ),
-    _AdminNavItem(
-        label="Invite User",
-        url_name="admin:accounts_invitation_add",
-        icon="user-plus",
-        track_active=False,
-    ),
+    # The everyday "invite somebody" action lives in the user dropdown, not
+    # here: every maintainer has it, so it isn't an admin action. What stays
+    # in the admin menu is the forensic view of the whole chain.
+    _AdminNavItem(label="Invite Tree", url_name="invite-tree", icon="sitemap"),
     _AdminNavItem(
         label="QR Codes",
         url_name="machine-qr-bulk",
@@ -315,6 +314,10 @@ def mobile_hamburger(context: dict) -> dict:
         "hamburger_active_for_logs": "log-" in url_name,
         "hamburger_active_for_parts": "part" in url_name,
         "profile_active": url_name == "profile",
+        # Mirrors the desktop user dropdown. Both menus must carry it or the
+        # action becomes desktop-only, which is exactly what
+        # ``manage.py check_mobile_parity`` exists to catch.
+        "can_invite": _can_invite_users(user),
     }
 
 
@@ -327,7 +330,12 @@ def user_dropdown(context: dict) -> dict:
         {% load nav_tags %}
         {% user_dropdown %}
     """
+    user = context["user"]
     return {
-        "user": context["user"],
+        "user": user,
         "perms": context.get("perms"),
+        # Computed rather than read off ``perms`` so the menu entry and the
+        # route gate use the same predicate — ``can_invite_users`` also
+        # requires portal access, which the bare codename doesn't imply.
+        "can_invite": _can_invite_users(user),
     }

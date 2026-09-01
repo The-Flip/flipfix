@@ -1,0 +1,28 @@
+{% extends "layouts/two_column.html" %}
+{% load ui_tags %}
+{% load sidebar_tags %}
+{% block title %}Invite Tree · {{ block.super }}{% endblock %}
+{% block breadcrumbs %}<span>Invite Tree</span>{% endblock %}
+{% block sidebar %}
+  {% sidebar_section label="Invite Tree" %}
+  <p class="text-muted text-sm">Every account, arranged by who invited whom.</p>
+  <p class="text-muted text-sm">
+    Accounts at the top level have no recorded inviter: superusers, shared terminals, and everyone who joined before invitations were tracked. That means <em>unknown</em>, not <em>self-registered</em>.
+  </p>
+{% endsidebar_section %}
+{% sidebar_section %}
+<a href="{% url 'invite-list' %}" class="btn btn--secondary btn--full">
+  {% icon "envelope" class="meta" %}
+  My Invitations
+</a>
+{% endsidebar_section %}
+{% endblock %}
+{% block main %}
+  <div class="card card--padded">
+    <ul class="invite-tree">
+      {% for node in roots %}
+        {% include "accounts/partials/invite_tree_node.html" with node=node %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}
