@@ -581,9 +581,26 @@ body {
   color: var(--color-text-primary);
 }
 
-/* Now Playing: dense list of machines, sub-columns flow within each location */
+/* Now Playing: dense list of machines, sub-columns flow within each location.
+   The board template sets --location-sub-columns and --location-rows per
+   location; orientation decides which one weights its share of the screen.
+   The orientation rules carry the wrapper's mode class so they outrank the
+   generic `.column-grid.wall-display > *` flex reset by specificity, not
+   by source order. */
 .now-playing-location {
   min-width: 0;
+}
+
+.wall-display--now-playing.wall-display--landscape > .now-playing-location {
+  flex-grow: var(--location-sub-columns, 1);
+}
+
+.wall-display--now-playing.wall-display--portrait {
+  flex-direction: column;
+}
+
+.wall-display--now-playing.wall-display--portrait > .now-playing-location {
+  flex-grow: var(--location-rows, 1);
 }
 
 .now-playing-grid {
@@ -609,6 +626,24 @@ body {
 }
 
 .now-playing-row__model:empty {
+  margin-left: 0;
+}
+
+/* Two-line rows: model and year drop beneath the name. text-overflow only
+   applies to a block's own inline content, so once the two parts are blocks
+   each carries its own truncation rather than relying on the row's. */
+.wall-display--two-line .now-playing-row {
+  padding-bottom: var(--space-1);
+}
+
+.wall-display--two-line .now-playing-row__name,
+.wall-display--two-line .now-playing-row__model {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wall-display--two-line .now-playing-row__model {
   margin-left: 0;
 }
 

@@ -6,7 +6,7 @@
 {% block breadcrumbs %}<span>Wall Display</span>{% endblock %}
 {% block sidebar %}
   {% sidebar_section label="Wall Display" %}
-  <p class="text-muted text-sm">Configure a full-screen display showing open problems.</p>
+  <p class="text-muted text-sm">Configure a full-screen display of open problems or machines ready to play.</p>
 {% endsidebar_section %}
 {% endblock %}
 {% block main %}
@@ -59,6 +59,24 @@
                value="{{ default_per_column }}"
                class="form-input form-input--width-10">
         <p class="form-hint">Now Playing only. Each location splits into sub-columns of this many machines.</p>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="orientation">Screen orientation</label>
+        <select id="orientation" name="orientation" class="form-input">
+          {% for value, label in orientation_choices %}
+            <option value="{{ value }}" {% if value == orientation %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">Now Playing only. Portrait stacks locations top to bottom for a tall screen.</p>
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="lines">Lines per machine</label>
+        <select id="lines" name="lines" class="form-input">
+          {% for value, label in lines_choices %}
+            <option value="{{ value }}" {% if value == lines %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <p class="form-hint">Now Playing only. Two lines puts the model and year under the machine name.</p>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn--primary" disabled>

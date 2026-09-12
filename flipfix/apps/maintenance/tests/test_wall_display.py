@@ -1,5 +1,7 @@
 """Tests for the wall display setup and board pages."""
 
+import re
+
 from constance.test import override_config
 from django.test import TestCase, tag
 from django.urls import reverse
@@ -74,6 +76,46 @@ class WallDisplaySetupViewTests(SuppressRequestLogsMixin, TestDataMixin, TestCas
         self.client.force_login(self.maintainer_user)
         response = self.client.get(self.url)
         self.assertContains(response, 'value="workshop" selected')
+
+    def test_orientation_dropdown_renders_both_options(self):
+        """The setup page exposes landscape and portrait orientations."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'name="orientation"')
+        self.assertContains(response, 'value="landscape"')
+        self.assertContains(response, 'value="portrait"')
+
+    def test_landscape_is_default_orientation(self):
+        """When no orientation is given, landscape is selected."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'value="landscape" selected')
+
+    def test_orientation_selection_preserved_in_dropdown(self):
+        """The orientation query param round-trips into the selected option."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url, {"orientation": "portrait"})
+        self.assertContains(response, 'value="portrait" selected')
+
+    def test_lines_dropdown_renders_both_options(self):
+        """The setup page exposes one-line and two-line machine rows."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'name="lines"')
+        self.assertContains(response, 'value="1"')
+        self.assertContains(response, 'value="2"')
+
+    def test_one_line_is_default_lines(self):
+        """When no line count is given, one line is selected."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'value="1" selected')
+
+    def test_lines_selection_preserved_in_dropdown(self):
+        """The lines query param round-trips into the selected option."""
+        self.client.force_login(self.maintainer_user)
+        response = self.client.get(self.url, {"lines": "2"})
+        self.assertContains(response, 'value="2" selected')
 
 
 @tag("views")
@@ -533,12 +575,16 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
         )
         self.assertContains(response, "grid-template-rows: repeat(50, auto)")
 
-    def test_now_playing_location_flex_matches_sub_column_count(self):
-        """Locations get flex-grow proportional to the number of sub-columns they need."""
-        # 5 machines on floor → 1 sub-column at per_column=10
+    def test_now_playing_location_weights_match_sub_columns_and_rows(self):
+        """Each location publishes its sub-column count and filled row count.
+
+        The stylesheet uses sub-columns to weight width in landscape and rows
+        to weight height in portrait, so the board emits both.
+        """
+        # 5 machines on floor → 1 sub-column, 5 rows at per_column=10
         for i in range(5):
             create_machine(slug=f"floor-{i}", location=self.floor)
-        # 25 machines on workshop → 3 sub-columns at per_column=10 (ceil(25/10))
+        # 25 machines on workshop → 3 sub-columns (ceil(25/10)), 10 rows
         for i in range(25):
             create_machine(slug=f"workshop-{i}", location=self.workshop)
         response = self.client.get(
@@ -550,16 +596,17 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
             },
         )
         content = response.content.decode()
-        # Floor wrapper (first location) gets flex-grow: 1
-        self.assertIn(":nth-of-type(1)", content)
-        self.assertIn("flex-grow: 1;", content)
-        # Workshop wrapper (second location) gets flex-grow: 3
-        self.assertIn(":nth-of-type(2)", content)
-        self.assertIn("flex-grow: 3;", content)
+        self.assertRegex(
+            content,
+            r"nth-of-type\(1\)\s*\{\s*--location-sub-columns: 1;\s*--location-rows: 5;",
+        )
+        self.assertRegex(
+            content,
+            r"nth-of-type\(2\)\s*\{\s*--location-sub-columns: 3;\s*--location-rows: 10;",
+        )
 
-    def test_now_playing_empty_location_still_gets_one_sub_column(self):
-        """Locations with no working machines still claim a minimum flex slice."""
-        # Workshop has no machines; flex should still be at least 1.
+    def test_now_playing_empty_location_still_gets_minimum_weights(self):
+        """Locations with no working machines still claim a minimum slice."""
         for i in range(15):
             create_machine(slug=f"floor-{i}", location=self.floor)
         response = self.client.get(
@@ -571,6 +618,70 @@ class WallDisplayBoardNowPlayingTests(SuppressRequestLogsMixin, TestDataMixin, T
             },
         )
         content = response.content.decode()
-        # Two flex-grow declarations: floor=2 (ceil(15/10)), workshop=1 (min)
-        self.assertIn("flex-grow: 2;", content)
-        self.assertIn("flex-grow: 1;", content)
+        self.assertRegex(
+            content,
+            r"nth-of-type\(1\)\s*\{\s*--location-sub-columns: 2;\s*--location-rows: 10;",
+        )
+        self.assertRegex(
+            content,
+            r"nth-of-type\(2\)\s*\{\s*--location-sub-columns: 1;\s*--location-rows: 1;",
+        )
+
+    def _board_wrapper_classes(self, **params) -> list[str]:
+        """Return the class list of the board's outer wrapper element."""
+        response = self.client.get(
+            self.board_url, {"mode": "now-playing", "location": ["floor"], **params}
+        )
+        self.assertEqual(response.status_code, 200)
+        match = re.search(
+            r'<div class="(column-grid wall-display[^"]*)"', response.content.decode()
+        )
+        assert match is not None, "board wrapper not rendered"
+        return match.group(1).split()
+
+    def test_now_playing_defaults_to_landscape_single_line(self):
+        """Without orientation or lines params the board renders as it always has."""
+        classes = self._board_wrapper_classes()
+        self.assertIn("wall-display--landscape", classes)
+        self.assertNotIn("wall-display--portrait", classes)
+        self.assertNotIn("wall-display--two-line", classes)
+
+    def test_now_playing_portrait_orientation(self):
+        """Portrait replaces the landscape modifier rather than adding to it."""
+        classes = self._board_wrapper_classes(orientation="portrait")
+        self.assertIn("wall-display--portrait", classes)
+        self.assertNotIn("wall-display--landscape", classes)
+
+    def test_now_playing_unknown_orientation_falls_back_to_landscape(self):
+        """An unrecognised orientation value never leaves the board without one."""
+        classes = self._board_wrapper_classes(orientation="sideways")
+        self.assertIn("wall-display--landscape", classes)
+        self.assertNotIn("wall-display--portrait", classes)
+
+    def test_now_playing_two_lines(self):
+        """lines=2 adds the two-line modifier."""
+        classes = self._board_wrapper_classes(lines="2")
+        self.assertIn("wall-display--two-line", classes)
+
+    def test_now_playing_unknown_lines_falls_back_to_one_line(self):
+        """An unrecognised lines value renders the default single-line rows."""
+        classes = self._board_wrapper_classes(lines="3")
+        self.assertNotIn("wall-display--two-line", classes)
+
+    def test_now_playing_wrapper_classes_render_on_board(self):
+        """The computed class list actually lands on the board wrapper element."""
+        create_machine(slug="floor-0", location=self.floor)
+        response = self.client.get(
+            self.board_url,
+            {
+                "mode": "now-playing",
+                "location": ["floor"],
+                "orientation": "portrait",
+                "lines": "2",
+            },
+        )
+        self.assertContains(
+            response,
+            'class="column-grid wall-display wall-display--now-playing '
+            'wall-display--portrait wall-display--two-line"',
+        )

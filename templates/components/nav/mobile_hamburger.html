@@ -29,12 +29,11 @@
     {% if user.is_authenticated %}
       <div class="nav-priority__dropdown-group">
         <p class="nav-priority__dropdown-heading">{{ user.username }}</p>
-        <a href="{% url 'profile' %}"
-           class="dropdown__item {% if profile_active %}dropdown__item--selected{% endif %}"
-           {% if profile_active %}aria-current="page"{% endif %}>{% icon "gear" class="space-right-sm" %} Account</a>
-        {% if can_invite %}
-          <a href="{% url 'invite-list' %}" class="dropdown__item">{% icon "user-plus" class="space-right-sm" %} Invite People</a>
-        {% endif %}
+        {% for item in account_items %}
+          <a href="{% url item.url_name %}"
+             class="dropdown__item {% if item.is_active %}dropdown__item--selected{% endif %}"
+             {% if item.is_active %}aria-current="page"{% endif %}>{% icon item.icon class="space-right-sm" %} {{ item.label }}</a>
+        {% endfor %}
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
           <button type="submit" class="dropdown__item dropdown__item--danger">

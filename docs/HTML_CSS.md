@@ -51,6 +51,7 @@ The project establishes component patterns in [flipfix/static/core/styles.css](.
 - **Flip Card** (`.flip-card` with `.flip-card__top`, `.flip-card__main`, `.flip-card__bottom` and optional left/right sub-elements for aligning content; use `.flip-card--clickable` when the whole card should be a link, and `.flip-card-list` to reset list spacing when rendering multiple flip-cards)
 - **Centered Container** (`.centered-container` - flexbox container that vertically and horizontally centers content)
 - **Wall Card** (`.wall-card` with `.wall-card__header`, `.wall-card__row`, `.wall-card__desc`, `.wall-card__time`, `.wall-card__overflow` — grouped machine card for the wall display board; used inside `.column-grid.wall-display`)
+- **Now Playing** (`.now-playing-location` > `.now-playing-grid` > `.now-playing-row` with `.now-playing-row__name` and `.now-playing-row__model` — dense machine list for the wall display's Now Playing mode, inside `.column-grid.wall-display.wall-display--now-playing`. The wrapper takes exactly one of `.wall-display--landscape` (locations side by side) or `.wall-display--portrait` (locations stacked); `.wall-display--two-line` puts the model on its own line under the name.)
 
 ### UI Components
 
