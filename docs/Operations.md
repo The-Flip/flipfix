@@ -175,14 +175,23 @@ enabled, then **myaccount.google.com → Security → App passwords**.
 
 - **Make `noreply@theflip.museum` a real mailbox**, not a phantom address.
   If it doesn't exist, bounces go nowhere and nobody learns that invitations
-  are failing. A licensed user or a Google Group both work.
-- To avoid spending a seat, authenticate as an existing user and leave
+  are failing. A licensed user or a Google Group both work as the mailbox.
+- **Authenticate as a licensed user, not a Group.** Groups have no password
+  and cannot hold an app password. To avoid spending a seat on `noreply@`,
+  make it a Group and set `EMAIL_HOST_USER` to an existing user; leave
   `DEFAULT_FROM_EMAIL` as `noreply@` — the relay's "only addresses in my
-  domains" rule permits it.
+  domains" rule permits sending as any domain address.
 
-If **App passwords** isn't offered, the tenant policy has disabled them.
-That is the most common blocker. Either allow them for that account, or fall
-back to IP allowlisting, which Railway makes impractical.
+If **App passwords** isn't offered, one of these is blocking it:
+
+- the Workspace admin has restricted app passwords for the tenant (most
+  common — allow them for the sending account);
+- the account is enrolled in Advanced Protection;
+- the account's 2-Step Verification is security-key-only.
+
+If none of those can be changed, the relay's other mode — IP allowlisting —
+needs stable egress addresses, which Railway does not offer. At that point
+use a different SMTP provider rather than fighting the relay.
 
 #### 3. DNS on `theflip.museum`
 
@@ -195,9 +204,9 @@ back to IP allowlisting, which Railway makes impractical.
 - **DMARC** (optional, recommended) — TXT at `_dmarc`:
   `v=DMARC1; p=none; rua=mailto:you@theflip.museum`.
 
-**Skipping DKIM does not break sending — it sends the invitations to spam**,
-which from the volunteer's side is indistinguishable from the feature being
-broken.
+**Skipping DKIM does not break sending — it makes the invitations likely to
+land in spam**, which from the volunteer's side is indistinguishable from the
+feature being broken.
 
 #### 4. Railway variables (web service)
 
@@ -206,7 +215,7 @@ EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=smtp-relay.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=noreply@theflip.museum
+EMAIL_HOST_USER=<the licensed user that owns the app password>
 EMAIL_HOST_PASSWORD=<16-char app password, spaces stripped>
 DEFAULT_FROM_EMAIL=Flipfix <noreply@theflip.museum>
 EMAIL_TIMEOUT=10
@@ -226,8 +235,8 @@ is still the console backend, and reports the result — so a typo in
 `EMAIL_HOST` surfaces immediately.
 
 Then set the Railway variables, redeploy, and send a real invitation to a
-personal address. **Check the spam folder specifically**: that is what a
-missing DKIM record looks like.
+personal address. **Check the spam folder specifically**: landing there is
+the usual sign of a missing DKIM record.
 
 ### Gotchas
 
