@@ -138,26 +138,128 @@ service log.
 | `EMAIL_TIMEOUT`                           | Seconds. Bounded because sending happens inside the request cycle     |
 | `DEFAULT_FROM_EMAIL`                      | Must be an address on a domain you control                            |
 
-### Setting up a provider
+Only the **web** service needs these variables. Sending happens inside the
+request cycle, so `worker` and `discord-bot` never send mail.
 
-1. Create an account with a transactional email provider (Resend, SendGrid
-   and Postmark all speak plain SMTP, so no new Python dependency is needed).
-2. Add the SPF and DKIM DNS records they give you to `theflip.museum`.
-   **Without these the invitations will land in spam**, which looks
-   identical to "the feature is broken" from the volunteer's side.
-3. Set the variables above on the Railway web service.
-4. Verify before anybody needs it:
+### Setting up Google Workspace SMTP relay
 
-   ```bash
-   python manage.py send_test_email you@example.com
-   ```
+This is what `theflip.museum` uses. Google offers three SMTP paths and only
+one of them fits:
 
-   The command prints the resolved backend and host first, warns if it is
-   still the console backend, and reports the send result.
+| Host                   | Why not / why                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `smtp-relay.gmail.com` | **Use this.** Sends as any address in the domain, to anyone.                              |
+| `smtp.gmail.com`       | Rewrites `From` to the authenticating user, so invitations wouldn't come from `noreply@`. |
+| `aspmx.l.google.com`   | Only delivers to your own Workspace users. Invitees have personal addresses.              |
 
-If delivery fails at invite time the maintainer is told so and shown the
-link to pass on by hand, so a misconfigured provider degrades rather than
-blocks. See [`Auth.md`](Auth.md) for why sending is synchronous.
+#### 1. Enable the relay
+
+**admin.google.com → Apps → Google Workspace → Gmail → Routing → SMTP relay
+service → Add**
+
+| Setting         | Value                            |
+| --------------- | -------------------------------- |
+| Name            | `Flipfix invitations`            |
+| Allowed senders | **Only addresses in my domains** |
+| Authentication  | Require SMTP Authentication      |
+| Encryption      | Require TLS encryption           |
+
+Authenticate rather than allowlist IPs: Railway's egress addresses are not
+stable enough to allowlist. Changes usually apply within minutes, though
+Google reserves up to 24 hours.
+
+#### 2. Create the sending credential
+
+SMTP authentication needs a real Workspace user with 2-Step Verification
+enabled, then **myaccount.google.com → Security → App passwords**.
+
+- **Make `noreply@theflip.museum` a real mailbox**, not a phantom address.
+  If it doesn't exist, bounces go nowhere and nobody learns that invitations
+  are failing. A licensed user or a Google Group both work as the mailbox.
+- **Authenticate as a licensed user, not a Group.** Groups have no password
+  and cannot hold an app password. To avoid spending a seat on `noreply@`,
+  make it a Group and set `EMAIL_HOST_USER` to an existing user; leave
+  `DEFAULT_FROM_EMAIL` as `noreply@` — the relay's "only addresses in my
+  domains" rule permits sending as any domain address.
+
+If **App passwords** isn't offered, one of these is blocking it:
+
+- the Workspace admin has restricted app passwords for the tenant (most
+  common — allow them for the sending account);
+- the account is enrolled in Advanced Protection;
+- the account's 2-Step Verification is security-key-only.
+
+If none of those can be changed, the relay's other mode — IP allowlisting —
+needs stable egress addresses, which Railway does not offer. At that point
+use a different SMTP provider rather than fighting the relay.
+
+#### 3. DNS on `theflip.museum`
+
+- **SPF** — TXT at the root: `v=spf1 include:_spf.google.com ~all`. If an
+  SPF record already exists, **merge into it**. Two SPF records is a hard
+  failure, not a warning.
+- **DKIM** — Admin console → Apps → Google Workspace → Gmail → **Authenticate
+  email**. Generate a 2048-bit key, publish the TXT at `google._domainkey`,
+  then click **Start authentication**.
+- **DMARC** (optional, recommended) — TXT at `_dmarc`:
+  `v=DMARC1; p=none; rua=mailto:you@theflip.museum`.
+
+**Skipping DKIM does not break sending — it makes the invitations likely to
+land in spam**, which from the volunteer's side is indistinguishable from the
+feature being broken.
+
+#### 4. Railway variables (web service)
+
+```bash
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp-relay.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=<the licensed user that owns the app password>
+EMAIL_HOST_PASSWORD=<16-char app password, spaces stripped>
+DEFAULT_FROM_EMAIL=Flipfix <noreply@theflip.museum>
+EMAIL_TIMEOUT=10
+```
+
+#### 5. Verify
+
+Test locally first — the feedback loop is seconds instead of a redeploy. Put
+the same values in `.env` and run:
+
+```bash
+python manage.py send_test_email you@example.com
+```
+
+The command prints the resolved backend and host before sending, warns if it
+is still the console backend, and reports the result — so a typo in
+`EMAIL_HOST` surfaces immediately.
+
+Then set the Railway variables, redeploy, and send a real invitation to a
+personal address. **Check the spam folder specifically**: landing there is
+the usual sign of a missing DKIM record.
+
+### Gotchas
+
+- Port 587 means STARTTLS. Set `EMAIL_USE_TLS` **or** `EMAIL_USE_SSL`, never
+  both — Django raises on startup if both are true.
+- Google displays app passwords in four space-separated groups. Strip the
+  spaces.
+- A `550` on send usually means the `From` address is not in an allowed
+  domain. Check the relay's allowed-senders setting before suspecting the
+  password.
+- Google publishes per-day relay recipient caps; read the current numbers off
+  their limits page rather than trusting a figure written here. Invitation
+  volume will not come close either way.
+
+### Using a different provider
+
+Nothing above is Google-specific in the code. Resend, SendGrid and Postmark
+all speak plain SMTP, so switching is the same six variables pointed
+somewhere else, plus that provider's SPF and DKIM records.
+
+If delivery fails at invite time the maintainer is told so and shown the link
+to pass on by hand, so a misconfigured provider degrades rather than blocks.
+See [`Auth.md`](Auth.md) for why sending is synchronous.
 
 ## File Storage
 
