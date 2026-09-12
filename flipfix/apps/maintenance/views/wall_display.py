@@ -7,6 +7,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from django.db.models import F
+from django.http import HttpRequest
 from django.views.generic import TemplateView
 
 from flipfix.apps.catalog.models import Location, MachineInstance
@@ -16,16 +17,19 @@ from flipfix.apps.maintenance.models import ProblemReport
 
 @dataclass
 class NowPlayingColumn:
-    """A location's machines plus how many sub-columns it should occupy.
+    """A location's machines plus the space it should claim on the board.
 
-    `sub_columns` lets the outer flex container size each location
-    proportionally to its content, so a location with 30 machines gets
-    more horizontal space than one with 5.
+    The stylesheet sizes each location proportionally to its content so a
+    location with 30 machines gets more room than one with 5. Which measure
+    applies depends on orientation: `sub_columns` weights width in landscape
+    (locations side by side); `rows` weights height in portrait (locations
+    stacked), since every sub-column shares the same row count.
     """
 
     label: str
     items: list[MachineInstance]
     sub_columns: int
+    rows: int
 
 
 MIN_REFRESH_SECONDS = 10
@@ -34,18 +38,68 @@ MIN_PER_COLUMN = 1
 MAX_PER_COLUMN = 50
 
 
-class WallDisplayMode:
+class _ChoiceParam:
+    """An enumerated query-string option that falls back to a default.
+
+    Subclasses declare `PARAM` (the query-string key the setup form submits),
+    `CHOICES` (value/label pairs, in the order the form should offer them)
+    and `DEFAULT`. `normalize` keeps any board URL renderable no matter what
+    it carries.
+    """
+
+    PARAM: str
+    CHOICES: list[tuple[str, str]]
+    DEFAULT: str
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        if cls.DEFAULT not in {choice for choice, _ in cls.CHOICES}:
+            raise ValueError(f"{cls.__name__}.DEFAULT is not one of its CHOICES")
+
+    @classmethod
+    def normalize(cls, value: str | None) -> str:
+        valid = {choice for choice, _ in cls.CHOICES}
+        return value if value in valid else cls.DEFAULT
+
+    @classmethod
+    def from_request(cls, request: HttpRequest) -> str:
+        return cls.normalize(request.GET.get(cls.PARAM))
+
+
+class WallDisplayMode(_ChoiceParam):
     """The two display modes the wall board can render."""
 
+    PARAM = "mode"
     WORKSHOP = "workshop"
     NOW_PLAYING = "now-playing"
     CHOICES = [(WORKSHOP, "Workshop"), (NOW_PLAYING, "Now Playing")]
     DEFAULT = WORKSHOP
-    _VALID = {WORKSHOP, NOW_PLAYING}
 
-    @classmethod
-    def normalize(cls, value: str | None) -> str:
-        return value if value in cls._VALID else cls.DEFAULT
+
+class WallDisplayOrientation(_ChoiceParam):
+    """Whether Now Playing lays locations out side by side or stacked."""
+
+    PARAM = "orientation"
+    LANDSCAPE = "landscape"
+    PORTRAIT = "portrait"
+    CHOICES = [
+        (LANDSCAPE, "Landscape (locations side by side)"),
+        (PORTRAIT, "Portrait (locations stacked)"),
+    ]
+    DEFAULT = LANDSCAPE
+
+
+class WallDisplayLines(_ChoiceParam):
+    """How many lines a Now Playing row takes: model beside the name, or beneath it."""
+
+    PARAM = "lines"
+    ONE = "1"
+    TWO = "2"
+    CHOICES = [
+        (ONE, "One line"),
+        (TWO, "Two lines (model and year underneath)"),
+    ]
+    DEFAULT = ONE
 
 
 _MODE_CARD_TEMPLATE = {
@@ -72,9 +126,13 @@ class WallDisplaySetupView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["locations"] = Location.objects.all()
-        context["mode"] = WallDisplayMode.normalize(self.request.GET.get("mode"))
+        context["mode"] = WallDisplayMode.from_request(self.request)
         context["mode_choices"] = WallDisplayMode.CHOICES
         context["default_per_column"] = DEFAULT_PER_COLUMN
+        context["orientation"] = WallDisplayOrientation.from_request(self.request)
+        context["orientation_choices"] = WallDisplayOrientation.CHOICES
+        context["lines"] = WallDisplayLines.from_request(self.request)
+        context["lines_choices"] = WallDisplayLines.CHOICES
         return context
 
 
@@ -85,11 +143,13 @@ class WallDisplayBoardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        mode = WallDisplayMode.normalize(self.request.GET.get("mode"))
+        mode = WallDisplayMode.from_request(self.request)
         context["mode"] = mode
         context["card_template"] = _MODE_CARD_TEMPLATE[mode]
         context["empty_message"] = _MODE_EMPTY_MESSAGE[mode]
         context["page_title"] = _MODE_PAGE_TITLE[mode]
+        context["orientation"] = WallDisplayOrientation.from_request(self.request)
+        context["is_two_line"] = WallDisplayLines.from_request(self.request) == WallDisplayLines.TWO
 
         location_slugs = self.request.GET.getlist("location")
 
@@ -174,7 +234,10 @@ def _build_now_playing_columns(
     result = []
     for location in locations:
         items = by_location.get(location.pk, [])
-        # At least 1 so empty locations still claim a slice of horizontal space.
+        # At least 1 so empty locations still claim a slice of the board.
         sub_columns = max(1, math.ceil(len(items) / per_column))
-        result.append(NowPlayingColumn(label=location.name, items=items, sub_columns=sub_columns))
+        rows = max(1, min(len(items), per_column))
+        result.append(
+            NowPlayingColumn(label=location.name, items=items, sub_columns=sub_columns, rows=rows)
+        )
     return result

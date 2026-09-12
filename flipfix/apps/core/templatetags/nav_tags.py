@@ -34,6 +34,10 @@ def _is_superuser(user: AbstractUser | Any) -> bool:
     return user.is_superuser
 
 
+def _is_authenticated(user: AbstractUser | Any) -> bool:
+    return user.is_authenticated
+
+
 # ---- Nav item data ----------------------------------------------------------
 
 
@@ -63,11 +67,12 @@ class _NavItem:
 
 
 @dataclass(frozen=True)
-class _AdminNavItem:
-    """An admin navigation item. Uses exact url_name matching for active state.
+class _MenuItem:
+    """An item in a dropdown section (admin or account). Exact url_name match.
 
     ``visible_to`` is the predicate that decides whether this item appears
-    in the admin dropdown for a given user. Default is superuser-only.
+    for a given user. Default is superuser-only, which suits the admin
+    section; account items always say who sees them.
     """
 
     label: str
@@ -77,34 +82,34 @@ class _AdminNavItem:
     visible_to: _UserPredicate = _is_superuser
 
 
-ADMIN_NAV_ITEMS: tuple[_AdminNavItem, ...] = (
-    _AdminNavItem(label="Wall Display", url_name="wall-display-setup", icon="tv"),
-    _AdminNavItem(label="Terminals", url_name="terminal-list", icon="display"),
-    _AdminNavItem(
+ADMIN_NAV_ITEMS: tuple[_MenuItem, ...] = (
+    _MenuItem(label="Terminals", url_name="terminal-list", icon="display"),
+    _MenuItem(
         label="Locations",
         url_name="admin:catalog_location_changelist",
         icon="location-dot",
         track_active=False,
     ),
-    # The everyday "invite somebody" action lives in the user dropdown, not
-    # here: every maintainer has it, so it isn't an admin action. What stays
-    # in the admin menu is the forensic view of the whole chain.
-    _AdminNavItem(label="Invite Tree", url_name="invite-tree", icon="sitemap"),
-    _AdminNavItem(
+    # Everyday actions every maintainer has — inviting somebody, opening the
+    # wall display — live in the user dropdown, not here: they aren't admin
+    # actions. What stays in the admin menu for invites is the forensic view
+    # of the whole chain.
+    _MenuItem(label="Invite Tree", url_name="invite-tree", icon="sitemap"),
+    _MenuItem(
         label="QR Codes",
         url_name="machine-qr-bulk",
         icon="qrcode",
         visible_to=_can_manage_catalog,
     ),
-    _AdminNavItem(label="Labor Report", url_name="labor-report-weekly", icon="clock"),
-    _AdminNavItem(
+    _MenuItem(label="Labor Report", url_name="labor-report-weekly", icon="clock"),
+    _MenuItem(
         label="Owners",
         url_name="owner-list",
         icon="address-book",
         visible_to=_can_manage_catalog,
     ),
-    _AdminNavItem(label="Site Settings", url_name="site-settings", icon="gear"),
-    _AdminNavItem(
+    _MenuItem(label="Site Settings", url_name="site-settings", icon="gear"),
+    _MenuItem(
         label="Django Admin",
         url_name="admin:index",
         icon="toolbox",
@@ -157,6 +162,31 @@ MAIN_NAV_ITEMS: tuple[_NavItem, ...] = (
     ),
 )
 
+#: The account section: the avatar dropdown on desktop and the hamburger's
+#: account group on mobile render this same list, so an item can't become
+#: desktop-only by accident. Everyday actions every maintainer has belong
+#: here rather than in the admin menu.
+ACCOUNT_NAV_ITEMS: tuple[_MenuItem, ...] = (
+    _MenuItem(label="Account", url_name="profile", icon="gear", visible_to=_is_authenticated),
+    # Computed with the same predicate as the route gate — ``can_invite_users``
+    # also requires portal access, which the bare codename doesn't imply.
+    _MenuItem(
+        label="Invite People",
+        url_name="invite-list",
+        icon="user-plus",
+        visible_to=_can_invite_users,
+    ),
+    # The wall routes are public, so this is a portal-only nav affordance
+    # rather than a permission gate: guests reach the board by URL.
+    _MenuItem(
+        label="Wall Display",
+        url_name="wall-display-setup",
+        icon="tv",
+        visible_to=can_access_maintainer_portal,
+    ),
+)
+
+
 # ---- Helpers ----------------------------------------------------------------
 
 
@@ -200,8 +230,10 @@ def _resolve_nav_items(
     ]
 
 
-def _resolve_admin_items(url_name: str, user: AbstractUser | Any) -> list[dict[str, str | bool]]:
-    """Build admin item context dicts with active state resolved.
+def _resolve_menu_items(
+    items: tuple[_MenuItem, ...], url_name: str, user: AbstractUser | Any
+) -> list[dict[str, str | bool]]:
+    """Build menu item context dicts with active state resolved.
 
     Items are filtered by their ``visible_to`` predicate, so each user
     sees only the entries they have access to.
@@ -217,9 +249,17 @@ def _resolve_admin_items(url_name: str, user: AbstractUser | Any) -> list[dict[s
             "icon": item.icon,
             "is_active": item.track_active and url_name == item.url_name,
         }
-        for item in ADMIN_NAV_ITEMS
+        for item in items
         if item.visible_to(user)
     ]
+
+
+def _resolve_admin_items(url_name: str, user: AbstractUser | Any) -> list[dict[str, str | bool]]:
+    return _resolve_menu_items(ADMIN_NAV_ITEMS, url_name, user)
+
+
+def _resolve_account_items(url_name: str, user: AbstractUser | Any) -> list[dict[str, str | bool]]:
+    return _resolve_menu_items(ACCOUNT_NAV_ITEMS, url_name, user)
 
 
 def _get_url_name(context: dict) -> str:
@@ -293,15 +333,16 @@ def mobile_hamburger(context: dict) -> dict:
         url_name, user, public_only=not can_access_maintainer_portal(user)
     )
     admin_items = _resolve_admin_items(url_name, user)
+    account_items = _resolve_account_items(url_name, user)
 
     # The hamburger button lights up when the current page is:
     # - A non-bar nav item that's active (e.g. Docs/wiki)
     # - An admin item visible to this user that matches the current route
-    # - The profile page (only reachable via the hamburger)
+    # - An account-section page (only reachable via the hamburger)
     hamburger_active = (
         any(item["is_active"] for item in nav_items if not item["in_mobile_bar"])
         or any(item["is_active"] for item in admin_items)
-        or url_name == "profile"
+        or any(item["is_active"] for item in account_items)
     )
 
     return {
@@ -313,11 +354,7 @@ def mobile_hamburger(context: dict) -> dict:
         "hamburger_active": hamburger_active,
         "hamburger_active_for_logs": "log-" in url_name,
         "hamburger_active_for_parts": "part" in url_name,
-        "profile_active": url_name == "profile",
-        # Mirrors the desktop user dropdown. Both menus must carry it or the
-        # action becomes desktop-only, which is exactly what
-        # ``manage.py check_mobile_parity`` exists to catch.
-        "can_invite": _can_invite_users(user),
+        "account_items": account_items,
     }
 
 
@@ -334,8 +371,5 @@ def user_dropdown(context: dict) -> dict:
     return {
         "user": user,
         "perms": context.get("perms"),
-        # Computed rather than read off ``perms`` so the menu entry and the
-        # route gate use the same predicate — ``can_invite_users`` also
-        # requires portal access, which the bare codename doesn't imply.
-        "can_invite": _can_invite_users(user),
+        "account_items": _resolve_account_items(_get_url_name(context), user),
     }

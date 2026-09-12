@@ -14,6 +14,7 @@ from flipfix.apps.core.templatetags.nav_tags import (
     MAIN_NAV_ITEMS,
     _get_url_name,
     _is_active,
+    _resolve_account_items,
     _resolve_admin_items,
     _resolve_nav_items,
 )
@@ -208,10 +209,10 @@ class ResolveAdminItemsTests(TestCase):
         self.assertEqual(len(result), len(ADMIN_NAV_ITEMS))
 
     def test_tracked_item_active(self):
-        """Wall Display is active when on its route."""
-        result = _resolve_admin_items("wall-display-setup", self.superuser)
-        wall = next(item for item in result if item["label"] == "Wall Display")
-        self.assertTrue(wall["is_active"])
+        """Labor Report is active when on its route."""
+        result = _resolve_admin_items("labor-report-weekly", self.superuser)
+        labor = next(item for item in result if item["label"] == "Labor Report")
+        self.assertTrue(labor["is_active"])
 
     def test_untracked_item_never_active(self):
         """Locations never shows as active (track_active=False)."""
@@ -303,7 +304,7 @@ class DesktopNavRenderTests(TestCase):
         request = _make_request("", user=superuser)
         html = _render_tag("{% desktop_nav %}", request)
         self.assertIn("Admin", html)
-        self.assertIn("Wall Display", html)
+        self.assertIn("Site Settings", html)
 
     def test_admin_button_active_on_admin_route(self):
         """Admin dropdown button gets nav-link--active on admin routes."""
@@ -323,7 +324,8 @@ class DesktopNavRenderTests(TestCase):
         """Regular maintainer does not see admin dropdown."""
         request = _make_request("", user=self.user)
         html = _render_tag("{% desktop_nav %}", request)
-        self.assertNotIn("Wall Display", html)
+        self.assertNotIn("Site Settings", html)
+        self.assertNotIn("dropdown__toggle", html)
 
     def test_public_nav_without_permission(self):
         """Non-maintainer user sees public nav items only."""
@@ -436,7 +438,7 @@ class MobileHamburgerRenderTests(TestCase):
     def test_hamburger_button_active_for_admin_route_visible_to_user(self):
         """Superuser on an admin-only route highlights the hamburger button."""
         superuser = create_superuser(username="hamburger_admin_route")
-        request = _make_request("wall-display-setup", user=superuser)
+        request = _make_request("labor-report-weekly", user=superuser)
         html = _render_tag("{% mobile_hamburger %}", request)
         self.assertIn("nav-priority__menu-btn--active", html)
 
@@ -457,14 +459,33 @@ class MobileHamburgerRenderTests(TestCase):
         superuser = create_superuser(username="hamburgeradmin")
         request = _make_request("", user=superuser)
         html = _render_tag("{% mobile_hamburger %}", request)
-        self.assertIn("Wall Display", html)
+        self.assertIn("Labor Report", html)
         self.assertIn("Django Admin", html)
 
     def test_no_admin_for_regular_maintainer(self):
         """Regular maintainer does not see admin section."""
         request = _make_request("", user=self.user)
         html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertNotIn("Django Admin", html)
+        self.assertNotIn('nav-priority__dropdown-heading">Admin', html)
+
+    def test_wall_display_in_account_section_for_regular_maintainer(self):
+        """Wall Display is an everyday tool, so every maintainer gets it in the hamburger."""
+        request = _make_request("", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertIn("Wall Display", html)
+
+    def test_wall_display_hidden_from_non_portal_user(self):
+        """A logged-in user without portal access does not get the Wall Display link."""
+        request = _make_request("", user=create_user(username="hamburger_nonportal"))
+        html = _render_tag("{% mobile_hamburger %}", request)
         self.assertNotIn("Wall Display", html)
+
+    def test_hamburger_button_active_for_wall_display_setup(self):
+        """Hamburger button lights up on the wall display setup page (only reachable via the menu)."""
+        request = _make_request("wall-display-setup", user=self.user)
+        html = _render_tag("{% mobile_hamburger %}", request)
+        self.assertIn("nav-priority__menu-btn--active", html)
 
     def test_logout_form_has_csrf(self):
         """Logout form has a CSRF token hidden input."""
@@ -522,6 +543,48 @@ class UserDropdownRenderTests(TestCase):
         html = _render_tag("{% user_dropdown %}", request)
         self.assertIn("avatar-dropdown--mobile-hidden", html)
 
+    def test_wall_display_for_maintainer(self):
+        """Every maintainer gets the Wall Display link; it is not an admin action."""
+        user = create_maintainer_user(username="walldroptest")
+        request = _make_request("", user=user)
+        html = _render_tag("{% user_dropdown %}", request)
+        self.assertIn("Wall Display", html)
+
+    def test_wall_display_hidden_from_non_portal_user(self):
+        """A logged-in user without portal access does not get the Wall Display link."""
+        request = _make_request("", user=create_user(username="walldrop_nonportal"))
+        html = _render_tag("{% user_dropdown %}", request)
+        self.assertNotIn("Wall Display", html)
+
+    def test_current_account_page_is_marked_selected(self):
+        """The desktop menu marks the page you are on, like the hamburger does."""
+        user = create_maintainer_user(username="walldrop_active")
+        request = _make_request("wall-display-setup", user=user)
+        html = _render_tag("{% user_dropdown %}", request)
+        self.assertIn("dropdown__item--selected", html)
+        self.assertIn('aria-current="page"', html)
+
+
+@tag("unit")
+class ResolveAccountItemsTests(TestCase):
+    """Tests for the _resolve_account_items helper behind both account menus."""
+
+    def test_maintainer_sees_every_account_item(self):
+        """A plain maintainer gets Account, Invite People and Wall Display."""
+        labels = [item["label"] for item in _resolve_account_items("", create_maintainer_user())]
+        self.assertEqual(labels, ["Account", "Invite People", "Wall Display"])
+
+    def test_non_portal_user_sees_only_account(self):
+        """A logged-in user without portal access keeps only the profile link."""
+        labels = [item["label"] for item in _resolve_account_items("", create_user())]
+        self.assertEqual(labels, ["Account"])
+
+    def test_active_state_matches_current_route(self):
+        """Exactly the item for the current route is active."""
+        items = _resolve_account_items("wall-display-setup", create_maintainer_user())
+        active = [item["label"] for item in items if item["is_active"]]
+        self.assertEqual(active, ["Wall Display"])
+
 
 # =============================================================================
 # Catalog Managers group: nav visibility boundary
@@ -530,7 +593,6 @@ class UserDropdownRenderTests(TestCase):
 
 _CATALOG_MANAGER_ITEMS = ("QR Codes", "Owners")
 _SUPERUSER_ONLY_ITEMS = (
-    "Wall Display",
     "Terminals",
     "Locations",
     "Invite User",

@@ -10,7 +10,8 @@
       }
       {% for column in columns %}
       .wall-display--now-playing .now-playing-location:nth-of-type({{ forloop.counter }}) {
-        flex-grow: {{ column.sub_columns }};
+        --location-sub-columns: {{ column.sub_columns }};
+        --location-rows: {{ column.rows }};
       }
       {% endfor %}
 </style>
@@ -23,7 +24,7 @@
       <p class="text-muted text-center">{{ error }}</p>
     </div>
   {% elif mode == "now-playing" %}
-    <div class="column-grid wall-display wall-display--now-playing">
+    <div class="column-grid wall-display wall-display--now-playing wall-display--{{ orientation }}{% if is_two_line %} wall-display--two-line{% endif %}">
       {% for column in columns %}
         <div class="now-playing-location">
           <h2 class="column-grid__header">{{ column.label }}</h2>

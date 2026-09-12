@@ -31,14 +31,14 @@ These live in `flipfix/apps/core/templatetags/` and are loaded as `{% load <name
 
 Defines main nav items as data and renders each navigation variant with pre-computed active states.
 
-| Component             | Type          | Description                                     |
-| --------------------- | ------------- | ----------------------------------------------- |
-| `desktop_nav`         | Inclusion tag | Desktop horizontal nav bar (md+ breakpoints)    |
-| `mobile_priority_bar` | Inclusion tag | Mobile priority+ bar with icons                 |
-| `mobile_hamburger`    | Inclusion tag | Mobile hamburger dropdown with all sections     |
-| `user_dropdown`       | Inclusion tag | Desktop avatar dropdown with account and logout |
+| Component             | Type          | Description                                                                                |
+| --------------------- | ------------- | ------------------------------------------------------------------------------------------ |
+| `desktop_nav`         | Inclusion tag | Desktop horizontal nav bar (md+ breakpoints)                                               |
+| `mobile_priority_bar` | Inclusion tag | Mobile priority+ bar with icons                                                            |
+| `mobile_hamburger`    | Inclusion tag | Mobile hamburger dropdown with all sections; its account group mirrors `user_dropdown`     |
+| `user_dropdown`       | Inclusion tag | Desktop avatar dropdown: account, everyday maintainer tools (invite, wall display), logout |
 
-Also exports `MAIN_NAV_ITEMS` (tuple of `_NavItem` dataclasses), `ADMIN_NAV_ITEMS` (tuple of `_AdminNavItem` dataclasses for the admin section of the hamburger menu), and `_is_active()` helper for testing. Navigation components automatically filter to public-accessible pages for unauthenticated users, using the URL name registry from `flipfix.apps.core.routing`. No template changes are needed — the filtering is internal to the tag.
+Also exports `MAIN_NAV_ITEMS` (tuple of `_NavItem` dataclasses), `ADMIN_NAV_ITEMS` and `ACCOUNT_NAV_ITEMS` (tuples of `_MenuItem` dataclasses for the admin section and the account section — the latter is rendered by both `user_dropdown` and the hamburger, so adding an item there reaches desktop and mobile at once), and `_is_active()` helper for testing. Navigation components automatically filter to public-accessible pages for unauthenticated users, using the URL name registry from `flipfix.apps.core.routing`. No template changes are needed — the filtering is internal to the tag.
 
 #### `ui_tags` — Atomic UI primitives
 
