@@ -7,6 +7,7 @@ JavaScript modules are tested with [Vitest](https://vitest.dev/). Tests run in N
 ## Setup
 
 ```bash
+nvm use                  # Node version is pinned in .nvmrc (CI reads the same file)
 npm install              # One-time: installs vitest
 make test-js             # Run JS tests
 ```
