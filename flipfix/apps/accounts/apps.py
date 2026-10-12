@@ -9,7 +9,7 @@ class AccountsConfig(AppConfig):
     def ready(self) -> None:
         from flipfix.apps.core.models import register_media_model
 
-        from . import signals  # noqa: F401
+        from . import checks, signals  # noqa: F401
         from .models import MaintainerMedia
 
         register_media_model(MaintainerMedia)

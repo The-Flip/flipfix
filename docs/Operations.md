@@ -124,8 +124,15 @@ creates/refreshes this dev superuser; override with `DEV_SUPERUSER` /
 Invitation delivery is the only thing in Flipfix that sends email. It is
 configured entirely through environment variables and defaults to Django's
 console backend, so with nothing set the app still works — invitations are
-created and their links are shareable, and the "email" is written to the
-service log.
+created and their links are shareable.
+
+With a backend that doesn't deliver (`NON_DELIVERING_BACKENDS` in
+`accounts/emails.py`), nothing is
+sent and the inviter is told "Email isn't set up on this server" alongside the
+link. In a non-`DEBUG` environment the system check `accounts.W001` also
+flags it; that warning appears in the deploy log because the start command
+runs `migrate`. It is a warning, not an error, so a missing email setting
+never blocks a deploy — check for it after configuring a new environment.
 
 ### Variables
 
@@ -231,7 +238,7 @@ python manage.py send_test_email you@example.com
 ```
 
 The command prints the resolved backend and host before sending, warns if it
-is still the console backend, and reports the result — so a typo in
+is a backend that does not deliver, and reports the result — so a typo in
 `EMAIL_HOST` surfaces immediately.
 
 Then set the Railway variables, redeploy, and send a real invitation to a
