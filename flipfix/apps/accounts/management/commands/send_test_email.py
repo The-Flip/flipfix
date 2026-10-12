@@ -24,6 +24,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self._report_config()
+        if not backend_delivers_mail():
+            raise CommandError(
+                "✗ This backend does not deliver mail, so nothing was sent. "
+                "Set EMAIL_BACKEND and the EMAIL_HOST_* variables to send for real."
+            )
         self._send(options["recipient"])
 
     def _report_config(self):
@@ -32,13 +37,6 @@ class Command(BaseCommand):
         self.stdout.write(f"Host:      {settings.EMAIL_HOST or '(unset)'}:{settings.EMAIL_PORT}")
         self.stdout.write(f"TLS:       {settings.EMAIL_USE_TLS}")
         self.stdout.write(f"From:      {settings.DEFAULT_FROM_EMAIL}")
-        if not backend_delivers_mail():
-            self.stdout.write(
-                self.style.WARNING(
-                    "⚠ This backend does not deliver mail — nothing will reach the recipient. "
-                    "Set EMAIL_BACKEND and the EMAIL_HOST_* variables to send for real."
-                )
-            )
 
     def _send(self, recipient: str):
         try:

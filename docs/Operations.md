@@ -237,9 +237,9 @@ the same values in `.env` and run:
 python manage.py send_test_email you@example.com
 ```
 
-The command prints the resolved backend and host before sending, warns if it
-is a backend that does not deliver, and reports the result — so a typo in
-`EMAIL_HOST` surfaces immediately.
+The command prints the resolved backend and host before sending, fails
+without sending if the backend does not deliver, and reports the result — so
+a typo in `EMAIL_HOST` surfaces immediately.
 
 Then set the Railway variables, redeploy, and send a real invitation to a
 personal address. **Check the spam folder specifically**: landing there is
