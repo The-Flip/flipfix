@@ -11,7 +11,7 @@ it; one more copy of the same three lines would be worse.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, assert_never, cast
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView, FormView, ListView, TemplateView
 
-from ..emails import build_registration_url, send_invitation_email
+from ..emails import SendOutcome, build_registration_url, send_invitation_email
 from ..forms import InvitationForm
 from ..invite_chain import build_chain, descendant_users
 from ..models import INVITATION_TTL, Invitation
@@ -32,6 +32,8 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User as UserType
 
 User = cast("type[UserType]", get_user_model())
+
+COPY_LINK_FALLBACK = "The invitation is ready — copy the link below and send it to them yourself."
 
 
 class CanInviteUsersMixin:
@@ -110,7 +112,7 @@ class InviteCreateView(CanInviteUsersMixin, FormView):
             # rather than putting a second valid token into the world.
             messages.info(
                 self.request,
-                f"{email} already had an invitation waiting, so we sent that one again.",
+                f"{email} already had an invitation waiting, so we reused its link.",
             )
         _send_and_report(self.request, invitation)
         return redirect(invitation.get_absolute_url())
@@ -241,16 +243,24 @@ class InviteSubtreePruneView(View):
 def _send_and_report(request, invitation: Invitation) -> None:
     """Send the invitation email and tell the inviter what happened.
 
-    A failed send is reported, not raised: the invitation exists either way
-    and the detail page we're about to redirect to carries the link.
+    Only a real delivery stamps ``last_sent_at``. A failed send and a server
+    with no delivering backend are both reported, not raised: the invitation
+    exists either way and the detail page we're about to redirect to carries
+    the link.
     """
-    if send_invitation_email(invitation, request):
-        invitation.last_sent_at = timezone.now()
-        invitation.save(update_fields=["last_sent_at", "updated_at"])
-        messages.success(request, f"Invitation emailed to {invitation.email}.")
-    else:
-        messages.warning(
-            request,
-            f"We couldn't email {invitation.email}. The invitation is ready — "
-            f"copy the link below and send it to them yourself.",
-        )
+    outcome = send_invitation_email(invitation, request)
+    match outcome:
+        case SendOutcome.SENT:
+            invitation.last_sent_at = timezone.now()
+            invitation.save(update_fields=["last_sent_at", "updated_at"])
+            messages.success(request, f"Invitation emailed to {invitation.email}.")
+        case SendOutcome.FAILED:
+            messages.warning(request, f"We couldn't email {invitation.email}. {COPY_LINK_FALLBACK}")
+        case SendOutcome.NOT_CONFIGURED:
+            messages.warning(
+                request,
+                f"Email isn't set up on this server, so nothing was sent to "
+                f"{invitation.email}. {COPY_LINK_FALLBACK}",
+            )
+        case _:
+            assert_never(outcome)

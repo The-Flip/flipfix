@@ -136,8 +136,9 @@ LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
 # Email. Everything is env-driven and the default backend writes to the
-# console, so the app runs identically with no provider configured: invites
-# are still created and their links still shareable. Point EMAIL_BACKEND at
+# console, so the app runs with no provider configured: invites are still
+# created and their links still shareable, and the inviter is told nothing was
+# emailed. Outside DEBUG, system check accounts.W001 flags it. Point EMAIL_BACKEND at
 # django.core.mail.backends.smtp.EmailBackend and fill in the host settings
 # to start delivering for real — no code change needed. See docs/Operations.md.
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")

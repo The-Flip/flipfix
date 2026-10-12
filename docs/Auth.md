@@ -164,7 +164,9 @@ volunteer in a worker log. It also means invites work in development without
 
 Delivery is configured entirely by environment variables and defaults to
 Django's console backend, so the feature works with no provider configured —
-the link is still created and shareable. See
+the link is still created and shareable. A backend that doesn't deliver is
+never reported as a successful send: the inviter is told email isn't set up,
+and `last_sent_at` stays empty. See
 [`Operations.md`](Operations.md) for provider setup and
 `manage.py send_test_email`.
 

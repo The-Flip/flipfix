@@ -80,6 +80,12 @@ class Color(StrEnum):
 
 **Prefer registries over enums for extensible type sets.** When the set of values grows as new features are added (e.g., record types, feed entry types), use a registry pattern instead of an enum. Enums require editing a central file every time a new type is added; registries let each app register its own types in `AppConfig.ready()`. See `core/feed.py` (feed sources), `core/markdown_links.py` (link types), and `discord/bot_handlers/` (bot record handlers) for examples.
 
+## System Checks
+
+Flag deployment misconfiguration with a [Django system check](https://docs.djangoproject.com/en/5.2/topics/checks/) instead of failing at request time. Put checks in the app's `checks.py`, register them with `@checks.register()`, and import the module in `AppConfig.ready()` (as with `signals`). Use IDs of the form `<app>.W001`.
+
+Prefer `Warning` over `Error`: the deploy start command runs `migrate`, which runs checks, so an `Error` blocks the deploy. Reserve `Error` for settings the app cannot run without. See `accounts/checks.py`.
+
 ## Constants
 
 Extract module-level constants for timeout values, default configuration, prompts, or sets of valid values:
