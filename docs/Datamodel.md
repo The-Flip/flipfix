@@ -33,6 +33,7 @@ erDiagram
     %% ── Wiki ──
     WikiPage ||--o{ WikiPageTag : "tagged as"
     WikiPage ||--o{ TemplateOptionIndex : "indexed as"
+    WikiMedia }o--o{ WikiPage : "embedded in"
 ```
 
 **Notes:**
@@ -42,7 +43,7 @@ erDiagram
 - `WikiTagOrder`, `RecordReference`, and `DiscordMessageMapping` are standalone or use polymorphic links (ContentType GFKs) and are not shown above.
 - `Invitation` is omitted too: its two foreign keys point at `User` rather than at the domain models the diagram covers. See its section below for the chain.
 - Audit fields (`created_by`, `updated_by`, `created_at`, `updated_at`) are omitted — most models with these have nullable FKs to `User`.
-- All media models inherit from `AbstractMedia` and share the same structure (media_type, file, thumbnail, transcode status, etc.).
+- All media models inherit from `AbstractMedia` and share the same structure (media_type, file, thumbnail, transcode status, etc.). `WikiMedia` is the exception: it belongs to many pages, so it is a standalone model (and is images-only for now).
 
 ## Accounts app
 
@@ -154,6 +155,16 @@ A wiki page with markdown content. Pages are identified by slug derived from tit
 ### Wiki Page Tag ([`WikiPageTag`](../flipfix/apps/wiki/models.py))
 
 Places a wiki page in the navigation tree. A page can have multiple tags, appearing in multiple locations. The empty string tag is a sentinel for untagged pages.
+
+### Wiki Media ([`WikiMedia`](../flipfix/apps/wiki/models.py))
+
+A media file embedded in wiki page markdown, currently images only, uploaded from the editor by pasting, dragging, or the "Add image" button. Markdown references it by a stable app URL, `![alt](/wiki/media/<pk>/)`, which redirects to the stored file, so stored content doesn't depend on the storage backend.
+
+Lifecycle (see [`wiki/media.py`](../flipfix/apps/wiki/media.py)):
+
+- **Upload** stores a copy resized for the web. An upload from the edit page links it to that page right away (and it stays linked even if the edit is abandoned); one from the create page has no page until the page is saved.
+- **Page save** (full form or inline edit) adds every page whose content references the image to `pages`. Links are only ever added: editing an image out of a page keeps the link, so earlier revisions of the page still render.
+- **Deletion** happens only in the daily `delete-orphaned-wiki-media` sweep, which removes media no page links to that was uploaded more than 7 days ago, along with its files. Deleting a page just drops its links, so an image shared with another page survives; media whose last page is deleted goes in the next sweep. As a safety net, the sweep links rather than deletes media that some page's current content still embeds.
 
 ### Wiki Tag Order ([`WikiTagOrder`](../flipfix/apps/wiki/models.py))
 

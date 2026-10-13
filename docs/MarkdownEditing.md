@@ -56,6 +56,18 @@ Bold and italic are toggles: if the selection is already wrapped, the shortcut u
 
 Select some text, then paste a URL starting with `http://` or `https://` from your clipboard. Instead of replacing the text, it wraps it as a markdown link: `[selected text](pasted-url)`.
 
+## Adding Images (Docs only)
+
+In the Docs editor you can add images three ways: paste one (e.g. a screenshot), drag one onto the text box, or use the **Add image** button below it.
+
+- While an image uploads, a placeholder like `![Uploading photo.jpg…](uploading-…)` holds its place on a new line after the cursor's line. When the upload finishes it becomes `![photo](/wiki/media/42/)` with the alt text selected, so you can type a description over it.
+- If the upload fails, the placeholder is removed and an error appears at the top of the page.
+- Saving is blocked, with a message, until every upload has finished.
+- Images up to 25MB; HEIC photos are converted to JPEG. Videos aren't supported yet.
+- The detail page's inline editor doesn't offer uploads, but image lines pasted there still work.
+
+How the files are stored and cleaned up is described under `WikiMedia` in [Datamodel.md](Datamodel.md). To offer uploads on another form, see [Forms.md](Forms.md#inline-image-uploads).
+
 ## List Enter Continuation
 
 When the cursor is on a list item and you press Enter, it creates the next list item:

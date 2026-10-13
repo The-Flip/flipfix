@@ -55,7 +55,7 @@ Always use `defer` when including scripts:
 <script src="{% static 'core/my_script.js' %}" defer></script>
 ```
 
-**Load order matters** when one module calls a global from another. For example, `dropdown_keyboard.js` must load before `link_autocomplete.js` because the latter calls `window.attachDropdownKeyboard`. The script partials in `templates/core/partials/` enforce correct ordering.
+**Load order matters** when one module calls a global from another. For example, `dropdown_keyboard.js` must load before `link_autocomplete.js` because the latter calls `window.attachDropdownKeyboard`. The script partials in `templates/core/partials/` enforce correct ordering. Modules that call `core.js` globals (`applyTextareaEdit`, `getCsrfToken`, `showMessage`) rely on `core.js` loading first, which `base_minimal_auth.html` guarantees for every page.
 
 ## Cross-Module Communication
 
@@ -128,11 +128,11 @@ All JavaScript files are in `flipfix/static/core/`.
 
 ### Core
 
-| File                    | Purpose                                                                          |
-| ----------------------- | -------------------------------------------------------------------------------- |
-| core.js                 | Utilities, dropdowns, clickable cards, smart dates, timeline injection           |
-| settable_pill.js        | Shared AJAX handler for all settable dropdown pills (status, priority, location) |
-| machine_pill_effects.js | Machine pill:updated side effects (toasts, mobile button sync, confetti)         |
+| File                    | Purpose                                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| core.js                 | Utilities, dropdowns, clickable cards, smart dates, timeline injection, `applyTextareaEdit` (undo-safe textarea edits) |
+| settable_pill.js        | Shared AJAX handler for all settable dropdown pills (status, priority, location)                                       |
+| machine_pill_effects.js | Machine pill:updated side effects (toasts, mobile button sync, confetti)                                               |
 
 ### Autocomplete
 
@@ -154,13 +154,14 @@ All JavaScript files are in `flipfix/static/core/`.
 
 ### Inline Editing
 
-| File                  | Purpose                                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| text_edit.js          | Inline text editing with markdown preview                                                       |
-| markdown_shortcuts.js | Smart wrapping, Cmd+B/I/K, Tab indent, task list Enter on `[data-markdown-shortcuts]` textareas |
-| checkbox_toggle.js    | Interactive task list checkboxes on `[data-text-card]` detail pages                             |
-| save_status.js        | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events                   |
-| sidebar_card_edit.js  | Sidebar dropdown editing (machine, problem)                                                     |
+| File                     | Purpose                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| text_edit.js             | Inline text editing with markdown preview                                                               |
+| markdown_shortcuts.js    | Smart wrapping, Cmd+B/I/K, Tab indent, task list Enter on `[data-markdown-shortcuts]` textareas         |
+| markdown_image_upload.js | Paste, drop, or pick images into `[data-image-upload-url]` textareas; uploads and inserts `![alt](url)` |
+| checkbox_toggle.js       | Interactive task list checkboxes on `[data-text-card]` detail pages                                     |
+| save_status.js           | Page-level "Saving…/Saved/Error" indicator via `save:start`/`save:end` events                           |
+| sidebar_card_edit.js     | Sidebar dropdown editing (machine, problem)                                                             |
 
 ### Utilities
 

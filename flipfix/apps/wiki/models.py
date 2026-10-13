@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F
+from django.urls import reverse
 from django.utils.text import slugify
 from simple_history.models import HistoricalRecords
 
@@ -193,3 +196,59 @@ class TemplateOptionIndex(models.Model):
 
     def __str__(self) -> str:
         return f"{self.label} ({self.record_type})"
+
+
+def wiki_media_upload_to(instance: WikiMedia, filename: str) -> str:
+    """Generate upload path for wiki media.
+
+    The path has no page id: media can be uploaded before its page exists,
+    and can belong to several pages.
+    """
+    return f"wiki/{uuid4()}-{filename}"
+
+
+class WikiMediaQuerySet(models.QuerySet):
+    """Custom queryset for WikiMedia."""
+
+    def orphaned(self, *, uploaded_before):
+        """Media no page references, uploaded before the given cutoff.
+
+        The cutoff gives a page being created time to be saved before its
+        not-yet-linked uploads count as orphans.
+        """
+        return self.filter(pages__isnull=True, created_at__lt=uploaded_before)
+
+
+class WikiMedia(TimeStampedMixin):
+    """A media file embedded in wiki page markdown. Images only, so far.
+
+    Markdown references it by a stable app URL (``/wiki/media/<pk>/``), not
+    by storage path. ``pages`` holds every page whose content has *ever*
+    referenced it: references are only added, never removed on edit, so
+    older page revisions keep rendering. It is deleted by the orphan sweep
+    once none of those pages still exists.
+    """
+
+    file = models.FileField(upload_to=wiki_media_upload_to)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    pages = models.ManyToManyField(WikiPage, related_name="media", blank=True)
+
+    objects = WikiMediaQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "wiki media"
+        verbose_name_plural = "wiki media"
+
+    def __str__(self) -> str:
+        return f"Wiki media {self.pk}"
+
+    def get_absolute_url(self) -> str:
+        """The stable URL markdown embeds; it redirects to the stored file."""
+        return reverse("wiki-media", kwargs={"pk": self.pk})

@@ -27,12 +27,29 @@
         {% template_selector_field record_type="page" %}
       {% endif %}
       {% form_field form.content %}
+      <div class="image-upload-controls">
+        <button type="button"
+                class="btn btn--secondary btn--sm"
+                data-image-upload-button="{{ form.content.id_for_label }}">
+          {% icon "image" class="meta" %}
+          Add image
+        </button>
+        <input type="file"
+               class="hidden"
+               accept="{% media_accept photos_only=True %}"
+               multiple
+               tabindex="-1"
+               aria-hidden="true"
+               data-image-upload-input="{{ form.content.id_for_label }}">
+        <span class="form-hint">You can also paste or drag images into the content.</span>
+      </div>
       <div class="form-actions">{% include "wiki/partials/page_form_actions.html" %}</div>
     </form>
   </div>
 {% endblock %}
 {% block extra_scripts %}
   {% include "core/partials/markdown_textarea_scripts.html" %}
+  <script src="{% static 'core/markdown_image_upload.js' %}" defer></script>
   <script src="{% static 'core/tag_chip_input.js' %}" defer></script>
   <script src="{% static 'core/template_selector.js' %}" defer></script>
 {% endblock %}

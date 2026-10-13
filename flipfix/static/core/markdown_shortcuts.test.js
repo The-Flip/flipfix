@@ -540,6 +540,7 @@ async function createDom(textareaContent) {
   const path = await import('path');
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const coreContent = fs.readFileSync(path.join(__dirname, 'core.js'), 'utf8');
   const scriptContent = fs.readFileSync(path.join(__dirname, 'markdown_shortcuts.js'), 'utf8');
 
   const dom = new JSDOM(
@@ -554,6 +555,10 @@ async function createDom(textareaContent) {
   const polyfill = doc.createElement('script');
   polyfill.textContent = 'document.execCommand = function() { return false; };';
   doc.head.appendChild(polyfill);
+
+  const core = doc.createElement('script');
+  core.textContent = coreContent;
+  doc.head.appendChild(core);
 
   const script = doc.createElement('script');
   script.textContent = scriptContent;

@@ -78,6 +78,10 @@ Templates using this widget must include the companion scripts partial:
 {% include "core/partials/markdown_textarea_scripts.html" %}
 ```
 
+### Inline image uploads
+
+Markdown textareas can also accept pasted, dropped, or picked images (`markdown_image_upload.js`; user-facing behavior in [MarkdownEditing.md](MarkdownEditing.md#adding-images-docs-only)). It's opt-in per form, because each record type needs an upload endpoint that decides where its media lives. To opt in, set `data-image-upload-url` (and optionally `data-image-upload-page`) on the textarea and render the button and file input next to it. The endpoint contract is in the module's header comment. Only wiki pages use it today (`WikiPageForm`, `templates/wiki/page_form.html`).
+
 ## Rendering Forms in Templates
 
 The project uses two approaches for rendering form fields:
