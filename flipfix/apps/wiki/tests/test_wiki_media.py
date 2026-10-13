@@ -25,7 +25,7 @@ from flipfix.apps.wiki.media import (
     media_markdown,
     referenced_media_ids,
 )
-from flipfix.apps.wiki.models import WikiMedia, WikiPage
+from flipfix.apps.wiki.models import WikiMedia, WikiPage, wiki_media_upload_to
 from flipfix.apps.wiki.tasks import delete_orphaned_wiki_media
 
 
@@ -249,6 +249,24 @@ class WikiMediaHelperTests(TestCase):
         )
 
         self.assertEqual(referenced_media_ids(content), {3, 12})
+
+    def test_storage_name_fits_the_file_field(self):
+        """Overlong client file names (stem or extension) are bounded for storage.
+
+        Django's storage can shorten a long stem but not an extension, so an
+        unbounded name could raise SuspiciousFileOperation on save.
+        """
+        max_length = WikiMedia._meta.get_field("file").max_length
+
+        for name in (f"{'s' * 300}.jpg", f"photo.{'e' * 200}", "Belt Drive (1).JPG"):
+            with self.subTest(name=name[:20]):
+                path = wiki_media_upload_to(WikiMedia(), name)
+                self.assertLessEqual(len(path), max_length)
+                self.assertTrue(path.startswith("wiki/"))
+
+        self.assertTrue(
+            wiki_media_upload_to(WikiMedia(), "Belt Drive (1).JPG").endswith("-belt-drive-1.jpg")
+        )
 
     def test_alt_text_from_filename(self):
         """File names become readable alt text."""

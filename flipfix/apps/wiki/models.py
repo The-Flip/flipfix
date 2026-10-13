@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from uuid import uuid4
 
 from django.conf import settings
@@ -202,9 +203,14 @@ def wiki_media_upload_to(instance: WikiMedia, filename: str) -> str:
     """Generate upload path for wiki media.
 
     The path has no page id: media can be uploaded before its page exists,
-    and can belong to several pages.
+    and can belong to several pages. The client's file name is slugified and
+    bounded so the path always fits the FileField (storage can shorten a long
+    stem, but an overlong extension would make the save fail).
     """
-    return f"wiki/{uuid4()}-{filename}"
+    path = Path(filename)
+    stem = slugify(path.stem)[:40] or "file"
+    ext = path.suffix.lower()[:10]
+    return f"wiki/{uuid4()}-{stem}{ext}"
 
 
 class WikiMediaQuerySet(models.QuerySet):
