@@ -44,13 +44,14 @@ Also exports `MAIN_NAV_ITEMS` (tuple of `_NavItem` dataclasses), `ADMIN_NAV_ITEM
 
 No domain knowledge. Used on every page type.
 
-| Component    | Type          | Description                                                                   |
-| ------------ | ------------- | ----------------------------------------------------------------------------- |
-| `icon`       | Simple tag    | Font Awesome icon with auto `aria-hidden`. Options: `class`, `label`, `style` |
-| `pill`       | Inclusion tag | Status pill/badge with variant styling                                        |
-| `smart_date` | Filter        | Render timestamp as `<time>` element for JS formatting                        |
-| `month_name` | Filter        | Convert month number (1-12) to name                                           |
-| `addstr`     | Filter        | Concatenate two values as strings                                             |
+| Component      | Type          | Description                                                                   |
+| -------------- | ------------- | ----------------------------------------------------------------------------- |
+| `icon`         | Simple tag    | Font Awesome icon with auto `aria-hidden`. Options: `class`, `label`, `style` |
+| `pill`         | Inclusion tag | Status pill/badge with variant styling                                        |
+| `smart_date`   | Filter        | Render timestamp as `<time>` element for JS formatting                        |
+| `month_name`   | Filter        | Convert month number (1-12) to name                                           |
+| `addstr`       | Filter        | Concatenate two values as strings                                             |
+| `media_accept` | Simple tag    | `accept` attribute for media file inputs; `photos_only=True` omits video      |
 
 Also exports `_settable_pill_context()`, a helper function used by app-level settable pill tags.
 

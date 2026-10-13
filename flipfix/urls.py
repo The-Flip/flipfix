@@ -118,6 +118,8 @@ from flipfix.apps.parts.views.part_requests import (
 )
 from flipfix.apps.wiki.views import (
     WikiHomeView,
+    WikiMediaUploadView,
+    WikiMediaView,
     WikiPageCreateView,
     WikiPageDeleteView,
     WikiPageDetailView,
@@ -637,6 +639,8 @@ urlpatterns = [
         WikiTemplatePrefillView.as_view(),
         name="wiki-template-prefill",
     ),
+    # Wiki media: stable URL embedded in markdown, redirects to the stored file
+    path("wiki/media/<int:pk>/", WikiMediaView.as_view(), name="wiki-media"),
     # Wiki page detail (shorter URL, not under /wiki/)
     path("doc/<path:path>", WikiPageDetailView.as_view(), name="wiki-page-detail"),
     # 301 redirect: old /wiki/doc/ → new /doc/
@@ -650,6 +654,12 @@ urlpatterns = [
     path("wiki/delete/<path:path>", WikiPageDeleteView.as_view(), name="wiki-page-delete"),
     # AJAX: wiki tag autocomplete
     path("api/wiki/tags/", WikiTagAutocompleteView.as_view(), name="api-wiki-tag-autocomplete"),
+    # AJAX: upload media (images, so far) from the wiki markdown editor
+    path(
+        "api/wiki/media/",
+        WikiMediaUploadView.as_view(),
+        name="api-wiki-media-upload",
+    ),
     # AJAX: save wiki nav reorder
     path("api/wiki/reorder/", WikiReorderSaveView.as_view(), name="api-wiki-reorder"),
     # AJAX: list matching template options for create forms

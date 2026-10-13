@@ -1,7 +1,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from .models import TemplateOptionIndex, WikiPage, WikiPageTag, WikiTagOrder
+from .models import TemplateOptionIndex, WikiMedia, WikiPage, WikiPageTag, WikiTagOrder
 
 
 class WikiPageTagInline(admin.TabularInline):
@@ -115,3 +115,24 @@ class TemplateOptionIndexAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("page")
+
+
+@admin.register(WikiMedia)
+class WikiMediaAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "page_list", "uploaded_by", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("pages__title", "file")
+    readonly_fields = ("file", "uploaded_by", "pages", "created_at", "updated_at")
+
+    def has_add_permission(self, request):
+        """Images are added from the markdown editor, which resizes them."""
+        return False
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("uploaded_by").prefetch_related("pages")
+
+    @admin.display(description="Pages")
+    def page_list(self, obj):
+        titles = [p.title for p in obj.pages.all()]
+        return ", ".join(titles) if titles else "(none)"

@@ -10,7 +10,7 @@ from django import template
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
-from flipfix.apps.core.media import MEDIA_ACCEPT_ATTR
+from flipfix.apps.core.media import MEDIA_ACCEPT_ATTR, PHOTO_ACCEPT_ATTR
 
 register = template.Library()
 
@@ -19,14 +19,15 @@ register = template.Library()
 
 
 @register.simple_tag
-def media_accept() -> str:
+def media_accept(photos_only: bool = False) -> str:
     """Return the ``accept`` attribute value for media file inputs.
 
     Usage::
 
         <input type="file" accept="{% media_accept %}" ...>
+        <input type="file" accept="{% media_accept photos_only=True %}" ...>
     """
-    return MEDIA_ACCEPT_ATTR
+    return PHOTO_ACCEPT_ATTR if photos_only else MEDIA_ACCEPT_ATTR
 
 
 # ---- Icon -------------------------------------------------------------------

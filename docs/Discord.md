@@ -59,7 +59,8 @@ finish, then posts **one message per machine they worked on**.
   public QR flow post immediately, so the floor still gets real-time alerts.
 - **Requires the background worker.** Buffered events are only delivered by the
   qcluster worker (`make runq`) running the flush schedule; ensure it's up and that
-  `ensure_scheduled_tasks` has run (it runs at deploy). With coalescing off, every
+  `ensure_scheduled_tasks` has run (it runs at deploy; it also registers the
+  daily `delete-orphaned-wiki-media` sweep). With coalescing off, every
   event posts immediately as before.
 - **At most four full posts per flush.** Grouping per machine means a session
   touching twenty machines would otherwise post twenty times. Past

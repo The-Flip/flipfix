@@ -59,6 +59,40 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/**
+ * Apply an edit descriptor to a textarea, preserving the undo stack.
+ *
+ * The descriptor is { replaceStart, replaceEnd, replacement, selectionStart,
+ * selectionEnd }: replace replaceStart..replaceEnd with replacement, then set
+ * the selection. Uses execCommand('insertText') to keep Cmd/Ctrl+Z working;
+ * despite being "deprecated", it remains the only way to programmatically
+ * edit a textarea with undo support. execCommand edits the *focused* element,
+ * so when the textarea isn't focused (e.g. an async upload finished after the
+ * user moved on), or in environments without it (jsdom), this falls back to
+ * direct .value assignment.
+ *
+ * @param {HTMLTextAreaElement} textarea
+ * @param {object|null} result - Edit descriptor; null is a no-op
+ * @returns {boolean} Whether an edit was applied
+ */
+function applyTextareaEdit(textarea, result) {
+  if (!result) return false;
+
+  textarea.selectionStart = result.replaceStart;
+  textarea.selectionEnd = result.replaceEnd;
+  const doc = textarea.ownerDocument;
+  if (doc.activeElement !== textarea || !doc.execCommand('insertText', false, result.replacement)) {
+    const before = textarea.value.substring(0, result.replaceStart);
+    const after = textarea.value.substring(result.replaceEnd);
+    textarea.value = `${before}${result.replacement}${after}`;
+  }
+
+  textarea.selectionStart = result.selectionStart;
+  textarea.selectionEnd = result.selectionEnd;
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  return true;
+}
+
 /* ==========================================================================
    Dropdowns
    ========================================================================== */
@@ -368,5 +402,6 @@ if (typeof module !== 'undefined') {
     formatTime,
     formatRelative,
     escapeHtml,
+    applyTextareaEdit,
   };
 }

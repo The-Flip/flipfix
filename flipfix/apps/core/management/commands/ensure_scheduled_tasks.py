@@ -3,8 +3,9 @@
 Idempotent — run at deploy time alongside ``migrate``. The existing ``qcluster``
 worker runs the schedules; no extra process is needed. Registers:
 
-* the daily maintenance report post, and
-* the once-a-minute flush of coalesced Discord notifications.
+* the daily maintenance report post,
+* the once-a-minute flush of coalesced Discord notifications, and
+* the daily sweep of wiki media no page references.
 """
 
 from __future__ import annotations
@@ -22,6 +23,10 @@ DAILY_REPORT_HOUR = 8  # local time
 FLUSH_NAME = "flush-discord-notifications"
 FLUSH_FUNC = "flipfix.apps.discord.tasks.flush_pending_notifications"
 FLUSH_EVERY_MINUTES = 1
+
+WIKI_MEDIA_SWEEP_NAME = "delete-orphaned-wiki-media"
+WIKI_MEDIA_SWEEP_FUNC = "flipfix.apps.wiki.tasks.delete_orphaned_wiki_media"
+WIKI_MEDIA_SWEEP_HOUR = 3  # local time, off-hours
 
 
 def _next_run_at(hour: int):
@@ -50,7 +55,13 @@ class Command(BaseCommand):
             minutes=FLUSH_EVERY_MINUTES,
             next_run=timezone.now(),
         )
-        for schedule in (daily, flush):
+        wiki_sweep = self._ensure(
+            name=WIKI_MEDIA_SWEEP_NAME,
+            func=WIKI_MEDIA_SWEEP_FUNC,
+            schedule_type=Schedule.DAILY,
+            next_run=_next_run_at(WIKI_MEDIA_SWEEP_HOUR),
+        )
+        for schedule in (daily, flush, wiki_sweep):
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Ensured schedule '{schedule.name}' (next run {schedule.next_run:%Y-%m-%d %H:%M})"

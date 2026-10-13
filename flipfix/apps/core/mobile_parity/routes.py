@@ -102,6 +102,7 @@ EXCLUDED_ROUTES: Mapping[str, str] = {
     "admin-debug-dashboard": "staff diagnostics, deliberately unstyled",
     "healthz": "plain-text health probe",
     "media": "serves uploaded files",
+    "wiki-media": "redirects to an uploaded image file",
     "invitation-register": "requires a live single-use invitation token",
 }
 

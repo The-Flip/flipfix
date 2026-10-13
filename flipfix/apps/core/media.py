@@ -47,15 +47,14 @@ ALLOWED_MEDIA_EXTENSIONS = ALLOWED_PHOTO_EXTENSIONS | ALLOWED_VIDEO_EXTENSIONS
 # These get explicit entries in the HTML accept attribute alongside image/*.
 BROWSER_QUIRK_EXTENSIONS = ALLOWED_HEIC_EXTENSIONS | ALLOWED_AVIF_EXTENSIONS
 
-# Generated accept string for file inputs — single source of truth.
-MEDIA_ACCEPT_ATTR = ",".join(
-    [
-        "image/*",
-        "video/*",
-        *sorted(f".{ext.lstrip('.')}" for ext in BROWSER_QUIRK_EXTENSIONS),
-        *sorted(f"image/{ext.lstrip('.')}" for ext in BROWSER_QUIRK_EXTENSIONS),
-    ]
-)
+_BROWSER_QUIRK_ACCEPT = [
+    *sorted(f".{ext.lstrip('.')}" for ext in BROWSER_QUIRK_EXTENSIONS),
+    *sorted(f"image/{ext.lstrip('.')}" for ext in BROWSER_QUIRK_EXTENSIONS),
+]
+
+# Generated accept strings for file inputs — single source of truth.
+MEDIA_ACCEPT_ATTR = ",".join(["image/*", "video/*", *_BROWSER_QUIRK_ACCEPT])
+PHOTO_ACCEPT_ATTR = ",".join(["image/*", *_BROWSER_QUIRK_ACCEPT])
 
 # File size limit
 MAX_MEDIA_FILE_SIZE_BYTES = 200 * 1024 * 1024  # 200MB

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
@@ -33,8 +33,21 @@ from .actions import (
     sync_template_option_index,
     validate_template_syntax,
 )
-from .forms import WikiPageForm
-from .models import UNTAGGED_SENTINEL, TemplateOptionIndex, WikiPage, WikiPageTag, WikiTagOrder
+from .forms import WikiMediaUploadForm, WikiPageForm
+from .media import (
+    alt_text_from_filename,
+    create_wiki_image,
+    media_markdown,
+    record_media_references,
+)
+from .models import (
+    UNTAGGED_SENTINEL,
+    TemplateOptionIndex,
+    WikiMedia,
+    WikiPage,
+    WikiPageTag,
+    WikiTagOrder,
+)
 from .selectors import build_nav_tree
 
 
@@ -141,6 +154,7 @@ class WikiPageDetailView(WikiPagePathMixin, DetailView):
                 )
             except ValidationError as e:
                 return JsonResponse({"success": False, "errors": e.messages}, status=400)
+            record_media_references(self.object)
             # Sync template option index (page reloads on success, picks up toast)
             result = sync_template_option_index(self.object)
             _add_template_sync_toast(request, result)
@@ -526,3 +540,46 @@ class WikiTemplateContentView(View):
             data["priority"] = action.priority
 
         return JsonResponse(data)
+
+
+class WikiMediaUploadView(View):
+    """API endpoint for inline media uploads from the wiki markdown editor (images only, so far).
+
+    Returns the markdown to insert. See ``markdown_image_upload.js``.
+    """
+
+    def post(self, request, *args, **kwargs):
+        form = WikiMediaUploadForm(request.POST, request.FILES)
+        if not form.is_valid():
+            errors = [e for field_errors in form.errors.values() for e in field_errors]
+            return JsonResponse({"success": False, "error": " ".join(errors)}, status=400)
+
+        upload = form.cleaned_data["file"]
+        media = create_wiki_image(
+            file=upload,
+            uploaded_by=request.user,
+            page=form.cleaned_data["page"],
+        )
+        return JsonResponse(
+            {
+                "success": True,
+                "markdown": media_markdown(media, alt_text_from_filename(upload.name)),
+            }
+        )
+
+
+class WikiMediaView(View):
+    """Resolve a wiki media file's stable URL to its stored file.
+
+    Markdown embeds ``/wiki/media/<pk>/`` so content doesn't depend on where
+    files are stored. This is an indirection, not an access boundary: the
+    stored file under ``/media/`` is served like all other uploads. The
+    redirect is cached for a day; keep that short if storage ever moves to
+    expiring (signed) URLs.
+    """
+
+    def get(self, request, pk: int, *args, **kwargs):
+        media = get_object_or_404(WikiMedia, pk=pk)
+        response = HttpResponseRedirect(media.file.url)
+        response["Cache-Control"] = "private, max-age=86400"
+        return response

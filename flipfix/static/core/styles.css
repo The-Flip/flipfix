@@ -1295,6 +1295,24 @@ body {
   padding: var(--space-3);
 }
 
+/* Image being dragged over a textarea that accepts uploads (markdown_image_upload.js) */
+.form-textarea--dropping {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 3px var(--color-input-focus-ring);
+}
+
+.image-upload-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.image-upload-controls .form-hint {
+  margin-top: 0;
+}
+
 .form-field {
   margin-bottom: var(--space-3);
 }
@@ -2616,6 +2634,12 @@ body {
 /* --- Markdown Content --- */
 .markdown-content {
   color: var(--color-text-primary);
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
 }
 
 .markdown-content p {

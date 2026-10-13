@@ -18,6 +18,8 @@
  *   Absorbed from task_list_enter.js.
  *
  * Dispatches 'input' event after changes for consistency with other modules.
+ *
+ * Requires core.js (for applyTextareaEdit).
  */
 (function (exports) {
   'use strict';
@@ -324,31 +326,8 @@
   // ── DOM Wiring (browser only) ─────────────────────────────────
 
   if (typeof document !== 'undefined') {
-    /**
-     * Apply a pure function result to a textarea, preserving undo.
-     *
-     * Uses execCommand('insertText') to keep the browser's undo stack
-     * intact (Cmd/Ctrl+Z). Despite being "deprecated", it remains the
-     * only way to programmatically edit a textarea with undo support.
-     * Falls back to direct .value assignment in environments that don't
-     * support it (e.g. jsdom in tests).
-     */
-    function applyResult(textarea, result) {
-      if (!result) return false;
-
-      textarea.selectionStart = result.replaceStart;
-      textarea.selectionEnd = result.replaceEnd;
-      if (!document.execCommand('insertText', false, result.replacement)) {
-        const before = textarea.value.substring(0, result.replaceStart);
-        const after = textarea.value.substring(result.replaceEnd);
-        textarea.value = `${before}${result.replacement}${after}`;
-      }
-
-      textarea.selectionStart = result.selectionStart;
-      textarea.selectionEnd = result.selectionEnd;
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      return true;
-    }
+    // applyTextareaEdit() comes from core.js.
+    const applyResult = applyTextareaEdit;
 
     function initMarkdownShortcuts(textarea) {
       textarea.addEventListener('paste', (e) => {

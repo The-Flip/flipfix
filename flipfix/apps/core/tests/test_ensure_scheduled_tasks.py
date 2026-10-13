@@ -14,6 +14,8 @@ from flipfix.apps.core.management.commands.ensure_scheduled_tasks import (
     FLUSH_EVERY_MINUTES,
     FLUSH_FUNC,
     FLUSH_NAME,
+    WIKI_MEDIA_SWEEP_FUNC,
+    WIKI_MEDIA_SWEEP_NAME,
 )
 
 
@@ -37,11 +39,19 @@ class EnsureScheduledTasksTests(TestCase):
         self.assertEqual(schedule.minutes, FLUSH_EVERY_MINUTES)
         self.assertIsNotNone(schedule.next_run)
 
+    def test_creates_wiki_media_sweep_schedule(self):
+        self._run()
+        schedule = Schedule.objects.get(name=WIKI_MEDIA_SWEEP_NAME)
+        self.assertEqual(schedule.func, WIKI_MEDIA_SWEEP_FUNC)
+        self.assertEqual(schedule.schedule_type, Schedule.DAILY)
+        self.assertIsNotNone(schedule.next_run)
+
     def test_is_idempotent(self):
         self._run()
         self._run()
         self.assertEqual(Schedule.objects.filter(name=DAILY_REPORT_NAME).count(), 1)
         self.assertEqual(Schedule.objects.filter(name=FLUSH_NAME).count(), 1)
+        self.assertEqual(Schedule.objects.filter(name=WIKI_MEDIA_SWEEP_NAME).count(), 1)
 
     def test_preserves_next_run_across_runs(self):
         self._run()
