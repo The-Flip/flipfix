@@ -118,6 +118,7 @@ from flipfix.apps.parts.views.part_requests import (
 )
 from flipfix.apps.wiki.views import (
     WikiHomeView,
+    WikiMediaSweepApiView,
     WikiMediaUploadView,
     WikiMediaView,
     WikiPageCreateView,
@@ -654,6 +655,13 @@ urlpatterns = [
     path("wiki/delete/<path:path>", WikiPageDeleteView.as_view(), name="wiki-page-delete"),
     # AJAX: wiki tag autocomplete
     path("api/wiki/tags/", WikiTagAutocompleteView.as_view(), name="api-wiki-tag-autocomplete"),
+    # Worker: daily sweep of unreferenced wiki media (runs here, where the files are)
+    path(
+        "api/wiki/media/sweep/",
+        WikiMediaSweepApiView.as_view(),
+        name="api-wiki-media-sweep",
+        access="always_public",
+    ),
     # AJAX: upload media (images, so far) from the wiki markdown editor
     path(
         "api/wiki/media/",

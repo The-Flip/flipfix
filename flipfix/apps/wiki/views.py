@@ -11,8 +11,10 @@ from django.db.models import Q
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.html import format_html, format_html_join
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -22,6 +24,7 @@ from django.views.generic import (
     UpdateView,
 )
 
+from flipfix.apps.core.api_auth import json_api_view, validate_worker_token
 from flipfix.apps.core.markdown_links import save_inline_markdown_field
 from flipfix.apps.core.mixins import FormPrefillMixin
 
@@ -37,6 +40,7 @@ from .forms import WikiMediaUploadForm, WikiPageForm
 from .media import (
     alt_text_from_filename,
     create_wiki_image,
+    delete_orphaned_media,
     media_markdown,
     record_media_references,
 )
@@ -583,3 +587,22 @@ class WikiMediaView(View):
         response = HttpResponseRedirect(media.file.url)
         response["Cache-Control"] = "private, max-age=86400"
         return response
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class WikiMediaSweepApiView(View):
+    """Internal endpoint: delete wiki media no page references.
+
+    Called daily by the worker's ``delete_orphaned_wiki_media`` task. The sweep
+    runs here because only the web service has the media disk; the worker
+    authenticates with the shared worker token.
+
+    POST /api/wiki/media/sweep/  ->  {"success": true, "deleted": <count>}
+    """
+
+    http_method_names = ["post"]
+
+    @json_api_view
+    def post(self, request, *args, **kwargs):
+        validate_worker_token(request)
+        return JsonResponse({"success": True, "deleted": delete_orphaned_media()})

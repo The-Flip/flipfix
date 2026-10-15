@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import secrets
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, tag
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -15,6 +16,7 @@ from flipfix.apps.core.test_utils import (
     SuppressRequestLogsMixin,
     TemporaryMediaMixin,
     TestDataMixin,
+    create_maintainer_user,
     create_uploaded_image,
 )
 from flipfix.apps.wiki.media import (
@@ -354,9 +356,111 @@ class DeleteOrphanedMediaTests(TemporaryMediaMixin, TestCase):
         self.assertEqual(list(image.pages.all()), [self.page_b])
         self.assertTrue(default_storage.exists(image.file.name))
 
-    def test_scheduled_task_runs_the_sweep(self):
-        """The django-q entry point deletes orphans and returns the count."""
-        self._media()
+
+WORKER_TOKEN = secrets.token_hex(16)
+
+
+@tag("views")
+@override_settings(TRANSCODING_UPLOAD_TOKEN=WORKER_TOKEN)
+class WikiMediaSweepApiTests(TemporaryMediaMixin, SuppressRequestLogsMixin, TestCase):
+    """The web-side sweep endpoint the worker calls.
+
+    Media files live on the web service's disk, which the worker can't reach,
+    so the sweep must run on web.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("api-wiki-media-sweep")
+
+    def _orphan(self) -> WikiMedia:
+        media = create_wiki_image(file=_jpeg_upload(), uploaded_by=None)
+        _backdate(media, ORPHAN_GRACE_PERIOD * 2)
+        return media
+
+    def test_sweeps_with_the_worker_token(self):
+        """The worker's bearer token runs the sweep, deleting rows and files."""
+        media = self._orphan()
 
         with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(delete_orphaned_wiki_media(), 1)
+            response = self.client.post(self.url, HTTP_AUTHORIZATION=f"Bearer {WORKER_TOKEN}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success": True, "deleted": 1})
+        self.assertFalse(WikiMedia.objects.exists())
+        self.assertFalse(default_storage.exists(media.file.name))
+
+    def test_rejects_missing_token(self):
+        """No Authorization header gets 401 and sweeps nothing."""
+        self._orphan()
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertTrue(WikiMedia.objects.exists())
+
+    def test_rejects_wrong_token(self):
+        """A wrong token gets 403."""
+        response = self.client.post(self.url, HTTP_AUTHORIZATION="Bearer wrong")
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_rejects_logged_in_maintainer_without_token(self):
+        """A browser session isn't enough; only the worker token is."""
+        self.client.force_login(create_maintainer_user())
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_get_not_allowed(self):
+        """Only POST runs the sweep."""
+        response = self.client.get(self.url, HTTP_AUTHORIZATION=f"Bearer {WORKER_TOKEN}")
+
+        self.assertEqual(response.status_code, 405)
+
+
+@tag("tasks")
+class DeleteOrphanedWikiMediaTaskTests(TestCase):
+    """The django-q task on the worker asks the web service to sweep."""
+
+    @override_settings(
+        DJANGO_WEB_SERVICE_URL="https://web.internal:8080/", TRANSCODING_UPLOAD_TOKEN=WORKER_TOKEN
+    )
+    @patch("flipfix.apps.core.web_service.requests.post")
+    def test_calls_the_web_service_sweep_endpoint(self, mock_post):
+        """It POSTs to the web service with the worker token and returns the count."""
+        mock_post.return_value = Mock(
+            status_code=200, json=Mock(return_value={"success": True, "deleted": 3})
+        )
+
+        self.assertEqual(delete_orphaned_wiki_media(), 3)
+
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], f"https://web.internal:8080{reverse('api-wiki-media-sweep')}")
+        self.assertEqual(kwargs["headers"], {"Authorization": f"Bearer {WORKER_TOKEN}"})
+
+    @override_settings(DJANGO_WEB_SERVICE_URL=None, TRANSCODING_UPLOAD_TOKEN=None)
+    @patch("flipfix.apps.core.web_service.requests.post")
+    def test_fails_loudly_when_not_configured(self, mock_post):
+        """Missing config raises (django-q records the failure) instead of silently skipping."""
+        with self.assertRaises(ValueError) as ctx:
+            delete_orphaned_wiki_media()
+
+        self.assertIn("DJANGO_WEB_SERVICE_URL", str(ctx.exception))
+        self.assertIn("TRANSCODING_UPLOAD_TOKEN", str(ctx.exception))
+        mock_post.assert_not_called()
+
+    @override_settings(
+        DJANGO_WEB_SERVICE_URL="https://web.internal", TRANSCODING_UPLOAD_TOKEN=WORKER_TOKEN
+    )
+    @patch("flipfix.apps.core.web_service.requests.post")
+    def test_raises_when_web_service_errors(self, mock_post):
+        """An error response raises, so the failed run shows up in django-q."""
+        mock_post.return_value = Mock(
+            status_code=500, json=Mock(return_value={"success": False, "error": "boom"})
+        )
+
+        with self.assertRaises(RuntimeError):
+            delete_orphaned_wiki_media()

@@ -5,39 +5,17 @@ from __future__ import annotations
 import logging
 from functools import partial
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import FileResponse, Http404, JsonResponse
-from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
-from flipfix.apps.core.api_auth import ApiAuthError, json_api_view
+from flipfix.apps.core.api_auth import json_api_view, validate_worker_token
 from flipfix.apps.core.models import AbstractMedia, get_media_model
 
 logger = logging.getLogger(__name__)
-
-
-def _validate_transcoding_auth(request) -> None:
-    """Validate Bearer token authentication for transcoding API endpoints.
-
-    Uses the shared TRANSCODING_UPLOAD_TOKEN setting (not the ApiKey table).
-
-    Raises:
-        ApiAuthError: If authentication fails.
-    """
-    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
-    if not auth_header.startswith("Bearer "):
-        raise ApiAuthError("Missing or invalid Authorization header", status=401)
-
-    token = auth_header[7:]
-    if not settings.TRANSCODING_UPLOAD_TOKEN:
-        raise ApiAuthError("Server not configured for transcoding", status=500)
-
-    if not constant_time_compare(token, settings.TRANSCODING_UPLOAD_TOKEN):
-        raise ApiAuthError("Invalid authentication token", status=403)
 
 
 def _get_media_record(model_name: str, media_id: int) -> tuple[type, AbstractMedia]:
@@ -96,7 +74,7 @@ class ReceiveTranscodedMediaView(View):
 
     @json_api_view
     def post(self, request, model_name: str, media_id: int):
-        _validate_transcoding_auth(request)
+        validate_worker_token(request)
 
         video_file = request.FILES.get("video_file")
         poster_file = request.FILES.get("poster_file")
@@ -149,7 +127,7 @@ class ServeSourceMediaView(View):
 
     @json_api_view
     def get(self, request, model_name: str, media_id: int):
-        _validate_transcoding_auth(request)
+        validate_worker_token(request)
         _media_model, media = _get_media_record(model_name, media_id)
 
         if not media.file:

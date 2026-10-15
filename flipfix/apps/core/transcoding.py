@@ -15,6 +15,7 @@ from decouple import config
 from django_q.tasks import async_task
 
 from flipfix.apps.core.models import get_media_model
+from flipfix.apps.core.web_service import require_web_service_config
 from flipfix.logging import bind_log_context, current_log_context, reset_log_context
 
 logger = logging.getLogger(__name__)
@@ -55,20 +56,10 @@ def _get_transcoding_config(
     Raises:
         ValueError: If required configuration is missing
     """
-    url = web_service_url or DJANGO_WEB_SERVICE_URL
-    token = upload_token or TRANSCODING_UPLOAD_TOKEN
-
-    missing = []
-    if not url:
-        missing.append("DJANGO_WEB_SERVICE_URL")
-    if not token:
-        missing.append("TRANSCODING_UPLOAD_TOKEN")
-
-    if missing:
-        msg = f"Required environment variables not configured: {', '.join(missing)}"
-        raise ValueError(msg)
-
-    return url, token
+    return require_web_service_config(
+        web_service_url or DJANGO_WEB_SERVICE_URL,
+        upload_token or TRANSCODING_UPLOAD_TOKEN,
+    )
 
 
 def enqueue_transcode(media_id: int, model_name: str, *, async_runner=async_task) -> None:
