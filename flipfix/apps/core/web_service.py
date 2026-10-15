@@ -9,6 +9,8 @@ service; the worker asks for it over HTTP, authenticated with the shared
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 import requests
 from django.conf import settings
 
@@ -17,8 +19,14 @@ ERROR_EXCERPT_CHARS = 200
 
 
 def require_web_service_config(web_service_url: str | None, token: str | None) -> tuple[str, str]:
-    """Return ``(web_service_url, token)``, raising ValueError naming whatever is missing."""
+    """Return ``(web_service_url, token)`` after validating them.
+
+    Raises ValueError naming whatever is missing, or if the URL would send the
+    token in cleartext: plain ``http`` is only allowed to this machine (local
+    development); everything else must be ``https``.
+    """
     if web_service_url and token:
+        _require_secure_transport(web_service_url)
         return web_service_url, token
     missing = [
         name
@@ -29,6 +37,19 @@ def require_web_service_config(web_service_url: str | None, token: str | None) -
         if not value
     ]
     raise ValueError(f"Required environment variables not configured: {', '.join(missing)}")
+
+
+_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+def _require_secure_transport(web_service_url: str) -> None:
+    """Reject URLs that would carry the worker token unencrypted off this machine."""
+    parts = urlsplit(web_service_url)
+    if parts.scheme == "https" or (parts.scheme == "http" and parts.hostname in _LOOPBACK_HOSTS):
+        return
+    raise ValueError(
+        "DJANGO_WEB_SERVICE_URL must use https (plain http is only allowed to localhost)"
+    )
 
 
 def post_to_web_service(path: str, *, timeout: int = 300) -> dict:
