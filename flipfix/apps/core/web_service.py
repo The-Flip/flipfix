@@ -12,6 +12,9 @@ from __future__ import annotations
 import requests
 from django.conf import settings
 
+ERROR_EXCERPT_CHARS = 200
+"""How much of a non-JSON error body to quote in the raised error."""
+
 
 def require_web_service_config(web_service_url: str | None, token: str | None) -> tuple[str, str]:
     """Return ``(web_service_url, token)``, raising ValueError naming whatever is missing."""
@@ -47,12 +50,18 @@ def post_to_web_service(path: str, *, timeout: int = 300) -> dict:
         f"{base_url.rstrip('/')}{path}",
         headers={"Authorization": f"Bearer {token}"},
         timeout=timeout,
+        # The request carries the worker token; never follow a redirect with it
+        # (requests keeps Authorization on some same-host redirects). A 3xx is
+        # reported as a failure below.
+        allow_redirects=False,
     )
     try:
         body = response.json()
     except ValueError:
         body = {}
     if response.status_code != 200 or not body.get("success"):
-        error = body.get("error") or f"HTTP {response.status_code}"
-        raise RuntimeError(f"Web service call to {path} failed: {error}")
+        detail = body.get("error") or response.text[:ERROR_EXCERPT_CHARS].strip()
+        raise RuntimeError(
+            f"Web service call to {path} failed: HTTP {response.status_code}: {detail}"
+        )
     return body

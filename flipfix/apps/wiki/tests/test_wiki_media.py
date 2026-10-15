@@ -440,6 +440,8 @@ class DeleteOrphanedWikiMediaTaskTests(TestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], f"https://web.internal:8080{reverse('api-wiki-media-sweep')}")
         self.assertEqual(kwargs["headers"], {"Authorization": f"Bearer {WORKER_TOKEN}"})
+        # Never follow a redirect while carrying the worker token.
+        self.assertIs(kwargs["allow_redirects"], False)
 
     @override_settings(DJANGO_WEB_SERVICE_URL=None, TRANSCODING_UPLOAD_TOKEN=None)
     @patch("flipfix.apps.core.web_service.requests.post")
@@ -464,3 +466,23 @@ class DeleteOrphanedWikiMediaTaskTests(TestCase):
 
         with self.assertRaises(RuntimeError):
             delete_orphaned_wiki_media()
+
+    @override_settings(
+        DJANGO_WEB_SERVICE_URL="https://web.internal", TRANSCODING_UPLOAD_TOKEN=WORKER_TOKEN
+    )
+    @patch("flipfix.apps.core.web_service.requests.post")
+    def test_non_json_error_includes_response_excerpt(self, mock_post):
+        """A non-JSON error page (e.g. from a proxy) is quoted, truncated, in the error."""
+        mock_post.return_value = Mock(
+            status_code=502,
+            text="Bad Gateway: upstream unavailable " + "x" * 1000,
+            json=Mock(side_effect=ValueError("not json")),
+        )
+
+        with self.assertRaises(RuntimeError) as ctx:
+            delete_orphaned_wiki_media()
+
+        message = str(ctx.exception)
+        self.assertIn("HTTP 502", message)
+        self.assertIn("Bad Gateway: upstream unavailable", message)
+        self.assertLess(len(message), 400)
