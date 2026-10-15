@@ -14,11 +14,9 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
-from flipfix.apps.core.api_auth import json_api_view
+from flipfix.apps.core.api_auth import json_api_view, validate_worker_token
 from flipfix.apps.core.media import ALLOWED_MEDIA_EXTENSIONS, is_video_file
 from flipfix.apps.core.models import AbstractMedia, get_media_model
-
-from .transcoding import _validate_transcoding_auth
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +93,7 @@ class ReceiveMediaView(View):
 
     @json_api_view
     def post(self, request, model_name: str, parent_id: int):
-        _validate_transcoding_auth(request)
+        validate_worker_token(request)
 
         uploaded_file = request.FILES.get("file")
         _validate_media_file(uploaded_file)

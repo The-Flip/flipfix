@@ -56,6 +56,8 @@ function manage(...args) {
       ...process.env,
       DATABASE_URL: `sqlite:///${RUN_DIR}/run.db`,
       DJANGO_SETTINGS_MODULE: 'flipfix.settings.dev',
+      // Worker-style tasks call the web service over HTTP; point them at this server.
+      DJANGO_WEB_SERVICE_URL: BASE,
     },
     stdio: ['ignore', 'pipe', 'ignore'],
   }).toString();

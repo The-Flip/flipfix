@@ -69,12 +69,13 @@ Railway runs these services:
 
 ### Background Worker
 
-- Handles async tasks, like video transcoding and webhook delivery
+- Handles async tasks, like video transcoding and webhook delivery, plus django-q schedules (registered at deploy by `ensure_scheduled_tasks`)
+- _In prod_ it runs as a separate service **without** the media disk. Anything that reads, writes or deletes uploaded files goes through the web service's internal API instead (see [`core/web_service.py`](../flipfix/apps/core/web_service.py)): the worker POSTs with a Bearer token, `TRANSCODING_UPLOAD_TOKEN`, which the web service checks with `api_auth.validate_worker_token`. Both services need `DJANGO_WEB_SERVICE_URL` and `TRANSCODING_UPLOAD_TOKEN` set; the URL must be `https` (plain `http` is only accepted to localhost), so the token never travels in cleartext, and redirects are not followed. Examples: transcoding downloads/uploads, and the daily wiki media sweep (`/api/wiki/media/sweep/`).
 
 ### Persistent File Storage
 
 - Store uploaded photos and videos
-- _In prod_: a persistent disk attached to the web application
+- _In prod_: a persistent disk attached to the web application only (not the worker)
 - _In dev_: the local project directory
 
 ### Database

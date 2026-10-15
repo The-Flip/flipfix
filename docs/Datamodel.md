@@ -164,7 +164,7 @@ Lifecycle (see [`wiki/media.py`](../flipfix/apps/wiki/media.py)):
 
 - **Upload** stores a copy resized for the web. An upload from the edit page links it to that page right away (and it stays linked even if the edit is abandoned); one from the create page has no page until the page is saved.
 - **Page save** (full form or inline edit) adds every page whose content references the image to `pages`. Links are only ever added: editing an image out of a page keeps the link, so earlier revisions of the page still render.
-- **Deletion** happens only in the daily `delete-orphaned-wiki-media` sweep, which removes media no page links to that was uploaded more than 7 days ago, along with its files. Deleting a page just drops its links, so an image shared with another page survives; media whose last page is deleted goes in the next sweep. As a safety net, the sweep links rather than deletes media that some page's current content still embeds.
+- **Deletion** happens only in the daily `delete-orphaned-wiki-media` sweep (scheduled on the worker, which asks the web service to run it because only web has the media disk), which removes media no page links to that was uploaded more than 7 days ago, along with its files. Deleting a page just drops its links, so an image shared with another page survives; media whose last page is deleted goes in the next sweep. As a safety net, the sweep links rather than deletes media that some page's current content still embeds.
 
 ### Wiki Tag Order ([`WikiTagOrder`](../flipfix/apps/wiki/models.py))
 

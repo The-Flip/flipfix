@@ -18,6 +18,8 @@ RUN_DIR="${RUN_DIR:-${TMPDIR:-/tmp}/flipfix-run}"
 PORT="${PORT:-8765}"
 export DATABASE_URL="sqlite:///$RUN_DIR/run.db"
 export DJANGO_SETTINGS_MODULE=flipfix.settings.dev
+# Worker-style tasks (e.g. the wiki media sweep) call the web service over HTTP.
+export DJANGO_WEB_SERVICE_URL="http://127.0.0.1:$PORT"
 PY="$REPO/.venv/bin/python"
 
 cd "$REPO"

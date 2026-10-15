@@ -1,8 +1,8 @@
 """Shared API authentication utilities.
 
 Provides a decorator and helpers for Bearer-token-authenticated JSON API
-endpoints.  Used by the transcoding API, media upload API, and the
-read-only machine list API.
+endpoints.  Used by the transcoding API, media upload API, internal
+worker-to-web endpoints, and the read-only machine list API.
 """
 
 from __future__ import annotations
@@ -66,6 +66,21 @@ def _parse_bearer_token(request) -> str:
     if not auth_header.startswith("Bearer "):
         raise ApiAuthError("Missing or invalid Authorization header", status=401)
     return auth_header[7:]
+
+
+def validate_worker_token(request) -> None:
+    """Validate the Bearer token the worker (and Discord bot) use to call the web service.
+
+    Uses the shared TRANSCODING_UPLOAD_TOKEN setting (not the ApiKey table).
+    Raises ``ApiAuthError`` on failure.
+    """
+    from django.conf import settings
+
+    token = _parse_bearer_token(request)
+    if not settings.TRANSCODING_UPLOAD_TOKEN:
+        raise ApiAuthError("Server not configured for worker calls", status=500)
+    if not constant_time_compare(token, settings.TRANSCODING_UPLOAD_TOKEN):
+        raise ApiAuthError("Invalid authentication token", status=403)
 
 
 def validate_api_key(request, *, require_write: bool = False):

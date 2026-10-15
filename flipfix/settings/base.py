@@ -159,7 +159,10 @@ LIST_PAGE_SIZE = 10
 RATE_LIMIT_REPORTS_PER_IP = config("RATE_LIMIT_REPORTS_PER_IP", default=5, cast=int)
 RATE_LIMIT_WINDOW_MINUTES = config("RATE_LIMIT_WINDOW_MINUTES", default=10, cast=int)
 
-# Transcoding upload authentication token (shared between web and worker services)
+# Worker -> web service calls (see core/web_service.py). The token is shared between
+# the web and worker services; it authenticates transcoding transfers and other
+# internal endpoints, despite the historical name.
+DJANGO_WEB_SERVICE_URL = config("DJANGO_WEB_SERVICE_URL", default=None)
 TRANSCODING_UPLOAD_TOKEN = config("TRANSCODING_UPLOAD_TOKEN", default=None)
 
 # Logging levels (env-overridable)
